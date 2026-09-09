@@ -708,7 +708,7 @@ Les palettes sont écrites à la main plutôt que dérivées d'une graine par un
   - `enum class SecaAppIdentity { Contacts, Phone, Messages }`
   - `val SecaTypography: Typography` et `val SecaShapes: Shapes`
   - `object SecaMotion` avec `emphasized()`, `standard()` et `expressiveSpring()`
-  - `@Composable fun SecaTheme(identity: SecaAppIdentity, darkTheme: Boolean = isSystemInDarkTheme(), dynamicColor: Boolean = true, content: @Composable () -> Unit)`
+  - `@Composable fun SecaTheme(identity: SecaAppIdentity, darkTheme: Boolean = isSystemInDarkTheme(), dynamicColor: Boolean = false, content: @Composable () -> Unit)`
 
 - [ ] **Step 1: Écrire la typographie**
 
@@ -831,8 +831,9 @@ import androidx.compose.animation.core.tween
  */
 object SecaMotion {
 
-    val EmphasizedEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
-    val StandardEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+    // M3 uses distinct curves: standard is symmetric-ish, emphasized decelerates late.
+    private val EmphasizedEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
+    private val StandardEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 
     fun <T> emphasized() = tween<T>(durationMillis = 500, easing = EmphasizedEasing)
 
@@ -879,47 +880,101 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import com.seca.core.design.SecaAppIdentity
 
-private val ContactsAccent = Color(0xFF00696E)
-private val ContactsAccentDark = Color(0xFF4FD8E0)
-private val PhoneAccent = Color(0xFF3A5BA9)
-private val PhoneAccentDark = Color(0xFFB1C5FF)
-private val MessagesAccent = Color(0xFF6B4EA8)
-private val MessagesAccentDark = Color(0xFFD3BCFF)
+/**
+ * One app's accent, in both themes.
+ *
+ * Container roles are set explicitly: `lightColorScheme`/`darkColorScheme` fill
+ * anything left out from Material's baseline purple, which would render every
+ * identity's containers identically and defeat the per-app accent.
+ */
+private data class Accent(
+    val primary: Color,
+    val onPrimary: Color,
+    val container: Color,
+    val onContainer: Color,
+)
 
-private val NeutralSurfaceLight = Color(0xFFF7FAFA)
-private val NeutralSurfaceDark = Color(0xFF0E1414)
-private val NeutralOnSurfaceLight = Color(0xFF191C1D)
-private val NeutralOnSurfaceDark = Color(0xFFE1E3E3)
+private val ContactsLight = Accent(Color(0xFF00696E), Color.White, Color(0xFF9CF1F6), Color(0xFF002022))
+private val ContactsDark = Accent(Color(0xFF4FD8E0), Color(0xFF00363A), Color(0xFF004F53), Color(0xFF9CF1F6))
+
+private val PhoneLight = Accent(Color(0xFF3A5BA9), Color.White, Color(0xFFDAE2FF), Color(0xFF001A43))
+private val PhoneDark = Accent(Color(0xFFB1C5FF), Color(0xFF002B75), Color(0xFF1F438F), Color(0xFFDAE2FF))
+
+private val MessagesLight = Accent(Color(0xFF6B4EA8), Color.White, Color(0xFFEADDFF), Color(0xFF250057))
+private val MessagesDark = Accent(Color(0xFFD3BCFF), Color(0xFF3A1D6E), Color(0xFF53378E), Color(0xFFEADDFF))
+
+// Shared neutral base — identical across the three apps, so the family reads as one system.
+private val SurfaceLight = Color(0xFFF7FAFA)
+private val OnSurfaceLight = Color(0xFF191C1D)
+private val SurfaceVariantLight = Color(0xFFDBE4E5)
+private val OnSurfaceVariantLight = Color(0xFF3F4849)
+private val OutlineLight = Color(0xFF6F7979)
+
+private val SurfaceDark = Color(0xFF0E1414)
+private val OnSurfaceDark = Color(0xFFE1E3E3)
+private val SurfaceVariantDark = Color(0xFF3F4849)
+private val OnSurfaceVariantDark = Color(0xFFBFC8C9)
+private val OutlineDark = Color(0xFF899393)
+
+private fun lightAccent(identity: SecaAppIdentity) = when (identity) {
+    SecaAppIdentity.Contacts -> ContactsLight
+    SecaAppIdentity.Phone -> PhoneLight
+    SecaAppIdentity.Messages -> MessagesLight
+}
+
+private fun darkAccent(identity: SecaAppIdentity) = when (identity) {
+    SecaAppIdentity.Contacts -> ContactsDark
+    SecaAppIdentity.Phone -> PhoneDark
+    SecaAppIdentity.Messages -> MessagesDark
+}
 
 internal fun lightSchemeFor(identity: SecaAppIdentity): ColorScheme {
-    val accent = when (identity) {
-        SecaAppIdentity.Contacts -> ContactsAccent
-        SecaAppIdentity.Phone -> PhoneAccent
-        SecaAppIdentity.Messages -> MessagesAccent
-    }
+    val a = lightAccent(identity)
     return lightColorScheme(
-        primary = accent,
-        onPrimary = Color.White,
-        surface = NeutralSurfaceLight,
-        onSurface = NeutralOnSurfaceLight,
-        background = NeutralSurfaceLight,
-        onBackground = NeutralOnSurfaceLight,
+        primary = a.primary,
+        onPrimary = a.onPrimary,
+        primaryContainer = a.container,
+        onPrimaryContainer = a.onContainer,
+        secondary = a.primary,
+        onSecondary = a.onPrimary,
+        secondaryContainer = a.container,
+        onSecondaryContainer = a.onContainer,
+        tertiary = a.primary,
+        onTertiary = a.onPrimary,
+        tertiaryContainer = a.container,
+        onTertiaryContainer = a.onContainer,
+        surface = SurfaceLight,
+        onSurface = OnSurfaceLight,
+        surfaceVariant = SurfaceVariantLight,
+        onSurfaceVariant = OnSurfaceVariantLight,
+        outline = OutlineLight,
+        background = SurfaceLight,
+        onBackground = OnSurfaceLight,
     )
 }
 
 internal fun darkSchemeFor(identity: SecaAppIdentity): ColorScheme {
-    val accent = when (identity) {
-        SecaAppIdentity.Contacts -> ContactsAccentDark
-        SecaAppIdentity.Phone -> PhoneAccentDark
-        SecaAppIdentity.Messages -> MessagesAccentDark
-    }
+    val a = darkAccent(identity)
     return darkColorScheme(
-        primary = accent,
-        onPrimary = Color(0xFF00363A),
-        surface = NeutralSurfaceDark,
-        onSurface = NeutralOnSurfaceDark,
-        background = NeutralSurfaceDark,
-        onBackground = NeutralOnSurfaceDark,
+        primary = a.primary,
+        onPrimary = a.onPrimary,
+        primaryContainer = a.container,
+        onPrimaryContainer = a.onContainer,
+        secondary = a.primary,
+        onSecondary = a.onPrimary,
+        secondaryContainer = a.container,
+        onSecondaryContainer = a.onContainer,
+        tertiary = a.primary,
+        onTertiary = a.onPrimary,
+        tertiaryContainer = a.container,
+        onTertiaryContainer = a.onContainer,
+        surface = SurfaceDark,
+        onSurface = OnSurfaceDark,
+        surfaceVariant = SurfaceVariantDark,
+        onSurfaceVariant = OnSurfaceVariantDark,
+        outline = OutlineDark,
+        background = SurfaceDark,
+        onBackground = OnSurfaceDark,
     )
 }
 ```
@@ -986,6 +1041,23 @@ class SecaThemeTest {
     }
 
     @Test
+    fun `container roles follow the app accent rather than Material defaults`() {
+        // Guards the gap that made every identity share Material's baseline
+        // purple container: SecaAvatar paints itself with primaryContainer.
+        val containers = mutableMapOf<SecaAppIdentity, Color>()
+        composeRule.setContent {
+            SecaAppIdentity.entries.forEach { identity ->
+                SecaTheme(identity = identity, darkTheme = false, dynamicColor = false) {
+                    containers[identity] = MaterialTheme.colorScheme.primaryContainer
+                    Text("container-${identity.name}")
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(SecaAppIdentity.entries.size, containers.values.toSet().size)
+    }
+
+    @Test
     fun `theme wires in the Seca shape and type scales`() {
         // Guards the constraint that no app gets Material defaults by accident.
         var shapes: Shapes? = null
@@ -1032,14 +1104,19 @@ import com.seca.core.design.color.lightSchemeFor
  * The single entry point for Seca visuals.
  *
  * No app module defines its own colours, shapes or typography; they all
- * wrap their content in this. [dynamicColor] honours the user's Material You
- * wallpaper palette, which is available on every device Seca targets.
+ * wrap their content in this.
+ *
+ * [dynamicColor] opts in to the user's Material You wallpaper palette. It
+ * defaults to false: dynamic colour derives every role from the wallpaper,
+ * which would make Contacts, Phone and Messages look identical and erase the
+ * per-app accent that makes them recognisable as distinct members of one
+ * family.
  */
 @Composable
 fun SecaTheme(
     identity: SecaAppIdentity,
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -1065,7 +1142,7 @@ fun SecaTheme(
 .\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaThemeTest*"
 ```
 
-Expected: PASS, 3 tests. Confirme aussi que les tests Compose tournent sous Robolectric, sans appareil connecté.
+Expected: PASS, 4 tests. Confirme aussi que les tests Compose tournent sous Robolectric, sans appareil connecté.
 
 - [ ] **Step 10: Commit**
 
@@ -1385,7 +1462,7 @@ fun SecaEmptyState(
 .\gradlew.bat :core:design:test
 ```
 
-Expected: PASS, 6 tests au total.
+Expected: PASS, 7 tests au total (SecaThemeTest 4, SecaAvatarTest 1, SecaContactRowTest 2).
 
 - [ ] **Step 11: Commit**
 
@@ -1812,7 +1889,7 @@ GPL-3.0-or-later.
 .\gradlew.bat test
 ```
 
-Expected: PASS, 19 tests au total — 10 dans `:core:model`, 7 dans `:core:design`, 2 dans `:apps:catalog`.
+Expected: PASS, 20 tests au total — 10 dans `:core:model`, 8 dans `:core:design`, 2 dans `:apps:catalog`.
 
 - [ ] **Step 7: Commit**
 
@@ -1825,7 +1902,7 @@ git commit -m "chore: garde-fous dépendances, lint strict et README"
 
 ## Vérification finale du plan
 
-1. `.\gradlew.bat test` — les 19 tests au vert, sans appareil connecté
+1. `.\gradlew.bat test` — les 20 tests au vert, sans appareil connecté
 2. `.\gradlew.bat :apps:catalog:lint` — propre
 3. `.\gradlew.bat :apps:catalog:assembleDebug` — APK produit
 4. APK installé sur le Pixel 9 : basculer les trois identités, clair/sombre, couleur dynamique — le rendu doit convenir avant de passer à la suite
