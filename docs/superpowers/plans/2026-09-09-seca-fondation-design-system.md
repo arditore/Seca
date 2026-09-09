@@ -1595,9 +1595,11 @@ package com.seca.catalog
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
@@ -1621,6 +1623,21 @@ import com.seca.core.model.PhoneNumber
 import com.seca.core.model.SecaContact
 import androidx.compose.foundation.layout.Row
 
+/**
+ * French display names for the identity chips.
+ *
+ * Identifiers stay English per the project constraint, but UI strings are
+ * French — `SecaAppIdentity.name` would print "Phone" on an otherwise French
+ * screen. This lives in the catalog because it is the only screen that lists
+ * all three apps; a real Seca app never shows a picker.
+ */
+private val SecaAppIdentity.frenchLabel: String
+    get() = when (this) {
+        SecaAppIdentity.Contacts -> "Contacts"
+        SecaAppIdentity.Phone -> "Téléphone"
+        SecaAppIdentity.Messages -> "Messages"
+    }
+
 private val sampleContact = SecaContact(
     id = 1L,
     displayName = "Camille Durand",
@@ -1633,8 +1650,10 @@ private val sampleContact = SecaContact(
 @Composable
 fun CatalogScreen() {
     var identity by remember { mutableStateOf(SecaAppIdentity.Contacts) }
-    var dark by remember { mutableStateOf(false) }
-    var dynamic by remember { mutableStateOf(false) }
+    // Dark and dynamic colour are the catalog's starting state by request:
+    // it should open looking the way the user expects to use their phone.
+    var dark by remember { mutableStateOf(true) }
+    var dynamic by remember { mutableStateOf(true) }
 
     SecaTheme(identity = identity, darkTheme = dark, dynamicColor = dynamic) {
         // Animating the background makes the shared motion spec visible: switching
@@ -1644,25 +1663,23 @@ fun CatalogScreen() {
             animationSpec = SecaMotion.emphasized(),
             label = "background",
         )
-        Surface(color = background) {
+        // The Surface paints edge to edge so no band of stale colour shows behind
+        // the system bars; the content itself is inset so nothing collides with
+        // the clock or the navigation bar.
+        Surface(color = background, modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
+                    .fillMaxSize()
                     .verticalScroll(rememberScrollState())
+                    .safeDrawingPadding()
                     .padding(vertical = 24.dp),
             ) {
-                Text(
-                    text = "Seca",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                )
-
                 Row(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                     SecaAppIdentity.entries.forEach { entry ->
                         FilterChip(
                             selected = identity == entry,
                             onClick = { identity = entry },
-                            label = { Text(entry.name) },
+                            label = { Text(entry.frenchLabel) },
                             modifier = Modifier.padding(end = 8.dp),
                         )
                     }
@@ -1733,8 +1750,8 @@ import androidx.activity.enableEdgeToEdge
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent { CatalogScreen() }
     }
 }
