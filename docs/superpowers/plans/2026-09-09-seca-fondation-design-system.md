@@ -1242,11 +1242,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * A contact's avatar: their photo when there is one, their initials otherwise.
+ * A contact's avatar, rendered as initials.
  *
- * Photo loading is deliberately absent for now — no image library is pulled in
- * until an app actually needs one, and the initials path is what the catalog
- * and the contact list exercise first.
+ * Photo rendering is NOT implemented. [photoUri] is accepted so call sites do
+ * not have to change when it lands, but passing one currently has no effect —
+ * no image library enters the APK until an app actually needs one. When it is
+ * added, the image should carry `contentDescription = null`: the adjacent name
+ * already identifies the contact, so announcing it twice hurts screen readers.
  */
 @Composable
 fun SecaAvatar(
@@ -1287,6 +1289,7 @@ Expected: PASS.
 package com.seca.core.design.component
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -1323,6 +1326,20 @@ class SecaContactRowTest {
         }
         composeRule.onNodeWithText("Camille Durand").assertIsDisplayed()
         composeRule.onNodeWithText("06 12 34 56 78").assertIsDisplayed()
+    }
+
+    @Test
+    fun `shows only the name when the contact has no phone number`() {
+        // Contacts with no number are routine — email-only entries, import
+        // artefacts. This covers the row's only real branch.
+        val numberless = camille.copy(phoneNumbers = emptyList())
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, dynamicColor = false) {
+                SecaContactRow(contact = numberless, onClick = {})
+            }
+        }
+        composeRule.onNodeWithText("Camille Durand").assertIsDisplayed()
+        composeRule.onNodeWithText("06 12 34 56 78").assertDoesNotExist()
     }
 
     @Test
@@ -1462,7 +1479,7 @@ fun SecaEmptyState(
 .\gradlew.bat :core:design:test
 ```
 
-Expected: PASS, 7 tests au total (SecaThemeTest 4, SecaAvatarTest 1, SecaContactRowTest 2).
+Expected: PASS, 8 tests au total (SecaThemeTest 4, SecaAvatarTest 1, SecaContactRowTest 3).
 
 - [ ] **Step 11: Commit**
 
@@ -1889,7 +1906,7 @@ GPL-3.0-or-later.
 .\gradlew.bat test
 ```
 
-Expected: PASS, 20 tests au total — 10 dans `:core:model`, 8 dans `:core:design`, 2 dans `:apps:catalog`.
+Expected: PASS, 21 tests au total — 10 dans `:core:model`, 9 dans `:core:design`, 2 dans `:apps:catalog`.
 
 - [ ] **Step 7: Commit**
 
@@ -1902,7 +1919,7 @@ git commit -m "chore: garde-fous dépendances, lint strict et README"
 
 ## Vérification finale du plan
 
-1. `.\gradlew.bat test` — les 20 tests au vert, sans appareil connecté
+1. `.\gradlew.bat test` — les 21 tests au vert, sans appareil connecté
 2. `.\gradlew.bat :apps:catalog:lint` — propre
 3. `.\gradlew.bat :apps:catalog:assembleDebug` — APK produit
 4. APK installé sur le Pixel 9 : basculer les trois identités, clair/sombre, couleur dynamique — le rendu doit convenir avant de passer à la suite
