@@ -165,6 +165,7 @@ local.properties
 captures/
 *.apk
 *.aab
+.superpowers/
 ```
 
 - [ ] **Step 5: Écrire `gradle/libs.versions.toml`**
@@ -501,7 +502,22 @@ class PhoneNumberTest {
     @Test
     fun `digits strips formatting characters`() {
         assertEquals("0612345678", PhoneNumber("06 12 34 56 78").digits)
-        assertEquals("+33612345678", PhoneNumber("+33 (0)6-12.34.56.78").digits)
+        assertEquals("+33612345678", PhoneNumber("+33 6-12.34.56.78").digits)
+    }
+
+    @Test
+    fun `digits keeps a parenthesised trunk prefix`() {
+        // "(0)" is a written convention, not a dialable digit, but stripping it
+        // would need country-specific rules. Keeping it is safe because matches()
+        // compares only the trailing significant digits.
+        assertEquals("+330612345678", PhoneNumber("+33 (0)6-12.34.56.78").digits)
+    }
+
+    @Test
+    fun `matches sees through a parenthesised trunk prefix`() {
+        assertTrue(
+            PhoneNumber("+33 (0)6-12.34.56.78").matches(PhoneNumber("06 12 34 56 78"))
+        )
     }
 
     @Test
@@ -578,7 +594,7 @@ value class PhoneNumber(val raw: String) {
 .\gradlew.bat :core:model:test --tests "*PhoneNumberTest*"
 ```
 
-Expected: PASS, 4 tests.
+Expected: PASS, 6 tests.
 
 - [ ] **Step 5: Écrire le test qui échoue pour `SecaContact`**
 
@@ -660,7 +676,7 @@ data class SecaContact(
 .\gradlew.bat :core:model:test
 ```
 
-Expected: PASS, 8 tests.
+Expected: PASS, 10 tests.
 
 - [ ] **Step 9: Commit**
 
@@ -671,13 +687,18 @@ git commit -m "feat(model): types domaine PhoneNumber et SecaContact"
 
 ---
 
-### Task 4: `:core:design` — système de couleur et thème
+### Task 4: `:core:design` — le thème Seca
 
-Le socle du design unifié. Les palettes sont écrites à la main plutôt que dérivées d'une graine par une bibliothèque : c'est déterministe, ça évite une dépendance, et ça donne un vrai contrôle sur le rendu.
+Typographie, formes, motion et couleurs forment un seul thème. Ils sont livrés dans la même tâche parce que `SecaTheme` ne compile qu'une fois les quatre présents, et parce qu'un relecteur ne pourrait pas approuver la typographie en rejetant la palette : c'est une seule décision de design.
+
+Les palettes sont écrites à la main plutôt que dérivées d'une graine par une bibliothèque : c'est déterministe, ça évite une dépendance, et ça donne un vrai contrôle sur le rendu.
 
 **Files:**
-- Create: `core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt`
+- Create: `core/design/src/main/kotlin/com/seca/core/design/SecaTypography.kt`
+- Create: `core/design/src/main/kotlin/com/seca/core/design/SecaShapes.kt`
+- Create: `core/design/src/main/kotlin/com/seca/core/design/SecaMotion.kt`
 - Create: `core/design/src/main/kotlin/com/seca/core/design/SecaAppIdentity.kt`
+- Create: `core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt`
 - Create: `core/design/src/main/kotlin/com/seca/core/design/SecaTheme.kt`
 - Test: `core/design/src/test/kotlin/com/seca/core/design/SecaThemeTest.kt`
 
@@ -685,224 +706,13 @@ Le socle du design unifié. Les palettes sont écrites à la main plutôt que d�
 - Consumes: rien.
 - Produces:
   - `enum class SecaAppIdentity { Contacts, Phone, Messages }`
+  - `val SecaTypography: Typography` et `val SecaShapes: Shapes`
+  - `object SecaMotion` avec `emphasized()`, `standard()` et `expressiveSpring()`
   - `@Composable fun SecaTheme(identity: SecaAppIdentity, darkTheme: Boolean = isSystemInDarkTheme(), dynamicColor: Boolean = true, content: @Composable () -> Unit)`
 
-- [ ] **Step 1: Écrire `SecaAppIdentity`**
-
-```kotlin
-package com.seca.core.design
-
-/**
- * Which Seca app is being themed.
- *
- * All three share tokens, shapes, typography and motion; only the accent
- * differs, so the family reads as one system while each app stays
- * recognisable at a glance.
- */
-enum class SecaAppIdentity {
-    Contacts,
-    Phone,
-    Messages,
-}
-```
-
-- [ ] **Step 2: Écrire les palettes**
-
-`core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt`. Trois accents distincts sur une base neutre commune — teal pour Contacts, indigo pour Phone, violet pour Messages.
-
-```kotlin
-package com.seca.core.design.color
-
-import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.ui.graphics.Color
-import com.seca.core.design.SecaAppIdentity
-
-private val ContactsAccent = Color(0xFF00696E)
-private val ContactsAccentDark = Color(0xFF4FD8E0)
-private val PhoneAccent = Color(0xFF3A5BA9)
-private val PhoneAccentDark = Color(0xFFB1C5FF)
-private val MessagesAccent = Color(0xFF6B4EA8)
-private val MessagesAccentDark = Color(0xFFD3BCFF)
-
-private val NeutralSurfaceLight = Color(0xFFF7FAFA)
-private val NeutralSurfaceDark = Color(0xFF0E1414)
-private val NeutralOnSurfaceLight = Color(0xFF191C1D)
-private val NeutralOnSurfaceDark = Color(0xFFE1E3E3)
-
-internal fun lightSchemeFor(identity: SecaAppIdentity): ColorScheme {
-    val accent = when (identity) {
-        SecaAppIdentity.Contacts -> ContactsAccent
-        SecaAppIdentity.Phone -> PhoneAccent
-        SecaAppIdentity.Messages -> MessagesAccent
-    }
-    return lightColorScheme(
-        primary = accent,
-        onPrimary = Color.White,
-        surface = NeutralSurfaceLight,
-        onSurface = NeutralOnSurfaceLight,
-        background = NeutralSurfaceLight,
-        onBackground = NeutralOnSurfaceLight,
-    )
-}
-
-internal fun darkSchemeFor(identity: SecaAppIdentity): ColorScheme {
-    val accent = when (identity) {
-        SecaAppIdentity.Contacts -> ContactsAccentDark
-        SecaAppIdentity.Phone -> PhoneAccentDark
-        SecaAppIdentity.Messages -> MessagesAccentDark
-    }
-    return darkColorScheme(
-        primary = accent,
-        onPrimary = Color(0xFF00363A),
-        surface = NeutralSurfaceDark,
-        onSurface = NeutralOnSurfaceDark,
-        background = NeutralSurfaceDark,
-        onBackground = NeutralOnSurfaceDark,
-    )
-}
-```
-
-- [ ] **Step 3: Écrire le test qui échoue pour le thème**
-
-`core/design/src/test/kotlin/com/seca/core/design/SecaThemeTest.kt` :
-
-```kotlin
-package com.seca.core.design
-
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.test.junit4.createComposeRule
-import org.junit.Assert.assertNotEquals
-import org.junit.Rule
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-
-@RunWith(RobolectricTestRunner::class)
-class SecaThemeTest {
-
-    @get:Rule
-    val composeRule = createComposeRule()
-
-    private fun primaryFor(identity: SecaAppIdentity): Color {
-        var captured = Color.Unspecified
-        composeRule.setContent {
-            SecaTheme(identity = identity, darkTheme = false, dynamicColor = false) {
-                captured = MaterialTheme.colorScheme.primary
-                Text("probe")
-            }
-        }
-        composeRule.waitForIdle()
-        return captured
-    }
-
-    @Test
-    fun `each app identity gets a distinct accent`() {
-        val contacts = primaryFor(SecaAppIdentity.Contacts)
-        val phone = primaryFor(SecaAppIdentity.Phone)
-        assertNotEquals(contacts, phone)
-    }
-
-    @Test
-    fun `dark theme differs from light theme`() {
-        var light = Color.Unspecified
-        var dark = Color.Unspecified
-        composeRule.setContent {
-            SecaTheme(SecaAppIdentity.Contacts, darkTheme = false, dynamicColor = false) {
-                light = MaterialTheme.colorScheme.surface
-            }
-            SecaTheme(SecaAppIdentity.Contacts, darkTheme = true, dynamicColor = false) {
-                dark = MaterialTheme.colorScheme.surface
-            }
-        }
-        composeRule.waitForIdle()
-        assertNotEquals(light, dark)
-    }
-}
-```
-
-- [ ] **Step 4: Lancer le test et vérifier qu'il échoue**
-
-```powershell
-.\gradlew.bat :core:design:test --tests "*SecaThemeTest*"
-```
-
-Expected: échec de compilation, `SecaTheme` n'existe pas.
-
-- [ ] **Step 5: Implémenter `SecaTheme`**
-
-```kotlin
-package com.seca.core.design
-
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import com.seca.core.design.color.darkSchemeFor
-import com.seca.core.design.color.lightSchemeFor
-
-/**
- * The single entry point for Seca visuals.
- *
- * No app module defines its own colours, shapes or typography; they all
- * wrap their content in this. [dynamicColor] honours the user's Material You
- * wallpaper palette, which is available on every device Seca targets.
- */
-@Composable
-fun SecaTheme(
-    identity: SecaAppIdentity,
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit,
-) {
-    val context = LocalContext.current
-    val colorScheme = when {
-        dynamicColor && darkTheme -> dynamicDarkColorScheme(context)
-        dynamicColor -> dynamicLightColorScheme(context)
-        darkTheme -> darkSchemeFor(identity)
-        else -> lightSchemeFor(identity)
-    }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = SecaTypography,
-        shapes = SecaShapes,
-        content = content,
-    )
-}
-```
-
-`SecaTypography` et `SecaShapes` sont écrits à la tâche 5 — ce fichier ne compilera qu'une fois celle-ci faite. C'est volontaire : les deux tâches forment une seule unité thème, et la tâche 5 se termine par l'exécution de ces tests.
-
-- [ ] **Step 6: Commit (le module ne compile pas encore, c'est attendu)**
-
-```bash
-git add core/design
-git commit -m "feat(design): identités d'app et schémas de couleur"
-```
-
----
-
-### Task 5: `:core:design` — typographie, formes et motion
-
-Termine le thème ouvert à la tâche 4. C'est ici que se joue l'essentiel de la qualité perçue : M3 Expressive met l'accent sur les formes et le mouvement.
-
-**Files:**
-- Create: `core/design/src/main/kotlin/com/seca/core/design/SecaTypography.kt`
-- Create: `core/design/src/main/kotlin/com/seca/core/design/SecaShapes.kt`
-- Create: `core/design/src/main/kotlin/com/seca/core/design/SecaMotion.kt`
-- Test: réutilise `SecaThemeTest.kt` de la tâche 4
-
-**Interfaces:**
-- Consumes: rien.
-- Produces: `val SecaTypography: Typography`, `val SecaShapes: Shapes`, `object SecaMotion` avec `emphasized`, `standard`, `expressiveSpring`.
-
 - [ ] **Step 1: Écrire la typographie**
+
+`core/design/src/main/kotlin/com/seca/core/design/SecaTypography.kt` :
 
 ```kotlin
 package com.seca.core.design
@@ -976,6 +786,8 @@ val SecaTypography = Typography(
 
 - [ ] **Step 2: Écrire les formes**
 
+`core/design/src/main/kotlin/com/seca/core/design/SecaShapes.kt` :
+
 ```kotlin
 package com.seca.core.design
 
@@ -999,6 +811,8 @@ val SecaShapes = Shapes(
 ```
 
 - [ ] **Step 3: Écrire les spécifications de motion**
+
+`core/design/src/main/kotlin/com/seca/core/design/SecaMotion.kt` :
 
 ```kotlin
 package com.seca.core.design
@@ -1031,26 +845,238 @@ object SecaMotion {
 }
 ```
 
-- [ ] **Step 4: Lancer les tests de thème et vérifier qu'ils passent**
+- [ ] **Step 4: Écrire `SecaAppIdentity`**
 
-Le module compile maintenant que `SecaTypography` et `SecaShapes` existent.
+`core/design/src/main/kotlin/com/seca/core/design/SecaAppIdentity.kt` :
+
+```kotlin
+package com.seca.core.design
+
+/**
+ * Which Seca app is being themed.
+ *
+ * All three share tokens, shapes, typography and motion; only the accent
+ * differs, so the family reads as one system while each app stays
+ * recognisable at a glance.
+ */
+enum class SecaAppIdentity {
+    Contacts,
+    Phone,
+    Messages,
+}
+```
+
+- [ ] **Step 5: Écrire les palettes**
+
+`core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt`. Trois accents distincts sur une base neutre commune — teal pour Contacts, indigo pour Phone, violet pour Messages.
+
+```kotlin
+package com.seca.core.design.color
+
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
+import com.seca.core.design.SecaAppIdentity
+
+private val ContactsAccent = Color(0xFF00696E)
+private val ContactsAccentDark = Color(0xFF4FD8E0)
+private val PhoneAccent = Color(0xFF3A5BA9)
+private val PhoneAccentDark = Color(0xFFB1C5FF)
+private val MessagesAccent = Color(0xFF6B4EA8)
+private val MessagesAccentDark = Color(0xFFD3BCFF)
+
+private val NeutralSurfaceLight = Color(0xFFF7FAFA)
+private val NeutralSurfaceDark = Color(0xFF0E1414)
+private val NeutralOnSurfaceLight = Color(0xFF191C1D)
+private val NeutralOnSurfaceDark = Color(0xFFE1E3E3)
+
+internal fun lightSchemeFor(identity: SecaAppIdentity): ColorScheme {
+    val accent = when (identity) {
+        SecaAppIdentity.Contacts -> ContactsAccent
+        SecaAppIdentity.Phone -> PhoneAccent
+        SecaAppIdentity.Messages -> MessagesAccent
+    }
+    return lightColorScheme(
+        primary = accent,
+        onPrimary = Color.White,
+        surface = NeutralSurfaceLight,
+        onSurface = NeutralOnSurfaceLight,
+        background = NeutralSurfaceLight,
+        onBackground = NeutralOnSurfaceLight,
+    )
+}
+
+internal fun darkSchemeFor(identity: SecaAppIdentity): ColorScheme {
+    val accent = when (identity) {
+        SecaAppIdentity.Contacts -> ContactsAccentDark
+        SecaAppIdentity.Phone -> PhoneAccentDark
+        SecaAppIdentity.Messages -> MessagesAccentDark
+    }
+    return darkColorScheme(
+        primary = accent,
+        onPrimary = Color(0xFF00363A),
+        surface = NeutralSurfaceDark,
+        onSurface = NeutralOnSurfaceDark,
+        background = NeutralSurfaceDark,
+        onBackground = NeutralOnSurfaceDark,
+    )
+}
+```
+
+- [ ] **Step 6: Écrire le test qui échoue pour le thème**
+
+`core/design/src/test/kotlin/com/seca/core/design/SecaThemeTest.kt` :
+
+```kotlin
+package com.seca.core.design
+
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Text
+import androidx.compose.material3.Typography
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.test.junit4.createComposeRule
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+
+@RunWith(RobolectricTestRunner::class)
+class SecaThemeTest {
+
+    @get:Rule
+    val composeRule = createComposeRule()
+
+    @Test
+    fun `every app identity gets a distinct accent`() {
+        // Captured in a single setContent: ComposeContentTestRule allows
+        // setContent only once per test.
+        val primaries = mutableMapOf<SecaAppIdentity, Color>()
+        composeRule.setContent {
+            SecaAppIdentity.entries.forEach { identity ->
+                SecaTheme(identity = identity, darkTheme = false, dynamicColor = false) {
+                    primaries[identity] = MaterialTheme.colorScheme.primary
+                    Text("probe-${identity.name}")
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(SecaAppIdentity.entries.size, primaries.values.toSet().size)
+    }
+
+    @Test
+    fun `dark theme differs from light theme`() {
+        var light = Color.Unspecified
+        var dark = Color.Unspecified
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, darkTheme = false, dynamicColor = false) {
+                light = MaterialTheme.colorScheme.surface
+                Text("light")
+            }
+            SecaTheme(SecaAppIdentity.Contacts, darkTheme = true, dynamicColor = false) {
+                dark = MaterialTheme.colorScheme.surface
+                Text("dark")
+            }
+        }
+        composeRule.waitForIdle()
+        assertNotEquals(light, dark)
+    }
+
+    @Test
+    fun `theme wires in the Seca shape and type scales`() {
+        // Guards the constraint that no app gets Material defaults by accident.
+        var shapes: Shapes? = null
+        var typography: Typography? = null
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, darkTheme = false, dynamicColor = false) {
+                shapes = MaterialTheme.shapes
+                typography = MaterialTheme.typography
+                Text("probe")
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(SecaShapes, shapes)
+        assertEquals(SecaTypography, typography)
+    }
+}
+```
+
+- [ ] **Step 7: Lancer le test et vérifier qu'il échoue**
 
 ```powershell
 .\gradlew.bat :core:design:test --tests "*SecaThemeTest*"
 ```
 
-Expected: PASS, 2 tests. Confirme que les tests Compose tournent bien sous Robolectric, sans appareil.
+Expected: échec de compilation, `SecaTheme` n'existe pas.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 8: Implémenter `SecaTheme`**
+
+`core/design/src/main/kotlin/com/seca/core/design/SecaTheme.kt` :
+
+```kotlin
+package com.seca.core.design
+
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import com.seca.core.design.color.darkSchemeFor
+import com.seca.core.design.color.lightSchemeFor
+
+/**
+ * The single entry point for Seca visuals.
+ *
+ * No app module defines its own colours, shapes or typography; they all
+ * wrap their content in this. [dynamicColor] honours the user's Material You
+ * wallpaper palette, which is available on every device Seca targets.
+ */
+@Composable
+fun SecaTheme(
+    identity: SecaAppIdentity,
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    val context = LocalContext.current
+    val colorScheme = when {
+        dynamicColor && darkTheme -> dynamicDarkColorScheme(context)
+        dynamicColor -> dynamicLightColorScheme(context)
+        darkTheme -> darkSchemeFor(identity)
+        else -> lightSchemeFor(identity)
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = SecaTypography,
+        shapes = SecaShapes,
+        content = content,
+    )
+}
+```
+
+- [ ] **Step 9: Lancer le test et vérifier qu'il passe**
+
+```powershell
+.\gradlew.bat :core:design:test --tests "*SecaThemeTest*"
+```
+
+Expected: PASS, 3 tests. Confirme aussi que les tests Compose tournent sous Robolectric, sans appareil connecté.
+
+- [ ] **Step 10: Commit**
 
 ```bash
 git add core/design
-git commit -m "feat(design): typographie, formes et motion expressifs"
+git commit -m "feat(design): thème Seca — typographie, formes, motion et couleurs"
 ```
 
 ---
 
-### Task 6: `:core:design` — composants partagés
+### Task 5: `:core:design` — composants partagés
 
 Les briques réutilisées par les trois apps. Chacune est testée sous Robolectric.
 
@@ -1063,7 +1089,7 @@ Les briques réutilisées par les trois apps. Chacune est testée sous Robolectr
 - Modify: `core/design/build.gradle.kts` — ajouter la dépendance `:core:model`
 
 **Interfaces:**
-- Consumes: `SecaContact`, `SecaTheme`, `SecaMotion` des tâches 3 à 5.
+- Consumes: `SecaContact`, `SecaTheme`, `SecaMotion` des tâches 3 et 4.
 - Produces:
   - `@Composable fun SecaAvatar(initials: String, photoUri: String?, modifier: Modifier = Modifier, size: Dp = 48.dp)`
   - `@Composable fun SecaContactRow(contact: SecaContact, onClick: () -> Unit, modifier: Modifier = Modifier)`
@@ -1359,7 +1385,7 @@ fun SecaEmptyState(
 .\gradlew.bat :core:design:test
 ```
 
-Expected: PASS, 5 tests au total.
+Expected: PASS, 6 tests au total.
 
 - [ ] **Step 11: Commit**
 
@@ -1370,7 +1396,7 @@ git commit -m "feat(design): composants avatar, ligne de contact et état vide"
 
 ---
 
-### Task 7: `apps/catalog` — galerie du design system
+### Task 6: `apps/catalog` — galerie du design system
 
 L'app qui rend le design jugeable. Elle s'installe sur le Pixel 9 et montre tout : les trois identités, clair/sombre, couleur dynamique.
 
@@ -1654,7 +1680,7 @@ git commit -m "feat(catalog): galerie du design system"
 
 ---
 
-### Task 8: Garde-fous et documentation
+### Task 7: Garde-fous et documentation
 
 Verrouille les propriétés que la spec revendique, pour qu'elles ne puissent pas régresser silencieusement.
 
@@ -1786,7 +1812,7 @@ GPL-3.0-or-later.
 .\gradlew.bat test
 ```
 
-Expected: PASS, 16 tests au total — 8 dans `:core:model`, 6 dans `:core:design`, 2 dans `:apps:catalog`.
+Expected: PASS, 19 tests au total — 10 dans `:core:model`, 7 dans `:core:design`, 2 dans `:apps:catalog`.
 
 - [ ] **Step 7: Commit**
 
@@ -1799,7 +1825,7 @@ git commit -m "chore: garde-fous dépendances, lint strict et README"
 
 ## Vérification finale du plan
 
-1. `.\gradlew.bat test` — les 16 tests au vert, sans appareil connecté
+1. `.\gradlew.bat test` — les 19 tests au vert, sans appareil connecté
 2. `.\gradlew.bat :apps:catalog:lint` — propre
 3. `.\gradlew.bat :apps:catalog:assembleDebug` — APK produit
 4. APK installé sur le Pixel 9 : basculer les trois identités, clair/sombre, couleur dynamique — le rendu doit convenir avant de passer à la suite
