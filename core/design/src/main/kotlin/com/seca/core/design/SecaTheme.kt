@@ -13,14 +13,19 @@ import com.seca.core.design.color.lightSchemeFor
  * The single entry point for Seca visuals.
  *
  * No app module defines its own colours, shapes or typography; they all
- * wrap their content in this. [dynamicColor] honours the user's Material You
- * wallpaper palette, which is available on every device Seca targets.
+ * wrap their content in this.
+ *
+ * [dynamicColor] opts in to the user's Material You wallpaper palette. It
+ * defaults to false: dynamic colour derives every role from the wallpaper,
+ * which would make Contacts, Phone and Messages look identical and erase the
+ * per-app accent that makes them recognisable as distinct members of one
+ * family.
  */
 @Composable
 fun SecaTheme(
     identity: SecaAppIdentity,
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current

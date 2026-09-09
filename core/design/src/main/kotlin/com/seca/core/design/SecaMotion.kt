@@ -14,8 +14,9 @@ import androidx.compose.animation.core.tween
  */
 object SecaMotion {
 
-    val EmphasizedEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
-    val StandardEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+    // M3 uses distinct curves: standard is symmetric-ish, emphasized decelerates late.
+    private val EmphasizedEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
+    private val StandardEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 
     fun <T> emphasized() = tween<T>(durationMillis = 500, easing = EmphasizedEasing)
 

@@ -55,6 +55,23 @@ class SecaThemeTest {
     }
 
     @Test
+    fun `container roles follow the app accent rather than Material defaults`() {
+        // Guards the gap that made every identity share Material's baseline
+        // purple container: SecaAvatar paints itself with primaryContainer.
+        val containers = mutableMapOf<SecaAppIdentity, Color>()
+        composeRule.setContent {
+            SecaAppIdentity.entries.forEach { identity ->
+                SecaTheme(identity = identity, darkTheme = false, dynamicColor = false) {
+                    containers[identity] = MaterialTheme.colorScheme.primaryContainer
+                    Text("container-${identity.name}")
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(SecaAppIdentity.entries.size, containers.values.toSet().size)
+    }
+
+    @Test
     fun `theme wires in the Seca shape and type scales`() {
         // Guards the constraint that no app gets Material defaults by accident.
         var shapes: Shapes? = null
