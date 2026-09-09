@@ -35,6 +35,8 @@ L'environnement de départ a **JDK 25 uniquement**, sans SDK Android, sans Gradl
 - **Android SDK** : cmdline-tools, platform-tools (adb), Build Tools 36.0.0, platform API 37
 - `compileSdk 37` (maximum supporté par AGP 9.4). Le `targetSdk` est à confirmer contre ce que GrapheneOS livre sur Pixel 9 — à vérifier sur l'appareil, ne pas deviner.
 
+> **Correction du 2026-09-09, après vérification sur l'appareil.** Le Pixel 9 (`tokay`) de l'utilisateur tourne sous **Android 17, API 37**. Mais `platforms;android-37` n'existe pas sous ce nom : le SDK est passé aux versions mineures (`android-37.0`, `37.1`, `37.2`). Le projet est donc construit en **`compileSdk = 36` / `targetSdk = 36`**, avec `build-tools 36.0.0`. Raison : les builds reproductibles F-Droid sont une contrainte dure, `android-36` est sans ambiguïté disponible partout, et rien dans la phase 1 n'utilise une API 37. Une application en `targetSdk 36` s'exécute normalement sur un appareil API 37. Le passage à 37 reste une modification d'une ligne dans deux convention plugins, le jour où une API le justifie.
+
 Les versions exactes de Kotlin, du BOM Compose et de `material3` alpha se pinnent à la première tâche en interrogeant les dépôts. `material3` doit être ≥ `1.5.0-alpha04` pour les APIs Expressive (`1.5.0-alpha24` en juillet 2026).
 
 ## Structure du dépôt
