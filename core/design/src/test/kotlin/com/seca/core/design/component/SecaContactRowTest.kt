@@ -40,6 +40,20 @@ class SecaContactRowTest {
     }
 
     @Test
+    fun `shows only the name when the contact has no phone number`() {
+        // Contacts with no number are routine — email-only entries, import
+        // artefacts. This covers the row's only real branch.
+        val numberless = camille.copy(phoneNumbers = emptyList())
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, dynamicColor = false) {
+                SecaContactRow(contact = numberless, onClick = {})
+            }
+        }
+        composeRule.onNodeWithText("Camille Durand").assertIsDisplayed()
+        composeRule.onNodeWithText("06 12 34 56 78").assertDoesNotExist()
+    }
+
+    @Test
     fun `invokes onClick when tapped`() {
         var clicked = false
         composeRule.setContent {

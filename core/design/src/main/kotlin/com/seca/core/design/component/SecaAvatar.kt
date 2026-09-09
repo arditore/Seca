@@ -14,11 +14,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * A contact's avatar: their photo when there is one, their initials otherwise.
+ * A contact's avatar, rendered as initials.
  *
- * Photo loading is deliberately absent for now — no image library is pulled in
- * until an app actually needs one, and the initials path is what the catalog
- * and the contact list exercise first.
+ * Photo rendering is NOT implemented. [photoUri] is accepted so call sites do
+ * not have to change when it lands, but passing one currently has no effect —
+ * no image library enters the APK until an app actually needs one. When it is
+ * added, the image should carry `contentDescription = null`: the adjacent name
+ * already identifies the contact, so announcing it twice hurts screen readers.
  */
 @Composable
 fun SecaAvatar(
