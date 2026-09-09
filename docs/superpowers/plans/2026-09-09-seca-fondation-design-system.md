@@ -542,7 +542,7 @@ La comparaison sur les neuf derniers chiffres est la manière habituelle de rapp
 - [ ] **Step 2: Lancer le test et vérifier qu'il échoue**
 
 ```powershell
-.\gradlew.bat :core:model:test --tests "*PhoneNumberTest*"
+.\gradlew.bat :core:model:testDebugUnitTest --tests "*PhoneNumberTest*"
 ```
 
 Expected: échec de compilation, `PhoneNumber` n'existe pas.
@@ -591,7 +591,7 @@ value class PhoneNumber(val raw: String) {
 - [ ] **Step 4: Lancer le test et vérifier qu'il passe**
 
 ```powershell
-.\gradlew.bat :core:model:test --tests "*PhoneNumberTest*"
+.\gradlew.bat :core:model:testDebugUnitTest --tests "*PhoneNumberTest*"
 ```
 
 Expected: PASS, 6 tests.
@@ -641,7 +641,7 @@ class SecaContactTest {
 - [ ] **Step 6: Lancer le test et vérifier qu'il échoue**
 
 ```powershell
-.\gradlew.bat :core:model:test --tests "*SecaContactTest*"
+.\gradlew.bat :core:model:testDebugUnitTest --tests "*SecaContactTest*"
 ```
 
 Expected: échec de compilation, `SecaContact` n'existe pas.
@@ -1007,7 +1007,7 @@ class SecaThemeTest {
 - [ ] **Step 7: Lancer le test et vérifier qu'il échoue**
 
 ```powershell
-.\gradlew.bat :core:design:test --tests "*SecaThemeTest*"
+.\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaThemeTest*"
 ```
 
 Expected: échec de compilation, `SecaTheme` n'existe pas.
@@ -1062,7 +1062,7 @@ fun SecaTheme(
 - [ ] **Step 9: Lancer le test et vérifier qu'il passe**
 
 ```powershell
-.\gradlew.bat :core:design:test --tests "*SecaThemeTest*"
+.\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaThemeTest*"
 ```
 
 Expected: PASS, 3 tests. Confirme aussi que les tests Compose tournent sous Robolectric, sans appareil connecté.
@@ -1141,7 +1141,7 @@ class SecaAvatarTest {
 - [ ] **Step 3: Lancer le test et vérifier qu'il échoue**
 
 ```powershell
-.\gradlew.bat :core:design:test --tests "*SecaAvatarTest*"
+.\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaAvatarTest*"
 ```
 
 Expected: échec de compilation, `SecaAvatar` n'existe pas.
@@ -1197,7 +1197,7 @@ fun SecaAvatar(
 - [ ] **Step 5: Lancer le test et vérifier qu'il passe**
 
 ```powershell
-.\gradlew.bat :core:design:test --tests "*SecaAvatarTest*"
+.\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaAvatarTest*"
 ```
 
 Expected: PASS.
@@ -1265,7 +1265,7 @@ class SecaContactRowTest {
 - [ ] **Step 7: Lancer le test et vérifier qu'il échoue**
 
 ```powershell
-.\gradlew.bat :core:design:test --tests "*SecaContactRowTest*"
+.\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaContactRowTest*"
 ```
 
 Expected: échec de compilation, `SecaContactRow` n'existe pas.
@@ -1733,7 +1733,7 @@ class NoProprietaryDependenciesTest {
 - [ ] **Step 2: Lancer le test et vérifier qu'il passe**
 
 ```powershell
-.\gradlew.bat :core:design:test --tests "*NoProprietaryDependenciesTest*"
+.\gradlew.bat :core:design:testDebugUnitTest --tests "*NoProprietaryDependenciesTest*"
 ```
 
 Expected: PASS. Si le test échoue, une dépendance propriétaire est déjà entrée — la traquer avec `.\gradlew.bat :core:design:dependencies` avant d'aller plus loin.
