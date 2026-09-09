@@ -16,7 +16,7 @@ Ces contraintes s'appliquent à **toutes** les tâches, implicitement.
 
 - **JDK 17 exactement.** AGP 9.4 l'indique en min *et* en défaut. Le JDK 25 présent sur la machine ne convient pas.
 - **Gradle 9.7.1** via wrapper uniquement. Jamais d'installation système.
-- `compileSdk = 36`, `buildToolsVersion = "36.0.0"`, `minSdk = 34`, `targetSdk = 36`. Voir la note de la tâche 1 : `platforms;android-37` n'existe pas sous ce nom, et API 37 est écarté pour les builds reproductibles.
+- `compileSdk = 37`, `buildToolsVersion = "36.0.0"`, `minSdk = 34`, `targetSdk = 36`. **`compileSdk 37` est obligatoire, pas préférentiel** : `material3:1.5.0-alpha27` *et* Compose `ui`/`foundation` 1.12.0 déclarent tous `minCompileSdk=37` dans leurs métadonnées AAR. Rien de ce plan ne compile en 36. `targetSdk` reste à 36 : c'est le niveau contre lequel on teste, et il est indépendant de `compileSdk`.
 - **Aucun Compose BOM.** Le BOM `2026.08.00` épingle `material3` sur `1.4.0`, qui ne contient pas les APIs Expressive. Toutes les versions sont épinglées explicitement dans `gradle/libs.versions.toml`.
 - **Zéro dépendance propriétaire.** Pas de Play Services, pas de Firebase, pas d'analytique, pas de crash reporting. Contrainte F-Droid.
 - **`@OptIn(ExperimentalMaterial3ExpressiveApi::class)` uniquement dans `:core:design`.** Aucun module d'app ne l'active.
@@ -70,7 +70,7 @@ Android Studio embarque le SDK et `sdkmanager`. Si l'IDE n'est pas souhaité, t�
 - [ ] **Step 5: Installer les paquets SDK requis**
 
 ```powershell
-& "$env:LOCALAPPDATA\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+& "$env:LOCALAPPDATA\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat" --install "platform-tools" "platforms;android-37.0" "build-tools;36.0.0"
 ```
 
 - [ ] **Step 6: Vérifier la toolchain complète**
@@ -101,7 +101,7 @@ Expected: l'appareil apparaît avec l'état `device`. **S'il n'apparaît pas**, 
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" shell getprop ro.build.version.sdk
 ```
 
-Noter la valeur. **Relevé le 2026-09-09 sur le Pixel 9 de l'utilisateur : `37` (Android 17).** Le projet compile malgré tout en 36 — voir la contrainte globale et la décision consignée au registre.
+Noter la valeur. **Relevé le 2026-09-09 sur le Pixel 9 : `37` (Android 17).** La plateforme à installer est `platforms;android-37.0` — `platforms;android-37` n'existe pas sous ce nom, le SDK étant passé aux versions mineures. `android-37.0` est publiée et non préversion (`PreviewSdkInt=0`, `BetaVersion` vide).
 
 ---
 
@@ -274,7 +274,7 @@ plugins {
 }
 
 extensions.configure<LibraryExtension> {
-    compileSdk = 36
+    compileSdk = 37
     buildToolsVersion = "36.0.0"
     defaultConfig {
         minSdk = 34
@@ -310,7 +310,7 @@ plugins {
 }
 
 extensions.configure<ApplicationExtension> {
-    compileSdk = 36
+    compileSdk = 37
     buildToolsVersion = "36.0.0"
     defaultConfig {
         minSdk = 34

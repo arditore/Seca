@@ -31,11 +31,27 @@ Trois vérifications faites en amont ont redéfini le périmètre par rapport à
 L'environnement de départ a **JDK 25 uniquement**, sans SDK Android, sans Gradle, sans adb. AGP 9.4 (septembre 2026) exige :
 
 - **JDK 17** — min *et* défaut dans la table de compatibilité AGP 9.4. Le JDK 25 présent ne convient pas ; installer Temurin 17 et le cibler via `JAVA_HOME` + toolchain Gradle, sans désinstaller le 25.
-- **Gradle 9.6.0** (via wrapper, pas d'installation système)
+- **Gradle 9.7.1** (via wrapper, pas d'installation système ; AGP 9.4 exige au minimum 9.6.0)
 - **Android SDK** : cmdline-tools, platform-tools (adb), Build Tools 36.0.0, platform API 37
 - `compileSdk 37` (maximum supporté par AGP 9.4). Le `targetSdk` est à confirmer contre ce que GrapheneOS livre sur Pixel 9 — à vérifier sur l'appareil, ne pas deviner.
 
-> **Correction du 2026-09-09, après vérification sur l'appareil.** Le Pixel 9 (`tokay`) de l'utilisateur tourne sous **Android 17, API 37**. Mais `platforms;android-37` n'existe pas sous ce nom : le SDK est passé aux versions mineures (`android-37.0`, `37.1`, `37.2`). Le projet est donc construit en **`compileSdk = 36` / `targetSdk = 36`**, avec `build-tools 36.0.0`. Raison : les builds reproductibles F-Droid sont une contrainte dure, `android-36` est sans ambiguïté disponible partout, et rien dans la phase 1 n'utilise une API 37. Une application en `targetSdk 36` s'exécute normalement sur un appareil API 37. Le passage à 37 reste une modification d'une ligne dans deux convention plugins, le jour où une API le justifie.
+> **Correction du 2026-09-09, après vérification sur l'appareil et sur les artefacts.**
+> Le Pixel 9 (`tokay`) tourne sous **Android 17, API 37**. La plateforme SDK correspondante s'appelle
+> `platforms;android-37.0` — `platforms;android-37` n'existe pas, le SDK étant passé aux versions mineures.
+> `android-37.0` est publiée, non préversion (`PreviewSdkInt=0`, `BetaVersion` vide).
+>
+> **`compileSdk = 37` est obligatoire.** Les métadonnées AAR de `material3:1.5.0-alpha27`, mais aussi de
+> Compose `ui` et `foundation` **1.12.0 stables**, déclarent toutes `minCompileSdk=37`. Aucune version de
+> Compose retenue par ce projet ne se construit en `compileSdk 36` : AGP échoue au contrôle
+> `checkDebugAarMetadata`, sans indicateur de contournement.
+>
+> `targetSdk` reste à **36** — c'est le niveau contre lequel on teste, et il est indépendant de `compileSdk`.
+> `buildToolsVersion` reste `36.0.0`, `minSdk` reste 34.
+>
+> *Une première correction de cette note fixait `compileSdk 36` pour éviter le risque supposé des versions
+> mineures de SDK dans le DSL d'AGP 9.4. C'était une erreur : ce risque n'existe pas — `compileSdk = 37`
+> résout `android-37.0` sans réglage supplémentaire — et le choix rendait le projet inconstructible.
+> L'échec a été révélé par la tâche 4, qui s'est bloquée dessus.*
 
 Les versions exactes de Kotlin, du BOM Compose et de `material3` alpha se pinnent à la première tâche en interrogeant les dépôts. `material3` doit être ≥ `1.5.0-alpha04` pour les APIs Expressive (`1.5.0-alpha24` en juillet 2026).
 
