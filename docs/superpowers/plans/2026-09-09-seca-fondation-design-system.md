@@ -1793,85 +1793,188 @@ git commit -m "feat(catalog): galerie du design system"
 
 ### Task 7: Garde-fous et documentation
 
-Verrouille les propriétés que la spec revendique, pour qu'elles ne puissent pas régresser silencieusement.
+Verrouille les propriétés que la spec revendique pour qu'elles ne régressent pas en silence : aucune dépendance propriétaire dans ce qui part dans l'APK, et un lint qui échoue au lieu d'avertir.
+
+> **Réécrite le 2026-09-10.** La première version prescrivait un test unitaire qui cherchait `com.google.android.gms` dans `System.getProperty("java.class.path")`. Lancé avec `play-services-base:18.3.0` réellement présent sur le classpath de test, il est **passé**. Les AAR sont transformés avant d'atteindre un classpath (`caches/<gradle>/transforms/<hash>/transformed/play-services-base-18.3.0/jars/classes.jar`) et le groupe Maven n'apparaît nulle part dans ce chemin : ce test ne pouvait pas échouer. Il n'inspectait en outre que le classpath de test de `:core:design`, pas ce qui part dans un APK. Il est remplacé par une vérification des coordonnées Maven résolues du classpath *release* de chaque app.
 
 **Files:**
-- Create: `core/design/src/test/kotlin/com/seca/core/design/NoProprietaryDependenciesTest.kt`
+- Create: `build-logic/src/main/kotlin/com/seca/buildlogic/VerifyNoProprietaryDependencies.kt`
+- Modify: `build-logic/src/main/kotlin/seca.android.application.gradle.kts` — enregistrer la vérification, activer lint en échec
 - Create: `README.md`
-- Modify: `build-logic/src/main/kotlin/seca.android.application.gradle.kts` — activer lint en échec
 
 **Interfaces:**
-- Consumes: tout ce qui précède.
-- Produces: aucune API. Des garanties.
+- Consumes: le convention plugin `seca.android.application` de la tâche 2.
+- Produces: dans chaque module d'app, une tâche `verifyReleaseNoProprietaryDependencies` branchée sur `check`. Aucune API Kotlin.
 
-- [ ] **Step 1: Écrire le test de garde sur les dépendances**
+- [ ] **Step 1: Écrire la tâche de vérification**
 
-`core/design/src/test/kotlin/com/seca/core/design/NoProprietaryDependenciesTest.kt` :
+`build-logic/src/main/kotlin/com/seca/buildlogic/VerifyNoProprietaryDependencies.kt` :
 
 ```kotlin
-package com.seca.core.design
+package com.seca.buildlogic
 
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedComponentResult
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.TaskAction
 
 /**
- * Guards the F-Droid constraint: no Google Play, Firebase or analytics code
- * may reach the classpath. Checks the loaded classpath rather than the build
- * files, so a transitive dependency cannot slip one in unnoticed.
+ * Fails the build if a proprietary Google artifact reaches an app's runtime
+ * classpath.
+ *
+ * Inspects resolved Maven coordinates, not file paths: AARs are transformed
+ * before they reach a classpath and the transformed path no longer contains
+ * the group, so a path-based check cannot see them. This is a tripwire for the
+ * well-known offenders, not an exhaustive scanner — F-Droid's own scanner
+ * remains the authority.
  */
-class NoProprietaryDependenciesTest {
+abstract class VerifyNoProprietaryDependencies : DefaultTask() {
 
-    private val forbidden = listOf(
-        "com.google.android.gms",
-        "com.google.firebase",
-        "com.google.android.play",
-    )
+    /** Wired from `incoming.resolutionResult.rootComponent`; configuration-cache safe. */
+    @get:Input
+    abstract val rootComponent: Property<ResolvedComponentResult>
 
-    @Test
-    fun `no proprietary Google packages on the classpath`() {
-        val classpath = System.getProperty("java.class.path").orEmpty()
-        val offenders = forbidden.filter { pkg ->
-            classpath.contains(pkg.replace('.', '/')) || classpath.contains(pkg)
+    @TaskAction
+    fun verify() {
+        val offenders = resolvedModules(rootComponent.get())
+            .filter { id -> ForbiddenGroups.any { id.group == it || id.group.startsWith("$it.") } }
+            .map { "${it.group}:${it.module}:${it.version}" }
+            .sorted()
+        if (offenders.isNotEmpty()) {
+            throw GradleException(
+                "Dépendances propriétaires sur le classpath d'exécution :\n" +
+                    offenders.joinToString("\n") { "  - $it" },
+            )
         }
-        assertTrue(
-            "Dépendances propriétaires détectées : $offenders",
-            offenders.isEmpty(),
+    }
+
+    private fun resolvedModules(root: ResolvedComponentResult): Set<ModuleComponentIdentifier> {
+        val seen = mutableSetOf<ResolvedComponentResult>()
+        val modules = mutableSetOf<ModuleComponentIdentifier>()
+        val queue = ArrayDeque(listOf(root))
+        while (queue.isNotEmpty()) {
+            val component = queue.removeFirst()
+            if (!seen.add(component)) continue
+            (component.id as? ModuleComponentIdentifier)?.let(modules::add)
+            component.dependencies
+                .filterIsInstance<ResolvedDependencyResult>()
+                .forEach { queue.addLast(it.selected) }
+        }
+        return modules
+    }
+
+    private companion object {
+        val ForbiddenGroups = listOf(
+            "com.google.android.gms",
+            "com.google.firebase",
+            "com.google.android.play",
         )
     }
 }
 ```
 
-- [ ] **Step 2: Lancer le test et vérifier qu'il passe**
+Le filtre compare le groupe entier ou un sous-groupe (`"$it."`), jamais un simple préfixe de chaîne : `com.google.android.material`, qui est libre, ne doit pas être pris pour `com.google.android.play`.
 
-```powershell
-.\gradlew.bat :core:design:testDebugUnitTest --tests "*NoProprietaryDependenciesTest*"
+- [ ] **Step 2: Enregistrer la vérification dans le convention plugin d'application**
+
+Dans `build-logic/src/main/kotlin/seca.android.application.gradle.kts` — **lire d'abord le fichier tel qu'il est** ; ne rien retirer de l'existant.
+
+Ajouter en tête, à côté de l'import existant :
+
+```kotlin
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.seca.buildlogic.VerifyNoProprietaryDependencies
 ```
 
-Expected: PASS. Si le test échoue, une dépendance propriétaire est déjà entrée — la traquer avec `.\gradlew.bat :core:design:dependencies` avant d'aller plus loin.
+Ajouter à la fin du fichier :
 
-- [ ] **Step 3: Activer lint en échec dans le convention plugin application**
+```kotlin
+// One check per release variant: it inspects exactly what ships in the APK.
+extensions.configure<ApplicationAndroidComponentsExtension> {
+    onVariants(selector().withBuildType("release")) { variant ->
+        val name = variant.name.replaceFirstChar { it.uppercase() }
+        val verify = tasks.register<VerifyNoProprietaryDependencies>(
+            "verify${name}NoProprietaryDependencies",
+        ) {
+            group = "verification"
+            description = "Fails if a proprietary Google artifact reaches the $name runtime classpath."
+            rootComponent.set(variant.runtimeConfiguration.incoming.resolutionResult.rootComponent)
+        }
+        tasks.named("check") { dependsOn(verify) }
+    }
+}
+```
 
-Dans `seca.android.application.gradle.kts`, à l'intérieur du bloc `extensions.configure<ApplicationExtension>` :
+`rootComponent` est un `Provider` paresseux, résolu à l'exécution de la tâche. L'action ne touche jamais `project` ni `configurations` : c'est ce qui la rend compatible avec le cache de configuration, activé dans ce dépôt.
+
+- [ ] **Step 3: Activer lint en échec**
+
+Dans le même fichier, à l'intérieur du bloc `extensions.configure<ApplicationExtension>` existant :
 
 ```kotlin
     lint {
         warningsAsErrors = true
         abortOnError = true
+        // Pinned versions are the point of a reproducible build; this check
+        // would otherwise fire on every dependency the moment a newer one ships.
         disable += setOf("GradleDependency")
     }
 ```
 
-`GradleDependency` est désactivé volontairement : lint signale les versions non les plus récentes, ce qui est exactement ce qu'on veut pour des builds reproductibles.
+- [ ] **Step 4: Vérifier que la tâche passe sur l'état réel**
 
-- [ ] **Step 4: Lancer lint**
+```powershell
+.\gradlew.bat :apps:catalog:verifyReleaseNoProprietaryDependencies
+```
+
+Expected: BUILD SUCCESSFUL.
+
+- [ ] **Step 5: Prouver qu'elle échoue quand elle doit — sans toucher un seul fichier suivi**
+
+Un garde-fou qui ne peut pas échouer ne garantit rien : c'est exactement le défaut de la première version. La preuve se fait par un init script temporaire, **hors du dépôt**, qui injecte l'intrus le temps d'une seule invocation. Aucun fichier suivi par git n'est jamais modifié : si l'exécution est interrompue en route, il n'y a rien à reverter.
+
+```powershell
+$init = Join-Path $env:TEMP "seca-teeth.init.gradle.kts"
+@'
+allprojects {
+    if (path == ":apps:catalog") {
+        afterEvaluate {
+            dependencies.add("implementation", "com.google.android.gms:play-services-base:18.3.0")
+        }
+    }
+}
+'@ | Set-Content -Encoding utf8 $init
+
+# 1. L'intrus est bien là.
+.\gradlew.bat :apps:catalog:dependencies --configuration releaseRuntimeClasspath --init-script $init | Select-String "com.google.android.gms"
+
+# 2. Et la vérification échoue.
+.\gradlew.bat :apps:catalog:verifyReleaseNoProprietaryDependencies --init-script $init
+
+Remove-Item $init
+git status --porcelain
+```
+
+Expected :
+1. la première commande liste `com.google.android.gms:play-services-base:18.3.0` ;
+2. la seconde se termine en **BUILD FAILED**, avec un message qui cite au moins `com.google.android.gms:play-services-base:18.3.0` ;
+3. `git status --porcelain` ne montre aucune modification liée à la preuve.
+
+**Si la seconde commande passe, s'arrêter** : soit l'injection n'a pas pris, soit la vérification est fausse. Dans les deux cas, le garde-fou n'est pas démontré et ne doit pas être committé comme tel.
+
+- [ ] **Step 6: Lancer lint**
 
 ```powershell
 .\gradlew.bat :apps:catalog:lint
 ```
 
-Expected: BUILD SUCCESSFUL. Corriger ce qui est signalé avant de committer.
+Expected: BUILD SUCCESSFUL. Corriger ce qui est signalé dans `apps/catalog`. Si lint signale quelque chose dans `core/` ou dans `build-logic/`, s'arrêter et le rapporter : ce serait un constat sur la fondation, pas une correction à glisser en fin de tâche.
 
-- [ ] **Step 5: Écrire le README**
+- [ ] **Step 7: Écrire le README**
 
 `README.md` :
 
@@ -1879,14 +1982,29 @@ Expected: BUILD SUCCESSFUL. Corriger ce qui est signalé avant de committer.
 # Seca
 
 Trois applications de communication pour Android, conçues pour GrapheneOS :
-**Seca Contacts**, **Seca Phone** et **Seca Messages**. Design Material 3
-Expressive unifié, orientées vie privée, sans aucune dépendance Google.
+**Seca Contacts**, **Seca Phone** et **Seca Messages**. Un design Material 3
+Expressive commun, orienté vie privée, sans aucune dépendance Google.
 
 ## État
 
-Fondation et design system en place. Seca Contacts est la prochaine étape.
-Voir `docs/superpowers/specs/` pour la conception et `docs/superpowers/plans/`
-pour les plans d'implémentation.
+Fondation et design system en place, avec une application catalogue qui les
+présente. Seca Contacts est la prochaine étape. Voir `docs/superpowers/specs/`
+pour la conception et `docs/superpowers/plans/` pour les plans d'implémentation.
+
+## Trois applications, une seule famille
+
+Les trois apps restent des APK distincts. Chacune affiche en bas une barre qui
+mène aux deux autres ; elles se lancent entre elles par intent. Garder trois APK
+séparés préserve la séparation des permissions : Seca Contacts n'a jamais besoin
+d'`INTERNET`, Seca Phone détient `ROLE_DIALER`, Seca Messages `ROLE_SMS`.
+
+Le thème clair ou sombre suit celui du système, sans réglage dans l'app. La
+seule préférence visuelle est la palette — Océan, Forêt, Crépuscule ou Ardoise.
+Chaque application décale la teinte de la palette choisie, si bien que les trois
+restent reconnaissables quelle que soit la palette.
+
+Material You n'est pas proposé : la couleur dynamique tire toutes les teintes du
+fond d'écran et rendait les trois applications identiques.
 
 ## Ce que Seca ne fait pas
 
@@ -1899,40 +2017,56 @@ pour les plans d'implémentation.
 
 ## Construire
 
-Prérequis : JDK 17 et le SDK Android (plateforme 37, build-tools 36.0.0).
+Prérequis : JDK 17 et le SDK Android (plateforme `android-37.0`, build-tools 36.0.0).
 
 ```bash
 ./gradlew :apps:catalog:assembleDebug
 ./gradlew test
+./gradlew :apps:catalog:check
 ```
 
 ## Vie privée
 
-Aucune analytique, aucun rapport de plantage, aucune dépendance Google.
+Aucune analytique, aucun rapport de plantage, aucune dépendance Google. Chaque
+application vérifie à la construction qu'aucun artefact `com.google.android.gms`,
+`com.google.firebase` ou `com.google.android.play` n'atteint son classpath
+d'exécution : la tâche `verifyReleaseNoProprietaryDependencies`, branchée sur
+`check`, fait échouer le build dans le cas contraire.
+
 Seca Contacts ne demandera **pas** la permission `INTERNET` : l'application
 sera structurellement incapable d'exfiltrer un répertoire.
+
+Les trois icônes de la barre sont dessinées dans le dépôt, en `ImageVector`.
+Les bibliothèques `material-icons-core` et `material-icons-extended` de Google
+sont figées en 1.7.8 alors que le projet utilise Compose 1.12.0 : trois icônes
+ne justifiaient pas d'embarquer une dépendance abandonnée.
 
 ## Licence
 
 GPL-3.0-or-later.
 ````
 
-- [ ] **Step 6: Lancer la suite complète**
+- [ ] **Step 8: Suite complète**
 
 ```powershell
 .\gradlew.bat test
+.\gradlew.bat :apps:catalog:check
 ```
 
-Expected: PASS, 25 tests au total — 10 dans `:core:model`, 12 dans `:core:design`, 3 dans `:apps:catalog`. (Le décompte a monté depuis la rédaction initiale : les tâches 8 à 10 ont ajouté les tests de palette, la barre inter-apps et la bascule d'app.)
+Expected : `test` au vert avec **24 tests** — 10 `:core:model`, 11 `:core:design`, 3 `:apps:catalog` (le test unitaire de la première version n'existe plus) ; `check` au vert, ce qui couvre lint et la vérification des dépendances.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 9: Commit**
+
+Ajouter chaque fichier par son chemin. **Jamais `git add -A` ni `git add .`** : un fichier orphelin laissé par une exécution interrompue — y compris une dépendance propriétaire temporaire — entrerait dans l'historique.
 
 ```bash
-git add -A
-git commit -m "chore: garde-fous dépendances, lint strict et README"
+git add build-logic/src/main/kotlin/com/seca/buildlogic/VerifyNoProprietaryDependencies.kt \
+        build-logic/src/main/kotlin/seca.android.application.gradle.kts \
+        README.md
+git commit -m "chore: garde-fou de dépendances au niveau Gradle, lint strict et README"
 ```
 
----
+Si les corrections de lint ont touché des fichiers de `apps/catalog`, les ajouter eux aussi, nommément.
 
 ---
 
@@ -2746,11 +2880,11 @@ git commit -m "feat(catalog): barre inter-apps, sélecteur de palette, thème sy
 
 ## Vérification finale du plan
 
-1. `.\gradlew.bat test` — les 25 tests au vert (10 `:core:model`, 12 `:core:design`, 3 `:apps:catalog`), sans appareil connecté
-2. `.\gradlew.bat :apps:catalog:lint` — propre
+1. `.\gradlew.bat test` — les 24 tests au vert (10 `:core:model`, 11 `:core:design`, 3 `:apps:catalog`), sans appareil connecté
+2. `.\gradlew.bat :apps:catalog:check` — lint strict propre et vérification des dépendances propriétaires au vert
 3. `.\gradlew.bat :apps:catalog:assembleDebug` — APK produit
-4. APK installé sur le Pixel 9 : basculer les trois identités, clair/sombre, couleur dynamique — le rendu doit convenir avant de passer à la suite
-5. `.\gradlew.bat :core:design:dependencies` — aucun artefact `com.google.android.gms`, `com.google.firebase` ou `com.google.android.play`
+4. APK installé sur le Pixel 9 : barre du bas avec les trois icônes, thème suivant le système sans bascule, les quatre palettes changeant réellement l'accent, et les trois apps visuellement distinctes à palette identique — prouvé par au moins une capture avec `Téléphone` ou `Messages` sélectionné
+5. La vérification des dépendances échoue réellement quand un artefact `com.google.android.gms` est injecté par init script (tâche 7, step 5). Un garde-fou qui ne peut pas échouer ne garantit rien
 
 ## Écart assumé par rapport à la spec
 
