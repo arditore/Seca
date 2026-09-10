@@ -1933,9 +1933,796 @@ git commit -m "chore: garde-fous dépendances, lint strict et README"
 
 ---
 
+---
+
+### Task 8: `:core:design` — palettes au choix, thème système
+
+Remplace Material You par une petite palette que l'utilisateur choisit, dont chaque app dérive une variante distincte. Le thème clair/sombre suit le système et n'est plus réglable dans l'app.
+
+Les accents ne sont plus écrits à la main un par un : chaque palette porte une teinte de base, chaque identité applique un décalage de teinte fixe, et les rôles se dérivent par des recettes HSL constantes. Compose fournit déjà `Color.hsl()` — aucune conversion colorimétrique à écrire. Ça donne des familles cohérentes, 4 palettes × 3 identités × 2 thèmes sans authoring manuel de 24 quadruplets, et c'est testable.
+
+**Files:**
+- Create: `core/design/src/main/kotlin/com/seca/core/design/SecaPalette.kt`
+- Modify: `core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt` (réécriture des dérivations)
+- Modify: `core/design/src/main/kotlin/com/seca/core/design/SecaTheme.kt` (signature)
+- Modify: `core/design/src/test/kotlin/com/seca/core/design/SecaThemeTest.kt`
+
+**Interfaces:**
+- Consumes: `SecaAppIdentity`, `SecaTypography`, `SecaShapes`.
+- Produces:
+  - `enum class SecaPalette(val label: String)` — `Ocean`, `Foret`, `Crepuscule`, `Ardoise`
+  - `@Composable fun SecaTheme(identity: SecaAppIdentity, palette: SecaPalette = SecaPalette.Ocean, darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit)`
+  - **`dynamicColor` disparaît.** Tout appelant qui le passait doit être mis à jour.
+
+- [ ] **Step 1: Écrire `SecaPalette`**
+
+`core/design/src/main/kotlin/com/seca/core/design/SecaPalette.kt` :
+
+```kotlin
+package com.seca.core.design
+
+/**
+ * The accent families a user can choose between.
+ *
+ * Material You is deliberately not offered: deriving every role from the
+ * wallpaper made all three Seca apps look identical, which defeats the
+ * per-app identity. A palette instead sets a base hue; each app shifts it by
+ * a fixed step so the three stay distinguishable inside every palette.
+ *
+ * [label] is user-visible and therefore French.
+ */
+enum class SecaPalette(
+    val label: String,
+    internal val baseHue: Float,
+    internal val chroma: Float,
+) {
+    Ocean("Océan", baseHue = 185f, chroma = 1f),
+    Foret("Forêt", baseHue = 128f, chroma = 0.9f),
+    Crepuscule("Crépuscule", baseHue = 322f, chroma = 0.95f),
+    Ardoise("Ardoise", baseHue = 220f, chroma = 0.4f),
+}
+```
+
+- [ ] **Step 2: Réécrire les dérivations de couleur**
+
+`core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt` — remplace intégralement le contenu :
+
+```kotlin
+package com.seca.core.design.color
+
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
+import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.SecaPalette
+
+/** One app's accent within one palette, for one theme. */
+private data class Accent(
+    val primary: Color,
+    val onPrimary: Color,
+    val container: Color,
+    val onContainer: Color,
+)
+
+/**
+ * How far each app's hue sits from its palette's base.
+ *
+ * Large enough to read as a different colour at a glance, small enough that
+ * the three still look like one family.
+ */
+private const val IdentityHueStep = 34f
+
+private fun hueFor(palette: SecaPalette, identity: SecaAppIdentity): Float {
+    val step = when (identity) {
+        SecaAppIdentity.Contacts -> 0f
+        SecaAppIdentity.Phone -> IdentityHueStep
+        SecaAppIdentity.Messages -> IdentityHueStep * 2f
+    }
+    return (palette.baseHue + step) % 360f
+}
+
+private fun lightAccent(palette: SecaPalette, identity: SecaAppIdentity): Accent {
+    val h = hueFor(palette, identity)
+    val s = 0.62f * palette.chroma
+    return Accent(
+        primary = Color.hsl(h, s, 0.32f),
+        onPrimary = Color.White,
+        container = Color.hsl(h, s * 0.7f, 0.88f),
+        onContainer = Color.hsl(h, s, 0.12f),
+    )
+}
+
+private fun darkAccent(palette: SecaPalette, identity: SecaAppIdentity): Accent {
+    val h = hueFor(palette, identity)
+    val s = 0.55f * palette.chroma
+    return Accent(
+        primary = Color.hsl(h, s, 0.72f),
+        onPrimary = Color.hsl(h, s, 0.14f),
+        container = Color.hsl(h, s, 0.28f),
+        onContainer = Color.hsl(h, s * 0.8f, 0.90f),
+    )
+}
+
+// Shared neutral base — identical across palettes and apps, so the family
+// reads as one system whatever accent the user picked.
+private val SurfaceLight = Color(0xFFF7FAFA)
+private val OnSurfaceLight = Color(0xFF191C1D)
+private val SurfaceVariantLight = Color(0xFFDBE4E5)
+private val OnSurfaceVariantLight = Color(0xFF3F4849)
+private val OutlineLight = Color(0xFF6F7979)
+
+private val SurfaceDark = Color(0xFF0E1414)
+private val OnSurfaceDark = Color(0xFFE1E3E3)
+private val SurfaceVariantDark = Color(0xFF3F4849)
+private val OnSurfaceVariantDark = Color(0xFFBFC8C9)
+private val OutlineDark = Color(0xFF899393)
+
+internal fun lightSchemeFor(palette: SecaPalette, identity: SecaAppIdentity): ColorScheme {
+    val a = lightAccent(palette, identity)
+    return lightColorScheme(
+        primary = a.primary,
+        onPrimary = a.onPrimary,
+        primaryContainer = a.container,
+        onPrimaryContainer = a.onContainer,
+        secondary = a.primary,
+        onSecondary = a.onPrimary,
+        secondaryContainer = a.container,
+        onSecondaryContainer = a.onContainer,
+        tertiary = a.primary,
+        onTertiary = a.onPrimary,
+        tertiaryContainer = a.container,
+        onTertiaryContainer = a.onContainer,
+        surface = SurfaceLight,
+        onSurface = OnSurfaceLight,
+        surfaceVariant = SurfaceVariantLight,
+        onSurfaceVariant = OnSurfaceVariantLight,
+        outline = OutlineLight,
+        background = SurfaceLight,
+        onBackground = OnSurfaceLight,
+    )
+}
+
+internal fun darkSchemeFor(palette: SecaPalette, identity: SecaAppIdentity): ColorScheme {
+    val a = darkAccent(palette, identity)
+    return darkColorScheme(
+        primary = a.primary,
+        onPrimary = a.onPrimary,
+        primaryContainer = a.container,
+        onPrimaryContainer = a.onContainer,
+        secondary = a.primary,
+        onSecondary = a.onPrimary,
+        secondaryContainer = a.container,
+        onSecondaryContainer = a.onContainer,
+        tertiary = a.primary,
+        onTertiary = a.onPrimary,
+        tertiaryContainer = a.container,
+        onTertiaryContainer = a.onContainer,
+        surface = SurfaceDark,
+        onSurface = OnSurfaceDark,
+        surfaceVariant = SurfaceVariantDark,
+        onSurfaceVariant = OnSurfaceVariantDark,
+        outline = OutlineDark,
+        background = SurfaceDark,
+        onBackground = OnSurfaceDark,
+    )
+}
+```
+
+- [ ] **Step 3: Écrire les tests qui échouent**
+
+Remplace `core/design/src/test/kotlin/com/seca/core/design/SecaThemeTest.kt` :
+
+```kotlin
+package com.seca.core.design
+
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Text
+import androidx.compose.material3.Typography
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.test.junit4.createComposeRule
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+
+@RunWith(RobolectricTestRunner::class)
+class SecaThemeTest {
+
+    @get:Rule
+    val composeRule = createComposeRule()
+
+    @Test
+    fun `every app identity gets a distinct accent within a palette`() {
+        val primaries = mutableMapOf<SecaAppIdentity, Color>()
+        composeRule.setContent {
+            SecaAppIdentity.entries.forEach { identity ->
+                SecaTheme(identity = identity, palette = SecaPalette.Ocean, darkTheme = false) {
+                    primaries[identity] = MaterialTheme.colorScheme.primary
+                    Text("probe-${identity.name}")
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(SecaAppIdentity.entries.size, primaries.values.toSet().size)
+    }
+
+    @Test
+    fun `every palette gives the same app a distinct accent`() {
+        val primaries = mutableMapOf<SecaPalette, Color>()
+        composeRule.setContent {
+            SecaPalette.entries.forEach { palette ->
+                SecaTheme(identity = SecaAppIdentity.Contacts, palette = palette, darkTheme = false) {
+                    primaries[palette] = MaterialTheme.colorScheme.primary
+                    Text("palette-${palette.name}")
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(SecaPalette.entries.size, primaries.values.toSet().size)
+    }
+
+    @Test
+    fun `container roles follow the app accent rather than Material defaults`() {
+        val containers = mutableMapOf<SecaAppIdentity, Color>()
+        composeRule.setContent {
+            SecaAppIdentity.entries.forEach { identity ->
+                SecaTheme(identity = identity, palette = SecaPalette.Ocean, darkTheme = false) {
+                    containers[identity] = MaterialTheme.colorScheme.primaryContainer
+                    Text("container-${identity.name}")
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(SecaAppIdentity.entries.size, containers.values.toSet().size)
+    }
+
+    @Test
+    fun `dark theme differs from light theme`() {
+        var light = Color.Unspecified
+        var dark = Color.Unspecified
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
+                light = MaterialTheme.colorScheme.surface
+                Text("light")
+            }
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = true) {
+                dark = MaterialTheme.colorScheme.surface
+                Text("dark")
+            }
+        }
+        composeRule.waitForIdle()
+        assertNotEquals(light, dark)
+    }
+
+    @Test
+    fun `theme wires in the Seca shape and type scales`() {
+        var shapes: Shapes? = null
+        var typography: Typography? = null
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
+                shapes = MaterialTheme.shapes
+                typography = MaterialTheme.typography
+                Text("probe")
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(SecaShapes, shapes)
+        assertEquals(SecaTypography, typography)
+    }
+}
+```
+
+- [ ] **Step 4: Lancer et vérifier l'échec**
+
+```powershell
+.\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaThemeTest*"
+```
+
+Expected: échec de compilation — `SecaPalette` n'existe pas et `SecaTheme` ne prend pas encore ce paramètre.
+
+- [ ] **Step 5: Réécrire `SecaTheme`**
+
+```kotlin
+package com.seca.core.design
+
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import com.seca.core.design.color.darkSchemeFor
+import com.seca.core.design.color.lightSchemeFor
+
+/**
+ * The single entry point for Seca visuals.
+ *
+ * No app module defines its own colours, shapes or typography; they all wrap
+ * their content in this.
+ *
+ * [darkTheme] follows the system and is never toggled inside an app — the
+ * parameter exists so tests can assert both themes. [palette] is the one
+ * visual choice a user gets; each [identity] shifts its hue so the three apps
+ * stay distinguishable whichever palette is picked.
+ */
+@Composable
+fun SecaTheme(
+    identity: SecaAppIdentity,
+    palette: SecaPalette = SecaPalette.Ocean,
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
+    val colorScheme =
+        if (darkTheme) darkSchemeFor(palette, identity) else lightSchemeFor(palette, identity)
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = SecaTypography,
+        shapes = SecaShapes,
+        content = content,
+    )
+}
+```
+
+- [ ] **Step 6: Mettre à jour les appelants existants**
+
+`SecaAvatarTest` et `SecaContactRowTest` passent `dynamicColor = false`, qui n'existe plus. Retirer cet argument des trois appels — ne rien changer d'autre à ces tests.
+
+- [ ] **Step 7: Lancer la suite du module**
+
+```powershell
+.\gradlew.bat :core:design:test
+```
+
+Expected: PASS, 9 tests (SecaThemeTest 5, SecaAvatarTest 1, SecaContactRowTest 3).
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add core/design
+git commit -m "feat(design): palettes au choix, thème suivant le système"
+```
+
+---
+
+### Task 9: `:core:design` — icônes et barre inter-apps
+
+Trois icônes dessinées à la main et une barre de navigation basse partagée par les trois apps. `material-icons-core` et `-extended` sont figés en 1.7.8 face à Compose 1.12.0 : bibliothèques mortes, écartées. Trois icônes ne justifient pas une dépendance abandonnée.
+
+**Files:**
+- Create: `core/design/src/main/kotlin/com/seca/core/design/SecaIcons.kt`
+- Create: `core/design/src/main/kotlin/com/seca/core/design/component/SecaSuiteBar.kt`
+- Test: `core/design/src/test/kotlin/com/seca/core/design/component/SecaSuiteBarTest.kt`
+
+**Interfaces:**
+- Consumes: `SecaAppIdentity`, `SecaPalette`, `SecaTheme`.
+- Produces:
+  - `object SecaIcons` avec `Contacts`, `Phone`, `Messages` (`ImageVector`)
+  - `@Composable fun SecaSuiteBar(current: SecaAppIdentity, onSelect: (SecaAppIdentity) -> Unit, modifier: Modifier = Modifier)`
+
+`SecaSuiteBar` ne connaît aucun `Intent`. Chaque app décide dans `onSelect` ce qu'elle fait — lancer l'app voisine, ou changer d'aperçu dans le catalogue. `:core:design` reste sans logique de navigation Android.
+
+- [ ] **Step 1: Écrire les icônes**
+
+`core/design/src/main/kotlin/com/seca/core/design/SecaIcons.kt` :
+
+```kotlin
+package com.seca.core.design
+
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.unit.dp
+
+/**
+ * The three suite icons, drawn here rather than pulled from a library.
+ *
+ * `material-icons-core` and `-extended` stopped at 1.7.8 while this project
+ * runs Compose 1.12.0 — they are abandoned, and three icons do not justify a
+ * dead dependency inside an F-Droid build.
+ */
+object SecaIcons {
+
+    val Contacts: ImageVector = icon("Contacts") {
+        path(fill = SolidColor(Color.Black)) {
+            moveTo(12f, 12f)
+            curveToRelative(2.21f, 0f, 4f, -1.79f, 4f, -4f)
+            reflectiveCurveToRelative(-1.79f, -4f, -4f, -4f)
+            reflectiveCurveToRelative(-4f, 1.79f, -4f, 4f)
+            reflectiveCurveToRelative(1.79f, 4f, 4f, 4f)
+            close()
+            moveTo(12f, 14f)
+            curveToRelative(-2.67f, 0f, -8f, 1.34f, -8f, 4f)
+            verticalLineToRelative(2f)
+            horizontalLineToRelative(16f)
+            verticalLineToRelative(-2f)
+            curveToRelative(0f, -2.66f, -5.33f, -4f, -8f, -4f)
+            close()
+        }
+    }
+
+    val Phone: ImageVector = icon("Phone") {
+        path(fill = SolidColor(Color.Black)) {
+            moveTo(6.62f, 10.79f)
+            curveToRelative(1.44f, 2.83f, 3.76f, 5.14f, 6.59f, 6.59f)
+            lineToRelative(2.2f, -2.2f)
+            curveToRelative(0.27f, -0.27f, 0.67f, -0.36f, 1.02f, -0.24f)
+            curveToRelative(1.12f, 0.37f, 2.33f, 0.57f, 3.57f, 0.57f)
+            curveToRelative(0.55f, 0f, 1f, 0.45f, 1f, 1f)
+            verticalLineTo(20f)
+            curveToRelative(0f, 0.55f, -0.45f, 1f, -1f, 1f)
+            curveToRelative(-9.39f, 0f, -17f, -7.61f, -17f, -17f)
+            curveToRelative(0f, -0.55f, 0.45f, -1f, 1f, -1f)
+            horizontalLineToRelative(3.5f)
+            curveToRelative(0.55f, 0f, 1f, 0.45f, 1f, 1f)
+            curveToRelative(0f, 1.25f, 0.2f, 2.45f, 0.57f, 3.57f)
+            curveToRelative(0.11f, 0.35f, 0.03f, 0.74f, -0.25f, 1.02f)
+            lineToRelative(-2.2f, 2.2f)
+            close()
+        }
+    }
+
+    val Messages: ImageVector = icon("Messages") {
+        path(fill = SolidColor(Color.Black)) {
+            moveTo(20f, 2f)
+            horizontalLineTo(4f)
+            curveToRelative(-1.1f, 0f, -1.99f, 0.9f, -1.99f, 2f)
+            lineTo(2f, 22f)
+            lineToRelative(4f, -4f)
+            horizontalLineToRelative(14f)
+            curveToRelative(1.1f, 0f, 2f, -0.9f, 2f, -2f)
+            verticalLineTo(4f)
+            curveToRelative(0f, -1.1f, -0.9f, -2f, -2f, -2f)
+            close()
+        }
+    }
+
+    private fun icon(name: String, block: ImageVector.Builder.() -> Unit): ImageVector =
+        ImageVector.Builder(
+            name = name,
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply(block).build()
+}
+```
+
+- [ ] **Step 2: Écrire le test qui échoue**
+
+`core/design/src/test/kotlin/com/seca/core/design/component/SecaSuiteBarTest.kt` :
+
+```kotlin
+package com.seca.core.design.component
+
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.SecaPalette
+import com.seca.core.design.SecaTheme
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+
+@RunWith(RobolectricTestRunner::class)
+class SecaSuiteBarTest {
+
+    @get:Rule
+    val composeRule = createComposeRule()
+
+    @Test
+    fun `shows all three apps in French`() {
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
+                SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = {})
+            }
+        }
+        composeRule.onNodeWithText("Contacts").assertIsDisplayed()
+        composeRule.onNodeWithText("Téléphone").assertIsDisplayed()
+        composeRule.onNodeWithText("Messages").assertIsDisplayed()
+    }
+
+    @Test
+    fun `reports the app the user tapped`() {
+        var chosen: SecaAppIdentity? = null
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
+                SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = { chosen = it })
+            }
+        }
+        composeRule.onNodeWithText("Téléphone").performClick()
+        assertEquals(SecaAppIdentity.Phone, chosen)
+    }
+}
+```
+
+- [ ] **Step 3: Lancer et vérifier l'échec**
+
+```powershell
+.\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaSuiteBarTest*"
+```
+
+Expected: échec de compilation, `SecaSuiteBar` n'existe pas.
+
+- [ ] **Step 4: Implémenter `SecaSuiteBar`**
+
+```kotlin
+package com.seca.core.design.component
+
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.SecaIcons
+
+/**
+ * The bar that ties the three Seca apps together.
+ *
+ * Each app shows it with its own [current] identity selected; tapping another
+ * entry calls [onSelect]. This component deliberately knows nothing about
+ * `Intent`s — the app decides what selecting a sibling does, which keeps
+ * `:core:design` free of Android navigation logic and lets the catalog reuse
+ * it as a preview switcher.
+ */
+@Composable
+fun SecaSuiteBar(
+    current: SecaAppIdentity,
+    onSelect: (SecaAppIdentity) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    NavigationBar(modifier = modifier) {
+        SecaAppIdentity.entries.forEach { identity ->
+            NavigationBarItem(
+                selected = identity == current,
+                onClick = { onSelect(identity) },
+                icon = { Icon(identity.icon, contentDescription = null) },
+                label = { Text(identity.label) },
+                alwaysShowLabel = true,
+            )
+        }
+    }
+}
+
+private val SecaAppIdentity.icon: ImageVector
+    get() = when (this) {
+        SecaAppIdentity.Contacts -> SecaIcons.Contacts
+        SecaAppIdentity.Phone -> SecaIcons.Phone
+        SecaAppIdentity.Messages -> SecaIcons.Messages
+    }
+
+/**
+ * French display name. `SecaAppIdentity.name` would print "Phone" on an
+ * otherwise French screen; identifiers stay English, UI strings do not.
+ */
+internal val SecaAppIdentity.label: String
+    get() = when (this) {
+        SecaAppIdentity.Contacts -> "Contacts"
+        SecaAppIdentity.Phone -> "Téléphone"
+        SecaAppIdentity.Messages -> "Messages"
+    }
+```
+
+`contentDescription = null` sur l'icône est délibéré : le libellé texte juste en dessous porte déjà le nom, et `NavigationBarItem` compose les deux en un seul nœud sémantique. Le décrire deux fois nuirait aux lecteurs d'écran.
+
+- [ ] **Step 5: Lancer et vérifier le succès**
+
+```powershell
+.\gradlew.bat :core:design:test
+```
+
+Expected: PASS, 11 tests (SecaThemeTest 5, SecaAvatarTest 1, SecaContactRowTest 3, SecaSuiteBarTest 2).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add core/design
+git commit -m "feat(design): icônes dessinées à la main et barre inter-apps"
+```
+
+---
+
+### Task 10: `apps/catalog` — barre en bas, sélecteur de palette, thème système
+
+Le catalogue adopte la forme définitive : plus aucune bascule de thème, un choix de palette, et les trois identités déplacées dans la barre du bas avec leurs icônes.
+
+**Files:**
+- Modify: `apps/catalog/src/main/kotlin/com/seca/catalog/CatalogScreen.kt`
+- Modify: `apps/catalog/src/test/kotlin/com/seca/catalog/CatalogScreenTest.kt`
+
+**Interfaces:**
+- Consumes: `SecaTheme`, `SecaPalette`, `SecaSuiteBar`, `SecaAvatar`, `SecaContactRow`, `SecaEmptyState`, `SecaMotion`.
+- Produces: rien. Aucun module ne dépend du catalogue.
+
+- [ ] **Step 1: Réécrire `CatalogScreen`**
+
+```kotlin
+package com.seca.catalog
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.SecaMotion
+import com.seca.core.design.SecaPalette
+import com.seca.core.design.SecaTheme
+import com.seca.core.design.component.SecaAvatar
+import com.seca.core.design.component.SecaContactRow
+import com.seca.core.design.component.SecaEmptyState
+import com.seca.core.design.component.SecaSuiteBar
+import com.seca.core.model.PhoneNumber
+import com.seca.core.model.SecaContact
+
+private val sampleContact = SecaContact(
+    id = 1L,
+    displayName = "Camille Durand",
+    phoneNumbers = listOf(PhoneNumber("06 12 34 56 78")),
+    isFavorite = true,
+    photoUri = null,
+)
+
+/**
+ * A gallery of every shared component, so the design can be judged as a whole.
+ *
+ * There is no light/dark switch: the theme follows the system, exactly as the
+ * real apps will. The only choice offered is the palette, which is also the
+ * only choice a Seca user gets.
+ */
+@Composable
+fun CatalogScreen() {
+    var identity by remember { mutableStateOf(SecaAppIdentity.Contacts) }
+    var palette by remember { mutableStateOf(SecaPalette.Ocean) }
+
+    SecaTheme(identity = identity, palette = palette) {
+        Scaffold(
+            bottomBar = {
+                SecaSuiteBar(current = identity, onSelect = { identity = it })
+            },
+        ) { innerPadding ->
+            // Animating the background makes the shared motion spec visible:
+            // switching app or palette should feel like one system reacting.
+            val background by animateColorAsState(
+                targetValue = MaterialTheme.colorScheme.background,
+                animationSpec = SecaMotion.emphasized(),
+                label = "background",
+            )
+            Surface(color = background, modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(innerPadding)
+                        .padding(vertical = 24.dp),
+                ) {
+                    Text(
+                        text = "Palette",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(start = 20.dp, bottom = 12.dp),
+                    )
+                    Row(modifier = Modifier.padding(horizontal = 20.dp)) {
+                        SecaPalette.entries.forEach { entry ->
+                            FilterChip(
+                                selected = palette == entry,
+                                onClick = { palette = entry },
+                                label = { Text(entry.label) },
+                                modifier = Modifier.padding(end = 8.dp),
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Avatars",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(start = 20.dp, top = 32.dp, bottom = 12.dp),
+                    )
+                    Row(modifier = Modifier.padding(horizontal = 20.dp)) {
+                        SecaAvatar("CD", null, size = 40.dp, modifier = Modifier.padding(end = 12.dp))
+                        SecaAvatar("AB", null, size = 56.dp, modifier = Modifier.padding(end = 12.dp))
+                        SecaAvatar("Z", null, size = 72.dp)
+                    }
+
+                    Text(
+                        text = "Ligne de contact",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(start = 20.dp, top = 32.dp, bottom = 12.dp),
+                    )
+                    SecaContactRow(contact = sampleContact, onClick = {})
+
+                    Text(
+                        text = "État vide",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(start = 20.dp, top = 32.dp, bottom = 12.dp),
+                    )
+                    SecaEmptyState(
+                        title = "Aucun contact",
+                        description = "Les contacts que vous ajoutez apparaîtront ici.",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(240.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+```
+
+`Scaffold` fournit `innerPadding`, qui porte déjà les insets système et la hauteur de la barre du bas. C'est ce qui remplace le `safeDrawingPadding()` précédent et ce qui empêche le contenu de passer sous la barre de navigation.
+
+- [ ] **Step 2: Mettre à jour le test**
+
+Dans `apps/catalog/src/test/kotlin/com/seca/catalog/CatalogScreenTest.kt`, ajouter l'import `androidx.compose.ui.test.performClick` et ce troisième cas :
+
+```kotlin
+    @Test
+    fun `switching app from the suite bar re-themes the screen`() {
+        composeRule.setContent { CatalogScreen() }
+        composeRule.onNodeWithText("Téléphone").performClick()
+        composeRule.onNodeWithText("Camille Durand").assertIsDisplayed()
+    }
+```
+
+Il vérifie que la barre du bas est réellement câblée et que changer d'app ne casse pas l'écran — ce qu'aucun test ne couvrait.
+
+- [ ] **Step 3: Lancer la suite complète**
+
+```powershell
+.\gradlew.bat test
+```
+
+Expected: PASS, 24 tests — 10 `:core:model`, 11 `:core:design`, 3 `:apps:catalog`.
+
+- [ ] **Step 4: Installer et vérifier de visu**
+
+```powershell
+.\gradlew.bat :apps:catalog:assembleDebug
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r apps\catalog\build\outputs\apk\debug\catalog-debug.apk
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" shell am start -n com.seca.catalog/.MainActivity
+```
+
+Réveiller l'appareil avant toute capture (`input keyevent KEYCODE_WAKEUP`), sinon l'image est noire. Contrôler : barre du bas avec les trois icônes, thème suivant le système, quatre palettes qui changent réellement l'accent, et les trois apps visuellement distinctes **dans chaque palette**.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add apps/catalog
+git commit -m "feat(catalog): barre inter-apps, sélecteur de palette, thème système"
+```
+
 ## Vérification finale du plan
 
-1. `.\gradlew.bat test` — les 21 tests au vert, sans appareil connecté
+1. `.\gradlew.bat test` — les 24 tests au vert (10 `:core:model`, 11 `:core:design`, 3 `:apps:catalog`), sans appareil connecté
 2. `.\gradlew.bat :apps:catalog:lint` — propre
 3. `.\gradlew.bat :apps:catalog:assembleDebug` — APK produit
 4. APK installé sur le Pixel 9 : basculer les trois identités, clair/sombre, couleur dynamique — le rendu doit convenir avant de passer à la suite

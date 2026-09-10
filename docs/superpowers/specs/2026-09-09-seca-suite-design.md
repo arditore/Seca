@@ -85,7 +85,7 @@ Seca/
 Le module qui répond à l'exigence « design uni, très joli ». Il contient **tout** ce qui est visuel ; aucune app ne définit sa propre couleur, forme ou typographie.
 
 - Palette Seca en tokens M3 Expressive, thèmes clair/sombre suivant le système
-- **Material You écarté, décision du 2026-09-10.** La couleur dynamique dérive tous les rôles du fond d'écran et ignore l'identité : les trois apps devenaient visuellement identiques, ce qui annulait la promesse « distinguables au coup d'œil ». Remplaée par une petite palette au choix de l'utilisateur, dont chaque app dérive une variante propre.
+- **Material You écarté, décision du 2026-09-10.** La couleur dynamique dérive tous les rôles du fond d'écran et ignore l'identité : les trois apps devenaient visuellement identiques, ce qui annulait la promesse « distinguables au coup d'œil ». Remplacée par une petite palette au choix de l'utilisateur, dont chaque app dérive une variante propre.
 - Échelle typographique et jeu de formes expressifs
 - Spécifications de motion — M3 Expressive met l'accent sur le mouvement, c'est là que se joue l'essentiel de la qualité perçue
 - Composants partagés : avatar de contact, ligne de contact, barre de recherche, états vides, feuilles d'action
