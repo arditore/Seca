@@ -1923,7 +1923,7 @@ GPL-3.0-or-later.
 .\gradlew.bat test
 ```
 
-Expected: PASS, 21 tests au total — 10 dans `:core:model`, 9 dans `:core:design`, 2 dans `:apps:catalog`.
+Expected: PASS, 25 tests au total — 10 dans `:core:model`, 12 dans `:core:design`, 3 dans `:apps:catalog`. (Le décompte a monté depuis la rédaction initiale : les tâches 8 à 10 ont ajouté les tests de palette, la barre inter-apps et la bascule d'app.)
 
 - [ ] **Step 7: Commit**
 
@@ -2736,7 +2736,7 @@ git commit -m "feat(catalog): barre inter-apps, sélecteur de palette, thème sy
 
 ## Vérification finale du plan
 
-1. `.\gradlew.bat test` — les 24 tests au vert (10 `:core:model`, 11 `:core:design`, 3 `:apps:catalog`), sans appareil connecté
+1. `.\gradlew.bat test` — les 25 tests au vert (10 `:core:model`, 12 `:core:design`, 3 `:apps:catalog`), sans appareil connecté
 2. `.\gradlew.bat :apps:catalog:lint` — propre
 3. `.\gradlew.bat :apps:catalog:assembleDebug` — APK produit
 4. APK installé sur le Pixel 9 : basculer les trois identités, clair/sombre, couleur dynamique — le rendu doit convenir avant de passer à la suite
