@@ -12,10 +12,11 @@ pour la conception et `docs/superpowers/plans/` pour les plans d'implémentation
 
 ## Trois applications, une seule famille
 
-Les trois apps restent des APK distincts. Chacune affiche en bas une barre qui
-mène aux deux autres ; elles se lancent entre elles par intent. Garder trois APK
-séparés préserve la séparation des permissions : Seca Contacts n'a jamais besoin
-d'`INTERNET`, Seca Phone détient `ROLE_DIALER`, Seca Messages `ROLE_SMS`.
+Les trois applications seront des APK distincts. Chacune affichera en bas une
+barre menant aux deux autres, qu'elle lancera par intent ; l'application
+catalogue présente déjà cette barre. Garder trois APK séparés préserve la
+séparation des permissions : Seca Contacts n'aura jamais besoin d'`INTERNET`,
+Seca Phone détiendra `ROLE_DIALER`, Seca Messages `ROLE_SMS`.
 
 Le thème clair ou sombre suit celui du système, sans réglage dans l'app. La
 seule préférence visuelle est la palette — Océan, Forêt, Crépuscule ou Ardoise.

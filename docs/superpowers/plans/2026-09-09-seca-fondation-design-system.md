@@ -2893,3 +2893,16 @@ La spec liste cinq composants partagés dans `:core:design` ; ce plan en livre t
 ## Suite
 
 Une fois ce plan exécuté et le rendu visuel validé, le plan suivant couvre **Seca Contacts** : `:core:contacts` au-dessus de `ContactsContract`, liste avec défilement rapide et recherche, fiche, création/édition, favoris, groupes, import/export vCard, actions rapides, gestion des Contact Scopes de GrapheneOS, et le test de garde interdisant la permission `INTERNET`.
+
+### À traiter en ouverture du plan Seca Contacts
+
+Issus de la relecture finale de cette branche, et reportés ici délibérément : l'atelier d'exécution qui les consignait est supprimé en fin de plan, seul ce fichier les conserve.
+
+1. **Robolectric sur l'API 36.** Les tests unitaires sont épinglés sur `sdk=34` dans les `robolectric.properties`, parce que le bac à sable Android 36 de Robolectric exige JDK 21 alors qu'AGP 9.4 épingle le projet sur JDK 17. Sans effet sur des tests de thème ; faux sentiment de sécurité pour des tests de `ContactsContract` et de permissions runtime, où les comportements diffèrent entre API 34 et 36. Correctif identifié : faire tourner le démon Gradle sur JDK 21 en gardant `jvmToolchain(17)` — l'exigence JDK d'AGP est un minimum, pas une version exacte. **À faire avant d'écrire ces tests.**
+2. **APIs Material 3 Expressive.** Aucune n'est encore utilisée : tout ce que la fondation consomme existe dans un `material3` stable. L'épinglage sur `1.5.0-alpha27` reste justifié par les composants Expressive attendus dans Seca Contacts — la barre de recherche et les feuilles d'action, reportées ici. Si ce plan n'en utilise finalement aucun, revenir à une version stable.
+3. **Pureté de `:core:model`.** Module Kotlin pur par convention seulement : il est construit par AGP, `android.jar` est donc sur son classpath et rien n'empêche d'y importer une API Android. Passer à `org.jetbrains.kotlin.jvm` avant que `:core:contacts` n'apparaisse à côté.
+4. **Variété tonale.** `secondary` et `tertiary` valent `primary` dans chaque identité. À revoir dès qu'un composant demande de la variété — un bouton d'action flottant, un badge.
+5. **Icônes de lanceur des trois apps.** Elles suivront le raisonnement retenu pour le catalogue — ressource système, hors thème Compose — mais leur couleur devra dériver de l'accent de chaque identité.
+6. **Trous de test hérités** : `.uppercase()` des initiales jamais exercé ; l'avatar non asserté dans `SecaContactRow` ; aucun clic de puce de palette testé dans le catalogue ; le test « re-themes the screen » ne vérifie pas un changement de couleur ; les tests de distinction de palette ne comparent que des tailles d'ensemble et passeraient pour des teintes à 1° d'écart.
+7. **Accessibilité.** `Modifier.clickable` fusionne la sémantique de `SecaContactRow` : TalkBack annoncera initiales, nom et numéro en un seul nœud. À traiter au niveau des écrans de Seca Contacts.
+8. **Licence.** Le README déclare GPL-3.0-or-later sans que le propriétaire du projet l'ait choisie, et aucun fichier `LICENSE` n'existe. F-Droid en exige un.

@@ -97,6 +97,8 @@ Toutes les APIs expérimentales sont opt-in **ici uniquement**, jamais dans les 
 
 Lit et écrit le `ContactsContract` système. Doit fonctionner correctement sous **Contact Scopes** de GrapheneOS : l'OS peut ne présenter qu'un sous-ensemble de contacts, voire aucun. C'est un état normal, pas une erreur.
 
+**Stockage sur l'appareil uniquement** — exigence de l'utilisateur, 2026-09-10. Seca Contacts lit tous les contacts de l'appareil, y compris ceux créés par une autre application, et enregistre les siens dans le compte local de l'appareil (`ACCOUNT_TYPE` et `ACCOUNT_NAME` nuls), jamais dans un compte synchronisé.
+
 Fonctionnalités :
 - Liste avec défilement rapide, recherche, tri et regroupement
 - Fiche contact, création et édition
