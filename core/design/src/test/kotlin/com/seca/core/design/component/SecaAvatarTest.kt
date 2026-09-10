@@ -19,7 +19,7 @@ class SecaAvatarTest {
     @Test
     fun `shows initials when no photo is available`() {
         composeRule.setContent {
-            SecaTheme(SecaAppIdentity.Contacts, dynamicColor = false) {
+            SecaTheme(SecaAppIdentity.Contacts) {
                 SecaAvatar(initials = "CD", photoUri = null)
             }
         }

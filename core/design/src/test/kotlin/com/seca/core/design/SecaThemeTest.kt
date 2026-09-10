@@ -20,13 +20,11 @@ class SecaThemeTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `every app identity gets a distinct accent`() {
-        // Captured in a single setContent: ComposeContentTestRule allows
-        // setContent only once per test.
+    fun `every app identity gets a distinct accent within a palette`() {
         val primaries = mutableMapOf<SecaAppIdentity, Color>()
         composeRule.setContent {
             SecaAppIdentity.entries.forEach { identity ->
-                SecaTheme(identity = identity, darkTheme = false, dynamicColor = false) {
+                SecaTheme(identity = identity, palette = SecaPalette.Ocean, darkTheme = false) {
                     primaries[identity] = MaterialTheme.colorScheme.primary
                     Text("probe-${identity.name}")
                 }
@@ -37,31 +35,26 @@ class SecaThemeTest {
     }
 
     @Test
-    fun `dark theme differs from light theme`() {
-        var light = Color.Unspecified
-        var dark = Color.Unspecified
+    fun `every palette gives the same app a distinct accent`() {
+        val primaries = mutableMapOf<SecaPalette, Color>()
         composeRule.setContent {
-            SecaTheme(SecaAppIdentity.Contacts, darkTheme = false, dynamicColor = false) {
-                light = MaterialTheme.colorScheme.surface
-                Text("light")
-            }
-            SecaTheme(SecaAppIdentity.Contacts, darkTheme = true, dynamicColor = false) {
-                dark = MaterialTheme.colorScheme.surface
-                Text("dark")
+            SecaPalette.entries.forEach { palette ->
+                SecaTheme(identity = SecaAppIdentity.Contacts, palette = palette, darkTheme = false) {
+                    primaries[palette] = MaterialTheme.colorScheme.primary
+                    Text("palette-${palette.name}")
+                }
             }
         }
         composeRule.waitForIdle()
-        assertNotEquals(light, dark)
+        assertEquals(SecaPalette.entries.size, primaries.values.toSet().size)
     }
 
     @Test
     fun `container roles follow the app accent rather than Material defaults`() {
-        // Guards the gap that made every identity share Material's baseline
-        // purple container: SecaAvatar paints itself with primaryContainer.
         val containers = mutableMapOf<SecaAppIdentity, Color>()
         composeRule.setContent {
             SecaAppIdentity.entries.forEach { identity ->
-                SecaTheme(identity = identity, darkTheme = false, dynamicColor = false) {
+                SecaTheme(identity = identity, palette = SecaPalette.Ocean, darkTheme = false) {
                     containers[identity] = MaterialTheme.colorScheme.primaryContainer
                     Text("container-${identity.name}")
                 }
@@ -72,12 +65,29 @@ class SecaThemeTest {
     }
 
     @Test
+    fun `dark theme differs from light theme`() {
+        var light = Color.Unspecified
+        var dark = Color.Unspecified
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
+                light = MaterialTheme.colorScheme.surface
+                Text("light")
+            }
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = true) {
+                dark = MaterialTheme.colorScheme.surface
+                Text("dark")
+            }
+        }
+        composeRule.waitForIdle()
+        assertNotEquals(light, dark)
+    }
+
+    @Test
     fun `theme wires in the Seca shape and type scales`() {
-        // Guards the constraint that no app gets Material defaults by accident.
         var shapes: Shapes? = null
         var typography: Typography? = null
         composeRule.setContent {
-            SecaTheme(SecaAppIdentity.Contacts, darkTheme = false, dynamicColor = false) {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
                 shapes = MaterialTheme.shapes
                 typography = MaterialTheme.typography
                 Text("probe")

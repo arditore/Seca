@@ -31,7 +31,7 @@ class SecaContactRowTest {
     @Test
     fun `shows the display name and first number`() {
         composeRule.setContent {
-            SecaTheme(SecaAppIdentity.Contacts, dynamicColor = false) {
+            SecaTheme(SecaAppIdentity.Contacts) {
                 SecaContactRow(contact = camille, onClick = {})
             }
         }
@@ -45,7 +45,7 @@ class SecaContactRowTest {
         // artefacts. This covers the row's only real branch.
         val numberless = camille.copy(phoneNumbers = emptyList())
         composeRule.setContent {
-            SecaTheme(SecaAppIdentity.Contacts, dynamicColor = false) {
+            SecaTheme(SecaAppIdentity.Contacts) {
                 SecaContactRow(contact = numberless, onClick = {})
             }
         }
@@ -57,7 +57,7 @@ class SecaContactRowTest {
     fun `invokes onClick when tapped`() {
         var clicked = false
         composeRule.setContent {
-            SecaTheme(SecaAppIdentity.Contacts, dynamicColor = false) {
+            SecaTheme(SecaAppIdentity.Contacts) {
                 SecaContactRow(contact = camille, onClick = { clicked = true })
             }
         }
