@@ -3,6 +3,7 @@ package com.seca.catalog
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,5 +25,12 @@ class CatalogScreenTest {
     fun `renders the empty state sample`() {
         composeRule.setContent { CatalogScreen() }
         composeRule.onNodeWithText("Aucun contact").assertIsDisplayed()
+    }
+
+    @Test
+    fun `switching app from the suite bar re-themes the screen`() {
+        composeRule.setContent { CatalogScreen() }
+        composeRule.onNodeWithText("Téléphone").performClick()
+        composeRule.onNodeWithText("Camille Durand").assertIsDisplayed()
     }
 }
