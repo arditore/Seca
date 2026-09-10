@@ -20,3 +20,6 @@ rootProject.name = "Seca"
 include(":core:model")
 include(":core:design")
 include(":apps:catalog")
+
+include(":core:contacts")
+include(":apps:contacts")

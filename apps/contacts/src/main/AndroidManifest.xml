@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Read only, for now: writing contacts arrives with the edit screen.
+         No INTERNET permission, ever — the app cannot send a contact anywhere. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <!-- The bottom bar opens the other Seca apps when they are installed. -->
+    <queries>
+        <package android:name="com.seca.phone" />
+        <package android:name="com.seca.messages" />
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Seca Contacts"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SecaContacts">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SecaContacts">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
