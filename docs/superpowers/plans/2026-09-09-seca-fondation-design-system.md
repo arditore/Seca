@@ -2670,17 +2670,27 @@ fun CatalogScreen() {
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(start = 20.dp, top = 32.dp, bottom = 12.dp),
                     )
-                    // 160dp, not 240: the component centres its content, and a
-                    // taller box left a 99dp gap under the heading where every
-                    // other section here uses 17dp. In a real app it fills the
-                    // screen; in a gallery it must keep the page's rhythm.
-                    SecaEmptyState(
-                        title = "Aucun contact",
-                        description = "Les contacts que vous ajoutez apparaîtront ici.",
+                    // Framed, not just shortened. SecaEmptyState carries 32dp of
+                    // its own padding and centres its content — correct when it
+                    // fills a real screen, but in a gallery strip that reads as
+                    // an accidental gap under the heading. Shrinking the box only
+                    // reduced it (261px to 156px, against 46-67px elsewhere on
+                    // this page). A surface frame makes the component's own
+                    // breathing room look deliberate instead, and the frame
+                    // itself starts on the page's normal rhythm.
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = MaterialTheme.shapes.large,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(160.dp),
-                    )
+                            .padding(horizontal = 20.dp)
+                            .height(200.dp),
+                    ) {
+                        SecaEmptyState(
+                            title = "Aucun contact",
+                            description = "Les contacts que vous ajoutez apparaîtront ici.",
+                        )
+                    }
                 }
             }
         }
