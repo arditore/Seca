@@ -1611,6 +1611,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaAppIdentity
@@ -2644,7 +2645,12 @@ fun CatalogScreen() {
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(start = 20.dp, top = 32.dp, bottom = 12.dp),
                     )
-                    Row(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    // Centred, not the Row default of Alignment.Top: three
+                    // different sizes sharing a top edge cascade downward.
+                    Row(
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         SecaAvatar("CD", null, size = 40.dp, modifier = Modifier.padding(end = 12.dp))
                         SecaAvatar("AB", null, size = 56.dp, modifier = Modifier.padding(end = 12.dp))
                         SecaAvatar("Z", null, size = 72.dp)
@@ -2664,12 +2670,16 @@ fun CatalogScreen() {
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(start = 20.dp, top = 32.dp, bottom = 12.dp),
                     )
+                    // 160dp, not 240: the component centres its content, and a
+                    // taller box left a 99dp gap under the heading where every
+                    // other section here uses 17dp. In a real app it fills the
+                    // screen; in a gallery it must keep the page's rhythm.
                     SecaEmptyState(
                         title = "Aucun contact",
                         description = "Les contacts que vous ajoutez apparaîtront ici.",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(240.dp),
+                            .height(160.dp),
                     )
                 }
             }
@@ -2713,7 +2723,9 @@ Expected: PASS, 24 tests — 10 `:core:model`, 11 `:core:design`, 3 `:apps:catal
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" shell am start -n com.seca.catalog/.MainActivity
 ```
 
-Réveiller l'appareil avant toute capture (`input keyevent KEYCODE_WAKEUP`), sinon l'image est noire. Contrôler : barre du bas avec les trois icônes, thème suivant le système, quatre palettes qui changent réellement l'accent, et les trois apps visuellement distinctes **dans chaque palette**.
+Réveiller l'appareil avant toute capture (`input keyevent KEYCODE_WAKEUP`), sinon l'image est noire. Contrôler : barre du bas avec les trois icônes, thème suivant le système, quatre palettes qui changent réellement l'accent.
+
+**Capturer au moins une image avec `Téléphone` OU `Messages` sélectionné dans la barre du bas**, en plus des captures par palette. Sans elle, la distinction visuelle entre les trois apps n'est jamais prouvée à l'écran — toutes les captures montreraient `Contacts`, et c'est précisément la promesse centrale du design system.
 
 - [ ] **Step 5: Commit**
 
