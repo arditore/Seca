@@ -1,9 +1,12 @@
 package com.seca.core.design
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createComposeRule
 import org.junit.Assert.assertEquals
@@ -96,5 +99,40 @@ class SecaThemeTest {
         composeRule.waitForIdle()
         assertEquals(SecaShapes, shapes)
         assertEquals(SecaTypography, typography)
+    }
+
+    @Test
+    fun `container and inverse roles never fall back to the Material baseline`() {
+        // SecaSuiteBar is a NavigationBar, which paints with surfaceContainer by
+        // default. Left unset, that role rendered Material's baseline #211F26 —
+        // a purple grey — under a teal-grey page.
+        val roles = listOf(
+            ColorScheme::surfaceContainerLow,
+            ColorScheme::surfaceContainer,
+            ColorScheme::surfaceContainerHigh,
+            ColorScheme::surfaceContainerHighest,
+            ColorScheme::outlineVariant,
+            ColorScheme::inverseSurface,
+            ColorScheme::inversePrimary,
+        )
+        var light: ColorScheme? = null
+        var dark: ColorScheme? = null
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
+                light = MaterialTheme.colorScheme
+                Text("light")
+            }
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = true) {
+                dark = MaterialTheme.colorScheme
+                Text("dark")
+            }
+        }
+        composeRule.waitForIdle()
+        val baselineLight = lightColorScheme()
+        val baselineDark = darkColorScheme()
+        roles.forEach { role ->
+            assertNotEquals("${role.name} (clair)", role.get(baselineLight), role.get(light!!))
+            assertNotEquals("${role.name} (sombre)", role.get(baselineDark), role.get(dark!!))
+        }
     }
 }
