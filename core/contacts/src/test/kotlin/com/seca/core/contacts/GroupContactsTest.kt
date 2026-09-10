@@ -10,8 +10,8 @@ class GroupContactsTest {
     @Test
     fun `attaches numbers to their contact and drops the same number written twice`() {
         val contacts = listOf(
-            ContactRow(id = 1, name = "Camille Durand", starred = true, photoUri = null),
-            ContactRow(id = 2, name = "Alex", starred = false, photoUri = null),
+            ContactRow(id = 1, lookupKey = "k1", name = "Camille Durand", starred = true, photoUri = null),
+            ContactRow(id = 2, lookupKey = "k2", name = "Alex", starred = false, photoUri = null),
         )
         val phones = listOf(
             PhoneRow(contactId = 1, number = "06 12 34 56 78"),
@@ -24,6 +24,7 @@ class GroupContactsTest {
         assertEquals(listOf(1L, 2L), result.map { it.id })
         assertEquals(listOf("06 12 34 56 78", "+33 7 11 22 33 44"), result[0].phoneNumbers.map { it.raw })
         assertTrue(result[0].isFavorite)
+        assertEquals("k1", result[0].lookupKey)
         assertEquals(emptyList<PhoneNumber>(), result[1].phoneNumbers)
     }
 }
