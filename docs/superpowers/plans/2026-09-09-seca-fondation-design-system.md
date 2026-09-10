@@ -2680,6 +2680,8 @@ fun CatalogScreen() {
 
 `Scaffold` fournit `innerPadding`, qui porte déjà les insets système et la hauteur de la barre du bas. C'est ce qui remplace le `safeDrawingPadding()` précédent et ce qui empêche le contenu de passer sous la barre de navigation.
 
+Le `frenchLabel` privé qui vivait dans ce fichier devient du code mort : les chips d'identité ont disparu, et `SecaSuiteBar` rend ses propres libellés. **Le supprimer.** Il ne peut pas être remplacé par le `SecaAppIdentity.label` de `:core:design`, qui est `internal` et donc invisible depuis un module d'app — mais le catalogue n'en a plus besoin, donc il n'y a rien à partager.
+
 - [ ] **Step 2: Mettre à jour le test**
 
 Dans `apps/catalog/src/test/kotlin/com/seca/catalog/CatalogScreenTest.kt`, ajouter l'import `androidx.compose.ui.test.performClick` et ce troisième cas :
