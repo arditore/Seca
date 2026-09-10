@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Neutral background for the catalog app's launcher icon: this is a
+         developer tool for browsing the design system, not a product, so it
+         stays deliberately palette-agnostic rather than picking one of the
+         four user-selectable palettes. -->
+    <color name="ic_launcher_background">#FF37474F</color>
+</resources>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Three circles standing for the three Seca apps, inside the adaptive
+     icon's 66dp safe zone. Drawn in-repo like the suite bar's icons in
+     SecaIcons.kt, for the same reason: no image asset to source or license. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFF7FAFA"
+        android:pathData="M54,38 m-9,0 a9,9 0,1 1,18,0 a9,9 0,1 1,-18,0" />
+    <path
+        android:fillColor="#FFF7FAFA"
+        android:pathData="M41,66 m-9,0 a9,9 0,1 1,18,0 a9,9 0,1 1,-18,0" />
+    <path
+        android:fillColor="#FFF7FAFA"
+        android:pathData="M67,66 m-9,0 a9,9 0,1 1,18,0 a9,9 0,1 1,-18,0" />
+</vector>

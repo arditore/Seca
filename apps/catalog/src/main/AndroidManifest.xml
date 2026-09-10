@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
+        android:icon="@mipmap/ic_launcher"
         android:label="Seca Catalogue"
         android:supportsRtl="true"
         android:theme="@style/Theme.SecaCatalog">

@@ -1,4 +1,6 @@
 import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.seca.buildlogic.VerifyNoProprietaryDependencies
 
 plugins {
     id("com.android.application")
@@ -25,8 +27,30 @@ extensions.configure<ApplicationExtension> {
         includeInApk = false
         includeInBundle = false
     }
+    lint {
+        warningsAsErrors = true
+        abortOnError = true
+        // Pinned versions are the point of a reproducible build; this check
+        // would otherwise fire on every dependency the moment a newer one ships.
+        disable += setOf("GradleDependency")
+    }
 }
 
 kotlin {
     jvmToolchain(17)
+}
+
+// One check per release variant: it inspects exactly what ships in the APK.
+extensions.configure<ApplicationAndroidComponentsExtension> {
+    onVariants(selector().withBuildType("release")) { variant ->
+        val name = variant.name.replaceFirstChar { it.uppercase() }
+        val verify = tasks.register<VerifyNoProprietaryDependencies>(
+            "verify${name}NoProprietaryDependencies",
+        ) {
+            group = "verification"
+            description = "Fails if a proprietary Google artifact reaches the $name runtime classpath."
+            rootComponent.set(variant.runtimeConfiguration.incoming.resolutionResult.rootComponent)
+        }
+        tasks.named("check") { dependsOn(verify) }
+    }
 }
