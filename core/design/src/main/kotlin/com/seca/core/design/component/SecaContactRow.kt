@@ -15,8 +15,9 @@ import androidx.compose.ui.unit.dp
 import com.seca.core.model.SecaContact
 
 /**
- * One contact in a list: avatar, name, and a supporting line — the first
- * number unless the app passes something better, such as a formatted one.
+ * One contact in a list: avatar in the accent family [tone], name, and a
+ * supporting line — the first number unless the app passes something better,
+ * such as a formatted one.
  */
 @Composable
 fun SecaContactRow(
@@ -24,6 +25,7 @@ fun SecaContactRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     supportingText: String? = contact.phoneNumbers.firstOrNull()?.raw,
+    tone: Int = 0,
 ) {
     Row(
         modifier = modifier
@@ -36,6 +38,7 @@ fun SecaContactRow(
             initials = contact.initials,
             photoUri = contact.photoUri,
             size = 44.dp,
+            tone = tone,
             seed = contact.displayName,
         )
         Column(

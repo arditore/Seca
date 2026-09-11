@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.seca.core.design.SecaIcons
+import com.seca.core.design.secaToneColors
 import com.seca.core.model.initialsOf
 
 /** A group's title, lined up with the content of the rounded group under it. */
@@ -97,12 +98,7 @@ internal fun SimpleTopBar(
  */
 @Composable
 internal fun ProfileBadge(name: String, tone: Int, size: Dp = 32.dp) {
-    val colors = MaterialTheme.colorScheme
-    val (container, content) = when (tone % 3) {
-        0 -> colors.primary to colors.onPrimary
-        1 -> colors.tertiary to colors.onTertiary
-        else -> colors.secondary to colors.onSecondary
-    }
+    val (container, content) = secaToneColors(tone, strong = true)
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier

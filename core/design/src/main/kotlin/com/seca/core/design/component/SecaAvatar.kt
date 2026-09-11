@@ -20,15 +20,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.seca.core.design.SecaIcons
+import com.seca.core.design.secaToneColors
 
 /**
- * A contact's avatar, rendered as initials on a tonal colour.
+ * A contact's avatar, rendered as initials.
  *
- * The colour is one of the accent containers, picked by [seed] (usually the
- * contact's name): a list reads as varied yet always on theme, and a contact
- * keeps the same colour on every screen. [expressive] swaps the circle for one
- * of the M3 Expressive shapes, also picked by [seed], for places where the
- * avatar is the centrepiece.
+ * Its colour is the accent family [tone] (see [secaToneColors]), never a
+ * random pick: Seca Contacts passes the contact's profile, so every contact of
+ * a profile shares one colour and the colour says where the contact belongs.
+ * [expressive] swaps the circle for one of the M3 Expressive shapes, picked by
+ * [seed] so a contact always keeps its own, for places where the avatar is the
+ * centrepiece.
  *
  * Photo rendering is NOT implemented. [photoUri] is accepted so call sites do
  * not have to change when it lands, but passing one currently has no effect —
@@ -42,15 +44,11 @@ fun SecaAvatar(
     photoUri: String?,
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
+    tone: Int = 0,
     seed: String = initials,
     expressive: Boolean = false,
 ) {
-    val colors = MaterialTheme.colorScheme
-    val (container, content) = when (Math.floorMod(seed.hashCode(), 3)) {
-        0 -> colors.primaryContainer to colors.onPrimaryContainer
-        1 -> colors.tertiaryContainer to colors.onTertiaryContainer
-        else -> colors.secondaryContainer to colors.onSecondaryContainer
-    }
+    val (container, content) = secaToneColors(tone)
     val shape = if (expressive) expressiveShapeFor(seed) else CircleShape
     Box(
         modifier = modifier
@@ -79,7 +77,7 @@ fun SecaAvatar(
 /** A few of the M3 Expressive shapes; [seed] picks one, so a contact always keeps its own. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun expressiveShapeFor(seed: String): Shape = when (Math.floorMod(seed.hashCode() / 3, 4)) {
+private fun expressiveShapeFor(seed: String): Shape = when (Math.floorMod(seed.hashCode(), 4)) {
     0 -> MaterialShapes.Cookie9Sided.toShape()
     1 -> MaterialShapes.Clover4Leaf.toShape()
     2 -> MaterialShapes.Sunny.toShape()

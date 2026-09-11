@@ -125,6 +125,8 @@ internal fun EditScreen(
                         initials = initialsOf("$givenName $familyName"),
                         photoUri = null,
                         size = 112.dp,
+                        // Takes the colour of the profile picked below, as a preview.
+                        tone = ui.profiles.indexOfFirst { it.id == profileId }.coerceAtLeast(0),
                         seed = existing?.displayName ?: "Nouveau contact",
                         expressive = true,
                     )

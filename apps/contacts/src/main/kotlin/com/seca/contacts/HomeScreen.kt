@@ -243,18 +243,18 @@ private fun HomeContent(ui: ContactsUi, listState: LazyListState, onOpen: (SecaC
             // Search looks through every profile; results are grouped by profile.
             shown.groupBy { ui.profileOf(it) }.forEach { (profile, group) ->
                 item(key = "profile-${profile.id}") { SectionLabel(profile.name) }
-                contactGroup(group, keyPrefix = "result", onOpen = onOpen)
+                contactGroup(group, keyPrefix = "result", ui = ui, onOpen = onOpen)
             }
         } else {
             val favorites = shown.filter { it.isFavorite }
             if (favorites.isNotEmpty()) {
                 item(key = "favorites-label") { SectionLabel("Favoris") }
-                item(key = "favorites") { FavoritesRow(favorites, onOpen) }
+                item(key = "favorites") { FavoritesRow(favorites, ui, onOpen) }
             }
             // The provider already sorts by name, so grouping keeps the letters in order.
             shown.groupBy { sectionLetterOf(it.displayName) }.forEach { (letter, group) ->
                 item(key = "letter-$letter") { SectionLabel(letter) }
-                contactGroup(group, keyPrefix = "contact", onOpen = onOpen)
+                contactGroup(group, keyPrefix = "contact", ui = ui, onOpen = onOpen)
             }
             item(key = "count") {
                 Text(
@@ -271,9 +271,11 @@ private fun HomeContent(ui: ContactsUi, listState: LazyListState, onOpen: (SecaC
     }
 }
 
+/** A rounded group of contacts; each avatar takes its profile's colour. */
 private fun LazyListScope.contactGroup(
     group: List<SecaContact>,
     keyPrefix: String,
+    ui: ContactsUi,
     onOpen: (SecaContact) -> Unit,
 ) {
     itemsIndexed(group, key = { _, contact -> "$keyPrefix-${contact.id}" }) { index, contact ->
@@ -282,6 +284,7 @@ private fun LazyListScope.contactGroup(
                 contact = contact,
                 onClick = { onOpen(contact) },
                 supportingText = contact.phoneNumbers.firstOrNull()?.raw?.let(::formatNumber),
+                tone = ui.toneOf(ui.profileOf(contact)),
             )
         }
     }
@@ -289,7 +292,7 @@ private fun LazyListScope.contactGroup(
 
 /** Favourites as a row of large avatars, the way a dialer shows speed dials. */
 @Composable
-private fun FavoritesRow(favorites: List<SecaContact>, onOpen: (SecaContact) -> Unit) {
+private fun FavoritesRow(favorites: List<SecaContact>, ui: ContactsUi, onOpen: (SecaContact) -> Unit) {
     LazyRow(
         contentPadding = PaddingValues(horizontal = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -307,6 +310,7 @@ private fun FavoritesRow(favorites: List<SecaContact>, onOpen: (SecaContact) -> 
                     initials = contact.initials,
                     photoUri = contact.photoUri,
                     size = 64.dp,
+                    tone = ui.toneOf(ui.profileOf(contact)),
                     seed = contact.displayName,
                     expressive = true,
                 )

@@ -157,6 +157,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 initials = initialsOf(detail.displayName),
                 photoUri = null,
                 size = 136.dp,
+                tone = ui.toneOf(profile),
                 seed = detail.displayName,
                 expressive = true,
                 modifier = Modifier.padding(top = 8.dp),
