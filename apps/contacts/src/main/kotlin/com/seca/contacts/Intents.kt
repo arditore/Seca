@@ -13,6 +13,7 @@ import com.seca.core.design.secaSwitchAnimation
 import java.io.File
 
 private const val SECA_PHONE = "com.seca.phone"
+private const val SECA_MESSAGES = "com.seca.messages"
 private const val SECA_PHONE_CALL = "com.seca.phone.action.CALL"
 private const val PLACE_CALLS = "com.seca.permission.PLACE_CALLS"
 
@@ -40,19 +41,24 @@ internal fun email(context: Context, address: String) =
 
 /** Opens the sibling Seca app, or the system's dialer or messaging app until it exists. */
 internal fun openSibling(context: Context, identity: SecaAppIdentity) {
-    val packages = context.packageManager
-    val intent = when (identity) {
-        SecaAppIdentity.Contacts -> return
-        SecaAppIdentity.Phone -> packages.getLaunchIntentForPackage("com.seca.phone")
-            ?: Intent(Intent.ACTION_DIAL)
-        SecaAppIdentity.Messages -> packages.getLaunchIntentForPackage("com.seca.messages")
-            ?: Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING)
+    if (identity == SecaAppIdentity.Contacts) return
+    val target = if (identity == SecaAppIdentity.Phone) SECA_PHONE else SECA_MESSAGES
+    val options = secaSwitchAnimation(context, SecaAppIdentity.Contacts, identity)
+    val seca = context.packageManager.getLaunchIntentForPackage(target)
+    if (seca != null) {
+        // In this app's own task rather than a new one: Android reserves the animation of a
+        // task switch for the system, so only inside one task do the screens slide as asked.
+        // Coming back to an app already open brings its screen forward instead of stacking another.
+        seca.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+        startSafely(context, seca, options)
+        return
     }
-    startSafely(
-        context,
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-        secaSwitchAnimation(context, SecaAppIdentity.Contacts, identity),
-    )
+    val fallback = if (identity == SecaAppIdentity.Phone) {
+        Intent(Intent.ACTION_DIAL)
+    } else {
+        Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING)
+    }
+    startSafely(context, fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), options)
 }
 
 /**

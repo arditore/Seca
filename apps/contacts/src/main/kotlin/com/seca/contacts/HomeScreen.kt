@@ -157,6 +157,16 @@ private fun HomeTopBar(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(top = 12.dp),
         ) {
+            // Every contact first, then one tab per profile.
+            item(key = "all-profiles") {
+                ProfileTab(
+                    name = "Tous",
+                    tone = null,
+                    count = ui.contacts.size,
+                    selected = ui.showingAll,
+                    onClick = { onSelectProfile(ProfileStore.ALL) },
+                )
+            }
             itemsIndexed(ui.profiles, key = { _, profile -> profile.id }) { index, profile ->
                 ProfileTab(
                     name = profile.name,
@@ -172,7 +182,7 @@ private fun HomeTopBar(
 }
 
 @Composable
-private fun ProfileTab(name: String, tone: Int, count: Int, selected: Boolean, onClick: () -> Unit) {
+private fun ProfileTab(name: String, tone: Int?, count: Int, selected: Boolean, onClick: () -> Unit) {
     // Selecting a profile morphs its pill toward a rounded square, as M3 Expressive toggles do.
     val corner by animateDpAsState(if (selected) 14.dp else 24.dp, label = "corner")
     val container by animateColorAsState(
@@ -187,14 +197,14 @@ private fun ProfileTab(name: String, tone: Int, count: Int, selected: Boolean, o
             .clip(RoundedCornerShape(corner))
             .background(container)
             .selectable(selected = selected, onClick = onClick, role = Role.Tab)
-            .padding(start = 8.dp, end = 16.dp),
+            .padding(start = if (tone != null) 8.dp else 16.dp, end = 16.dp),
     ) {
-        SecaProfileBadge(name = name, tone = tone, size = 32.dp)
+        if (tone != null) SecaProfileBadge(name = name, tone = tone, size = 32.dp)
         Text(
             text = name,
             style = MaterialTheme.typography.labelLarge,
             color = content,
-            modifier = Modifier.padding(start = 10.dp),
+            modifier = Modifier.padding(start = if (tone != null) 10.dp else 0.dp),
         )
         Text(
             text = count.toString(),
@@ -243,6 +253,8 @@ private fun HomeContent(
     val shown = remember(ui) {
         if (searching) {
             ui.contacts.filter { matchesQuery(it, ui.query, ui.numbers) }
+        } else if (ui.showingAll) {
+            ui.contacts
         } else {
             ui.contacts.filter { ui.profileOf(it).id == ui.currentProfileId }
         }

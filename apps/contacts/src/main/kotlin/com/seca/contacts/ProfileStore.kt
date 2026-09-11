@@ -55,7 +55,8 @@ class ProfileStore(context: Context) {
         saveAssignments(updated)
     }
 
-    fun currentProfileId(): String = prefs.getString(KEY_CURRENT, null) ?: Principal.id
+    /** [ALL] until the owner picks a profile: the list opens on every contact. */
+    fun currentProfileId(): String = prefs.getString(KEY_CURRENT, null) ?: ALL
 
     fun setCurrentProfile(id: String) {
         prefs.edit { putString(KEY_CURRENT, id) }
@@ -100,6 +101,9 @@ class ProfileStore(context: Context) {
     }
 
     companion object {
+        /** Not a profile: the choice that shows every contact, whatever their profile. */
+        const val ALL = "all"
+
         val Principal = Profile.Principal
         private const val KEY_PROFILES = "profiles"
         private const val KEY_ASSIGNMENTS = "assignments"

@@ -62,6 +62,9 @@ data class ContactsUi(
     val currentProfile: Profile
         get() = profiles.firstOrNull { it.id == currentProfileId } ?: ProfileStore.Principal
 
+    /** Whether the list is showing every contact rather than one profile. */
+    val showingAll: Boolean get() = currentProfileId == ProfileStore.ALL
+
     /** How many contacts each profile holds, by profile id. */
     val counts: Map<String, Int> by lazy { contacts.groupingBy { profileOf(it).id }.eachCount() }
 
@@ -265,8 +268,11 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                 repository.updateContact(existing, input)
                 existing.id
             }
-            val lookupKey = existing?.lookupKey ?: repository.lookupKeyOf(id)
-            if (lookupKey != null) store.assign(lookupKey, profileId)
+            // The provider rebuilds a contact's key when its name changes, so the profile is
+            // filed again under the key the contact has now, and the old one is let go.
+            val currentKey = repository.lookupKeyOf(id)
+            existing?.lookupKey?.takeIf { it != currentKey }?.let { store.assign(it, ProfileStore.Principal.id) }
+            if (currentKey != null) store.assign(currentKey, profileId)
             refreshPreferences()
             load()
             if (existing == null) backStack[backStack.lastIndex] = Screen.Detail(id) else back()

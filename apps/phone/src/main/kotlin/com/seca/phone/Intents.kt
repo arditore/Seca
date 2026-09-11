@@ -58,21 +58,26 @@ internal fun addContact(context: Context, number: String) {
     startPreferring(context, intent, SECA_CONTACTS)
 }
 
-/** Opens the sibling Seca app, or the system's messaging app until Seca Messages exists. */
+/** Opens the sibling Seca app, or the system's own app until Seca Messages exists. */
 internal fun openSibling(context: Context, identity: SecaAppIdentity) {
-    val packages = context.packageManager
-    val intent = when (identity) {
-        SecaAppIdentity.Phone -> return
-        SecaAppIdentity.Contacts -> packages.getLaunchIntentForPackage(SECA_CONTACTS)
-            ?: Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI)
-        SecaAppIdentity.Messages -> packages.getLaunchIntentForPackage(SECA_MESSAGES)
-            ?: Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING)
+    if (identity == SecaAppIdentity.Phone) return
+    val target = if (identity == SecaAppIdentity.Contacts) SECA_CONTACTS else SECA_MESSAGES
+    val options = secaSwitchAnimation(context, SecaAppIdentity.Phone, identity)
+    val seca = context.packageManager.getLaunchIntentForPackage(target)
+    if (seca != null) {
+        // In this app's own task rather than a new one: Android reserves the animation of a
+        // task switch for the system, so only inside one task do the screens slide as asked.
+        // Coming back to an app already open brings its screen forward instead of stacking another.
+        seca.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+        startSafely(context, seca, options)
+        return
     }
-    startSafely(
-        context,
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-        secaSwitchAnimation(context, SecaAppIdentity.Phone, identity),
-    )
+    val fallback = if (identity == SecaAppIdentity.Contacts) {
+        Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI)
+    } else {
+        Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING)
+    }
+    startSafely(context, fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), options)
 }
 
 /** Adds [number] to Android's own blocked list; only the default phone app may. */

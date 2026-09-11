@@ -86,7 +86,10 @@ internal fun EditScreen(
     var birthday by remember(id) { mutableStateOf("") }
     var note by remember(id) { mutableStateOf("") }
     val resources = LocalResources.current
-    var profileId by remember(id) { mutableStateOf(ui.currentProfileId) }
+    // "Tous" is a way of looking at the list, not a profile: a new contact starts in Principal.
+    var profileId by remember(id) {
+        mutableStateOf(ui.currentProfileId.takeIf { !ui.showingAll } ?: ProfileStore.Principal.id)
+    }
 
     LaunchedEffect(id) {
         if (id != null) {
