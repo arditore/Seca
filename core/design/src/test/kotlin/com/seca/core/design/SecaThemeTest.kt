@@ -6,8 +6,10 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createComposeRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -21,6 +23,21 @@ class SecaThemeTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun `without a palette the colours follow the wallpaper`() {
+        var expected = Color.Unspecified
+        var actual = Color.Unspecified
+        composeRule.setContent {
+            expected = dynamicLightColorScheme(LocalContext.current).primary
+            SecaTheme(SecaAppIdentity.Contacts, darkTheme = false) {
+                actual = MaterialTheme.colorScheme.primary
+                Text("dynamic")
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(expected, actual)
+    }
 
     @Test
     fun `every app identity gets a distinct accent within a palette`() {

@@ -14,22 +14,35 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.seca.core.model.SecaContact
 
-/** One contact in a list: avatar, name, and first number if there is one. */
+/**
+ * One contact in a list: avatar, name, and a supporting line — the first
+ * number unless the app passes something better, such as a formatted one.
+ */
 @Composable
 fun SecaContactRow(
     contact: SecaContact,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    supportingText: String? = contact.phoneNumbers.firstOrNull()?.raw,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SecaAvatar(initials = contact.initials, photoUri = contact.photoUri)
-        Column(modifier = Modifier.padding(start = 16.dp)) {
+        SecaAvatar(
+            initials = contact.initials,
+            photoUri = contact.photoUri,
+            size = 44.dp,
+            seed = contact.displayName,
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 16.dp),
+        ) {
             Text(
                 text = contact.displayName,
                 style = MaterialTheme.typography.titleMedium,
@@ -37,12 +50,13 @@ fun SecaContactRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            contact.phoneNumbers.firstOrNull()?.let { number ->
+            supportingText?.let {
                 Text(
-                    text = number.raw,
+                    text = it,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

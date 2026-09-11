@@ -34,16 +34,23 @@ data class ContactsUi(
     val currentProfileId: String = ProfileStore.Principal.id,
     val assignments: Map<String, String> = emptyMap(),
     val query: String = "",
-    val palette: SecaPalette = SecaPalette.Ocean,
+    /** Null, the default, follows the wallpaper colours (Material You). */
+    val palette: SecaPalette? = null,
 ) {
     val currentProfile: Profile
         get() = profiles.firstOrNull { it.id == currentProfileId } ?: ProfileStore.Principal
+
+    /** How many contacts each profile holds, by profile id. */
+    val counts: Map<String, Int> by lazy { contacts.groupingBy { profileOf(it).id }.eachCount() }
 
     /** A contact never placed anywhere, or whose profile was deleted, is in Principal. */
     fun profileForKey(lookupKey: String): Profile =
         profiles.firstOrNull { it.id == assignments[lookupKey] } ?: ProfileStore.Principal
 
     fun profileOf(contact: SecaContact): Profile = profileForKey(contact.lookupKey)
+
+    /** A profile's position in the list, which picks its badge colour. */
+    fun toneOf(profile: Profile): Int = profiles.indexOfFirst { it.id == profile.id }.coerceAtLeast(0)
 }
 
 class ContactsViewModel(application: Application) : AndroidViewModel(application) {
@@ -107,7 +114,8 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
         refreshPreferences()
     }
 
-    fun setPalette(palette: SecaPalette) {
+    /** Null goes back to the wallpaper colours. */
+    fun setPalette(palette: SecaPalette?) {
         store.setPalette(palette)
         refreshPreferences()
     }

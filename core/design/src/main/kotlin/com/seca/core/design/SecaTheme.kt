@@ -1,8 +1,13 @@
 package com.seca.core.design
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import com.seca.core.design.color.darkSchemeFor
 import com.seca.core.design.color.lightSchemeFor
 
@@ -12,25 +17,35 @@ import com.seca.core.design.color.lightSchemeFor
  * No app module defines its own colours, shapes or typography; they all wrap
  * their content in this.
  *
- * [darkTheme] follows the system and is never toggled inside an app — the
- * parameter exists so tests can assert both themes. [palette] is the one
- * visual choice a user gets; each [identity] shifts its hue so the three apps
- * stay distinguishable whichever palette is picked.
+ * Colours follow the wallpaper (Material You) unless the user picked a
+ * [palette] in settings; with a palette, each [identity] shifts its hue so the
+ * three apps become distinguishable. [darkTheme] follows the system and is
+ * never toggled inside an app — the parameter exists so tests can assert both
+ * themes.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SecaTheme(
     identity: SecaAppIdentity,
-    palette: SecaPalette = SecaPalette.Ocean,
+    palette: SecaPalette? = null,
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val colorScheme =
-        if (darkTheme) darkSchemeFor(palette, identity) else lightSchemeFor(palette, identity)
+    val context = LocalContext.current
+    val colorScheme = when {
+        palette == null && darkTheme -> dynamicDarkColorScheme(context)
+        palette == null -> dynamicLightColorScheme(context)
+        darkTheme -> darkSchemeFor(palette, identity)
+        else -> lightSchemeFor(palette, identity)
+    }
 
-    MaterialTheme(
+    // The expressive motion scheme gives components their springy, slightly
+    // overshooting movement: the other half of M3 Expressive, besides shape.
+    MaterialExpressiveTheme(
         colorScheme = colorScheme,
-        typography = SecaTypography,
+        motionScheme = MotionScheme.expressive(),
         shapes = SecaShapes,
+        typography = SecaTypography,
         content = content,
     )
 }

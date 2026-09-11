@@ -61,13 +61,16 @@ class ProfileStore(context: Context) {
         prefs.edit { putString(KEY_CURRENT, id) }
     }
 
-    fun palette(): SecaPalette {
-        val name = prefs.getString(KEY_PALETTE, null)
-        return SecaPalette.entries.firstOrNull { it.name == name } ?: SecaPalette.Ocean
+    /** Null, the default, means the wallpaper colours. */
+    fun palette(): SecaPalette? {
+        val name = prefs.getString(KEY_PALETTE, null) ?: return null
+        return SecaPalette.entries.firstOrNull { it.name == name }
     }
 
-    fun setPalette(palette: SecaPalette) {
-        prefs.edit { putString(KEY_PALETTE, palette.name) }
+    fun setPalette(palette: SecaPalette?) {
+        prefs.edit {
+            if (palette == null) remove(KEY_PALETTE) else putString(KEY_PALETTE, palette.name)
+        }
     }
 
     private fun customProfiles(): List<Profile> {

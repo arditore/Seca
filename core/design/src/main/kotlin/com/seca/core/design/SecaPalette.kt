@@ -1,12 +1,12 @@
 package com.seca.core.design
 
 /**
- * The accent families a user can choose between.
+ * The accent families a user can pick instead of the wallpaper colours.
  *
- * Material You is deliberately not offered: deriving every role from the
- * wallpaper made all three Seca apps look identical, which defeats the
- * per-app identity. A palette instead sets a base hue; each app shifts it by
- * a fixed step so the three stay distinguishable inside every palette.
+ * Seca follows Material You by default, so the apps match the rest of the
+ * phone. A palette is the opt-in alternative, chosen in settings: it sets a
+ * base hue and each app shifts it by a fixed step, so the three apps become
+ * distinguishable at a glance.
  *
  * [label] is user-visible and therefore French.
  */

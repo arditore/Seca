@@ -6,11 +6,14 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -22,14 +25,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.SecaIcons
+import com.seca.core.design.SecaMotion
 import com.seca.core.design.SecaTheme
+import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaSuiteBar
 
 @Composable
@@ -64,6 +67,10 @@ fun ContactsApp(
         }
     }
 
+    // Held here, above the screen transitions, so the list keeps its scroll
+    // position when the user opens a contact and comes back.
+    val homeListState = rememberLazyListState()
+
     LaunchedEffect(permissionGranted) {
         if (permissionGranted) viewModel.start()
     }
@@ -72,64 +79,49 @@ fun ContactsApp(
     SecaTheme(identity = SecaAppIdentity.Contacts, palette = ui.palette) {
         if (!permissionGranted) {
             Scaffold(
+                containerColor = MaterialTheme.colorScheme.surface,
                 bottomBar = {
                     SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = { openSibling(context, it) })
                 },
             ) { padding ->
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                ) {
-                    PermissionPrompt(
-                        permanentlyDenied = permanentlyDenied,
-                        onAllow = { readLauncher.launch(Manifest.permission.READ_CONTACTS) },
-                        onOpenSettings = { openAppSettings(context) },
-                    )
+                SecaEmptyState(
+                    icon = SecaIcons.Contacts,
+                    title = "Vos contacts, chez vous",
+                    description = "Seca Contacts affiche les contacts enregistrés sur ce téléphone. " +
+                        "Rien ne quitte l'appareil : l'application n'a pas accès à Internet.",
+                    modifier = Modifier.padding(padding),
+                    action = {
+                        if (permanentlyDenied) {
+                            Button(onClick = { openAppSettings(context) }) { Text("Ouvrir les réglages") }
+                        } else {
+                            Button(onClick = { readLauncher.launch(Manifest.permission.READ_CONTACTS) }) {
+                                Text("Autoriser l'accès")
+                            }
+                        }
+                    },
+                )
+            }
+        } else {
+            AnimatedContent(
+                targetState = viewModel.backStack.last() to viewModel.backStack.size,
+                transitionSpec = {
+                    // A deeper screen slides in from the end; going back reverses it.
+                    val direction = if (targetState.second >= initialState.second) 1 else -1
+                    (slideInHorizontally(SecaMotion.emphasized()) { direction * it / 4 } + fadeIn(SecaMotion.standard()))
+                        .togetherWith(
+                            slideOutHorizontally(SecaMotion.emphasized()) { -direction * it / 4 } +
+                                fadeOut(SecaMotion.standard()),
+                        )
+                },
+                label = "screens",
+            ) { (screen, _) ->
+                when (screen) {
+                    Screen.Home -> HomeScreen(ui, viewModel, homeListState, onOpenSibling = { openSibling(context, it) })
+                    is Screen.Detail -> DetailScreen(screen.id, ui, viewModel, withWrite)
+                    is Screen.Edit -> EditScreen(screen.id, ui, viewModel, withWrite)
+                    Screen.Settings -> SettingsScreen(ui, viewModel)
                 }
             }
-        } else {
-            when (val screen = viewModel.backStack.last()) {
-                Screen.Home -> HomeScreen(ui, viewModel, onOpenSibling = { openSibling(context, it) })
-                is Screen.Detail -> DetailScreen(screen.id, ui, viewModel, withWrite)
-                is Screen.Edit -> EditScreen(screen.id, ui, viewModel, withWrite)
-                Screen.Settings -> SettingsScreen(ui, viewModel)
-            }
-        }
-    }
-}
-
-@Composable
-private fun PermissionPrompt(
-    permanentlyDenied: Boolean,
-    onAllow: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = "Accès aux contacts",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = "Seca Contacts affiche les contacts enregistrés sur ce téléphone. " +
-                "Rien ne quitte l'appareil : l'application n'a pas accès à Internet.",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 12.dp, bottom = 24.dp),
-        )
-        if (permanentlyDenied) {
-            Button(onClick = onOpenSettings) { Text("Ouvrir les réglages") }
-        } else {
-            Button(onClick = onAllow) { Text("Autoriser") }
         }
     }
 }

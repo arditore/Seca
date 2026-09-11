@@ -7,13 +7,13 @@ import androidx.compose.ui.unit.dp
 /**
  * Seca's shape scale.
  *
- * Corners are noticeably rounder than the Material default — the single
- * cheapest lever on how expressive the surface reads.
+ * A little rounder than the Material baseline, while a 56dp button still
+ * reads as a rounded square rather than a circle, as M3 Expressive draws it.
  */
 val SecaShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(28.dp),
-    extraLarge = RoundedCornerShape(36.dp),
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(32.dp),
 )

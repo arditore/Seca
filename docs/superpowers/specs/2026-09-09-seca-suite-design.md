@@ -26,7 +26,7 @@ Trois vérifications faites en amont ont redéfini le périmètre par rapport à
 | Sync contacts | Aucune. DAVx⁵ synchronise déjà dans `ContactsContract` ; on lit le fournisseur système. |
 | Premier livrable | `:core:design` + Seca Contacts. |
 | Thème clair/sombre | Suit le thème système, point. Aucune bascule dans l'app. |
-| Couleur | Pas de Material You. L'utilisateur choisit une palette parmi quelques-unes ; chaque app en dérive sa propre variante distincte. |
+| Couleur | Material You par défaut (couleurs du fond d'écran). En option, dans les paramètres : une palette Seca parmi quelques-unes, dont chaque app dérive sa propre variante distincte. |
 | Navigation inter-apps | Barre en bas dans chacune des trois apps, liens croisés par intent vers les deux voisines. Les trois APKs restent séparés. |
 | Icônes | Dessinées à la main en `ImageVector` dans `:core:design`. `material-icons-core` et `-extended` sont figés en 1.7.8 alors que Compose est en 1.12.0 : bibliothèques mortes, écartées. |
 
@@ -85,7 +85,7 @@ Seca/
 Le module qui répond à l'exigence « design uni, très joli ». Il contient **tout** ce qui est visuel ; aucune app ne définit sa propre couleur, forme ou typographie.
 
 - Palette Seca en tokens M3 Expressive, thèmes clair/sombre suivant le système
-- **Material You écarté, décision du 2026-09-10.** La couleur dynamique dérive tous les rôles du fond d'écran et ignore l'identité : les trois apps devenaient visuellement identiques, ce qui annulait la promesse « distinguables au coup d'œil ». Remplacée par une petite palette au choix de l'utilisateur, dont chaque app dérive une variante propre.
+- **Material You par défaut, décision corrigée le 2026-09-10.** Une première lecture avait écarté la couleur dynamique ; l'utilisateur la veut par défaut, avec les palettes Seca en simple option dans les paramètres. En couleur dynamique, les trois apps partagent les couleurs du fond d'écran, comme les apps système ; c'est en choisissant une palette qu'elles deviennent « distinguables au coup d'œil », chaque app en dérivant une variante propre.
 - Échelle typographique et jeu de formes expressifs
 - Spécifications de motion — M3 Expressive met l'accent sur le mouvement, c'est là que se joue l'essentiel de la qualité perçue
 - Composants partagés : avatar de contact, ligne de contact, barre de recherche, états vides, feuilles d'action

@@ -1,28 +1,39 @@
 package com.seca.contacts
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,44 +41,54 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaContactRow
 import com.seca.core.design.component.SecaEmptyState
+import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaSearchField
 import com.seca.core.design.component.SecaSuiteBar
 import com.seca.core.model.SecaContact
-import com.seca.core.model.initialsOf
 import java.text.Normalizer
 
 @Composable
 internal fun HomeScreen(
     ui: ContactsUi,
     viewModel: ContactsViewModel,
+    listState: LazyListState,
     onOpenSibling: (SecaAppIdentity) -> Unit,
 ) {
     var addingProfile by remember { mutableStateOf(false) }
+    // The button carries its label at the top of the list and shrinks to an icon once scrolled.
+    val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             HomeTopBar(
                 ui = ui,
+                onQueryChange = viewModel::setQuery,
+                onOpenSettings = { viewModel.open(Screen.Settings) },
                 onSelectProfile = viewModel::selectProfile,
                 onAddProfile = { addingProfile = true },
-                onOpenSettings = { viewModel.open(Screen.Settings) },
-                onQueryChange = viewModel::setQuery,
             )
         },
         bottomBar = { SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = onOpenSibling) },
         floatingActionButton = {
-            FloatingActionButton(
+            ExtendedFloatingActionButton(
+                text = { Text("Nouveau contact") },
+                icon = {
+                    Icon(SecaIcons.PersonAdd, contentDescription = if (fabExpanded) null else "Nouveau contact")
+                },
                 onClick = { viewModel.open(Screen.Edit(null)) },
+                expanded = fabExpanded,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            ) {
-                Icon(SecaIcons.Add, contentDescription = "Ajouter un contact")
-            }
+            )
         },
     ) { padding ->
         Box(
@@ -75,7 +96,7 @@ internal fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            HomeContent(ui, onOpen = { viewModel.open(Screen.Detail(it.id)) })
+            HomeContent(ui, listState, onOpen = { viewModel.open(Screen.Detail(it.id)) })
         }
     }
     if (addingProfile) {
@@ -92,90 +113,113 @@ internal fun HomeScreen(
     }
 }
 
+/** Search on top; under it, one tab per profile and a button to add another. */
 @Composable
 private fun HomeTopBar(
     ui: ContactsUi,
+    onQueryChange: (String) -> Unit,
+    onOpenSettings: () -> Unit,
     onSelectProfile: (String) -> Unit,
     onAddProfile: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onQueryChange: (String) -> Unit,
 ) {
-    var menuOpen by remember { mutableStateOf(false) }
-    val profile = ui.currentProfile
     Column(
         Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(top = 8.dp, bottom = 8.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Box {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clip(MaterialTheme.shapes.extraLarge)
-                        .clickable { menuOpen = true }
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-                ) {
-                    SecaAvatar(initials = initialsOf(profile.name).take(1), photoUri = null, size = 40.dp)
-                    Column(Modifier.padding(start = 12.dp)) {
-                        Text(
-                            text = "Profil",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = profile.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Icon(
-                                SecaIcons.ArrowDropDown,
-                                contentDescription = "Changer de profil",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    ProfileMenuItems(
-                        profiles = ui.profiles,
-                        selectedId = ui.currentProfileId,
-                        label = { p -> "${p.name} (${ui.contacts.count { ui.profileOf(it).id == p.id }})" },
-                        onSelect = {
-                            menuOpen = false
-                            onSelectProfile(it.id)
-                        },
-                    )
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text("Ajouter un profil") },
-                        leadingIcon = { Icon(SecaIcons.Add, contentDescription = null) },
-                        onClick = {
-                            menuOpen = false
-                            onAddProfile()
-                        },
-                    )
-                }
-            }
-            Spacer(Modifier.weight(1f))
-            IconButton(onClick = onOpenSettings) {
-                Icon(SecaIcons.Settings, contentDescription = "Paramètres")
-            }
-        }
         SecaSearchField(
             query = ui.query,
             onQueryChange = onQueryChange,
             placeholder = "Rechercher un contact",
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(horizontal = 16.dp),
+        ) {
+            IconButton(onClick = onOpenSettings) {
+                Icon(SecaIcons.Settings, contentDescription = "Paramètres")
+            }
+        }
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 12.dp),
+        ) {
+            itemsIndexed(ui.profiles, key = { _, profile -> profile.id }) { index, profile ->
+                ProfileTab(
+                    name = profile.name,
+                    tone = index,
+                    count = ui.counts[profile.id] ?: 0,
+                    selected = profile.id == ui.currentProfileId,
+                    onClick = { onSelectProfile(profile.id) },
+                )
+            }
+            item(key = "add-profile") { AddProfileTab(onClick = onAddProfile) }
+        }
+    }
+}
+
+@Composable
+private fun ProfileTab(name: String, tone: Int, count: Int, selected: Boolean, onClick: () -> Unit) {
+    // Selecting a profile morphs its pill toward a rounded square, as M3 Expressive toggles do.
+    val corner by animateDpAsState(if (selected) 14.dp else 24.dp, label = "corner")
+    val container by animateColorAsState(
+        if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+        label = "container",
+    )
+    val content = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .height(48.dp)
+            .clip(RoundedCornerShape(corner))
+            .background(container)
+            .selectable(selected = selected, onClick = onClick, role = Role.Tab)
+            .padding(start = 8.dp, end = 16.dp),
+    ) {
+        ProfileBadge(name = name, tone = tone, size = 32.dp)
+        Text(
+            text = name,
+            style = MaterialTheme.typography.labelLarge,
+            color = content,
+            modifier = Modifier.padding(start = 10.dp),
+        )
+        Text(
+            text = count.toString(),
+            style = MaterialTheme.typography.labelMedium,
+            color = content.copy(alpha = 0.7f),
+            modifier = Modifier.padding(start = 6.dp),
         )
     }
 }
 
 @Composable
-private fun HomeContent(ui: ContactsUi, onOpen: (SecaContact) -> Unit) {
+private fun AddProfileTab(onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .height(48.dp)
+            .clip(CircleShape)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp),
+    ) {
+        Icon(
+            SecaIcons.Add,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = "Nouveau profil",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun HomeContent(ui: ContactsUi, listState: LazyListState, onOpen: (SecaContact) -> Unit) {
     if (!ui.loaded) return
     val searching = ui.query.isNotBlank()
     val shown = remember(ui) {
@@ -186,51 +230,118 @@ private fun HomeContent(ui: ContactsUi, onOpen: (SecaContact) -> Unit) {
         }
     }
     if (shown.isEmpty()) {
-        when {
-            searching -> SecaEmptyState(
-                title = "Aucun résultat",
-                description = "Aucun contact ne correspond à « ${ui.query.trim()} ».",
-            )
-            ui.currentProfileId == ProfileStore.Principal.id -> SecaEmptyState(
-                title = "Aucun contact",
-                description = "Les contacts enregistrés sur ce téléphone apparaîtront ici.",
-            )
-            else -> SecaEmptyState(
-                title = "Aucun contact",
-                description = "Rangez un contact dans « ${ui.currentProfile.name} » depuis sa fiche, ou créez-en un.",
-            )
-        }
+        EmptyHome(ui, searching)
         return
     }
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
-        // Room at the bottom so the last contact is not hidden behind the + button.
-        contentPadding = PaddingValues(top = 4.dp, bottom = 96.dp),
+        // Room at the bottom so the last contact clears the floating button.
+        contentPadding = PaddingValues(bottom = 112.dp),
     ) {
         if (searching) {
             // Search looks through every profile; results are grouped by profile.
             shown.groupBy { ui.profileOf(it) }.forEach { (profile, group) ->
-                item(key = "profile-${profile.id}") { SectionHeader(profile.name) }
-                items(group, key = { "result-${it.id}" }) { contact ->
-                    SecaContactRow(contact = contact, onClick = { onOpen(contact) })
-                }
+                item(key = "profile-${profile.id}") { SectionLabel(profile.name) }
+                contactGroup(group, keyPrefix = "result", onOpen = onOpen)
             }
         } else {
             val favorites = shown.filter { it.isFavorite }
             if (favorites.isNotEmpty()) {
-                item(key = "favorites") { SectionHeader("Favoris") }
-                items(favorites, key = { "favorite-${it.id}" }) { contact ->
-                    SecaContactRow(contact = contact, onClick = { onOpen(contact) })
-                }
+                item(key = "favorites-label") { SectionLabel("Favoris") }
+                item(key = "favorites") { FavoritesRow(favorites, onOpen) }
             }
             // The provider already sorts by name, so grouping keeps the letters in order.
             shown.groupBy { sectionLetterOf(it.displayName) }.forEach { (letter, group) ->
-                item(key = "letter-$letter") { SectionHeader(letter) }
-                items(group, key = { it.id }) { contact ->
-                    SecaContactRow(contact = contact, onClick = { onOpen(contact) })
-                }
+                item(key = "letter-$letter") { SectionLabel(letter) }
+                contactGroup(group, keyPrefix = "contact", onOpen = onOpen)
+            }
+            item(key = "count") {
+                Text(
+                    text = if (shown.size == 1) "1 contact" else "${shown.size} contacts",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp),
+                )
             }
         }
+    }
+}
+
+private fun LazyListScope.contactGroup(
+    group: List<SecaContact>,
+    keyPrefix: String,
+    onOpen: (SecaContact) -> Unit,
+) {
+    itemsIndexed(group, key = { _, contact -> "$keyPrefix-${contact.id}" }) { index, contact ->
+        SecaGroupItem(index = index, count = group.size) {
+            SecaContactRow(
+                contact = contact,
+                onClick = { onOpen(contact) },
+                supportingText = contact.phoneNumbers.firstOrNull()?.raw?.let(::formatNumber),
+            )
+        }
+    }
+}
+
+/** Favourites as a row of large avatars, the way a dialer shows speed dials. */
+@Composable
+private fun FavoritesRow(favorites: List<SecaContact>, onOpen: (SecaContact) -> Unit) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        items(favorites, key = { it.id }) { contact ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .width(88.dp)
+                    .clip(MaterialTheme.shapes.large)
+                    .clickable { onOpen(contact) }
+                    .padding(vertical = 8.dp),
+            ) {
+                SecaAvatar(
+                    initials = contact.initials,
+                    photoUri = contact.photoUri,
+                    size = 64.dp,
+                    seed = contact.displayName,
+                    expressive = true,
+                )
+                Text(
+                    text = contact.displayName.substringBefore(' '),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyHome(ui: ContactsUi, searching: Boolean) {
+    when {
+        searching -> SecaEmptyState(
+            icon = SecaIcons.Search,
+            title = "Aucun résultat",
+            description = "Aucun contact ne correspond à « ${ui.query.trim()} ».",
+        )
+        ui.currentProfileId == ProfileStore.Principal.id -> SecaEmptyState(
+            icon = SecaIcons.Contacts,
+            title = "Aucun contact",
+            description = "Les contacts enregistrés sur ce téléphone apparaîtront ici.",
+        )
+        else -> SecaEmptyState(
+            icon = SecaIcons.Label,
+            title = "« ${ui.currentProfile.name} » est vide",
+            description = "Ouvrez la fiche d'un contact pour le ranger ici, ou créez-en un.",
+        )
     }
 }
 

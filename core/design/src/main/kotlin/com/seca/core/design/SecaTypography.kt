@@ -23,12 +23,25 @@ val SecaTypography = Typography(
         lineHeight = 44.sp,
         letterSpacing = (-0.5).sp,
     ),
+    headlineLarge = TextStyle(
+        fontFamily = Platform,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
+        letterSpacing = (-0.5).sp,
+    ),
     headlineMedium = TextStyle(
         fontFamily = Platform,
         fontWeight = FontWeight.SemiBold,
         fontSize = 28.sp,
         lineHeight = 36.sp,
         letterSpacing = (-0.25).sp,
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = Platform,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 24.sp,
+        lineHeight = 32.sp,
     ),
     titleLarge = TextStyle(
         fontFamily = Platform,
@@ -42,6 +55,13 @@ val SecaTypography = Typography(
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.15.sp,
+    ),
+    titleSmall = TextStyle(
+        fontFamily = Platform,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.1.sp,
     ),
     bodyLarge = TextStyle(
         fontFamily = Platform,
@@ -63,5 +83,12 @@ val SecaTypography = Typography(
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp,
+    ),
+    labelMedium = TextStyle(
+        fontFamily = Platform,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp,
     ),
 )

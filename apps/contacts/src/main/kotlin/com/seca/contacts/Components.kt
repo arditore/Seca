@@ -1,16 +1,15 @@
 package com.seca.contacts
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -28,20 +27,37 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.seca.core.design.SecaIcons
+import com.seca.core.model.initialsOf
 
+/** A group's title, lined up with the content of the rounded group under it. */
 @Composable
-internal fun SectionHeader(text: String) {
+internal fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 4.dp),
+        modifier = modifier.padding(start = 32.dp, end = 32.dp, top = 24.dp, bottom = 8.dp),
     )
 }
 
-/** A back or close button, a title, and optional actions on the right. */
+/** A line of explanation under a group. */
+@Composable
+internal fun Hint(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 8.dp),
+    )
+}
+
+/** A back or close button, a title, and optional actions at the end. */
 @Composable
 internal fun SimpleTopBar(
     title: String,
@@ -53,20 +69,56 @@ internal fun SimpleTopBar(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
-            .padding(horizontal = 4.dp, vertical = 4.dp),
+            .height(64.dp)
+            .padding(horizontal = 4.dp),
     ) {
-        IconButton(onClick = onBack) { Icon(navigationIcon, contentDescription = "Retour") }
+        IconButton(onClick = onBack) {
+            Icon(navigationIcon, contentDescription = if (navigationIcon == SecaIcons.Close) "Fermer" else "Retour")
+        }
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 4.dp),
         )
         actions()
+    }
+}
+
+/**
+ * A profile's badge: its initial on the profile's own accent, so profiles can
+ * be told apart at a glance. [tone] is the profile's position in the list.
+ */
+@Composable
+internal fun ProfileBadge(name: String, tone: Int, size: Dp = 32.dp) {
+    val colors = MaterialTheme.colorScheme
+    val (container, content) = when (tone % 3) {
+        0 -> colors.primary to colors.onPrimary
+        1 -> colors.tertiary to colors.onTertiary
+        else -> colors.secondary to colors.onSecondary
+    }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(container),
+    ) {
+        Text(
+            text = initialsOf(name).take(1).ifEmpty { "?" },
+            color = content,
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontSize = (size.value * 0.44f).sp,
+                lineHeight = (size.value * 0.44f).sp,
+                fontWeight = FontWeight.SemiBold,
+            ),
+        )
     }
 }
 
@@ -81,6 +133,7 @@ internal fun ProfileNameDialog(
     var name by remember { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { Icon(SecaIcons.Label, contentDescription = null) },
         title = { Text(title) },
         text = {
             OutlinedTextField(
@@ -88,6 +141,7 @@ internal fun ProfileNameDialog(
                 onValueChange = { name = it },
                 singleLine = true,
                 label = { Text("Nom du profil") },
+                shape = MaterialTheme.shapes.medium,
             )
         },
         confirmButton = {
@@ -97,51 +151,17 @@ internal fun ProfileNameDialog(
     )
 }
 
-/** A round action button with its label underneath, as on a contact's card. */
-@Composable
-internal fun QuickAction(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick)
-            .padding(8.dp),
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(56.dp)
-                .clip(MaterialTheme.shapes.extraLarge)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-        ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 6.dp),
-        )
-    }
-}
-
 /** Dropdown entries for choosing a profile, with a check on [selectedId]. */
 @Composable
-internal fun ProfileMenuItems(
-    profiles: List<Profile>,
-    selectedId: String,
-    label: (Profile) -> String = { it.name },
-    onSelect: (Profile) -> Unit,
-) {
-    profiles.forEach { profile ->
+internal fun ProfileMenuItems(ui: ContactsUi, selectedId: String, onSelect: (Profile) -> Unit) {
+    ui.profiles.forEachIndexed { index, profile ->
         DropdownMenuItem(
-            text = { Text(label(profile)) },
-            leadingIcon = {
-                if (profile.id == selectedId) {
-                    Icon(SecaIcons.Check, contentDescription = null)
-                } else {
-                    Spacer(Modifier.size(24.dp))
-                }
+            text = { Text(profile.name) },
+            leadingIcon = { ProfileBadge(profile.name, tone = index, size = 28.dp) },
+            trailingIcon = if (profile.id == selectedId) {
+                { Icon(SecaIcons.Check, contentDescription = "Profil actuel") }
+            } else {
+                null
             },
             onClick = { onSelect(profile) },
         )
