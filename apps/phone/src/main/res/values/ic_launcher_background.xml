@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Deep blue, from the Phone identity's hue in the default Océan palette (the
+         Contacts hue plus one 34° step). A launcher icon is rendered by the system
+         before any Compose theme exists, so it cannot follow the user's colours. -->
+    <color name="ic_launcher_background">#FF1F3D75</color>
+</resources>

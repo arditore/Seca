@@ -23,3 +23,4 @@ include(":apps:catalog")
 
 include(":core:contacts")
 include(":apps:contacts")
+include(":apps:phone")

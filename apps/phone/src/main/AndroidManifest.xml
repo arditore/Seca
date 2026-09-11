@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The call history, and the contacts it is matched against. No INTERNET
+         permission, ever: the app cannot send a call history anywhere. -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Asked the first time the user places a call. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- Seca Contacts' profiles, readable only by apps signed with the same key. -->
+    <uses-permission android:name="com.seca.permission.READ_PROFILES" />
+
+    <!-- Lets Seca Contacts place a call in one tap through PlaceCallActivity. Only apps
+         signed with the same key get it, so no other app can call without CALL_PHONE. -->
+    <permission
+        android:name="com.seca.permission.PLACE_CALLS"
+        android:label="Passer des appels avec Seca Téléphone"
+        android:protectionLevel="signature" />
+
+    <!-- Not required: without a SIM the history and the contacts still show, and
+         calls simply cannot be placed. -->
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
+    <!-- The bottom bar opens the other Seca apps, or the system's messaging app until
+         Seca Messages exists. -->
+    <queries>
+        <package android:name="com.seca.contacts" />
+        <package android:name="com.seca.messages" />
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="smsto" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Seca Téléphone"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SecaPhone">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.SecaPhone"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- "Open the keypad", from any app, with or without a number. -->
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tel" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".PlaceCallActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:permission="com.seca.permission.PLACE_CALLS"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="com.seca.phone.action.CALL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="tel" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

@@ -1,0 +1,167 @@
+package com.seca.phone
+
+import android.Manifest
+import android.app.Activity
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.SecaIcons
+import com.seca.core.design.SecaMotion
+import com.seca.core.design.SecaTheme
+import com.seca.core.design.component.SecaEmptyState
+import com.seca.core.design.component.SecaSuiteBar
+
+/** Stands for the voicemail in the pending-call slot, which otherwise holds a number. */
+private const val VOICEMAIL = "voicemail"
+
+@Composable
+fun PhoneApp(
+    callLogGranted: Boolean,
+    contactsGranted: Boolean,
+    onPermissionsResult: () -> Unit,
+    dialRequest: DialRequest?,
+    onDialRequestHandled: () -> Unit,
+    viewModel: PhoneViewModel = viewModel(),
+) {
+    val context = LocalContext.current
+    val ui by viewModel.ui.collectAsState()
+
+    var permanentlyDenied by remember { mutableStateOf(false) }
+    val accessLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        onPermissionsResult()
+        // After a refusal, no rationale means "don't ask again": only Settings can grant it now.
+        permanentlyDenied = result[Manifest.permission.READ_CALL_LOG] != true &&
+            (context as? Activity)?.shouldShowRequestPermissionRationale(Manifest.permission.READ_CALL_LOG) == false
+    }
+
+    // The right to call is asked the first time the user places a call, and the call then goes through.
+    var pendingCall by remember { mutableStateOf<String?>(null) }
+    val callLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val target = pendingCall
+        pendingCall = null
+        when {
+            !granted -> Toast.makeText(context, "Autorisez les appels pour appeler depuis Seca Téléphone", Toast.LENGTH_LONG).show()
+            target == VOICEMAIL -> callVoicemail(context)
+            target != null -> placeCall(context, target)
+        }
+    }
+    val onCall: (String) -> Unit = { number ->
+        if (!placeCall(context, number)) {
+            pendingCall = number
+            callLauncher.launch(Manifest.permission.CALL_PHONE)
+        }
+    }
+    val onVoicemail: () -> Unit = {
+        if (!callVoicemail(context)) {
+            pendingCall = VOICEMAIL
+            callLauncher.launch(Manifest.permission.CALL_PHONE)
+        }
+    }
+
+    // Held above the screen transitions, so the history keeps its scroll position.
+    val homeListState = rememberLazyListState()
+
+    LaunchedEffect(callLogGranted, contactsGranted) { viewModel.start(callLogGranted, contactsGranted) }
+    LaunchedEffect(dialRequest) {
+        if (dialRequest != null) {
+            viewModel.openDialer(dialRequest.number)
+            onDialRequestHandled()
+        }
+    }
+    BackHandler(enabled = viewModel.backStack.size > 1) { viewModel.back() }
+
+    SecaTheme(identity = SecaAppIdentity.Phone, palette = ui.palette) {
+        // The keypad works without access to the history: calling must never depend on it.
+        if (!callLogGranted && viewModel.backStack.last() !is PhoneScreen.Dialer) {
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.surface,
+                bottomBar = { SecaSuiteBar(current = SecaAppIdentity.Phone, onSelect = { openSibling(context, it) }) },
+            ) { padding ->
+                SecaEmptyState(
+                    icon = SecaIcons.Phone,
+                    title = "Votre historique d'appels",
+                    description = "Seca Téléphone affiche les appels de ce téléphone et reconnaît vos contacts. " +
+                        "Rien ne quitte l'appareil : l'application n'a pas accès à Internet.",
+                    modifier = Modifier.padding(padding),
+                    action = {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (permanentlyDenied) {
+                                Button(onClick = { openAppSettings(context) }) { Text("Ouvrir les réglages") }
+                            } else {
+                                Button(
+                                    onClick = {
+                                        accessLauncher.launch(
+                                            arrayOf(Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_CONTACTS),
+                                        )
+                                    },
+                                ) { Text("Autoriser l'accès") }
+                            }
+                            TextButton(onClick = { viewModel.openDialer("") }) { Text("Ouvrir le clavier") }
+                        }
+                    },
+                )
+            }
+        } else {
+            AnimatedContent(
+                targetState = viewModel.backStack.last() to viewModel.backStack.size,
+                transitionSpec = {
+                    val forward = targetState.second >= initialState.second
+                    val keypad = targetState.first is PhoneScreen.Dialer || initialState.first is PhoneScreen.Dialer
+                    if (keypad) {
+                        // The keypad rises from the bottom and sinks back down.
+                        (slideInVertically(SecaMotion.emphasized()) { if (forward) it / 3 else -it / 12 } + fadeIn(SecaMotion.standard()))
+                            .togetherWith(
+                                slideOutVertically(SecaMotion.emphasized()) { if (forward) -it / 12 else it / 3 } +
+                                    fadeOut(SecaMotion.standard()),
+                            )
+                    } else {
+                        val direction = if (forward) 1 else -1
+                        (slideInHorizontally(SecaMotion.emphasized()) { direction * it / 4 } + fadeIn(SecaMotion.standard()))
+                            .togetherWith(
+                                slideOutHorizontally(SecaMotion.emphasized()) { -direction * it / 4 } +
+                                    fadeOut(SecaMotion.standard()),
+                            )
+                    }
+                },
+                label = "screens",
+            ) { (screen, _) ->
+                when (screen) {
+                    PhoneScreen.Home -> HomeScreen(ui, viewModel, homeListState, onCall)
+                    is PhoneScreen.Dialer -> DialerScreen(screen.initial, ui, viewModel, onCall, onVoicemail)
+                    is PhoneScreen.CallDetail -> CallDetailScreen(screen.number, ui, viewModel, onCall)
+                }
+            }
+        }
+    }
+}
