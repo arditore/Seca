@@ -46,6 +46,10 @@ data class ContactDetail(
     val organization: ContactField?,
     val jobTitle: String,
     val website: ContactField?,
+    /** The contact's own ringtone, or null for the phone's. */
+    val ringtone: String?,
+    /** Whether this contact's calls go straight to the voicemail. */
+    val sendToVoicemail: Boolean,
     /** As the provider keeps it: "1990-05-12", or "--05-12" for a day without a year. */
     val birthday: ContactField?,
     val note: ContactField?,
@@ -102,13 +106,25 @@ class ContactsRepository(
     suspend fun contactDetail(id: Long): ContactDetail? = withContext(Dispatchers.IO) {
         val head = resolver.query(
             ContentUris.withAppendedId(Contacts.CONTENT_URI, id),
-            arrayOf(Contacts.LOOKUP_KEY, Contacts.DISPLAY_NAME_PRIMARY, Contacts.STARRED),
+            arrayOf(
+                Contacts.LOOKUP_KEY,
+                Contacts.DISPLAY_NAME_PRIMARY,
+                Contacts.STARRED,
+                Contacts.CUSTOM_RINGTONE,
+                Contacts.SEND_TO_VOICEMAIL,
+            ),
             null,
             null,
             null,
         )?.use { cursor ->
             if (cursor.moveToFirst()) {
-                Head(cursor.getString(0).orEmpty(), cursor.getString(1).orEmpty(), cursor.getInt(2) == 1)
+                Head(
+                    lookupKey = cursor.getString(0).orEmpty(),
+                    displayName = cursor.getString(1).orEmpty(),
+                    starred = cursor.getInt(2) == 1,
+                    ringtone = cursor.getString(3),
+                    sendToVoicemail = cursor.getInt(4) == 1,
+                )
             } else {
                 null
             }
@@ -182,6 +198,8 @@ class ContactsRepository(
             organization = organization,
             jobTitle = jobTitle,
             website = website,
+            ringtone = head.ringtone,
+            sendToVoicemail = head.sendToVoicemail,
             birthday = birthday,
             note = note,
             rawContactId = rawContactId,
@@ -257,6 +275,22 @@ class ContactsRepository(
     suspend fun deleteContact(id: Long) {
         withContext(Dispatchers.IO) {
             resolver.delete(ContentUris.withAppendedId(Contacts.CONTENT_URI, id), null, null)
+        }
+    }
+
+    /** Gives a contact their own ringtone, or null to go back to the phone's. */
+    suspend fun setRingtone(id: Long, ringtone: String?) {
+        withContext(Dispatchers.IO) {
+            val values = ContentValues().apply { put(Contacts.CUSTOM_RINGTONE, ringtone) }
+            resolver.update(ContentUris.withAppendedId(Contacts.CONTENT_URI, id), values, null, null)
+        }
+    }
+
+    /** Sends this contact's calls straight to the voicemail, without ringing. */
+    suspend fun setSendToVoicemail(id: Long, on: Boolean) {
+        withContext(Dispatchers.IO) {
+            val values = ContentValues().apply { put(Contacts.SEND_TO_VOICEMAIL, if (on) 1 else 0) }
+            resolver.update(ContentUris.withAppendedId(Contacts.CONTENT_URI, id), values, null, null)
         }
     }
 
@@ -554,7 +588,13 @@ class ContactsRepository(
         }
     }
 
-    private data class Head(val lookupKey: String, val displayName: String, val starred: Boolean)
+    private data class Head(
+        val lookupKey: String,
+        val displayName: String,
+        val starred: Boolean,
+        val ringtone: String?,
+        val sendToVoicemail: Boolean,
+    )
 }
 
 private fun displayNameOf(input: ContactInput): String =

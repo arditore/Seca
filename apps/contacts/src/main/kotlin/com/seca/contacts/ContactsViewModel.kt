@@ -282,6 +282,21 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /** Null goes back to the phone's own ringtone. */
+    fun setRingtone(id: Long, ringtone: String?) {
+        viewModelScope.launch {
+            repository.setRingtone(id, ringtone)
+            load()
+        }
+    }
+
+    fun setSendToVoicemail(id: Long, on: Boolean) {
+        viewModelScope.launch {
+            repository.setSendToVoicemail(id, on)
+            load()
+        }
+    }
+
     fun setStarred(id: Long, starred: Boolean) {
         viewModelScope.launch {
             repository.setStarred(id, starred)

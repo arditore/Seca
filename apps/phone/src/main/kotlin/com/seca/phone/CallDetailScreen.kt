@@ -207,6 +207,7 @@ private fun HistoryRow(call: CallRecord, ui: PhoneUi, showNumber: Boolean) {
     val context = LocalContext.current
     val details = listOfNotNull(
         "${dayLabel(call.date)}, ${timeOf(context, call.date)}",
+        ui.simLabels[call.accountId],
         durationOf(call.durationSeconds),
         if (showNumber) ui.numbers.display(call.number) else null,
     ).joinToString(" · ")

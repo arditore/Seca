@@ -1,6 +1,9 @@
 package com.seca.phone
 
+import android.Manifest
 import android.app.Application
+import android.content.pm.PackageManager
+import android.telecom.TelecomManager
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -62,6 +65,8 @@ data class PhoneUi(
     val profiles: SharedProfiles = SharedProfiles(),
     val query: String = "",
     val filter: CallFilter = CallFilter.All,
+    /** SIM name by account, filled only when the phone holds more than one SIM. */
+    val simLabels: Map<String, String> = emptyMap(),
 ) {
     /** The palette picked in Seca Contacts; null follows the wallpaper. */
     val palette: SecaPalette? get() = SecaPalette.entries.firstOrNull { it.name == profiles.palette }
@@ -108,6 +113,7 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
 
     /** (Re)loads what the granted permissions allow, then follows every change. */
     fun start(callLogGranted: Boolean, contactsGranted: Boolean) {
+        loadSims()
         watching?.cancel()
         watching = viewModelScope.launch {
             if (contactsGranted) {
@@ -172,6 +178,28 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
             NumberIndex(list, numbers)
         }
         _ui.update { regrouped(it.copy(contacts = list, index = index)) }
+    }
+
+    /**
+     * Names the SIMs, so the history can say which one carried a call. Needs
+     * the phone-state permission, which comes with being the phone app; with a
+     * single SIM there is nothing worth saying.
+     */
+    private fun loadSims() {
+        val context = getApplication<Application>()
+        if (context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) return
+        val telecom = context.getSystemService(TelecomManager::class.java) ?: return
+        val labels = runCatching {
+            val accounts = telecom.callCapablePhoneAccounts
+            if (accounts.size < 2) {
+                emptyMap()
+            } else {
+                accounts.associate { handle ->
+                    handle.id to (telecom.getPhoneAccount(handle)?.label?.toString()?.takeIf { it.isNotBlank() } ?: "SIM")
+                }
+            }
+        }.getOrDefault(emptyMap())
+        _ui.update { it.copy(simLabels = labels) }
     }
 
     private suspend fun loadProfiles() {

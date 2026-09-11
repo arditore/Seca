@@ -26,6 +26,8 @@ data class CallRecord(
     val presentation: Presentation,
     /** The name the system dialer stored at the time, used when the contact is no longer visible. */
     val cachedName: String?,
+    /** Which SIM carried the call; named only when the phone has more than one. */
+    val accountId: String? = null,
 )
 
 /**
@@ -43,6 +45,7 @@ class CallLogRepository(private val resolver: ContentResolver) {
             Calls.DURATION,
             Calls.NUMBER_PRESENTATION,
             Calls.CACHED_NAME,
+            Calls.PHONE_ACCOUNT_ID,
         )
         val uri = Calls.CONTENT_URI.buildUpon()
             .appendQueryParameter(Calls.LIMIT_PARAM_KEY, limit.toString())
@@ -59,6 +62,7 @@ class CallLogRepository(private val resolver: ContentResolver) {
                             durationSeconds = c.getLong(4),
                             presentation = presentationOf(c.getInt(5)),
                             cachedName = c.getString(6)?.takeIf { it.isNotBlank() },
+                            accountId = c.getString(7),
                         ),
                     )
                 }

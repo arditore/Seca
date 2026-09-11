@@ -1,8 +1,14 @@
 package com.seca.contacts
 
+import android.app.Activity
+import android.content.Intent
+import android.media.RingtoneManager
+import android.net.Uri
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
+import androidx.core.net.toUri
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.ContactDetail
 import com.seca.core.design.SecaIcons
@@ -72,6 +79,13 @@ internal fun DetailScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var menuOpen by remember { mutableStateOf(false) }
+    // The system's own ringtone picker: Seca never reads the music on the phone.
+    val ringtonePicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val picked = result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+            withWrite { viewModel.setRingtone(id, picked?.toString()) }
+        }
+    }
     var confirmDelete by remember { mutableStateOf(false) }
     val current = detail
 
@@ -105,6 +119,33 @@ internal fun DetailScreen(
                                 onClick = {
                                     menuOpen = false
                                     scope.launch { viewModel.vCardOf(id)?.let { shareVCard(context, current.displayName, it) } }
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Sonnerie du contact") },
+                                leadingIcon = { Icon(SecaIcons.Bell, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
+                                        .putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE)
+                                        .putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Sonnerie du contact")
+                                        .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                                        .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+                                        .putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, current.ringtone?.toUri())
+                                    runCatching { ringtonePicker.launch(intent) }
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Appels vers la messagerie") },
+                                leadingIcon = { Icon(SecaIcons.Voicemail, contentDescription = null) },
+                                trailingIcon = if (current.sendToVoicemail) {
+                                    { Icon(SecaIcons.Check, contentDescription = "Activé") }
+                                } else {
+                                    null
+                                },
+                                onClick = {
+                                    menuOpen = false
+                                    withWrite { viewModel.setSendToVoicemail(id, !current.sendToVoicemail) }
                                 },
                             )
                             DropdownMenuItem(

@@ -284,6 +284,7 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
     val title = contact?.displayName ?: callerLabel(call, ui.numbers)
     val details = buildList {
         add(timeOf(context, call.date))
+        ui.simLabels[call.accountId]?.let { add(it) }
         if (contact != null) {
             ui.profileOf(contact).takeIf { it.id != Profile.Principal.id }?.let { add(it.name) }
         } else if (call.callable) {
