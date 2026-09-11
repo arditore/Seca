@@ -57,7 +57,11 @@ data class ContactInput(
  * nothing — both are normal results, not errors. Contacts created here go to the
  * device's own account and are never synced anywhere.
  */
-class ContactsRepository(private val resolver: ContentResolver) {
+class ContactsRepository(
+    private val resolver: ContentResolver,
+    /** Fills in the E.164 form of saved numbers, the one callers are matched on. */
+    private val numbers: PhoneNumbers? = null,
+) {
 
     /** Every visible contact, in the order the system sorts names. */
     suspend fun contacts(): List<SecaContact> = withContext(Dispatchers.IO) {
@@ -289,6 +293,14 @@ class ContactsRepository(private val resolver: ContentResolver) {
             .withValue(Data.MIMETYPE, mimeType)
             .withValue(Data.DATA1, field.value.trim())
             .withValue(Data.DATA2, field.type)
+            .apply { normalizedNumber(mimeType, field.value)?.let { withValue(Phone.NORMALIZED_NUMBER, it) } }
+
+    /**
+     * The E.164 form of a phone number, read with the SIM's country. Left out
+     * when the number is not understood, so the provider computes its own.
+     */
+    private fun normalizedNumber(mimeType: String, value: String): String? =
+        if (mimeType == Phone.CONTENT_ITEM_TYPE) numbers?.toE164(value) else null
 
     /** Turns the editor's list into deletes, updates and inserts against the saved rows. */
     private fun syncFields(
@@ -313,6 +325,7 @@ class ContactsRepository(private val resolver: ContentResolver) {
                 ops += ContentProviderOperation.newUpdate(Data.CONTENT_URI)
                     .withSelection("${Data._ID} = ?", arrayOf(savedId.toString()))
                     .withValue(Data.DATA1, field.value.trim())
+                    .apply { normalizedNumber(mimeType, field.value)?.let { withValue(Phone.NORMALIZED_NUMBER, it) } }
                     .build()
             }
         }

@@ -224,7 +224,7 @@ private fun HomeContent(ui: ContactsUi, listState: LazyListState, onOpen: (SecaC
     val searching = ui.query.isNotBlank()
     val shown = remember(ui) {
         if (searching) {
-            ui.contacts.filter { matchesQuery(it, ui.query) }
+            ui.contacts.filter { matchesQuery(it, ui.query, ui.numbers) }
         } else {
             ui.contacts.filter { ui.profileOf(it).id == ui.currentProfileId }
         }
@@ -283,7 +283,7 @@ private fun LazyListScope.contactGroup(
             SecaContactRow(
                 contact = contact,
                 onClick = { onOpen(contact) },
-                supportingText = contact.phoneNumbers.firstOrNull()?.raw?.let(::formatNumber),
+                supportingText = contact.phoneNumbers.firstOrNull()?.raw?.let(ui.numbers::display),
                 tone = ui.toneOf(ui.profileOf(contact)),
             )
         }

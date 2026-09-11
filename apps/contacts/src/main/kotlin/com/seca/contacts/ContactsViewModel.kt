@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.seca.core.contacts.ContactDetail
 import com.seca.core.contacts.ContactInput
 import com.seca.core.contacts.ContactsRepository
+import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.design.SecaPalette
 import com.seca.core.model.SecaContact
 import kotlinx.coroutines.Job
@@ -28,6 +29,8 @@ sealed interface Screen {
 }
 
 data class ContactsUi(
+    /** Reads numbers with the SIM's country. */
+    val numbers: PhoneNumbers,
     val loaded: Boolean = false,
     val contacts: List<SecaContact> = emptyList(),
     val profiles: List<Profile> = listOf(ProfileStore.Principal),
@@ -55,9 +58,10 @@ data class ContactsUi(
 
 class ContactsViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = ContactsRepository(application.contentResolver)
+    private val numbers = PhoneNumbers(PhoneNumbers.detectRegion(application))
+    private val repository = ContactsRepository(application.contentResolver, numbers)
     private val store = ProfileStore(application)
-    private val _ui = MutableStateFlow(ContactsUi())
+    private val _ui = MutableStateFlow(ContactsUi(numbers = numbers))
     val ui: StateFlow<ContactsUi> = _ui.asStateFlow()
 
     /** Kept here rather than in the composition, so it survives rotation. */

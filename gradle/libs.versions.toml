@@ -5,6 +5,7 @@ compose = "1.12.0"
 material3 = "1.5.0-alpha27"
 activityCompose = "1.13.0"
 coreKtx = "1.18.0"
+libphonenumber = "9.0.39"
 navigationCompose = "2.10.0"
 lifecycle = "2.11.0"
 coroutines = "1.11.0"
@@ -22,6 +23,7 @@ compose-foundation = { module = "androidx.compose.foundation:foundation", versio
 compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version.ref = "libphonenumber" }
 androidx-navigation-compose ={ module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }

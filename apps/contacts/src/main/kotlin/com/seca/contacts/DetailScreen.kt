@@ -210,7 +210,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
             SecaGroupItem(index = index, count = count) {
                 FieldRow(
                     icon = SecaIcons.Phone,
-                    value = formatNumber(field.value),
+                    value = ui.numbers.display(field.value),
                     label = Phone.getTypeLabel(resources, field.type, "").toString(),
                     onClick = { dial(context, field.value) },
                 ) {

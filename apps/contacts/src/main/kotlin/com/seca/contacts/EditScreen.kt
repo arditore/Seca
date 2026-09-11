@@ -138,7 +138,14 @@ internal fun EditScreen(
                 }
 
                 FormSection(SecaIcons.Phone) {
-                    FieldList(phones, label = "Numéro", keyboard = KeyboardType.Phone, removeLabel = "Retirer ce numéro")
+                    FieldList(
+                        phones,
+                        label = "Numéro",
+                        keyboard = KeyboardType.Phone,
+                        removeLabel = "Retirer ce numéro",
+                        // Says which country the number was read as: "06…" is French with a French SIM.
+                        describe = ui.numbers::describe,
+                    )
                     AddFieldButton("Ajouter un numéro") { phones.add(ContactField(null, "", Phone.TYPE_MOBILE)) }
                 }
 
@@ -229,6 +236,7 @@ private fun FieldList(
     label: String,
     keyboard: KeyboardType,
     removeLabel: String,
+    describe: ((String) -> String?)? = null,
 ) {
     fields.forEachIndexed { index, field ->
         FieldEditor(
@@ -236,6 +244,7 @@ private fun FieldList(
             label = label,
             keyboard = keyboard,
             removeLabel = removeLabel,
+            supporting = describe?.invoke(field.value),
             // A lone empty field has nothing to remove.
             removable = fields.size > 1 || field.value.isNotEmpty(),
             onChange = { fields[index] = field.copy(value = it) },
@@ -251,6 +260,7 @@ private fun FieldEditor(
     keyboard: KeyboardType,
     removeLabel: String,
     removable: Boolean,
+    supporting: String?,
     onChange: (String) -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -259,6 +269,7 @@ private fun FieldEditor(
             value = value,
             onValueChange = onChange,
             label = { Text(label) },
+            supportingText = supporting?.let { { Text(it) } },
             singleLine = true,
             shape = MaterialTheme.shapes.medium,
             keyboardOptions = KeyboardOptions(keyboardType = keyboard, imeAction = ImeAction.Next),
