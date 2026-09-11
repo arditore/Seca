@@ -13,6 +13,7 @@ import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.design.SecaPalette
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** The app's screens; the last entry of the back stack is the one shown. */
 sealed interface PhoneScreen {
@@ -125,14 +127,21 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setFilter(filter: CallFilter) = _ui.update { regrouped(it.copy(filter = filter)) }
 
+    // Every number is read here, off the main thread, before the screen sees it:
+    // the list then only looks results up, and scrolling never waits on parsing.
     private suspend fun loadCalls() {
         val calls = callLog.calls()
+        withContext(Dispatchers.Default) { calls.forEach { numbers.prepare(it.number) } }
         _ui.update { regrouped(it.copy(calls = calls, loaded = true)) }
     }
 
     private suspend fun loadContacts() {
         val list = contacts.contacts()
-        _ui.update { regrouped(it.copy(contacts = list, index = NumberIndex(list, numbers))) }
+        val index = withContext(Dispatchers.Default) {
+            list.forEach { contact -> contact.phoneNumbers.forEach { numbers.prepare(it.raw) } }
+            NumberIndex(list, numbers)
+        }
+        _ui.update { regrouped(it.copy(contacts = list, index = index)) }
     }
 
     private suspend fun loadProfiles() {

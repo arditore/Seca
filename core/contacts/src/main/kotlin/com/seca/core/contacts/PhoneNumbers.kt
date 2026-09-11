@@ -7,6 +7,8 @@ import com.google.i18n.phonenumbers.PhoneNumberUtil
 import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat
 import com.google.i18n.phonenumbers.Phonenumber
 import java.util.Locale
+import java.util.Optional
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Understands phone numbers the way the phone's owner writes them.
@@ -16,28 +18,45 @@ import java.util.Locale
  * French SIM, "06 95 86 61 33" and "+33 6 95 86 61 33" are the same line, and
  * with an American SIM "(201) 555-0123" needs no +1. Numbers keep the shape
  * their owner gave them — spaced out, never rewritten.
+ *
+ * Reading a number is slow next to drawing a frame, so each result is kept:
+ * the contacts and the call history repeat the same numbers. [prepare] does
+ * the reading ahead, off the main thread, so lists scroll without stalling.
  */
 class PhoneNumbers(val homeRegion: String) {
 
     private val util = PhoneNumberUtil.getInstance()
     private val homeCountryCode = util.getCountryCodeForRegion(homeRegion)
 
+    private val displays = ConcurrentHashMap<String, String>()
+    private val keys = ConcurrentHashMap<String, String>()
+    private val countries = ConcurrentHashMap<String, Optional<NumberCountry>>()
+    private val forms = ConcurrentHashMap<String, List<String>>()
+
+    /** Reads [raw] now so that later lookups are instant. Call it off the main thread. */
+    fun prepare(raw: String) {
+        display(raw)
+        key(raw)
+        countryOf(raw)
+        formsOf(raw)
+    }
+
     /**
      * The number spaced out in the shape it was written: national stays
      * national, international stays international. A foreign number always
      * shows its country code. Anything not understood is left as it is.
      */
-    fun display(raw: String): String {
-        val number = parse(raw)?.takeIf(util::isValidNumber) ?: return raw.trim()
+    fun display(raw: String): String = displays.getOrPut(raw) {
+        val number = parse(raw)?.takeIf(util::isValidNumber) ?: return@getOrPut raw.trim()
         val writtenInternational = raw.trimStart().let { it.startsWith("+") || it.startsWith("00") }
         val international = writtenInternational || number.countryCode != homeCountryCode
-        return util.format(number, if (international) PhoneNumberFormat.INTERNATIONAL else PhoneNumberFormat.NATIONAL)
+        util.format(number, if (international) PhoneNumberFormat.INTERNATIONAL else PhoneNumberFormat.NATIONAL)
     }
 
     /** Equal for every way of writing the same line: E.164 when the number is understood, else its digits. */
-    fun key(raw: String): String {
-        val number = parse(raw)?.takeIf(util::isPossibleNumber) ?: return raw.filter(Char::isDigit)
-        return util.format(number, PhoneNumberFormat.E164)
+    fun key(raw: String): String = keys.getOrPut(raw) {
+        val number = parse(raw)?.takeIf(util::isPossibleNumber) ?: return@getOrPut raw.filter(Char::isDigit)
+        util.format(number, PhoneNumberFormat.E164)
     }
 
     /** E.164, the form the contacts provider matches callers on, or null when the number is not understood. */
@@ -45,12 +64,16 @@ class PhoneNumbers(val homeRegion: String) {
         parse(raw)?.takeIf(util::isValidNumber)?.let { util.format(it, PhoneNumberFormat.E164) }
 
     /** The country of a valid number, or null. */
-    fun countryOf(raw: String): NumberCountry? {
-        val number = parse(raw)?.takeIf(util::isValidNumber) ?: return null
-        val region = util.getRegionCodeForNumber(number) ?: return null
-        val name = Locale.Builder().setRegion(region).build().getDisplayCountry(Locale.getDefault())
-        return NumberCountry(region = region, displayName = name, isHome = region == homeRegion)
-    }
+    fun countryOf(raw: String): NumberCountry? = countries.getOrPut(raw) {
+        val number = parse(raw)?.takeIf(util::isValidNumber)
+        val region = number?.let(util::getRegionCodeForNumber)
+        Optional.ofNullable(
+            region?.let {
+                val name = Locale.Builder().setRegion(it).build().getDisplayCountry(Locale.getDefault())
+                NumberCountry(region = it, displayName = name, isHome = it == homeRegion)
+            },
+        )
+    }.orElse(null)
 
     /** One line for the editor: the number's country, or why it is not recognised. Null for an empty field. */
     fun describe(raw: String): String? {
@@ -81,10 +104,10 @@ class PhoneNumbers(val homeRegion: String) {
         return formatted
     }
 
-    private fun formsOf(raw: String): List<String> {
+    private fun formsOf(raw: String): List<String> = forms.getOrPut(raw) {
         val saved = raw.filter(Char::isDigit)
-        val number = parse(raw) ?: return listOf(saved)
-        return listOf(
+        val number = parse(raw) ?: return@getOrPut listOf(saved)
+        listOf(
             saved,
             util.format(number, PhoneNumberFormat.E164).filter(Char::isDigit),
             util.format(number, PhoneNumberFormat.NATIONAL).filter(Char::isDigit),

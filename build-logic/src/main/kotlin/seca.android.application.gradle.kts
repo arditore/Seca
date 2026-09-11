@@ -27,6 +27,22 @@ extensions.configure<ApplicationExtension> {
         includeInApk = false
         includeInBundle = false
     }
+    buildTypes {
+        getByName("release") {
+            // R8 shrinks and optimises the code, and the libraries' baseline profiles get
+            // compiled ahead of time: Compose scrolls far more smoothly than in a debug build.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            // F-Droid signs releases itself and needs them unsigned. To try a release on
+            // one's own phone, -Pseca.signReleaseWithDebugKey signs it with the debug key,
+            // the one the debug builds use, so it installs over them and the Seca apps
+            // still recognise each other.
+            if (providers.gradleProperty("seca.signReleaseWithDebugKey").isPresent) {
+                signingConfig = signingConfigs.getByName("debug")
+            }
+        }
+    }
     lint {
         warningsAsErrors = true
         abortOnError = true

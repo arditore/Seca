@@ -57,6 +57,7 @@ internal fun EditScreen(
     ui: ContactsUi,
     viewModel: ContactsViewModel,
     withWrite: (() -> Unit) -> Unit,
+    prefillPhone: String? = null,
 ) {
     var existing by remember(id) { mutableStateOf<ContactDetail?>(null) }
     var ready by remember(id) { mutableStateOf(false) }
@@ -80,7 +81,7 @@ internal fun EditScreen(
             }
         }
         // One empty field of each kind is always offered; blank ones are not saved.
-        if (phones.isEmpty()) phones.add(ContactField(null, "", Phone.TYPE_MOBILE))
+        if (phones.isEmpty()) phones.add(ContactField(null, prefillPhone.orEmpty(), Phone.TYPE_MOBILE))
         if (emails.isEmpty()) emails.add(ContactField(null, "", Email.TYPE_HOME))
         ready = true
     }

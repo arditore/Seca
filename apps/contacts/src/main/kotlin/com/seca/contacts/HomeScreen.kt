@@ -56,6 +56,7 @@ import com.seca.core.design.component.SecaSearchField
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSuiteBar
 import com.seca.core.model.SecaContact
+import com.seca.core.model.initialsOf
 import java.text.Normalizer
 
 @Composable
@@ -98,7 +99,12 @@ internal fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            HomeContent(ui, listState, onOpen = { viewModel.open(Screen.Detail(it.id)) })
+            HomeContent(
+                ui,
+                listState,
+                onOpen = { viewModel.open(Screen.Detail(it.id)) },
+                onOpenMyCard = { viewModel.open(Screen.MyCard) },
+            )
         }
     }
     if (addingProfile) {
@@ -221,7 +227,12 @@ private fun AddProfileTab(onClick: () -> Unit) {
 }
 
 @Composable
-private fun HomeContent(ui: ContactsUi, listState: LazyListState, onOpen: (SecaContact) -> Unit) {
+private fun HomeContent(
+    ui: ContactsUi,
+    listState: LazyListState,
+    onOpen: (SecaContact) -> Unit,
+    onOpenMyCard: () -> Unit,
+) {
     if (!ui.loaded) return
     val searching = ui.query.isNotBlank()
     val shown = remember(ui) {
@@ -231,8 +242,8 @@ private fun HomeContent(ui: ContactsUi, listState: LazyListState, onOpen: (SecaC
             ui.contacts.filter { ui.profileOf(it).id == ui.currentProfileId }
         }
     }
-    if (shown.isEmpty()) {
-        EmptyHome(ui, searching)
+    if (searching && shown.isEmpty()) {
+        EmptyHome(ui, searching = true)
         return
     }
     LazyColumn(
@@ -241,10 +252,18 @@ private fun HomeContent(ui: ContactsUi, listState: LazyListState, onOpen: (SecaC
         // Room at the bottom so the last contact clears the floating button.
         contentPadding = PaddingValues(bottom = 112.dp),
     ) {
+        if (!searching) {
+            item(key = "my-card", contentType = "my-card") { MyCardRow(ui, onOpenMyCard) }
+            if (shown.isEmpty()) {
+                item(key = "empty", contentType = "empty") {
+                    EmptyHome(ui, searching = false, modifier = Modifier.fillParentMaxHeight(0.6f))
+                }
+            }
+        }
         if (searching) {
             // Search looks through every profile; results are grouped by profile.
             shown.groupBy { ui.profileOf(it) }.forEach { (profile, group) ->
-                item(key = "profile-${profile.id}") { SecaSectionLabel(profile.name) }
+                item(key = "profile-${profile.id}", contentType = "label") { SecaSectionLabel(profile.name) }
                 contactGroup(group, keyPrefix = "result", ui = ui, onOpen = onOpen)
             }
         } else {
@@ -255,10 +274,10 @@ private fun HomeContent(ui: ContactsUi, listState: LazyListState, onOpen: (SecaC
             }
             // The provider already sorts by name, so grouping keeps the letters in order.
             shown.groupBy { sectionLetterOf(it.displayName) }.forEach { (letter, group) ->
-                item(key = "letter-$letter") { SecaSectionLabel(letter) }
+                item(key = "letter-$letter", contentType = "label") { SecaSectionLabel(letter) }
                 contactGroup(group, keyPrefix = "contact", ui = ui, onOpen = onOpen)
             }
-            item(key = "count") {
+            if (shown.isNotEmpty()) item(key = "count") {
                 Text(
                     text = if (shown.size == 1) "1 contact" else "${shown.size} contacts",
                     style = MaterialTheme.typography.labelMedium,
@@ -280,7 +299,12 @@ private fun LazyListScope.contactGroup(
     ui: ContactsUi,
     onOpen: (SecaContact) -> Unit,
 ) {
-    itemsIndexed(group, key = { _, contact -> "$keyPrefix-${contact.id}" }) { index, contact ->
+    // A shared content type lets the list reuse rows it scrolled past instead of building new ones.
+    itemsIndexed(
+        group,
+        key = { _, contact -> "$keyPrefix-${contact.id}" },
+        contentType = { _, _ -> "contact" },
+    ) { index, contact ->
         SecaGroupItem(index = index, count = group.size) {
             SecaContactRow(
                 contact = contact,
@@ -331,23 +355,75 @@ private fun FavoritesRow(favorites: List<SecaContact>, ui: ContactsUi, onOpen: (
 }
 
 @Composable
-private fun EmptyHome(ui: ContactsUi, searching: Boolean) {
+private fun EmptyHome(ui: ContactsUi, searching: Boolean, modifier: Modifier = Modifier) {
     when {
         searching -> SecaEmptyState(
             icon = SecaIcons.Search,
             title = "Aucun résultat",
             description = "Aucun contact ne correspond à « ${ui.query.trim()} ».",
+            modifier = modifier,
         )
         ui.currentProfileId == ProfileStore.Principal.id -> SecaEmptyState(
             icon = SecaIcons.Contacts,
             title = "Aucun contact",
             description = "Les contacts enregistrés sur ce téléphone apparaîtront ici.",
+            modifier = modifier,
         )
         else -> SecaEmptyState(
             icon = SecaIcons.Label,
             title = "« ${ui.currentProfile.name} » est vide",
             description = "Ouvrez la fiche d'un contact pour le ranger ici, ou créez-en un.",
+            modifier = modifier,
         )
+    }
+}
+
+/** "Ma fiche": the owner's own card, first in the list. */
+@Composable
+private fun MyCardRow(ui: ContactsUi, onClick: () -> Unit) {
+    val mine = ui.myNumbers
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp)
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+    ) {
+        SecaAvatar(
+            initials = initialsOf(ui.myCard.name),
+            photoUri = null,
+            size = 64.dp,
+            seed = MY_CARD_SEED,
+            expressive = true,
+            photo = ui.myPhoto,
+        )
+        Column(
+            Modifier
+                .weight(1f)
+                .padding(start = 16.dp),
+        ) {
+            Text(
+                text = ui.myCard.displayName,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = if (mine.isEmpty()) {
+                    "Ajoutez votre numéro, votre nom et une photo"
+                } else {
+                    mine.joinToString(" · ", transform = ui.numbers::display)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

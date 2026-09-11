@@ -5,6 +5,7 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.database.ContentObserver
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
@@ -204,6 +205,17 @@ class ContactsRepository(
             null,
             null,
         )?.use { if (it.moveToFirst()) it.getString(0) else null }
+    }
+
+    /** The contact behind a contacts link handed over by another app, or null. */
+    suspend fun contactIdFor(uri: Uri): Long? = withContext(Dispatchers.IO) {
+        try {
+            Contacts.lookupContact(resolver, uri)?.let(ContentUris::parseId)
+        } catch (e: SecurityException) {
+            null
+        } catch (e: IllegalArgumentException) {
+            null
+        }
     }
 
     private fun queryContacts(): List<ContactRow> {

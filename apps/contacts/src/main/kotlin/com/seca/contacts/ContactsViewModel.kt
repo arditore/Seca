@@ -1,7 +1,10 @@
 package com.seca.contacts
 
 import android.app.Application
+import android.net.Uri
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.seca.core.contacts.ContactDetail
@@ -11,6 +14,7 @@ import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.design.SecaPalette
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,15 +22,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** The app's screens; the last entry of the back stack is the one shown. */
 sealed interface Screen {
     data object Home : Screen
     data class Detail(val id: Long) : Screen
 
-    /** [id] is null when creating a contact. */
-    data class Edit(val id: Long?) : Screen
+    /** [id] is null when creating a contact; [prefillPhone] comes from another app's "add". */
+    data class Edit(val id: Long?, val prefillPhone: String? = null) : Screen
     data object Settings : Screen
+    data object MyCard : Screen
 }
 
 data class ContactsUi(
@@ -40,7 +46,15 @@ data class ContactsUi(
     val query: String = "",
     /** Null, the default, follows the wallpaper colours (Material You). */
     val palette: SecaPalette? = null,
+    val myCard: MyCard = MyCard(),
+    val myPhoto: ImageBitmap? = null,
+    /** The phone's SIM lines, read only once the owner allowed it. */
+    val simLines: List<SimLine> = emptyList(),
 ) {
+    /** The owner's numbers: those the SIMs carry, then those typed in, each once. */
+    val myNumbers: List<String>
+        get() = (simLines.mapNotNull { it.number } + myCard.numbers).distinctBy { numbers.key(it) }
+
     val currentProfile: Profile
         get() = profiles.firstOrNull { it.id == currentProfileId } ?: ProfileStore.Principal
 
@@ -62,6 +76,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     private val numbers = PhoneNumbers(PhoneNumbers.detectRegion(application))
     private val repository = ContactsRepository(application.contentResolver, numbers)
     private val store = ProfileStore(application)
+    private val myCards = MyCardStore(application)
     private val _ui = MutableStateFlow(ContactsUi(numbers = numbers))
     val ui: StateFlow<ContactsUi> = _ui.asStateFlow()
 
@@ -72,6 +87,8 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
 
     init {
         refreshPreferences()
+        loadMyCard()
+        refreshSimLines()
     }
 
     /** Loads once access is granted, then follows every change to the provider. */
@@ -89,6 +106,19 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
 
     fun back() {
         if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
+    }
+
+    /** Opens straight on [screen] for another app's request, so going back returns to that app. */
+    fun startWith(screen: Screen) {
+        backStack.clear()
+        backStack.add(screen)
+    }
+
+    /** Opens the card of the contact behind a contacts link from another app. */
+    fun openExternal(uri: Uri) {
+        viewModelScope.launch {
+            repository.contactIdFor(uri)?.let { startWith(Screen.Detail(it)) }
+        }
     }
 
     fun setQuery(query: String) = _ui.update { it.copy(query = query) }
@@ -123,6 +153,36 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     fun setPalette(palette: SecaPalette?) {
         store.setPalette(palette)
         refreshPreferences()
+    }
+
+    fun saveMyCard(name: String, numbers: List<String>) {
+        myCards.save(name, numbers)
+        loadMyCard()
+    }
+
+    fun setMyPhoto(uri: Uri) {
+        viewModelScope.launch { if (myCards.setPhoto(uri)) loadMyCard() }
+    }
+
+    fun removeMyPhoto() {
+        myCards.removePhoto()
+        loadMyCard()
+    }
+
+    /** Reads the SIM lines again, e.g. once the owner allowed it; nothing without the permissions. */
+    fun refreshSimLines() {
+        viewModelScope.launch {
+            val lines = withContext(Dispatchers.IO) { readSimLines(getApplication<Application>()) }
+            _ui.update { it.copy(simLines = lines) }
+        }
+    }
+
+    private fun loadMyCard() {
+        viewModelScope.launch {
+            val card = myCards.load()
+            val photo = myCards.photo()?.asImageBitmap()
+            _ui.update { it.copy(myCard = card, myPhoto = photo) }
+        }
     }
 
     suspend fun detail(id: Long): ContactDetail? = repository.contactDetail(id)
@@ -161,6 +221,11 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
 
     private suspend fun load() {
         val contacts = repository.contacts()
+        // Every number is read here, off the main thread: the list then only
+        // looks results up, and scrolling never waits on parsing.
+        withContext(Dispatchers.Default) {
+            contacts.forEach { contact -> contact.phoneNumbers.forEach { numbers.prepare(it.raw) } }
+        }
         _ui.update { it.copy(loaded = true, contacts = contacts) }
     }
 

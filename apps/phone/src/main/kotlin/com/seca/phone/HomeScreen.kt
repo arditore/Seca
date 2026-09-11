@@ -137,8 +137,11 @@ private fun Recents(ui: PhoneUi, listState: LazyListState, onCall: (String) -> U
             item(key = "favorites") { FavoritesRow(favorites, ui, onCall) }
         }
         byDay.values.forEach { rows ->
-            item(key = "day-${rows.first().latest.id}") { SecaSectionLabel(dayLabel(rows.first().latest.date)) }
-            itemsIndexed(rows, key = { _, group -> group.latest.id }) { index, group ->
+            item(key = "day-${rows.first().latest.id}", contentType = "label") {
+                SecaSectionLabel(dayLabel(rows.first().latest.date))
+            }
+            // A shared content type lets the list reuse rows it scrolled past instead of building new ones.
+            itemsIndexed(rows, key = { _, group -> group.latest.id }, contentType = { _, _ -> "call" }) { index, group ->
                 SecaGroupItem(index = index, count = rows.size) {
                     CallRow(group, ui, onCall, onOpen)
                 }

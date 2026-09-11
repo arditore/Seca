@@ -16,7 +16,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.design.SecaIcons
-import java.util.Date
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /** The arrow or symbol telling how a call went, missed calls in the error colour. */
 @Composable
@@ -81,8 +84,14 @@ internal fun callerLabel(call: CallRecord, numbers: PhoneNumbers): String = when
     else -> call.cachedName ?: numbers.display(call.number)
 }
 
-/** The time of day, in the phone's 12- or 24-hour setting. */
-internal fun timeOf(context: Context, millis: Long): String = DateFormat.getTimeFormat(context).format(Date(millis))
+private val Time24: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private val Time12: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault()) }
+
+/** The time of day, in the phone's 12- or 24-hour setting; the formatters are made once, not per row. */
+internal fun timeOf(context: Context, millis: Long): String {
+    val formatter = if (DateFormat.is24HourFormat(context)) Time24 else Time12
+    return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).format(formatter)
+}
 
 /** "3 min 12 s", "45 s", or nothing for a call never picked up. */
 internal fun durationOf(seconds: Long): String? = when {

@@ -1,5 +1,6 @@
 package com.seca.core.design.component
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -14,7 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -23,20 +26,19 @@ import com.seca.core.design.SecaIcons
 import com.seca.core.design.secaToneColors
 
 /**
- * A contact's avatar, rendered as initials.
+ * A person's avatar: their [photo] when there is one, else their initials.
  *
- * Its colour is the accent family [tone] (see [secaToneColors]), never a
+ * The colour is the accent family [tone] (see [secaToneColors]), never a
  * random pick: Seca Contacts passes the contact's profile, so every contact of
  * a profile shares one colour and the colour says where the contact belongs.
  * [expressive] swaps the circle for one of the M3 Expressive shapes, picked by
- * [seed] so a contact always keeps its own, for places where the avatar is the
+ * [seed] so a person always keeps their own, where the avatar is the
  * centrepiece.
  *
- * Photo rendering is NOT implemented. [photoUri] is accepted so call sites do
- * not have to change when it lands, but passing one currently has no effect —
- * no image library enters the APK until an app actually needs one. When it is
- * added, the image should carry `contentDescription = null`: the adjacent name
- * already identifies the contact, so announcing it twice hurts screen readers.
+ * [photoUri], the contacts provider's thumbnail, is accepted so call sites do
+ * not have to change when it is drawn, but it has no effect yet; [photo] is an
+ * image the app already decoded. It carries no description: the adjacent name
+ * already identifies the person, and announcing it twice hurts screen readers.
  */
 @Composable
 fun SecaAvatar(
@@ -47,6 +49,7 @@ fun SecaAvatar(
     tone: Int = 0,
     seed: String = initials,
     expressive: Boolean = false,
+    photo: ImageBitmap? = null,
 ) {
     val (container, content) = secaToneColors(tone)
     val shape = if (expressive) expressiveShapeFor(seed) else CircleShape
@@ -57,10 +60,20 @@ fun SecaAvatar(
             .background(container),
         contentAlignment = Alignment.Center,
     ) {
-        if (initials.isBlank()) {
-            Icon(SecaIcons.Contacts, contentDescription = null, tint = content, modifier = Modifier.size(size * 0.5f))
-        } else {
-            Text(
+        when {
+            photo != null -> Image(
+                bitmap = photo,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize(),
+            )
+            initials.isBlank() -> Icon(
+                SecaIcons.Contacts,
+                contentDescription = null,
+                tint = content,
+                modifier = Modifier.size(size * 0.5f),
+            )
+            else -> Text(
                 text = initials,
                 color = content,
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -74,7 +87,7 @@ fun SecaAvatar(
     }
 }
 
-/** A few of the M3 Expressive shapes; [seed] picks one, so a contact always keeps its own. */
+/** A few of the M3 Expressive shapes; [seed] picks one, so a person always keeps their own. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun expressiveShapeFor(seed: String): Shape = when (Math.floorMod(seed.hashCode(), 4)) {

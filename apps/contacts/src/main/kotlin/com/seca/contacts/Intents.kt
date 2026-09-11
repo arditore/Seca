@@ -2,13 +2,30 @@ package com.seca.contacts
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import com.seca.core.design.SecaAppIdentity
 
-/** Opens the dialer with [number] filled in; the user confirms the call there. */
-internal fun dial(context: Context, number: String) =
-    startSafely(context, Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", number, null)))
+private const val SECA_PHONE = "com.seca.phone"
+private const val SECA_PHONE_CALL = "com.seca.phone.action.CALL"
+private const val PLACE_CALLS = "com.seca.permission.PLACE_CALLS"
+
+/**
+ * Calls [number] in one tap through Seca Phone, when it is installed and
+ * signed with the same key. Otherwise opens the dialer with the number filled
+ * in, for the user to confirm.
+ */
+internal fun dial(context: Context, number: String) {
+    val tel = Uri.fromParts("tel", number, null)
+    val call = Intent(SECA_PHONE_CALL, tel).setPackage(SECA_PHONE)
+    val allowed = context.checkSelfPermission(PLACE_CALLS) == PackageManager.PERMISSION_GRANTED
+    if (allowed && call.resolveActivity(context.packageManager) != null) {
+        startSafely(context, call)
+    } else {
+        startSafely(context, Intent(Intent.ACTION_DIAL, tel))
+    }
+}
 
 internal fun sms(context: Context, number: String) =
     startSafely(context, Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", number, null)))
