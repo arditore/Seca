@@ -34,7 +34,12 @@ import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.component.SecaGroupItem
+import com.seca.core.design.component.SecaHint
 import com.seca.core.design.component.SecaPaletteSwatch
+import com.seca.core.design.component.SecaProfileBadge
+import com.seca.core.design.component.SecaSectionLabel
+import com.seca.core.design.component.SecaTopBar
+import com.seca.core.model.Profile
 
 @Composable
 internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
@@ -45,7 +50,7 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SimpleTopBar(title = "", onBack = { viewModel.back() }) },
+        topBar = { SecaTopBar(title = "", onBack = { viewModel.back() }) },
     ) { padding ->
         Column(
             Modifier
@@ -61,7 +66,7 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
             )
 
-            SectionLabel("Couleurs")
+            SecaSectionLabel("Couleurs")
             SecaGroupItem(index = 0, count = 2) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -135,9 +140,9 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                     }
                 }
             }
-            Hint("Le mode clair ou sombre suit celui du téléphone.")
+            SecaHint("Le mode clair ou sombre suit celui du téléphone.")
 
-            SectionLabel("Profils")
+            SecaSectionLabel("Profils")
             val total = ui.profiles.size + 1
             ui.profiles.forEachIndexed { index, profile ->
                 SecaGroupItem(index = index, count = total) {
@@ -162,9 +167,9 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                     )
                 }
             }
-            Hint("Rangez vos contacts par profil, comme Travail ou Famille. Supprimer un profil ne supprime aucun contact.")
+            SecaHint("Rangez vos contacts par profil, comme Travail ou Famille. Supprimer un profil ne supprime aucun contact.")
 
-            SectionLabel("Confidentialité")
+            SecaSectionLabel("Confidentialité")
             SecaGroupItem(index = 0, count = 1) {
                 Row(Modifier.padding(16.dp)) {
                     IconBadge(SecaIcons.Lock)
@@ -269,7 +274,7 @@ private fun ProfileRow(
             .fillMaxWidth()
             .padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
     ) {
-        ProfileBadge(profile.name, tone = tone, size = 40.dp)
+        SecaProfileBadge(profile.name, tone = tone, size = 40.dp)
         Column(
             Modifier
                 .weight(1f)

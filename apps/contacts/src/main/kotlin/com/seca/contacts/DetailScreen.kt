@@ -44,6 +44,10 @@ import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaGroupItem
+import com.seca.core.design.component.SecaProfileBadge
+import com.seca.core.design.component.SecaSectionLabel
+import com.seca.core.design.component.SecaTopBar
+import com.seca.core.model.Profile
 import com.seca.core.model.initialsOf
 
 @Composable
@@ -68,7 +72,7 @@ internal fun DetailScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            SimpleTopBar(title = "", onBack = { viewModel.back() }) {
+            SecaTopBar(title = "", onBack = { viewModel.back() }) {
                 if (current != null) {
                     IconButton(onClick = { withWrite { viewModel.setStarred(id, !current.starred) } }) {
                         Icon(
@@ -194,7 +198,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
             }
         }
 
-        SectionLabel("Coordonnées")
+        SecaSectionLabel("Coordonnées")
         val count = detail.phones.size + detail.emails.size
         if (count == 0) {
             SecaGroupItem(index = 0, count = 1) {
@@ -251,7 +255,7 @@ private fun ProfilePill(
                 .clickable(onClickLabel = "Changer de profil") { open = true }
                 .padding(start = 4.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
         ) {
-            ProfileBadge(profile.name, tone = ui.toneOf(profile), size = 28.dp)
+            SecaProfileBadge(profile.name, tone = ui.toneOf(profile), size = 28.dp)
             Text(
                 text = profile.name,
                 style = MaterialTheme.typography.labelLarge,

@@ -6,6 +6,13 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
 
+    <!-- Seca apps signed with the same key read the profiles through ProfilesProvider;
+         no other app can. -->
+    <permission
+        android:name="com.seca.permission.READ_PROFILES"
+        android:label="Lire les profils Seca"
+        android:protectionLevel="signature" />
+
     <!-- The bottom bar opens the other Seca apps when they are installed. -->
     <queries>
         <package android:name="com.seca.phone" />
@@ -29,6 +36,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:name=".ProfilesProvider"
+            android:authorities="com.seca.contacts.profiles"
+            android:exported="true"
+            android:permission="com.seca.permission.READ_PROFILES" />
     </application>
 
 </manifest>

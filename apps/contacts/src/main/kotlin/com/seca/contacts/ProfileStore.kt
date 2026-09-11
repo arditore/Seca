@@ -2,26 +2,26 @@ package com.seca.contacts
 
 import android.content.Context
 import androidx.core.content.edit
+import com.seca.core.contacts.SharedProfilesContract
 import com.seca.core.design.SecaPalette
+import com.seca.core.model.Profile
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
-/** A category of contacts, such as "Travail". */
-data class Profile(val id: String, val name: String)
-
 /**
  * Seca's own contact categories ("profiles") and preferences.
  *
- * Kept in this app's private storage, on the device only: other apps on the
- * phone cannot see which profile a contact belongs to. Assignments are keyed by
- * the contact's lookup key, which survives the provider re-aggregating
- * contacts, unlike its row id. Seca Phone will read them to show a caller's
- * profile.
+ * Kept in this app's private storage, on the device only. Other apps on the
+ * phone cannot see which profile a contact belongs to; the Seca apps signed
+ * with the same key read them through [ProfilesProvider], and every change is
+ * announced so they refresh. Assignments are keyed by the contact's lookup
+ * key, which survives the provider re-aggregating contacts, unlike its row id.
  */
 class ProfileStore(context: Context) {
 
     private val prefs = context.getSharedPreferences("seca_contacts", Context.MODE_PRIVATE)
+    private val resolver = context.contentResolver
 
     /** Principal first, then the profiles the user created, in creation order. */
     fun profiles(): List<Profile> = listOf(Principal) + customProfiles()
@@ -71,6 +71,7 @@ class ProfileStore(context: Context) {
         prefs.edit {
             if (palette == null) remove(KEY_PALETTE) else putString(KEY_PALETTE, palette.name)
         }
+        announceChange()
     }
 
     private fun customProfiles(): List<Profile> {
@@ -85,14 +86,21 @@ class ProfileStore(context: Context) {
         val json = JSONArray()
         profiles.forEach { json.put(JSONObject().put("id", it.id).put("name", it.name)) }
         prefs.edit { putString(KEY_PROFILES, json.toString()) }
+        announceChange()
     }
 
     private fun saveAssignments(assignments: Map<String, String>) {
         prefs.edit { putString(KEY_ASSIGNMENTS, JSONObject(assignments).toString()) }
+        announceChange()
+    }
+
+    /** Tells Seca Phone and Seca Messages to read the profiles again. */
+    private fun announceChange() {
+        resolver.notifyChange(SharedProfilesContract.BASE_URI, null)
     }
 
     companion object {
-        val Principal = Profile(id = "principal", name = "Principal")
+        val Principal = Profile.Principal
         private const val KEY_PROFILES = "profiles"
         private const val KEY_ASSIGNMENTS = "assignments"
         private const val KEY_CURRENT = "current_profile"

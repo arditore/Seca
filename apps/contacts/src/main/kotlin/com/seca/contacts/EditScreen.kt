@@ -47,6 +47,8 @@ import com.seca.core.contacts.ContactField
 import com.seca.core.contacts.ContactInput
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
+import com.seca.core.design.component.SecaProfileBadge
+import com.seca.core.design.component.SecaTopBar
 import com.seca.core.model.initialsOf
 
 @Composable
@@ -89,7 +91,7 @@ internal fun EditScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            SimpleTopBar(
+            SecaTopBar(
                 title = if (id == null) "Nouveau contact" else "Modifier le contact",
                 onBack = { viewModel.back() },
                 navigationIcon = SecaIcons.Close,
@@ -176,7 +178,7 @@ internal fun EditScreen(
                                 selected = profile.id == profileId,
                                 onClick = { profileId = profile.id },
                                 label = { Text(profile.name) },
-                                leadingIcon = { ProfileBadge(profile.name, tone = index, size = 20.dp) },
+                                leadingIcon = { SecaProfileBadge(profile.name, tone = index, size = 20.dp) },
                             )
                         }
                     }

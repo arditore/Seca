@@ -9,6 +9,7 @@ import com.seca.core.contacts.ContactInput
 import com.seca.core.contacts.ContactsRepository
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.design.SecaPalette
+import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow

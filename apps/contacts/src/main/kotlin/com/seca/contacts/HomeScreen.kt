@@ -51,7 +51,9 @@ import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaContactRow
 import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaGroupItem
+import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSearchField
+import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSuiteBar
 import com.seca.core.model.SecaContact
 import java.text.Normalizer
@@ -176,7 +178,7 @@ private fun ProfileTab(name: String, tone: Int, count: Int, selected: Boolean, o
             .selectable(selected = selected, onClick = onClick, role = Role.Tab)
             .padding(start = 8.dp, end = 16.dp),
     ) {
-        ProfileBadge(name = name, tone = tone, size = 32.dp)
+        SecaProfileBadge(name = name, tone = tone, size = 32.dp)
         Text(
             text = name,
             style = MaterialTheme.typography.labelLarge,
@@ -242,18 +244,18 @@ private fun HomeContent(ui: ContactsUi, listState: LazyListState, onOpen: (SecaC
         if (searching) {
             // Search looks through every profile; results are grouped by profile.
             shown.groupBy { ui.profileOf(it) }.forEach { (profile, group) ->
-                item(key = "profile-${profile.id}") { SectionLabel(profile.name) }
+                item(key = "profile-${profile.id}") { SecaSectionLabel(profile.name) }
                 contactGroup(group, keyPrefix = "result", ui = ui, onOpen = onOpen)
             }
         } else {
             val favorites = shown.filter { it.isFavorite }
             if (favorites.isNotEmpty()) {
-                item(key = "favorites-label") { SectionLabel("Favoris") }
+                item(key = "favorites-label") { SecaSectionLabel("Favoris") }
                 item(key = "favorites") { FavoritesRow(favorites, ui, onOpen) }
             }
             // The provider already sorts by name, so grouping keeps the letters in order.
             shown.groupBy { sectionLetterOf(it.displayName) }.forEach { (letter, group) ->
-                item(key = "letter-$letter") { SectionLabel(letter) }
+                item(key = "letter-$letter") { SecaSectionLabel(letter) }
                 contactGroup(group, keyPrefix = "contact", ui = ui, onOpen = onOpen)
             }
             item(key = "count") {
