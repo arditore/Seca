@@ -1,6 +1,7 @@
 package com.seca.phone
 
 import android.content.Intent
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,7 +41,13 @@ import com.seca.core.design.component.SecaTopBar
 private data class SystemEntry(val icon: ImageVector, val title: String, val subtitle: String, val intents: List<Intent>)
 
 @Composable
-internal fun SettingsScreen(ui: PhoneUi, viewModel: PhoneViewModel, withCallLogWrite: (() -> Unit) -> Unit) {
+internal fun SettingsScreen(
+    ui: PhoneUi,
+    viewModel: PhoneViewModel,
+    withCallLogWrite: (() -> Unit) -> Unit,
+    isDefaultDialer: Boolean,
+    onBecomeDefault: () -> Unit,
+) {
     val context = LocalContext.current
     var confirmClear by remember { mutableStateOf(false) }
     val dynamic = ui.palette == null
@@ -78,6 +85,35 @@ internal fun SettingsScreen(ui: PhoneUi, viewModel: PhoneViewModel, withCallLogW
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
             )
+
+            SecaSectionLabel("Application Téléphone")
+            SecaGroupItem(
+                index = 0,
+                count = 1,
+                onClick = {
+                    if (isDefaultDialer) {
+                        openSystemScreen(context, listOf(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)))
+                    } else {
+                        onBecomeDefault()
+                    }
+                },
+            ) {
+                SecaSettingRow(
+                    icon = SecaIcons.Phone,
+                    title = if (isDefaultDialer) "Seca Téléphone gère vos appels" else "Utiliser Seca Téléphone par défaut",
+                    subtitle = if (isDefaultDialer) {
+                        "Écran d'appel, profil de l'appelant, blocage des numéros"
+                    } else {
+                        "Pour voir qui appelle et répondre depuis Seca, même écran verrouillé"
+                    },
+                    trailing = if (isDefaultDialer) {
+                        { Icon(SecaIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                    } else {
+                        null
+                    },
+                )
+            }
+            SecaHint("Android continue de sonner et de vibrer ; Seca affiche l'appel. Vous pouvez revenir en arrière à tout moment.")
 
             SecaSectionLabel("Couleurs")
             if (ui.profiles.connected) {

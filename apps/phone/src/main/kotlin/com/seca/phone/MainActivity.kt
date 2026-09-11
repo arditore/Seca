@@ -1,6 +1,7 @@
 package com.seca.phone
 
 import android.Manifest
+import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -17,6 +18,7 @@ class MainActivity : ComponentActivity() {
     /** Re-read on every resume: the user may grant or revoke access in Settings. */
     private val callLogGranted = mutableStateOf(false)
     private val contactsGranted = mutableStateOf(false)
+    private val defaultDialer = mutableStateOf(false)
     private val dialRequest = mutableStateOf<DialRequest?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,6 +29,7 @@ class MainActivity : ComponentActivity() {
             PhoneApp(
                 callLogGranted = callLogGranted.value,
                 contactsGranted = contactsGranted.value,
+                isDefaultDialer = defaultDialer.value,
                 onPermissionsResult = ::refreshPermissions,
                 dialRequest = dialRequest.value,
                 onDialRequestHandled = { dialRequest.value = null },
@@ -47,6 +50,8 @@ class MainActivity : ComponentActivity() {
     private fun refreshPermissions() {
         callLogGranted.value = granted(Manifest.permission.READ_CALL_LOG)
         contactsGranted.value = granted(Manifest.permission.READ_CONTACTS)
+        // Being the phone app is what lets Seca show the call screen; the user may change it in Settings.
+        defaultDialer.value = getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_DIALER) == true
     }
 
     private fun granted(permission: String) = checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED

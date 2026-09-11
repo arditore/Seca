@@ -80,6 +80,8 @@ internal fun DialerScreen(
         typed += key
         playTone(key)
         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        // A hidden service code runs as soon as it is complete, as on every dialer.
+        if (sendSpecialCode(context, typed)) typed = ""
     }
     val longPress: (Char) -> Unit = { key ->
         when {

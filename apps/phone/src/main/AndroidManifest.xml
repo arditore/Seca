@@ -9,8 +9,16 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- Asked the first time the user places a call. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- Granted with the phone-app role: names the SIM a call goes through. -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <!-- Seca Contacts' profiles, readable only by apps signed with the same key. -->
     <uses-permission android:name="com.seca.permission.READ_PROFILES" />
+
+    <!-- The call screen: its notification, its full screen when the phone is locked,
+         and the proximity sensor that darkens the screen against the ear. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Lets Seca Contacts place a call in one tap through PlaceCallActivity. Only apps
          signed with the same key get it, so no other app can call without CALL_PHONE. -->
@@ -80,6 +88,41 @@
                 <data android:scheme="tel" />
             </intent-filter>
         </activity>
+
+        <!-- The call screen lives in its own task: it shows over the lock screen and
+             never mixes with the app's own back stack. -->
+        <activity
+            android:name=".call.InCallActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:taskAffinity="com.seca.phone.incall"
+            android:theme="@style/Theme.SecaPhone"
+            android:turnScreenOn="true" />
+
+        <!-- Android hands every call to this service once Seca Téléphone is the default
+             phone app. Only the system may bind to it. -->
+        <service
+            android:name=".call.SecaInCallService"
+            android:exported="true"
+            android:permission="android.permission.BIND_INCALL_SERVICE">
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_UI"
+                android:value="true" />
+            <!-- False: Android keeps playing the ringtone and the vibration itself. -->
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_RINGING"
+                android:value="false" />
+            <intent-filter>
+                <action android:name="android.telecom.InCallService" />
+            </intent-filter>
+        </service>
+
+        <!-- "Refuser" and "Raccrocher" in the call notifications; this app's only. -->
+        <receiver
+            android:name=".call.CallActionReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

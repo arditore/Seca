@@ -3,11 +3,13 @@ package com.seca.phone
 import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.provider.BlockedNumberContract
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.telecom.TelecomManager
@@ -66,6 +68,25 @@ internal fun openSibling(context: Context, identity: SecaAppIdentity) {
             ?: Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING)
     }
     startSafely(context, intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+/** Adds [number] to Android's own blocked list; only the default phone app may. */
+internal fun blockNumber(context: Context, number: String): Boolean =
+    BlockedNumberContract.canCurrentUserBlockNumbers(context) &&
+        runCatching {
+            val values = ContentValues().apply {
+                put(BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER, number)
+            }
+            context.contentResolver.insert(BlockedNumberContract.BlockedNumbers.CONTENT_URI, values) != null
+        }.getOrDefault(false)
+
+/**
+ * Runs a hidden service code such as *#*#4636#*#* once it is fully typed.
+ * Android only accepts them from the default phone app; elsewhere nothing happens.
+ */
+internal fun sendSpecialCode(context: Context, typed: String): Boolean {
+    val code = Regex("^\\*#\\*#(\\d+)#\\*#\\*$").find(typed)?.groupValues?.get(1) ?: return false
+    return runCatching { context.getSystemService(TelephonyManager::class.java)?.sendDialerSpecialCode(code) }.isSuccess
 }
 
 /** Copies [number]; Android confirms it on screen by itself. */

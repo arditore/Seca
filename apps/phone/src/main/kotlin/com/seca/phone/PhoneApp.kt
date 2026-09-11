@@ -2,6 +2,7 @@ package com.seca.phone
 
 import android.Manifest
 import android.app.Activity
+import android.app.role.RoleManager
 import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -50,6 +51,7 @@ private const val VOICEMAIL = "voicemail"
 fun PhoneApp(
     callLogGranted: Boolean,
     contactsGranted: Boolean,
+    isDefaultDialer: Boolean,
     onPermissionsResult: () -> Unit,
     dialRequest: DialRequest?,
     onDialRequestHandled: () -> Unit,
@@ -105,6 +107,28 @@ fun PhoneApp(
         }
     }
     val onDeleteCalls: (List<Long>) -> Unit = { ids -> withCallLogWrite { viewModel.deleteCalls(ids) } }
+
+    // Becoming the phone app: notifications are asked first, since the incoming-call
+    // notification is what shows a call while the phone is in use.
+    val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        onPermissionsResult()
+    }
+    val requestRole = {
+        val roles = context.getSystemService(RoleManager::class.java)
+        if (roles != null && roles.isRoleAvailable(RoleManager.ROLE_DIALER) && !roles.isRoleHeld(RoleManager.ROLE_DIALER)) {
+            roleLauncher.launch(roles.createRequestRoleIntent(RoleManager.ROLE_DIALER))
+        }
+    }
+    val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        requestRole()
+    }
+    val onBecomeDefault: () -> Unit = {
+        if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            requestRole()
+        } else {
+            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     // Held above the screen transitions, so the history keeps its scroll position.
     val homeListState = rememberLazyListState()
@@ -174,10 +198,18 @@ fun PhoneApp(
                 label = "screens",
             ) { (screen, _) ->
                 when (screen) {
-                    PhoneScreen.Home -> HomeScreen(ui, viewModel, homeListState, onCall, onDeleteCalls)
+                    PhoneScreen.Home -> HomeScreen(
+                        ui = ui,
+                        viewModel = viewModel,
+                        listState = homeListState,
+                        onCall = onCall,
+                        onDeleteCalls = onDeleteCalls,
+                        isDefaultDialer = isDefaultDialer,
+                        onBecomeDefault = onBecomeDefault,
+                    )
                     is PhoneScreen.Dialer -> DialerScreen(screen.initial, ui, viewModel, onCall, onVoicemail)
                     is PhoneScreen.CallDetail -> CallDetailScreen(screen.number, ui, viewModel, onCall, onDeleteCalls)
-                    PhoneScreen.Settings -> SettingsScreen(ui, viewModel, withCallLogWrite)
+                    PhoneScreen.Settings -> SettingsScreen(ui, viewModel, withCallLogWrite, isDefaultDialer, onBecomeDefault)
                 }
             }
         }

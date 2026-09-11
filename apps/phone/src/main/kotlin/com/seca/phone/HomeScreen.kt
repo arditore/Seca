@@ -1,5 +1,7 @@
 package com.seca.phone
 
+import android.provider.BlockedNumberContract
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -19,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -28,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -64,8 +68,11 @@ internal fun HomeScreen(
     listState: LazyListState,
     onCall: (String) -> Unit,
     onDeleteCalls: (List<Long>) -> Unit,
+    isDefaultDialer: Boolean,
+    onBecomeDefault: () -> Unit,
 ) {
     val context = LocalContext.current
+    var bannerDismissed by remember { mutableStateOf(false) }
     // The button carries its label at the top of the list and shrinks to an icon once scrolled.
     val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
     val actions = RowActions(
@@ -116,7 +123,14 @@ internal fun HomeScreen(
             if (ui.query.isNotBlank()) {
                 SearchResults(ui, actions)
             } else {
-                Recents(ui, listState, actions)
+                Recents(
+                    ui = ui,
+                    listState = listState,
+                    actions = actions,
+                    showBanner = !isDefaultDialer && !bannerDismissed,
+                    onBecomeDefault = onBecomeDefault,
+                    onDismissBanner = { bannerDismissed = true },
+                )
             }
         }
     }
@@ -164,12 +178,22 @@ private fun filterLabel(filter: CallFilter): String = when (filter) {
 }
 
 @Composable
-private fun Recents(ui: PhoneUi, listState: LazyListState, actions: RowActions) {
+private fun Recents(
+    ui: PhoneUi,
+    listState: LazyListState,
+    actions: RowActions,
+    showBanner: Boolean,
+    onBecomeDefault: () -> Unit,
+    onDismissBanner: () -> Unit,
+) {
     if (!ui.loaded) return
     val favorites = remember(ui.contacts) { ui.contacts.filter { it.isFavorite && it.phoneNumbers.isNotEmpty() } }
     val showFavorites = favorites.isNotEmpty() && ui.filter == CallFilter.All
     if (ui.groups.isEmpty() && !showFavorites) {
-        EmptyHistory(ui.filter)
+        Column {
+            if (showBanner) DefaultDialerBanner(onBecomeDefault, onDismissBanner)
+            EmptyHistory(ui.filter)
+        }
         return
     }
     val byDay = remember(ui.groups) { ui.groups.groupBy { dayOf(it.latest.date) } }
@@ -179,6 +203,9 @@ private fun Recents(ui: PhoneUi, listState: LazyListState, actions: RowActions) 
         // Room at the bottom so the last call clears the floating button.
         contentPadding = PaddingValues(bottom = 112.dp),
     ) {
+        if (showBanner) {
+            item(key = "default-banner", contentType = "banner") { DefaultDialerBanner(onBecomeDefault, onDismissBanner) }
+        }
         if (showFavorites) {
             item(key = "favorites-label", contentType = "label") { SecaSectionLabel("Favoris") }
             item(key = "favorites", contentType = "favorites") { FavoritesRow(favorites, ui, actions.onCall) }
@@ -192,6 +219,34 @@ private fun Recents(ui: PhoneUi, listState: LazyListState, actions: RowActions) 
                 SecaGroupItem(index = index, count = rows.size) {
                     CallRow(group, ui, actions)
                 }
+            }
+        }
+    }
+}
+
+/** Offers to make Seca the phone app, which is what lets it show incoming calls. */
+@Composable
+private fun DefaultDialerBanner(onActivate: () -> Unit, onDismiss: () -> Unit) {
+    SecaGroupItem(index = 0, count = 1, modifier = Modifier.padding(top = 8.dp)) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(SecaIcons.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = "Répondre aux appels avec Seca",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 12.dp),
+                )
+            }
+            Text(
+                text = "Vous verrez qui appelle et son profil, et vous pourrez répondre depuis l'écran verrouillé.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Button(onClick = onActivate) { Text("Activer") }
+                TextButton(onClick = onDismiss, modifier = Modifier.padding(start = 8.dp)) { Text("Plus tard") }
             }
         }
     }
@@ -309,6 +364,18 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
                         menuOpen = false
                         addContact(context, call.number)
                     }
+                }
+            }
+            // Blocking is Android's own list, which only the default phone app may change.
+            if (call.callable && BlockedNumberContract.canCurrentUserBlockNumbers(context)) {
+                MenuEntry("Bloquer ce numéro", SecaIcons.Block) {
+                    menuOpen = false
+                    val blocked = blockNumber(context, call.number)
+                    Toast.makeText(
+                        context,
+                        if (blocked) "Numéro bloqué" else "Blocage impossible",
+                        Toast.LENGTH_SHORT,
+                    ).show()
                 }
             }
             MenuEntry(
