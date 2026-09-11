@@ -2,6 +2,7 @@ package com.seca.phone
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,11 +13,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,17 +42,52 @@ import com.seca.core.design.component.SecaTopBar
 
 /** Who a number belongs to, what can be done with it, and every call with them. */
 @Composable
-internal fun CallDetailScreen(number: String, ui: PhoneUi, viewModel: PhoneViewModel, onCall: (String) -> Unit) {
+internal fun CallDetailScreen(
+    number: String,
+    ui: PhoneUi,
+    viewModel: PhoneViewModel,
+    onCall: (String) -> Unit,
+    onDeleteCalls: (List<Long>) -> Unit,
+) {
     val context = LocalContext.current
     val match = remember(number, ui.index) { ui.index?.find(number) }
     val contact = match?.contact
     val history = remember(number, ui.calls, ui.index) { ui.historyFor(number) }
     // A contact with several numbers: each call says which one it was.
     val showNumbers = (contact?.phoneNumbers?.size ?: 0) > 1
+    var menuOpen by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "", onBack = { viewModel.back() }) },
+        topBar = {
+            SecaTopBar(title = "", onBack = { viewModel.back() }) {
+                Box {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(SecaIcons.MoreVert, contentDescription = "Plus d'options")
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Copier le numéro") },
+                            leadingIcon = { Icon(SecaIcons.ContentCopy, contentDescription = null) },
+                            onClick = {
+                                menuOpen = false
+                                copyNumber(context, match?.number?.raw ?: number)
+                            },
+                        )
+                        if (history.isNotEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("Supprimer cet historique") },
+                                leadingIcon = { Icon(SecaIcons.Delete, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    onDeleteCalls(history.map { it.id })
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        },
     ) { padding ->
         LazyColumn(
             modifier = Modifier

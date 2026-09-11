@@ -1,6 +1,7 @@
 package com.seca.core.contacts
 
 import android.content.ContentResolver
+import android.content.ContentValues
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Handler
@@ -42,6 +43,8 @@ data class SharedProfiles(
     val assignments: Map<String, String> = emptyMap(),
     /** The palette picked in Seca Contacts, by name, or null for the wallpaper colours. */
     val palette: String? = null,
+    /** Whether Seca Contacts answered: without it there are no profiles to show nor colours to set. */
+    val connected: Boolean = false,
 ) {
     fun profileForKey(lookupKey: String): Profile =
         profiles.firstOrNull { it.id == assignments[lookupKey] } ?: Profile.Principal
@@ -76,9 +79,22 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
                 profiles = profiles?.takeIf { it.isNotEmpty() } ?: listOf(Profile.Principal),
                 assignments = assignments.orEmpty(),
                 palette = palette,
+                connected = profiles != null,
             )
         } catch (e: SecurityException) {
             SharedProfiles()
+        }
+    }
+
+    /** Sets the palette of every Seca app, kept by Seca Contacts; false when it cannot be reached. */
+    suspend fun setPalette(palette: String?): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val values = ContentValues().apply { put(SharedProfilesContract.COLUMN_PALETTE, palette) }
+            resolver.update(SharedProfilesContract.SETTINGS_URI, values, null, null) > 0
+        } catch (e: SecurityException) {
+            false
+        } catch (e: IllegalArgumentException) {
+            false
         }
     }
 

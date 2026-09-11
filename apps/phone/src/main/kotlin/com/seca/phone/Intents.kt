@@ -1,6 +1,8 @@
 package com.seca.phone
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -9,6 +11,7 @@ import android.os.Bundle
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.telecom.TelecomManager
+import android.telephony.TelephonyManager
 import com.seca.core.design.SecaAppIdentity
 
 private const val SECA_CONTACTS = "com.seca.contacts"
@@ -64,6 +67,34 @@ internal fun openSibling(context: Context, identity: SecaAppIdentity) {
     }
     startSafely(context, intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
+
+/** Copies [number]; Android confirms it on screen by itself. */
+internal fun copyNumber(context: Context, number: String) {
+    context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Numéro", number))
+}
+
+/**
+ * The system's Wi-Fi calling settings, then the mobile network settings that
+ * hold the same switch on some phones. Android gives the first screen no
+ * public name, so its action is spelled out.
+ */
+internal fun wifiCallingSettings(): List<Intent> = listOf(
+    Intent("android.settings.WIFI_CALLING_SETTINGS"),
+    Intent(Settings.ACTION_NETWORK_OPERATOR_SETTINGS),
+)
+
+/** The operator's call settings: forwarding, waiting, caller ID. */
+internal fun callSettings(): Intent = Intent(TelecomManager.ACTION_SHOW_CALL_SETTINGS)
+
+internal fun voicemailSettings(): Intent = Intent(TelephonyManager.ACTION_CONFIGURE_VOICEMAIL)
+
+/** The system's list of blocked numbers, shared by every app. */
+internal fun blockedNumbers(context: Context): Intent? =
+    context.getSystemService(TelecomManager::class.java)?.createManageBlockedNumbersIntent()
+
+/** Opens the first of these system screens the phone has; false when it has none of them. */
+internal fun openSystemScreen(context: Context, intents: List<Intent>): Boolean =
+    intents.any { runCatching { context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess }
 
 internal fun openAppSettings(context: Context) = startSafely(
     context,

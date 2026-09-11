@@ -11,6 +11,7 @@ import com.seca.core.contacts.ContactDetail
 import com.seca.core.contacts.ContactInput
 import com.seca.core.contacts.ContactsRepository
 import com.seca.core.contacts.PhoneNumbers
+import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.design.SecaPalette
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
@@ -89,6 +90,10 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
         refreshPreferences()
         loadMyCard()
         refreshSimLines()
+        // Seca Phone can change the suite's palette too: follow it.
+        viewModelScope.launch {
+            SharedProfilesClient(application.contentResolver).changes().conflate().collect { refreshPreferences() }
+        }
     }
 
     /** Loads once access is granted, then follows every change to the provider. */

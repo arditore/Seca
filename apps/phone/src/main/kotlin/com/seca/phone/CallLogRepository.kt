@@ -66,6 +66,17 @@ class CallLogRepository(private val resolver: ContentResolver) {
         }.orEmpty()
     }
 
+    /** Removes these calls from the phone's history, for every app. Needs WRITE_CALL_LOG. */
+    suspend fun delete(ids: Collection<Long>): Boolean = withContext(Dispatchers.IO) {
+        if (ids.isEmpty()) return@withContext true
+        runCatching { resolver.delete(Calls.CONTENT_URI, "${Calls._ID} IN (${ids.joinToString(",")})", null) }.isSuccess
+    }
+
+    /** Empties the phone's call history. Needs WRITE_CALL_LOG. */
+    suspend fun deleteAll(): Boolean = withContext(Dispatchers.IO) {
+        runCatching { resolver.delete(Calls.CONTENT_URI, null, null) }.isSuccess
+    }
+
     /** Emits whenever a call is added to or removed from the history. */
     fun changes(): Flow<Unit> = callbackFlow {
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {

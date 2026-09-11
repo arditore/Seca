@@ -30,9 +30,25 @@ sealed interface PhoneScreen {
 
     /** The history with one number — or with the whole contact, when the number is known. */
     data class CallDetail(val number: String) : PhoneScreen
+    data object Settings : PhoneScreen
 }
 
-enum class CallFilter { All, Missed }
+/** Which calls the history shows: by how they went, or by the profile of the person. */
+sealed interface CallFilter {
+    data object All : CallFilter
+    data object Missed : CallFilter
+    data object Incoming : CallFilter
+    data object Outgoing : CallFilter
+
+    /** Declined or blocked. */
+    data object Rejected : CallFilter
+    data object Voicemail : CallFilter
+    data class ByProfile(val profileId: String) : CallFilter
+
+    companion object {
+        val ByType: List<CallFilter> = listOf(All, Missed, Incoming, Outgoing, Rejected, Voicemail)
+    }
+}
 
 data class PhoneUi(
     /** Reads numbers with the SIM's country. */
@@ -127,6 +143,20 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setFilter(filter: CallFilter) = _ui.update { regrouped(it.copy(filter = filter)) }
 
+    /** Removes calls from the history; the change comes back through the history's observer. */
+    fun deleteCalls(ids: List<Long>) {
+        viewModelScope.launch { callLog.delete(ids) }
+    }
+
+    fun clearHistory() {
+        viewModelScope.launch { callLog.deleteAll() }
+    }
+
+    /** Sets the palette of every Seca app; null follows the wallpaper. */
+    fun setPalette(palette: SecaPalette?) {
+        viewModelScope.launch { sharedProfiles.setPalette(palette?.name) }
+    }
+
     // Every number is read here, off the main thread, before the screen sees it:
     // the list then only looks results up, and scrolling never waits on parsing.
     private suspend fun loadCalls() {
@@ -146,11 +176,21 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun loadProfiles() {
         val profiles = sharedProfiles.load()
-        _ui.update { it.copy(profiles = profiles) }
+        _ui.update { regrouped(it.copy(profiles = profiles)) }
     }
 
     private fun regrouped(ui: PhoneUi): PhoneUi {
-        val shown = if (ui.filter == CallFilter.Missed) ui.calls.filter { it.type == CallType.Missed } else ui.calls
+        val shown = ui.calls.filter { call ->
+            when (val filter = ui.filter) {
+                CallFilter.All -> true
+                CallFilter.Missed -> call.type == CallType.Missed
+                CallFilter.Incoming -> call.type == CallType.Incoming
+                CallFilter.Outgoing -> call.type == CallType.Outgoing
+                CallFilter.Rejected -> call.type == CallType.Rejected || call.type == CallType.Blocked
+                CallFilter.Voicemail -> call.type == CallType.Voicemail
+                is CallFilter.ByProfile -> ui.matchOf(call)?.contact?.let { ui.profileOf(it).id == filter.profileId } == true
+            }
+        }
         val keyOf = { call: CallRecord ->
             if (call.presentation == Presentation.Allowed) numbers.key(call.number) else "hidden-${call.presentation}"
         }

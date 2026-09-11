@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
 import com.seca.core.contacts.SharedProfilesContract
+import com.seca.core.design.SecaPalette
 
 /**
  * Lets the other Seca apps read the profiles, and nothing else: no writes.
@@ -43,13 +44,20 @@ class ProfilesProvider : ContentProvider() {
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? = throw UnsupportedOperationException(READ_ONLY)
 
-    override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int =
-        throw UnsupportedOperationException(READ_ONLY)
+    /** The palette is the one setting the suite shares: the other Seca apps may change it. */
+    override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int {
+        if (uri.lastPathSegment != "settings" || values?.containsKey(SharedProfilesContract.COLUMN_PALETTE) != true) {
+            throw UnsupportedOperationException(READ_ONLY)
+        }
+        val name = values.getAsString(SharedProfilesContract.COLUMN_PALETTE)
+        ProfileStore(requireContext()).setPalette(SecaPalette.entries.firstOrNull { it.name == name })
+        return 1
+    }
 
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int =
         throw UnsupportedOperationException(READ_ONLY)
 
     private companion object {
-        const val READ_ONLY = "Profiles are read-only outside Seca Contacts"
+        const val READ_ONLY = "Only the palette can be changed outside Seca Contacts"
     }
 }

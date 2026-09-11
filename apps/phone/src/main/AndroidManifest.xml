@@ -4,6 +4,8 @@
     <!-- The call history, and the contacts it is matched against. No INTERNET
          permission, ever: the app cannot send a call history anywhere. -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <!-- Asked the first time the user deletes a call from the history. -->
+    <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- Asked the first time the user places a call. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />

@@ -2,6 +2,7 @@ package com.seca.phone
 
 import android.Manifest
 import android.app.Activity
+import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -89,6 +90,22 @@ fun PhoneApp(
         }
     }
 
+    // Deleting from the history is asked the first time the user does it.
+    var pendingLogWrite by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val logWriteLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) pendingLogWrite?.invoke()
+        pendingLogWrite = null
+    }
+    val withCallLogWrite: (() -> Unit) -> Unit = { action ->
+        if (context.checkSelfPermission(Manifest.permission.WRITE_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
+            action()
+        } else {
+            pendingLogWrite = action
+            logWriteLauncher.launch(Manifest.permission.WRITE_CALL_LOG)
+        }
+    }
+    val onDeleteCalls: (List<Long>) -> Unit = { ids -> withCallLogWrite { viewModel.deleteCalls(ids) } }
+
     // Held above the screen transitions, so the history keeps its scroll position.
     val homeListState = rememberLazyListState()
 
@@ -157,9 +174,10 @@ fun PhoneApp(
                 label = "screens",
             ) { (screen, _) ->
                 when (screen) {
-                    PhoneScreen.Home -> HomeScreen(ui, viewModel, homeListState, onCall)
+                    PhoneScreen.Home -> HomeScreen(ui, viewModel, homeListState, onCall, onDeleteCalls)
                     is PhoneScreen.Dialer -> DialerScreen(screen.initial, ui, viewModel, onCall, onVoicemail)
-                    is PhoneScreen.CallDetail -> CallDetailScreen(screen.number, ui, viewModel, onCall)
+                    is PhoneScreen.CallDetail -> CallDetailScreen(screen.number, ui, viewModel, onCall, onDeleteCalls)
+                    PhoneScreen.Settings -> SettingsScreen(ui, viewModel, withCallLogWrite)
                 }
             }
         }

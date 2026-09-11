@@ -2,6 +2,7 @@ package com.seca.phone
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,16 +19,21 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +48,7 @@ import com.seca.core.design.component.SecaChoicePill
 import com.seca.core.design.component.SecaContactRow
 import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaGroupItem
+import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSearchField
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSuiteBar
@@ -50,11 +57,21 @@ import com.seca.core.model.SecaContact
 import java.text.Normalizer
 
 @Composable
-internal fun HomeScreen(ui: PhoneUi, viewModel: PhoneViewModel, listState: LazyListState, onCall: (String) -> Unit) {
+internal fun HomeScreen(
+    ui: PhoneUi,
+    viewModel: PhoneViewModel,
+    listState: LazyListState,
+    onCall: (String) -> Unit,
+    onDeleteCalls: (List<Long>) -> Unit,
+) {
     val context = LocalContext.current
     // The button carries its label at the top of the list and shrinks to an icon once scrolled.
     val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
-    val onOpen: (String) -> Unit = { viewModel.open(PhoneScreen.CallDetail(it)) }
+    val actions = RowActions(
+        onCall = onCall,
+        onOpen = { viewModel.open(PhoneScreen.CallDetail(it)) },
+        onDelete = onDeleteCalls,
+    )
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
@@ -70,20 +87,12 @@ internal fun HomeScreen(ui: PhoneUi, viewModel: PhoneViewModel, listState: LazyL
                     onQueryChange = viewModel::setQuery,
                     placeholder = "Rechercher un contact ou un numéro",
                     modifier = Modifier.padding(horizontal = 16.dp),
-                )
-                if (ui.query.isBlank()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
-                    ) {
-                        SecaChoicePill("Tous", selected = ui.filter == CallFilter.All, onClick = { viewModel.setFilter(CallFilter.All) })
-                        SecaChoicePill(
-                            "Manqués",
-                            selected = ui.filter == CallFilter.Missed,
-                            onClick = { viewModel.setFilter(CallFilter.Missed) },
-                        )
+                ) {
+                    IconButton(onClick = { viewModel.open(PhoneScreen.Settings) }) {
+                        Icon(SecaIcons.Settings, contentDescription = "Paramètres")
                     }
                 }
+                if (ui.query.isBlank()) FilterRow(ui, onSelect = viewModel::setFilter)
             }
         },
         bottomBar = { SecaSuiteBar(current = SecaAppIdentity.Phone, onSelect = { openSibling(context, it) }) },
@@ -104,25 +113,62 @@ internal fun HomeScreen(ui: PhoneUi, viewModel: PhoneViewModel, listState: LazyL
                 .padding(padding),
         ) {
             if (ui.query.isNotBlank()) {
-                SearchResults(ui, onCall, onOpen)
+                SearchResults(ui, actions)
             } else {
-                Recents(ui, listState, onCall, onOpen)
+                Recents(ui, listState, actions)
             }
         }
     }
 }
 
+/** What a history row can do; gathered so every row gets the same. */
+private class RowActions(
+    val onCall: (String) -> Unit,
+    val onOpen: (String) -> Unit,
+    val onDelete: (List<Long>) -> Unit,
+)
+
+/** The history's filters: how calls went, then — with more than one — the profiles. */
 @Composable
-private fun Recents(ui: PhoneUi, listState: LazyListState, onCall: (String) -> Unit, onOpen: (String) -> Unit) {
+private fun FilterRow(ui: PhoneUi, onSelect: (CallFilter) -> Unit) {
+    val profiles = if (ui.profiles.connected && ui.profiles.profiles.size > 1) ui.profiles.profiles else emptyList()
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(top = 12.dp),
+    ) {
+        items(CallFilter.ByType, key = { filterLabel(it) }) { filter ->
+            SecaChoicePill(filterLabel(filter), selected = ui.filter == filter, onClick = { onSelect(filter) })
+        }
+        items(profiles, key = { "profile-${it.id}" }) { profile ->
+            val filter = CallFilter.ByProfile(profile.id)
+            SecaChoicePill(
+                label = profile.name,
+                selected = ui.filter == filter,
+                onClick = { onSelect(filter) },
+                leading = { SecaProfileBadge(profile.name, tone = ui.profiles.toneOf(profile), size = 28.dp) },
+            )
+        }
+    }
+}
+
+private fun filterLabel(filter: CallFilter): String = when (filter) {
+    CallFilter.All -> "Tous"
+    CallFilter.Missed -> "Manqués"
+    CallFilter.Incoming -> "Entrants"
+    CallFilter.Outgoing -> "Sortants"
+    CallFilter.Rejected -> "Refusés"
+    CallFilter.Voicemail -> "Messagerie"
+    is CallFilter.ByProfile -> "Profil"
+}
+
+@Composable
+private fun Recents(ui: PhoneUi, listState: LazyListState, actions: RowActions) {
     if (!ui.loaded) return
     val favorites = remember(ui.contacts) { ui.contacts.filter { it.isFavorite && it.phoneNumbers.isNotEmpty() } }
     val showFavorites = favorites.isNotEmpty() && ui.filter == CallFilter.All
     if (ui.groups.isEmpty() && !showFavorites) {
-        SecaEmptyState(
-            icon = if (ui.filter == CallFilter.Missed) SecaIcons.CallMissed else SecaIcons.Phone,
-            title = if (ui.filter == CallFilter.Missed) "Aucun appel manqué" else "Aucun appel",
-            description = "Les appels passés et reçus sur ce téléphone apparaîtront ici.",
-        )
+        EmptyHistory(ui.filter)
         return
     }
     val byDay = remember(ui.groups) { ui.groups.groupBy { dayOf(it.latest.date) } }
@@ -133,8 +179,8 @@ private fun Recents(ui: PhoneUi, listState: LazyListState, onCall: (String) -> U
         contentPadding = PaddingValues(bottom = 112.dp),
     ) {
         if (showFavorites) {
-            item(key = "favorites-label") { SecaSectionLabel("Favoris") }
-            item(key = "favorites") { FavoritesRow(favorites, ui, onCall) }
+            item(key = "favorites-label", contentType = "label") { SecaSectionLabel("Favoris") }
+            item(key = "favorites", contentType = "favorites") { FavoritesRow(favorites, ui, actions.onCall) }
         }
         byDay.values.forEach { rows ->
             item(key = "day-${rows.first().latest.id}", contentType = "label") {
@@ -143,20 +189,40 @@ private fun Recents(ui: PhoneUi, listState: LazyListState, onCall: (String) -> U
             // A shared content type lets the list reuse rows it scrolled past instead of building new ones.
             itemsIndexed(rows, key = { _, group -> group.latest.id }, contentType = { _, _ -> "call" }) { index, group ->
                 SecaGroupItem(index = index, count = rows.size) {
-                    CallRow(group, ui, onCall, onOpen)
+                    CallRow(group, ui, actions)
                 }
             }
         }
     }
 }
 
+@Composable
+private fun EmptyHistory(filter: CallFilter) {
+    val (title, icon) = when (filter) {
+        CallFilter.All -> "Aucun appel" to SecaIcons.Phone
+        CallFilter.Missed -> "Aucun appel manqué" to SecaIcons.CallMissed
+        CallFilter.Incoming -> "Aucun appel reçu" to SecaIcons.CallReceived
+        CallFilter.Outgoing -> "Aucun appel émis" to SecaIcons.CallMade
+        CallFilter.Rejected -> "Aucun appel refusé ni bloqué" to SecaIcons.Block
+        CallFilter.Voicemail -> "Aucun message vocal" to SecaIcons.Voicemail
+        is CallFilter.ByProfile -> "Aucun appel avec ce profil" to SecaIcons.Label
+    }
+    SecaEmptyState(
+        icon = icon,
+        title = title,
+        description = "Les appels passés et reçus sur ce téléphone apparaîtront ici.",
+    )
+}
+
 /**
  * One row of the history: who, how many times, how and when. A contact's
- * profile other than Principal is named, so "Travail" calls stand out.
+ * profile other than Principal is named, so "Travail" calls stand out. A long
+ * press offers the rest: copy, message, the contact, deletion.
  */
 @Composable
-private fun CallRow(group: CallGroup, ui: PhoneUi, onCall: (String) -> Unit, onOpen: (String) -> Unit) {
+private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
     val context = LocalContext.current
+    var menuOpen by remember { mutableStateOf(false) }
     val call = group.latest
     val contact = group.match?.contact
     val title = contact?.displayName ?: callerLabel(call, ui.numbers)
@@ -168,54 +234,99 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, onCall: (String) -> Unit, onO
             ui.numbers.countryOf(call.number)?.takeIf { !it.isHome }?.let { add("${it.flag} ${it.displayName}") }
         }
     }.joinToString(" · ")
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = call.callable) { onOpen(call.number) }
-            .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
-    ) {
-        if (contact != null) {
-            SecaAvatar(
-                initials = contact.initials,
-                photoUri = contact.photoUri,
-                size = 44.dp,
-                tone = ui.toneOf(contact),
-                seed = contact.displayName,
-            )
-        } else {
-            UnknownAvatar()
-        }
-        Column(
-            Modifier
-                .weight(1f)
-                .padding(start = 16.dp),
+    Box {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = { if (call.callable) actions.onOpen(call.number) },
+                    onLongClickLabel = "Plus d'actions",
+                    onLongClick = { menuOpen = true },
+                )
+                .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
         ) {
-            Text(
-                text = if (group.calls.size > 1) "$title (${group.calls.size})" else title,
-                style = MaterialTheme.typography.titleMedium,
-                color = if (call.type == CallType.Missed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                CallTypeIcon(call.type, Modifier.size(16.dp))
+            if (contact != null) {
+                SecaAvatar(
+                    initials = contact.initials,
+                    photoUri = contact.photoUri,
+                    size = 44.dp,
+                    tone = ui.toneOf(contact),
+                    seed = contact.displayName,
+                )
+            } else {
+                UnknownAvatar()
+            }
+            Column(
+                Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+            ) {
                 Text(
-                    text = details,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = if (group.calls.size > 1) "$title (${group.calls.size})" else title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (call.type == CallType.Missed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 6.dp),
                 )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CallTypeIcon(call.type, Modifier.size(16.dp))
+                    Text(
+                        text = details,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = 6.dp),
+                    )
+                }
+            }
+            if (call.callable) {
+                FilledTonalIconButton(onClick = { actions.onCall(call.number) }) {
+                    Icon(SecaIcons.Phone, contentDescription = "Appeler $title")
+                }
             }
         }
-        if (call.callable) {
-            FilledTonalIconButton(onClick = { onCall(call.number) }) {
-                Icon(SecaIcons.Phone, contentDescription = "Appeler $title")
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            if (call.callable) {
+                MenuEntry("Copier le numéro", SecaIcons.ContentCopy) {
+                    menuOpen = false
+                    copyNumber(context, call.number)
+                }
+                MenuEntry("Envoyer un message", SecaIcons.Messages) {
+                    menuOpen = false
+                    sms(context, call.number)
+                }
+                if (contact != null) {
+                    MenuEntry("Voir la fiche", SecaIcons.Contacts) {
+                        menuOpen = false
+                        openContact(context, contact.id, contact.lookupKey)
+                    }
+                } else {
+                    MenuEntry("Ajouter aux contacts", SecaIcons.PersonAdd) {
+                        menuOpen = false
+                        addContact(context, call.number)
+                    }
+                }
+            }
+            MenuEntry(
+                if (group.calls.size > 1) "Supprimer ces ${group.calls.size} appels" else "Supprimer de l'historique",
+                SecaIcons.Delete,
+            ) {
+                menuOpen = false
+                actions.onDelete(group.calls.map { it.id })
             }
         }
     }
+}
+
+@Composable
+private fun MenuEntry(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = { Text(label) },
+        leadingIcon = { Icon(icon, contentDescription = null) },
+        onClick = onClick,
+    )
 }
 
 /** Favourites as large avatars; one tap calls, as on a speed dial. */
@@ -256,32 +367,40 @@ private fun FavoritesRow(favorites: List<SecaContact>, ui: PhoneUi, onCall: (Str
     }
 }
 
-/** Contacts matching the search by name or number, and the typed number itself when it is one. */
+/** The typed number itself, contacts matching by name or number, and matching calls from the history. */
 @Composable
-private fun SearchResults(ui: PhoneUi, onCall: (String) -> Unit, onOpen: (String) -> Unit) {
+private fun SearchResults(ui: PhoneUi, actions: RowActions) {
     val query = ui.query.trim()
-    val results = remember(ui.contacts, query) {
+    val digits = query.count(Char::isDigit)
+    val contacts = remember(ui.contacts, query) {
         val name = searchable(query)
         ui.contacts.filter { contact ->
             contact.phoneNumbers.isNotEmpty() &&
                 (searchable(contact.displayName).contains(name) ||
-                    (query.count(Char::isDigit) >= 2 && contact.phoneNumbers.any { ui.numbers.matchesDigits(it.raw, query) }))
+                    (digits >= 2 && contact.phoneNumbers.any { ui.numbers.matchesDigits(it.raw, query) }))
         }
     }
-    val isNumber = query.count(Char::isDigit) >= 3 && query.all { it.isDigit() || it in "+ ()-.*#" }
-    if (!isNumber && results.isEmpty()) {
+    val calls = remember(ui.groups, query) {
+        val name = searchable(query)
+        ui.groups.filter { group ->
+            group.match?.contact?.displayName?.let { searchable(it).contains(name) } == true ||
+                (digits >= 2 && group.latest.callable && ui.numbers.matchesDigits(group.latest.number, query))
+        }.take(MAX_CALL_RESULTS)
+    }
+    val isNumber = digits >= 3 && query.all { it.isDigit() || it in "+ ()-.*#" }
+    if (!isNumber && contacts.isEmpty() && calls.isEmpty()) {
         SecaEmptyState(
             icon = SecaIcons.Search,
             title = "Aucun résultat",
-            description = "Aucun contact ne correspond à « $query ».",
+            description = "Rien ne correspond à « $query ».",
         )
         return
     }
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
         if (isNumber) {
-            item(key = "number-label") { SecaSectionLabel("Numéro") }
+            item(key = "number-label", contentType = "label") { SecaSectionLabel("Numéro") }
             item(key = "number") {
-                SecaGroupItem(index = 0, count = 1, onClick = { onCall(query) }) {
+                SecaGroupItem(index = 0, count = 1, onClick = { actions.onCall(query) }) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
                         Icon(SecaIcons.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Column(Modifier.padding(start = 16.dp)) {
@@ -298,22 +417,30 @@ private fun SearchResults(ui: PhoneUi, onCall: (String) -> Unit, onOpen: (String
                 }
             }
         }
-        if (results.isNotEmpty()) {
-            item(key = "contacts-label") { SecaSectionLabel("Contacts") }
-            itemsIndexed(results, key = { _, contact -> contact.id }) { index, contact ->
+        if (contacts.isNotEmpty()) {
+            item(key = "contacts-label", contentType = "label") { SecaSectionLabel("Contacts") }
+            itemsIndexed(contacts, key = { _, contact -> "contact-${contact.id}" }, contentType = { _, _ -> "contact" }) { index, contact ->
                 val number = contact.phoneNumbers.first().raw
-                SecaGroupItem(index = index, count = results.size) {
+                SecaGroupItem(index = index, count = contacts.size) {
                     SecaContactRow(
                         contact = contact,
-                        onClick = { onOpen(number) },
+                        onClick = { actions.onOpen(number) },
                         supportingText = ui.numbers.display(number),
                         tone = ui.toneOf(contact),
                     )
                 }
             }
         }
+        if (calls.isNotEmpty()) {
+            item(key = "calls-label", contentType = "label") { SecaSectionLabel("Historique") }
+            itemsIndexed(calls, key = { _, group -> "call-${group.latest.id}" }, contentType = { _, _ -> "call" }) { index, group ->
+                SecaGroupItem(index = index, count = calls.size) { CallRow(group, ui, actions) }
+            }
+        }
     }
 }
+
+private const val MAX_CALL_RESULTS = 30
 
 private val Accents = Regex("\\p{M}+")
 
