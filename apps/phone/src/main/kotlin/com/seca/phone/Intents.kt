@@ -15,6 +15,7 @@ import android.provider.Settings
 import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
 import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.secaSwitchAnimation
 
 private const val SECA_CONTACTS = "com.seca.contacts"
 private const val SECA_MESSAGES = "com.seca.messages"
@@ -67,7 +68,11 @@ internal fun openSibling(context: Context, identity: SecaAppIdentity) {
         SecaAppIdentity.Messages -> packages.getLaunchIntentForPackage(SECA_MESSAGES)
             ?: Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING)
     }
-    startSafely(context, intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    startSafely(
+        context,
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        secaSwitchAnimation(context, SecaAppIdentity.Phone, identity),
+    )
 }
 
 /** Adds [number] to Android's own blocked list; only the default phone app may. */
@@ -130,6 +135,6 @@ private fun startPreferring(context: Context, intent: Intent, preferred: String)
 }
 
 /** No app to handle the intent is a normal situation on a de-Googled phone, not a crash. */
-private fun startSafely(context: Context, intent: Intent) {
-    runCatching { context.startActivity(intent) }
+private fun startSafely(context: Context, intent: Intent, options: Bundle? = null) {
+    runCatching { context.startActivity(intent, options) }
 }

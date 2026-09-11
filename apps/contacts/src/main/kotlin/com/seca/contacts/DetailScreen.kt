@@ -2,6 +2,7 @@ package com.seca.contacts
 
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -213,7 +214,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
         }
 
         SecaSectionLabel("Coordonnées")
-        val count = detail.phones.size + detail.emails.size
+        val count = detail.phones.size + detail.emails.size + detail.addresses.size + if (detail.website != null) 1 else 0
         if (count == 0) {
             SecaGroupItem(index = 0, count = 1) {
                 Text(
@@ -247,6 +248,48 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                     onClick = { email(context, field.value) },
                 )
             }
+        }
+        detail.addresses.forEachIndexed { index, field ->
+            SecaGroupItem(index = detail.phones.size + detail.emails.size + index, count = count) {
+                FieldRow(
+                    icon = SecaIcons.Place,
+                    value = field.value,
+                    label = StructuredPostal.getTypeLabel(resources, field.type, "").toString(),
+                    onClick = { openMap(context, field.value) },
+                )
+            }
+        }
+        detail.website?.let { site ->
+            SecaGroupItem(index = count - 1, count = count) {
+                FieldRow(
+                    icon = SecaIcons.Link,
+                    value = site.value,
+                    label = "Site web",
+                    onClick = { openLink(context, site.value) },
+                )
+            }
+        }
+
+        About(detail)
+    }
+}
+
+/** Company, birthday and notes: what a card holds besides ways to reach someone. */
+@Composable
+private fun About(detail: ContactDetail) {
+    val company = listOf(detail.jobTitle, detail.organization?.value.orEmpty())
+        .filter { it.isNotBlank() }
+        .joinToString(" · ")
+    val rows = buildList {
+        if (company.isNotBlank()) add(Triple(SecaIcons.Work, company, "Société"))
+        detail.birthday?.let { add(Triple(SecaIcons.Cake, formatBirthday(it.value), "Anniversaire")) }
+        detail.note?.let { add(Triple(SecaIcons.Subject, it.value, "Notes")) }
+    }
+    if (rows.isEmpty()) return
+    SecaSectionLabel("À propos")
+    rows.forEachIndexed { index, (icon, value, label) ->
+        SecaGroupItem(index = index, count = rows.size) {
+            FieldRow(icon = icon, value = value, label = label, onClick = null)
         }
     }
 }
@@ -335,14 +378,14 @@ private fun FieldRow(
     icon: ImageVector,
     value: String,
     label: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)

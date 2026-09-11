@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- And the app being left slips to the right. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:interpolator/fast_out_slow_in">
+    <translate
+        android:duration="320"
+        android:fromXDelta="0"
+        android:toXDelta="25%p" />
+    <alpha
+        android:duration="320"
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0" />
+</set>

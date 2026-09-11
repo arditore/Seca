@@ -4,9 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Bundle
 import android.provider.Settings
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.secaSwitchAnimation
 import java.io.File
 
 private const val SECA_PHONE = "com.seca.phone"
@@ -45,7 +48,11 @@ internal fun openSibling(context: Context, identity: SecaAppIdentity) {
         SecaAppIdentity.Messages -> packages.getLaunchIntentForPackage("com.seca.messages")
             ?: Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING)
     }
-    startSafely(context, intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    startSafely(
+        context,
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        secaSwitchAnimation(context, SecaAppIdentity.Contacts, identity),
+    )
 }
 
 /**
@@ -64,12 +71,22 @@ internal fun shareVCard(context: Context, name: String, vcard: String) {
     startSafely(context, Intent.createChooser(send, "Partager le contact"))
 }
 
+/** Shows an address in whichever map app the phone has, if it has one. */
+internal fun openMap(context: Context, address: String) =
+    startSafely(context, Intent(Intent.ACTION_VIEW, ("geo:0,0?q=" + Uri.encode(address)).toUri()))
+
+/** Opens a contact's website; a bare "example.org" is understood as an address. */
+internal fun openLink(context: Context, url: String) {
+    val full = if (url.contains("://")) url else "https://$url"
+    startSafely(context, Intent(Intent.ACTION_VIEW, full.toUri()))
+}
+
 internal fun openAppSettings(context: Context) = startSafely(
     context,
     Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)),
 )
 
 /** No app to handle the intent is a normal situation on a de-Googled phone, not a crash. */
-private fun startSafely(context: Context, intent: Intent) {
-    runCatching { context.startActivity(intent) }
+private fun startSafely(context: Context, intent: Intent, options: Bundle? = null) {
+    runCatching { context.startActivity(intent, options) }
 }

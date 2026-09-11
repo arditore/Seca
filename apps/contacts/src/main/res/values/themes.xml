@@ -3,5 +3,12 @@
     <style name="Theme.SecaContacts" parent="android:Theme.Material.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- The starting window wears the app colours and shows the icon still, with no
+             animation: opening Seca Contacts and Seca Telephone looks the same, and the
+             launch screen gives way to the app without a flash. -->
+        <item name="android:windowBackground">@color/seca_launch</item>
+        <item name="android:windowSplashScreenBackground">@color/seca_launch</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenAnimationDuration">0</item>
     </style>
 </resources>

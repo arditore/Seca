@@ -1,7 +1,11 @@
 package com.seca.contacts
 
+import android.app.DatePickerDialog
+import android.content.Context
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +43,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -53,10 +58,12 @@ import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.model.initialsOf
+import java.time.LocalDate
 
 /** The kinds offered in the editor; any other kind a contact already has is kept and shown. */
 private val PhoneTypes = listOf(Phone.TYPE_MOBILE, Phone.TYPE_HOME, Phone.TYPE_WORK, Phone.TYPE_MAIN, Phone.TYPE_OTHER)
 private val EmailTypes = listOf(Email.TYPE_HOME, Email.TYPE_WORK, Email.TYPE_MOBILE, Email.TYPE_OTHER)
+private val AddressTypes = listOf(StructuredPostal.TYPE_HOME, StructuredPostal.TYPE_WORK, StructuredPostal.TYPE_OTHER)
 
 @Composable
 internal fun EditScreen(
@@ -72,6 +79,12 @@ internal fun EditScreen(
     var familyName by remember(id) { mutableStateOf("") }
     val phones = remember(id) { mutableStateListOf<ContactField>() }
     val emails = remember(id) { mutableStateListOf<ContactField>() }
+    val addresses = remember(id) { mutableStateListOf<ContactField>() }
+    var organization by remember(id) { mutableStateOf("") }
+    var jobTitle by remember(id) { mutableStateOf("") }
+    var website by remember(id) { mutableStateOf("") }
+    var birthday by remember(id) { mutableStateOf("") }
+    var note by remember(id) { mutableStateOf("") }
     val resources = LocalResources.current
     var profileId by remember(id) { mutableStateOf(ui.currentProfileId) }
 
@@ -85,6 +98,12 @@ internal fun EditScreen(
                 familyName = loaded.familyName
                 phones.addAll(loaded.phones)
                 emails.addAll(loaded.emails)
+                addresses.addAll(loaded.addresses)
+                organization = loaded.organization?.value.orEmpty()
+                jobTitle = loaded.jobTitle
+                website = loaded.website?.value.orEmpty()
+                birthday = loaded.birthday?.value.orEmpty()
+                note = loaded.note?.value.orEmpty()
                 profileId = ui.profileForKey(loaded.lookupKey).id
             }
         }
@@ -108,7 +127,18 @@ internal fun EditScreen(
                 Button(
                     enabled = canSave,
                     onClick = {
-                        val input = ContactInput(givenName, familyName, phones.toList(), emails.toList())
+                        val input = ContactInput(
+                            givenName = givenName,
+                            familyName = familyName,
+                            phones = phones.toList(),
+                            emails = emails.toList(),
+                            addresses = addresses.toList(),
+                            organization = organization,
+                            jobTitle = jobTitle,
+                            website = website,
+                            birthday = birthday,
+                            note = note,
+                        )
                         withWrite { viewModel.save(existing, input, profileId) }
                     },
                     modifier = Modifier.padding(end = 8.dp),
@@ -172,6 +202,37 @@ internal fun EditScreen(
                         typeLabel = { Email.getTypeLabel(resources, it, "").toString() },
                     )
                     AddFieldButton("Ajouter une adresse e-mail") { emails.add(ContactField(null, "", Email.TYPE_HOME)) }
+                }
+
+                FormSection(SecaIcons.Place) {
+                    FieldList(
+                        addresses,
+                        label = "Adresse",
+                        keyboard = KeyboardType.Text,
+                        removeLabel = "Retirer cette adresse",
+                        types = AddressTypes,
+                        typeLabel = { StructuredPostal.getTypeLabel(resources, it, "").toString() },
+                    )
+                    AddFieldButton("Ajouter une adresse") {
+                        addresses.add(ContactField(null, "", StructuredPostal.TYPE_HOME))
+                    }
+                }
+
+                FormSection(SecaIcons.Work) {
+                    PlainField(organization, "Société") { organization = it }
+                    PlainField(jobTitle, "Poste") { jobTitle = it }
+                }
+
+                FormSection(SecaIcons.Link) {
+                    PlainField(website, "Site web", keyboard = KeyboardType.Uri) { website = it }
+                }
+
+                FormSection(SecaIcons.Cake) {
+                    BirthdayField(birthday) { birthday = it }
+                }
+
+                FormSection(SecaIcons.Subject) {
+                    PlainField(note, "Notes", singleLine = false) { note = it }
                 }
 
                 // Lined up with the chips rather than with the "Profil" label above them.
@@ -313,6 +374,74 @@ private fun FieldEditor(
         TypeSelector(type, types, typeLabel, onTypeChange)
     }
 }
+
+/** A field with nothing but text: a company, a website, a note. */
+@Composable
+private fun PlainField(
+    value: String,
+    label: String,
+    keyboard: KeyboardType = KeyboardType.Text,
+    singleLine: Boolean = true,
+    onChange: (String) -> Unit,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        label = { Text(label) },
+        singleLine = singleLine,
+        minLines = if (singleLine) 1 else 3,
+        shape = MaterialTheme.shapes.medium,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = keyboard,
+            capitalization = if (keyboard == KeyboardType.Text) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
+            imeAction = if (singleLine) ImeAction.Next else ImeAction.Default,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+/** The birthday, chosen in the system's date picker and kept as the provider writes it. */
+@Composable
+private fun BirthdayField(value: String, onChange: (String) -> Unit) {
+    val context = LocalContext.current
+    Box {
+        OutlinedTextField(
+            value = if (value.isBlank()) "" else formatBirthday(value),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Anniversaire") },
+            shape = MaterialTheme.shapes.medium,
+            trailingIcon = {
+                if (value.isNotBlank()) {
+                    IconButton(onClick = { onChange("") }) {
+                        Icon(SecaIcons.Close, contentDescription = "Retirer la date")
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        // The field itself opens the picker; typing a date by hand helps no one.
+        Box(
+            Modifier
+                .matchParentSize()
+                .clickable(onClickLabel = "Choisir une date") { pickBirthday(context, value, onChange) },
+        )
+    }
+}
+
+private fun pickBirthday(context: Context, current: String, onChange: (String) -> Unit) {
+    val start = runCatching { LocalDate.parse(current) }.getOrNull() ?: LocalDate.now().minusYears(YEARS_BACK)
+    DatePickerDialog(
+        context,
+        { _, year, month, day -> onChange("%04d-%02d-%02d".format(year, month + 1, day)) },
+        start.year,
+        start.monthValue - 1,
+        start.dayOfMonth,
+    ).show()
+}
+
+/** Where the date picker opens when a contact has no birthday yet. */
+private const val YEARS_BACK = 30L
 
 /** Mobile, Domicile, Travail…: the kind of number or address, in the phone's language. */
 @Composable

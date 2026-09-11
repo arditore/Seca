@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
@@ -30,7 +31,7 @@ private val PhotoCache = object : LruCache<String, ImageBitmap>(PHOTO_CACHE_BYTE
  */
 @Composable
 fun rememberContactThumbnail(photoUri: String?): ImageBitmap? =
-    rememberCachedPhoto(photoUri) { resolver -> photoUri?.let { resolver.openInputStream(Uri.parse(it)) } }
+    rememberCachedPhoto(photoUri) { resolver -> photoUri?.let { resolver.openInputStream(it.toUri()) } }
 
 /** A contact's full-size photo, for the screens where the avatar is large. */
 @Composable

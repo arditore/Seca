@@ -6,6 +6,7 @@ import android.database.ContentObserver
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import androidx.core.net.toUri
 import com.seca.core.model.Profile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -24,7 +25,7 @@ import kotlinx.coroutines.withContext
 object SharedProfilesContract {
     const val AUTHORITY = "com.seca.contacts.profiles"
     const val PERMISSION = "com.seca.permission.READ_PROFILES"
-    val BASE_URI: Uri = Uri.parse("content://$AUTHORITY")
+    val BASE_URI: Uri = "content://$AUTHORITY".toUri()
     val PROFILES_URI: Uri = Uri.withAppendedPath(BASE_URI, "profiles")
     val ASSIGNMENTS_URI: Uri = Uri.withAppendedPath(BASE_URI, "assignments")
     val SETTINGS_URI: Uri = Uri.withAppendedPath(BASE_URI, "settings")

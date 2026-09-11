@@ -2,6 +2,7 @@ package com.seca.core.contacts
 
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import java.io.ByteArrayOutputStream
 
 /** A contact as a vCard carries it. */
@@ -11,6 +12,12 @@ data class VCardContact(
     val displayName: String,
     val phones: List<ContactField>,
     val emails: List<ContactField>,
+    val addresses: List<ContactField> = emptyList(),
+    val organization: String = "",
+    val jobTitle: String = "",
+    val website: String = "",
+    val birthday: String = "",
+    val note: String = "",
 )
 
 /**
@@ -32,6 +39,13 @@ object VCard {
             line("FN:${escape(contact.displayName.ifBlank { nameOf(contact.givenName, contact.familyName) })}")
             contact.phones.forEach { line("TEL;TYPE=${phoneTypeName(it.type)}:${escape(it.value)}") }
             contact.emails.forEach { line("EMAIL;TYPE=${emailTypeName(it.type)}:${escape(it.value)}") }
+            // An address is written whole, in the street field: Seca keeps it as one line.
+            contact.addresses.forEach { line("ADR;TYPE=${addressTypeName(it.type)}:;;${escape(it.value)};;;;") }
+            if (contact.organization.isNotBlank()) line("ORG:${escape(contact.organization)}")
+            if (contact.jobTitle.isNotBlank()) line("TITLE:${escape(contact.jobTitle)}")
+            if (contact.website.isNotBlank()) line("URL:${escape(contact.website)}")
+            if (contact.birthday.isNotBlank()) line("BDAY:${escape(contact.birthday)}")
+            if (contact.note.isNotBlank()) line("NOTE:${escape(contact.note)}")
             line("END:VCARD")
         }
     }
@@ -64,6 +78,19 @@ object VCard {
                 "FN" -> card?.display = unescape(value)
                 "TEL" -> card?.phones?.add(ContactField(null, unescape(value).removePrefix("tel:").trim(), phoneTypeOf(types)))
                 "EMAIL" -> card?.emails?.add(ContactField(null, unescape(value).trim(), emailTypeOf(types)))
+                // The parts of an address, minus the post-office box, joined back into one line.
+                "ADR" -> splitUnescaped(value).drop(2).filter { it.isNotBlank() }.joinToString(", ")
+                    .takeIf { it.isNotBlank() }
+                    ?.let { card?.addresses?.add(ContactField(null, it, addressTypeOf(types))) }
+                "ORG" -> card?.let { current ->
+                    val parts = splitUnescaped(value)
+                    current.organization = parts.firstOrNull().orEmpty()
+                    if (current.jobTitle.isEmpty()) current.jobTitle = parts.getOrElse(1) { "" }
+                }
+                "TITLE" -> card?.jobTitle = unescape(value)
+                "URL" -> card?.website = unescape(value)
+                "BDAY" -> card?.birthday = unescape(value).trim()
+                "NOTE" -> card?.note = unescape(value)
             }
         }
         return contacts
@@ -73,13 +100,31 @@ object VCard {
         var given = ""
         var family = ""
         var display = ""
+        var organization = ""
+        var jobTitle = ""
+        var website = ""
+        var birthday = ""
+        var note = ""
         val phones = mutableListOf<ContactField>()
         val emails = mutableListOf<ContactField>()
+        val addresses = mutableListOf<ContactField>()
 
         fun build(): VCardContact? {
             val shown = display.ifBlank { nameOf(given, family) }
             if (shown.isBlank() && phones.isEmpty() && emails.isEmpty()) return null
-            return VCardContact(given, family, shown, phones.filter { it.value.isNotBlank() }, emails.filter { it.value.isNotBlank() })
+            return VCardContact(
+                givenName = given,
+                familyName = family,
+                displayName = shown,
+                phones = phones.filter { it.value.isNotBlank() },
+                emails = emails.filter { it.value.isNotBlank() },
+                addresses = addresses,
+                organization = organization,
+                jobTitle = jobTitle,
+                website = website,
+                birthday = birthday,
+                note = note,
+            )
         }
     }
 
@@ -200,6 +245,18 @@ object VCard {
         Phone.TYPE_PAGER -> "PAGER"
         Phone.TYPE_MAIN -> "MAIN"
         else -> "VOICE"
+    }
+
+    private fun addressTypeOf(types: Set<String>): Int = when {
+        "WORK" in types -> StructuredPostal.TYPE_WORK
+        "HOME" in types -> StructuredPostal.TYPE_HOME
+        else -> StructuredPostal.TYPE_OTHER
+    }
+
+    private fun addressTypeName(type: Int): String = when (type) {
+        StructuredPostal.TYPE_WORK -> "WORK"
+        StructuredPostal.TYPE_HOME -> "HOME"
+        else -> "OTHER"
     }
 
     private fun emailTypeOf(types: Set<String>): Int = when {

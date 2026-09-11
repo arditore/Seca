@@ -84,12 +84,20 @@ internal fun callerLabel(call: CallRecord, numbers: PhoneNumbers): String = when
     else -> call.cachedName ?: numbers.display(call.number)
 }
 
-private val Time24: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-private val Time12: DateTimeFormatter by lazy { DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault()) }
+/** Kept between rows, and rebuilt when the language or the 12/24-hour setting changes. */
+private var timeFormat: Triple<Locale, Boolean, DateTimeFormatter>? = null
 
-/** The time of day, in the phone's 12- or 24-hour setting; the formatters are made once, not per row. */
+/** The time of day, in the phone's 12- or 24-hour setting. */
 internal fun timeOf(context: Context, millis: Long): String {
-    val formatter = if (DateFormat.is24HourFormat(context)) Time24 else Time12
+    val locale = Locale.getDefault()
+    val hours24 = DateFormat.is24HourFormat(context)
+    val kept = timeFormat
+    val formatter = if (kept != null && kept.first == locale && kept.second == hours24) {
+        kept.third
+    } else {
+        DateTimeFormatter.ofPattern(if (hours24) "HH:mm" else "h:mm a", locale)
+            .also { timeFormat = Triple(locale, hours24, it) }
+    }
     return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).format(formatter)
 }
 
