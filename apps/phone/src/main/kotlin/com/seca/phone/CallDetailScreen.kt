@@ -39,6 +39,7 @@ import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaTopBar
+import com.seca.core.design.component.rememberContactPhoto
 
 /** Who a number belongs to, what can be done with it, and every call with them. */
 @Composable
@@ -149,6 +150,7 @@ private fun Header(number: String, match: NumberMatch?, ui: PhoneUi) {
                 size = 120.dp,
                 tone = ui.toneOf(contact),
                 seed = contact.displayName,
+                photo = rememberContactPhoto(contact.id),
                 expressive = true,
                 modifier = Modifier.padding(top = 8.dp),
             )

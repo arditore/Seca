@@ -2,6 +2,7 @@ package com.seca.contacts
 
 import android.app.Application
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -12,6 +13,8 @@ import com.seca.core.contacts.ContactInput
 import com.seca.core.contacts.ContactsRepository
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.SharedProfilesClient
+import com.seca.core.contacts.VCard
+import com.seca.core.contacts.VCardContact
 import com.seca.core.design.SecaPalette
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
@@ -78,6 +81,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     private val repository = ContactsRepository(application.contentResolver, numbers)
     private val store = ProfileStore(application)
     private val myCards = MyCardStore(application)
+    private val resolver = application.contentResolver
     private val _ui = MutableStateFlow(ContactsUi(numbers = numbers))
     val ui: StateFlow<ContactsUi> = _ui.asStateFlow()
 
@@ -158,6 +162,67 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     fun setPalette(palette: SecaPalette?) {
         store.setPalette(palette)
         refreshPreferences()
+    }
+
+    /** Writes every contact to the chosen .vcf file. */
+    fun exportContacts(uri: Uri) {
+        viewModelScope.launch {
+            val cards = repository.exportAll()
+            val written = withContext(Dispatchers.IO) {
+                runCatching {
+                    resolver.openOutputStream(uri, "wt")?.use { it.write(VCard.write(cards).toByteArray(Charsets.UTF_8)) } != null
+                }.getOrDefault(false)
+            }
+            toast(if (written) plural(cards.size, "contact exporté", "contacts exportés") else "L'export a échoué")
+        }
+    }
+
+    /** Adds the contacts of a .vcf file, on this device only, skipping those already here. */
+    fun importContacts(uri: Uri) {
+        viewModelScope.launch {
+            val cards = withContext(Dispatchers.IO) {
+                runCatching { resolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) } }.getOrNull()
+            }?.let(VCard::parse)
+            if (cards == null) {
+                toast("Ce fichier ne peut pas être lu")
+                return@launch
+            }
+            val existing = _ui.value.contacts
+            var added = 0
+            cards.filterNot { card -> existing.any { it.isSameAs(card) } }.forEach { card ->
+                val input = ContactInput(
+                    givenName = card.givenName.ifBlank { if (card.familyName.isBlank()) card.displayName else "" },
+                    familyName = card.familyName,
+                    phones = card.phones,
+                    emails = card.emails,
+                )
+                if (repository.createContact(input) != null) added++
+            }
+            load()
+            toast(
+                when {
+                    cards.isEmpty() -> "Aucun contact dans ce fichier"
+                    added == 0 -> "Ces contacts sont déjà sur ce téléphone"
+                    else -> plural(added, "contact importé", "contacts importés")
+                },
+            )
+        }
+    }
+
+    /** One contact as a vCard, for sharing it. */
+    suspend fun vCardOf(id: Long): String? = repository.contactDetail(id)?.let { detail ->
+        VCard.write(listOf(VCardContact(detail.givenName, detail.familyName, detail.displayName, detail.phones, detail.emails)))
+    }
+
+    /** Same name, and a number in common when the card has one: importing the same file twice adds nothing. */
+    private fun SecaContact.isSameAs(card: VCardContact): Boolean =
+        displayName.equals(card.displayName, ignoreCase = true) &&
+            (card.phones.isEmpty() || card.phones.any { phone -> phoneNumbers.any { numbers.key(it.raw) == numbers.key(phone.value) } })
+
+    private fun plural(count: Int, one: String, many: String) = if (count == 1) "1 $one" else "$count $many"
+
+    private fun toast(text: String) {
+        Toast.makeText(getApplication(), text, Toast.LENGTH_LONG).show()
     }
 
     fun saveMyCard(name: String, numbers: List<String>) {

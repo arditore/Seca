@@ -119,7 +119,7 @@ fun ContactsApp(
                     Screen.Home -> HomeScreen(ui, viewModel, homeListState, onOpenSibling = { openSibling(context, it) })
                     is Screen.Detail -> DetailScreen(screen.id, ui, viewModel, withWrite)
                     is Screen.Edit -> EditScreen(screen.id, ui, viewModel, withWrite, prefillPhone = screen.prefillPhone)
-                    Screen.Settings -> SettingsScreen(ui, viewModel)
+                    Screen.Settings -> SettingsScreen(ui, viewModel, withWrite)
                     Screen.MyCard -> MyCardScreen(ui, viewModel)
                 }
             }

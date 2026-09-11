@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.seca.core.model.SecaContact
@@ -26,6 +27,7 @@ fun SecaContactRow(
     modifier: Modifier = Modifier,
     supportingText: String? = contact.phoneNumbers.firstOrNull()?.raw,
     tone: Int = 0,
+    photo: ImageBitmap? = null,
 ) {
     Row(
         modifier = modifier
@@ -40,6 +42,7 @@ fun SecaContactRow(
             size = 44.dp,
             tone = tone,
             seed = contact.displayName,
+            photo = photo,
         )
         Column(
             modifier = Modifier

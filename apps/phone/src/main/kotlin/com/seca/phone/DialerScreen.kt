@@ -45,6 +45,7 @@ import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaTopBar
+import com.seca.core.design.component.rememberContactThumbnail
 import com.seca.core.design.secaCallColors
 import com.seca.core.model.Profile
 
@@ -306,6 +307,7 @@ private fun SuggestionRow(match: NumberMatch, ui: PhoneUi) {
             size = 40.dp,
             tone = ui.toneOf(match.contact),
             seed = match.contact.displayName,
+            photo = rememberContactThumbnail(match.contact.photoUri),
         )
         Column(
             Modifier

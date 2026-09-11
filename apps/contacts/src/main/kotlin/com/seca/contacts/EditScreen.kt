@@ -18,6 +18,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,6 +39,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,6 +53,10 @@ import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.model.initialsOf
+
+/** The kinds offered in the editor; any other kind a contact already has is kept and shown. */
+private val PhoneTypes = listOf(Phone.TYPE_MOBILE, Phone.TYPE_HOME, Phone.TYPE_WORK, Phone.TYPE_MAIN, Phone.TYPE_OTHER)
+private val EmailTypes = listOf(Email.TYPE_HOME, Email.TYPE_WORK, Email.TYPE_MOBILE, Email.TYPE_OTHER)
 
 @Composable
 internal fun EditScreen(
@@ -65,6 +72,7 @@ internal fun EditScreen(
     var familyName by remember(id) { mutableStateOf("") }
     val phones = remember(id) { mutableStateListOf<ContactField>() }
     val emails = remember(id) { mutableStateListOf<ContactField>() }
+    val resources = LocalResources.current
     var profileId by remember(id) { mutableStateOf(ui.currentProfileId) }
 
     LaunchedEffect(id) {
@@ -146,6 +154,8 @@ internal fun EditScreen(
                         label = "Numéro",
                         keyboard = KeyboardType.Phone,
                         removeLabel = "Retirer ce numéro",
+                        types = PhoneTypes,
+                        typeLabel = { Phone.getTypeLabel(resources, it, "").toString() },
                         // Says which country the number was read as: "06…" is French with a French SIM.
                         describe = ui.numbers::describe,
                     )
@@ -158,6 +168,8 @@ internal fun EditScreen(
                         label = "Adresse e-mail",
                         keyboard = KeyboardType.Email,
                         removeLabel = "Retirer cette adresse",
+                        types = EmailTypes,
+                        typeLabel = { Email.getTypeLabel(resources, it, "").toString() },
                     )
                     AddFieldButton("Ajouter une adresse e-mail") { emails.add(ContactField(null, "", Email.TYPE_HOME)) }
                 }
@@ -239,6 +251,8 @@ private fun FieldList(
     label: String,
     keyboard: KeyboardType,
     removeLabel: String,
+    types: List<Int>,
+    typeLabel: (Int) -> String,
     describe: ((String) -> String?)? = null,
 ) {
     fields.forEachIndexed { index, field ->
@@ -247,6 +261,10 @@ private fun FieldList(
             label = label,
             keyboard = keyboard,
             removeLabel = removeLabel,
+            type = field.type,
+            types = types,
+            typeLabel = typeLabel,
+            onTypeChange = { fields[index] = field.copy(type = it) },
             supporting = describe?.invoke(field.value),
             // A lone empty field has nothing to remove.
             removable = fields.size > 1 || field.value.isNotEmpty(),
@@ -262,29 +280,64 @@ private fun FieldEditor(
     label: String,
     keyboard: KeyboardType,
     removeLabel: String,
+    type: Int,
+    types: List<Int>,
+    typeLabel: (Int) -> String,
+    onTypeChange: (Int) -> Unit,
     removable: Boolean,
     supporting: String?,
     onChange: (String) -> Unit,
     onRemove: () -> Unit,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onChange,
-            label = { Text(label) },
-            supportingText = supporting?.let { { Text(it) } },
-            singleLine = true,
-            shape = MaterialTheme.shapes.medium,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboard, imeAction = ImeAction.Next),
-            modifier = Modifier.weight(1f),
-        )
-        if (removable) {
-            IconButton(onClick = onRemove) {
-                Icon(SecaIcons.Close, contentDescription = removeLabel)
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = onChange,
+                label = { Text(label) },
+                supportingText = supporting?.let { { Text(it) } },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                keyboardOptions = KeyboardOptions(keyboardType = keyboard, imeAction = ImeAction.Next),
+                modifier = Modifier.weight(1f),
+            )
+            if (removable) {
+                IconButton(onClick = onRemove) {
+                    Icon(SecaIcons.Close, contentDescription = removeLabel)
+                }
+            } else {
+                // Keeps the field as wide as its neighbours that do have the button.
+                Spacer(Modifier.size(48.dp))
             }
-        } else {
-            // Keeps the field as wide as its neighbours that do have the button.
-            Spacer(Modifier.size(48.dp))
+        }
+        TypeSelector(type, types, typeLabel, onTypeChange)
+    }
+}
+
+/** Mobile, Domicile, Travail…: the kind of number or address, in the phone's language. */
+@Composable
+private fun TypeSelector(type: Int, types: List<Int>, typeLabel: (Int) -> String, onChange: (Int) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        TextButton(onClick = { open = true }) {
+            Text(typeLabel(type))
+            Icon(SecaIcons.ArrowDropDown, contentDescription = "Changer le type")
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            types.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(typeLabel(option)) },
+                    trailingIcon = if (option == type) {
+                        { Icon(SecaIcons.Check, contentDescription = "Type actuel") }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        open = false
+                        onChange(option)
+                    },
+                )
+            }
         }
     }
 }

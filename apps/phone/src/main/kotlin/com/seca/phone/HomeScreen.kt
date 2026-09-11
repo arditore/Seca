@@ -52,6 +52,7 @@ import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSearchField
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSuiteBar
+import com.seca.core.design.component.rememberContactThumbnail
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
 import java.text.Normalizer
@@ -253,6 +254,7 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
                     size = 44.dp,
                     tone = ui.toneOf(contact),
                     seed = contact.displayName,
+                    photo = rememberContactThumbnail(contact.photoUri),
                 )
             } else {
                 UnknownAvatar()
@@ -352,6 +354,7 @@ private fun FavoritesRow(favorites: List<SecaContact>, ui: PhoneUi, onCall: (Str
                     tone = ui.toneOf(contact),
                     seed = contact.displayName,
                     expressive = true,
+                    photo = rememberContactThumbnail(contact.photoUri),
                 )
                 Text(
                     text = contact.displayName.substringBefore(' '),
@@ -427,6 +430,7 @@ private fun SearchResults(ui: PhoneUi, actions: RowActions) {
                         onClick = { actions.onOpen(number) },
                         supportingText = ui.numbers.display(number),
                         tone = ui.toneOf(contact),
+                        photo = rememberContactThumbnail(contact.photoUri),
                     )
                 }
             }

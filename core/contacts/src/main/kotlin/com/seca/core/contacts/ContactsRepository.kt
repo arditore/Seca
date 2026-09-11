@@ -207,6 +207,40 @@ class ContactsRepository(
         )?.use { if (it.moveToFirst()) it.getString(0) else null }
     }
 
+    /** Every visible contact as a vCard carries it, read in one pass over the provider. */
+    suspend fun exportAll(): List<VCardContact> = withContext(Dispatchers.IO) {
+        val cards = linkedMapOf<Long, ExportCard>()
+        resolver.query(
+            Data.CONTENT_URI,
+            arrayOf(Data.CONTACT_ID, Data.DISPLAY_NAME_PRIMARY, Data.MIMETYPE, Data.DATA1, Data.DATA2, Data.DATA3),
+            "${Data.MIMETYPE} IN (?, ?, ?)",
+            arrayOf(StructuredName.CONTENT_ITEM_TYPE, Phone.CONTENT_ITEM_TYPE, Email.CONTENT_ITEM_TYPE),
+            null,
+        )?.use { c ->
+            while (c.moveToNext()) {
+                val card = cards.getOrPut(c.getLong(0)) { ExportCard(c.getString(1).orEmpty()) }
+                when (c.getString(2)) {
+                    StructuredName.CONTENT_ITEM_TYPE -> if (card.given.isEmpty() && card.family.isEmpty()) {
+                        card.given = c.getString(4).orEmpty()
+                        card.family = c.getString(5).orEmpty()
+                    }
+                    Phone.CONTENT_ITEM_TYPE -> c.getString(3)?.let { card.phones += ContactField(null, it, c.getInt(4)) }
+                    Email.CONTENT_ITEM_TYPE -> c.getString(3)?.let { card.emails += ContactField(null, it, c.getInt(4)) }
+                }
+            }
+        }
+        cards.values
+            .map { VCardContact(it.given, it.family, it.display, it.phones.distinctBy(ContactField::value), it.emails.distinctBy(ContactField::value)) }
+            .sortedBy { it.displayName.lowercase() }
+    }
+
+    private class ExportCard(val display: String) {
+        var given = ""
+        var family = ""
+        val phones = mutableListOf<ContactField>()
+        val emails = mutableListOf<ContactField>()
+    }
+
     /** The contact behind a contacts link handed over by another app, or null. */
     suspend fun contactIdFor(uri: Uri): Long? = withContext(Dispatchers.IO) {
         try {
@@ -333,10 +367,11 @@ class ContactsRepository(
             val savedId = field.id
             if (savedId == null) {
                 ops += fieldRow(mimeType, field).withValue(Data.RAW_CONTACT_ID, rawContactId).build()
-            } else if (before.firstOrNull { it.id == savedId }?.value != field.value) {
+            } else if (before.firstOrNull { it.id == savedId }.let { it == null || it.value != field.value || it.type != field.type }) {
                 ops += ContentProviderOperation.newUpdate(Data.CONTENT_URI)
                     .withSelection("${Data._ID} = ?", arrayOf(savedId.toString()))
                     .withValue(Data.DATA1, field.value.trim())
+                    .withValue(Data.DATA2, field.type)
                     .apply { normalizedNumber(mimeType, field.value)?.let { withValue(Phone.NORMALIZED_NUMBER, it) } }
                     .build()
             }

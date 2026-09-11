@@ -61,6 +61,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Hands a shared contact's .vcf to the app the user picks, and to no other. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.seca.contacts.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
+
         <provider
             android:name=".ProfilesProvider"
             android:authorities="com.seca.contacts.profiles"

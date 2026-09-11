@@ -1,5 +1,7 @@
 package com.seca.contacts
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,11 +40,23 @@ import com.seca.core.design.component.SecaHint
 import com.seca.core.design.component.SecaPaletteSwatch
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSectionLabel
+import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.model.Profile
+import java.time.LocalDate
+
+/** What a .vcf file may be labelled as, depending on the app that made it. */
+private val VCardTypes = arrayOf("text/x-vcard", "text/vcard", "text/directory", "text/plain", "application/octet-stream")
 
 @Composable
-internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
+internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWrite: (() -> Unit) -> Unit) {
+    // The system file picker: the user chooses where the file goes, and the app sees nothing else.
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/x-vcard")) { uri ->
+        uri?.let(viewModel::exportContacts)
+    }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { withWrite { viewModel.importContacts(it) } }
+    }
     var adding by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<Profile?>(null) }
     var deleting by remember { mutableStateOf<Profile?>(null) }
@@ -168,6 +182,23 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                 }
             }
             SecaHint("Rangez vos contacts par profil, comme Travail ou Famille. Supprimer un profil ne supprime aucun contact.")
+
+            SecaSectionLabel("Sauvegarde")
+            SecaGroupItem(index = 0, count = 2, onClick = { exportLauncher.launch("contacts-seca-${LocalDate.now()}.vcf") }) {
+                SecaSettingRow(
+                    icon = SecaIcons.Upload,
+                    title = "Exporter les contacts",
+                    subtitle = "Un fichier .vcf, gardé où vous voulez",
+                )
+            }
+            SecaGroupItem(index = 1, count = 2, onClick = { importLauncher.launch(VCardTypes) }) {
+                SecaSettingRow(
+                    icon = SecaIcons.Download,
+                    title = "Importer des contacts",
+                    subtitle = "Depuis un fichier .vcf ; ceux déjà présents sont ignorés",
+                )
+            }
+            SecaHint("Seca ne synchronise rien : gardez une copie de vos contacts ailleurs que sur ce téléphone.")
 
             SecaSectionLabel("Confidentialité")
             SecaGroupItem(index = 0, count = 1) {

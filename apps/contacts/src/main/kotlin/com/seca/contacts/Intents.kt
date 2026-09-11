@@ -5,7 +5,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import androidx.core.content.FileProvider
 import com.seca.core.design.SecaAppIdentity
+import java.io.File
 
 private const val SECA_PHONE = "com.seca.phone"
 private const val SECA_PHONE_CALL = "com.seca.phone.action.CALL"
@@ -44,6 +46,22 @@ internal fun openSibling(context: Context, identity: SecaAppIdentity) {
             ?: Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING)
     }
     startSafely(context, intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+/**
+ * Shares a contact as a .vcf file through the system share sheet. The file is
+ * readable only by the app the user picks, and only for that share.
+ */
+internal fun shareVCard(context: Context, name: String, vcard: String) {
+    val folder = File(context.cacheDir, "shared").apply { mkdirs() }
+    val safeName = name.replace(Regex("[^\\p{L}\\p{N} _-]"), "").trim().ifEmpty { "contact" }
+    val file = File(folder, "$safeName.vcf").apply { writeText(vcard) }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val send = Intent(Intent.ACTION_SEND)
+        .setType("text/x-vcard")
+        .putExtra(Intent.EXTRA_STREAM, uri)
+        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    startSafely(context, Intent.createChooser(send, "Partager le contact"))
 }
 
 internal fun openAppSettings(context: Context) = startSafely(

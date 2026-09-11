@@ -29,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,8 +48,10 @@ import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaTopBar
+import com.seca.core.design.component.rememberContactPhoto
 import com.seca.core.model.Profile
 import com.seca.core.model.initialsOf
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun DetailScreen(
@@ -65,6 +68,8 @@ internal fun DetailScreen(
         detail = loaded
         missing = loaded == null
     }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var menuOpen by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     val current = detail
@@ -93,6 +98,14 @@ internal fun DetailScreen(
                             Icon(SecaIcons.MoreVert, contentDescription = "Plus d'options")
                         }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Partager") },
+                                leadingIcon = { Icon(SecaIcons.Share, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    scope.launch { viewModel.vCardOf(id)?.let { shareVCard(context, current.displayName, it) } }
+                                },
+                            )
                             DropdownMenuItem(
                                 text = { Text("Supprimer") },
                                 leadingIcon = { Icon(SecaIcons.Delete, contentDescription = null) },
@@ -163,6 +176,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 size = 136.dp,
                 tone = ui.toneOf(profile),
                 seed = detail.displayName,
+                photo = rememberContactPhoto(detail.id),
                 expressive = true,
                 modifier = Modifier.padding(top = 8.dp),
             )

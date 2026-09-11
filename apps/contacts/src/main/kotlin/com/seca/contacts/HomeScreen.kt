@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,6 +38,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,14 +52,17 @@ import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaContactRow
 import com.seca.core.design.component.SecaEmptyState
+import com.seca.core.design.component.SecaFastScroller
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSearchField
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSuiteBar
+import com.seca.core.design.component.rememberContactThumbnail
 import com.seca.core.model.SecaContact
 import com.seca.core.model.initialsOf
 import java.text.Normalizer
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun HomeScreen(
@@ -246,48 +251,73 @@ private fun HomeContent(
         EmptyHome(ui, searching = true)
         return
     }
-    LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxSize(),
-        // Room at the bottom so the last contact clears the floating button.
-        contentPadding = PaddingValues(bottom = 112.dp),
-    ) {
-        if (!searching) {
-            item(key = "my-card", contentType = "my-card") { MyCardRow(ui, onOpenMyCard) }
-            if (shown.isEmpty()) {
-                item(key = "empty", contentType = "empty") {
-                    EmptyHome(ui, searching = false, modifier = Modifier.fillParentMaxHeight(0.6f))
+    val favorites = remember(shown, searching) { if (searching) emptyList() else shown.filter { it.isFavorite } }
+    // The provider already sorts by name, so grouping keeps the letters in order.
+    val sections = remember(shown, searching) {
+        if (searching) emptyMap() else shown.groupBy { sectionLetterOf(it.displayName) }
+    }
+    // Where each letter's title sits in the list: after "Ma fiche" and the favourites.
+    val letterIndex = remember(sections, favorites) {
+        var index = 1 + if (favorites.isNotEmpty()) 2 else 0
+        sections.mapValues { (_, group) -> index.also { index += 1 + group.size } }
+    }
+    val showScroller = sections.size >= MIN_SECTIONS_FOR_SCROLLER
+    val scope = rememberCoroutineScope()
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            // Room at the bottom so the last contact clears the floating button, and on
+            // the right for the letter strip when there is one.
+            contentPadding = PaddingValues(end = if (showScroller) 20.dp else 0.dp, bottom = 112.dp),
+        ) {
+            if (!searching) {
+                item(key = "my-card", contentType = "my-card") { MyCardRow(ui, onOpenMyCard) }
+                if (shown.isEmpty()) {
+                    item(key = "empty", contentType = "empty") {
+                        EmptyHome(ui, searching = false, modifier = Modifier.fillParentMaxHeight(0.6f))
+                    }
+                }
+            }
+            if (searching) {
+                // Search looks through every profile; results are grouped by profile.
+                shown.groupBy { ui.profileOf(it) }.forEach { (profile, group) ->
+                    item(key = "profile-${profile.id}", contentType = "label") { SecaSectionLabel(profile.name) }
+                    contactGroup(group, keyPrefix = "result", ui = ui, onOpen = onOpen)
+                }
+            } else {
+                if (favorites.isNotEmpty()) {
+                    item(key = "favorites-label", contentType = "label") { SecaSectionLabel("Favoris") }
+                    item(key = "favorites", contentType = "favorites") { FavoritesRow(favorites, ui, onOpen) }
+                }
+                sections.forEach { (letter, group) ->
+                    item(key = "letter-$letter", contentType = "label") { SecaSectionLabel(letter) }
+                    contactGroup(group, keyPrefix = "contact", ui = ui, onOpen = onOpen)
+                }
+                if (shown.isNotEmpty()) {
+                    item(key = "count") {
+                        Text(
+                            text = if (shown.size == 1) "1 contact" else "${shown.size} contacts",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 24.dp),
+                        )
+                    }
                 }
             }
         }
-        if (searching) {
-            // Search looks through every profile; results are grouped by profile.
-            shown.groupBy { ui.profileOf(it) }.forEach { (profile, group) ->
-                item(key = "profile-${profile.id}", contentType = "label") { SecaSectionLabel(profile.name) }
-                contactGroup(group, keyPrefix = "result", ui = ui, onOpen = onOpen)
-            }
-        } else {
-            val favorites = shown.filter { it.isFavorite }
-            if (favorites.isNotEmpty()) {
-                item(key = "favorites-label") { SecaSectionLabel("Favoris") }
-                item(key = "favorites") { FavoritesRow(favorites, ui, onOpen) }
-            }
-            // The provider already sorts by name, so grouping keeps the letters in order.
-            shown.groupBy { sectionLetterOf(it.displayName) }.forEach { (letter, group) ->
-                item(key = "letter-$letter", contentType = "label") { SecaSectionLabel(letter) }
-                contactGroup(group, keyPrefix = "contact", ui = ui, onOpen = onOpen)
-            }
-            if (shown.isNotEmpty()) item(key = "count") {
-                Text(
-                    text = if (shown.size == 1) "1 contact" else "${shown.size} contacts",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp),
-                )
-            }
+        if (showScroller) {
+            SecaFastScroller(
+                letters = sections.keys.toList(),
+                onSelect = { letter -> letterIndex[letter]?.let { scope.launch { listState.scrollToItem(it) } } },
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .padding(top = 16.dp, bottom = 112.dp, end = 2.dp),
+            )
         }
     }
 }
@@ -311,6 +341,7 @@ private fun LazyListScope.contactGroup(
                 onClick = { onOpen(contact) },
                 supportingText = contact.phoneNumbers.firstOrNull()?.raw?.let(ui.numbers::display),
                 tone = ui.toneOf(ui.profileOf(contact)),
+                photo = rememberContactThumbnail(contact.photoUri),
             )
         }
     }
@@ -339,6 +370,7 @@ private fun FavoritesRow(favorites: List<SecaContact>, ui: ContactsUi, onOpen: (
                     tone = ui.toneOf(ui.profileOf(contact)),
                     seed = contact.displayName,
                     expressive = true,
+                    photo = rememberContactThumbnail(contact.photoUri),
                 )
                 Text(
                     text = contact.displayName.substringBefore(' '),
@@ -426,6 +458,9 @@ private fun MyCardRow(ui: ContactsUi, onClick: () -> Unit) {
         }
     }
 }
+
+/** Below this many letters the list is short enough to scroll by hand. */
+private const val MIN_SECTIONS_FOR_SCROLLER = 4
 
 /** "Élodie" files under E, not under a separate É; anything without a letter under #. */
 private fun sectionLetterOf(name: String): String {
