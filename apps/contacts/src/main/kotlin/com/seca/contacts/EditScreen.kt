@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -32,12 +33,14 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.ContactDetail
 import com.seca.core.contacts.ContactField
@@ -74,7 +77,9 @@ internal fun EditScreen(
                 profileId = ui.profileForKey(loaded.lookupKey).id
             }
         }
+        // One empty field of each kind is always offered; blank ones are not saved.
         if (phones.isEmpty()) phones.add(ContactField(null, "", Phone.TYPE_MOBILE))
+        if (emails.isEmpty()) emails.add(ContactField(null, "", Email.TYPE_HOME))
         ready = true
     }
 
@@ -131,34 +136,22 @@ internal fun EditScreen(
                 }
 
                 FormSection(SecaIcons.Phone) {
-                    phones.forEachIndexed { index, field ->
-                        FieldEditor(
-                            value = field.value,
-                            label = "Numéro",
-                            keyboard = KeyboardType.Phone,
-                            removeLabel = "Retirer ce numéro",
-                            onChange = { phones[index] = field.copy(value = it) },
-                            onRemove = { phones.removeAt(index) },
-                        )
-                    }
+                    FieldList(phones, label = "Numéro", keyboard = KeyboardType.Phone, removeLabel = "Retirer ce numéro")
                     AddFieldButton("Ajouter un numéro") { phones.add(ContactField(null, "", Phone.TYPE_MOBILE)) }
                 }
 
                 FormSection(SecaIcons.Email) {
-                    emails.forEachIndexed { index, field ->
-                        FieldEditor(
-                            value = field.value,
-                            label = "Adresse e-mail",
-                            keyboard = KeyboardType.Email,
-                            removeLabel = "Retirer cette adresse",
-                            onChange = { emails[index] = field.copy(value = it) },
-                            onRemove = { emails.removeAt(index) },
-                        )
-                    }
+                    FieldList(
+                        emails,
+                        label = "Adresse e-mail",
+                        keyboard = KeyboardType.Email,
+                        removeLabel = "Retirer cette adresse",
+                    )
                     AddFieldButton("Ajouter une adresse e-mail") { emails.add(ContactField(null, "", Email.TYPE_HOME)) }
                 }
 
-                FormSection(SecaIcons.Label) {
+                // Lined up with the chips rather than with the "Profil" label above them.
+                FormSection(SecaIcons.Label, iconTop = 50.dp) {
                     Text(
                         text = "Profil",
                         style = MaterialTheme.typography.labelLarge,
@@ -184,9 +177,9 @@ internal fun EditScreen(
     }
 }
 
-/** One part of the form: its icon at the start, its fields beside it. */
+/** One part of the form: its icon at the start, lined up with the first field, and its fields beside it. */
 @Composable
-private fun FormSection(icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
+private fun FormSection(icon: ImageVector, iconTop: Dp = 24.dp, content: @Composable ColumnScope.() -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -196,7 +189,7 @@ private fun FormSection(icon: ImageVector, content: @Composable ColumnScope.() -
             icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 24.dp),
+            modifier = Modifier.padding(top = iconTop),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -224,12 +217,38 @@ private fun NameField(value: String, label: String, onChange: (String) -> Unit) 
     )
 }
 
+/**
+ * The editable numbers or addresses. The last one left is cleared rather than
+ * removed, so the section never loses its field.
+ */
+@Composable
+private fun FieldList(
+    fields: SnapshotStateList<ContactField>,
+    label: String,
+    keyboard: KeyboardType,
+    removeLabel: String,
+) {
+    fields.forEachIndexed { index, field ->
+        FieldEditor(
+            value = field.value,
+            label = label,
+            keyboard = keyboard,
+            removeLabel = removeLabel,
+            // A lone empty field has nothing to remove.
+            removable = fields.size > 1 || field.value.isNotEmpty(),
+            onChange = { fields[index] = field.copy(value = it) },
+            onRemove = { if (fields.size > 1) fields.removeAt(index) else fields[index] = field.copy(value = "") },
+        )
+    }
+}
+
 @Composable
 private fun FieldEditor(
     value: String,
     label: String,
     keyboard: KeyboardType,
     removeLabel: String,
+    removable: Boolean,
     onChange: (String) -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -243,8 +262,13 @@ private fun FieldEditor(
             keyboardOptions = KeyboardOptions(keyboardType = keyboard, imeAction = ImeAction.Next),
             modifier = Modifier.weight(1f),
         )
-        IconButton(onClick = onRemove) {
-            Icon(SecaIcons.Close, contentDescription = removeLabel)
+        if (removable) {
+            IconButton(onClick = onRemove) {
+                Icon(SecaIcons.Close, contentDescription = removeLabel)
+            }
+        } else {
+            // Keeps the field as wide as its neighbours that do have the button.
+            Spacer(Modifier.size(48.dp))
         }
     }
 }
