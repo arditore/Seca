@@ -32,6 +32,12 @@ class ProfileStore(context: Context) {
         return profile
     }
 
+    /** Puts back a profile from a backup, keeping its id so that its contacts find it again. */
+    fun restoreProfile(profile: Profile) {
+        if (profile.id == Principal.id || profile.id == ALL || customProfiles().any { it.id == profile.id }) return
+        saveCustomProfiles(customProfiles() + profile)
+    }
+
     fun renameProfile(id: String, name: String) {
         saveCustomProfiles(customProfiles().map { if (it.id == id) it.copy(name = name.trim()) else it })
     }

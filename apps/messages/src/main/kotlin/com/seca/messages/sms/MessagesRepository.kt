@@ -38,6 +38,16 @@ data class Message(
     val outgoing: Boolean get() = status != MessageStatus.Received
 }
 
+/** A message as a backup carries it. */
+data class BackupMessage(
+    val address: String,
+    val body: String,
+    val date: Long,
+    val dateSent: Long,
+    val type: Int,
+    val read: Boolean,
+)
+
 /**
  * The phone's text messages, as Android keeps them for every messaging app.
  *
@@ -103,6 +113,62 @@ class MessagesRepository(private val context: Context) {
                 }
             }
         }.orEmpty()
+    }
+
+    /** Every message on the phone, for a backup. */
+    suspend fun allForBackup(): List<BackupMessage> = withContext(Dispatchers.IO) {
+        resolver.query(
+            Sms.CONTENT_URI,
+            arrayOf(Sms.ADDRESS, Sms.BODY, Sms.DATE, Sms.DATE_SENT, Sms.TYPE, Sms.READ),
+            null,
+            null,
+            "${Sms.DATE} ASC",
+        )?.use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    add(
+                        BackupMessage(
+                            address = c.getString(0).orEmpty(),
+                            body = c.getString(1).orEmpty(),
+                            date = c.getLong(2),
+                            dateSent = c.getLong(3),
+                            type = c.getInt(4),
+                            read = c.getInt(5) == 1,
+                        ),
+                    )
+                }
+            }
+        }.orEmpty()
+    }
+
+    /**
+     * Puts messages from a backup back, skipping those already on the phone.
+     * Only the default messaging app may write them. Returns how many came back.
+     */
+    suspend fun restore(messages: List<BackupMessage>): Int = withContext(Dispatchers.IO) {
+        val present = HashSet<String>()
+        resolver.query(Sms.CONTENT_URI, arrayOf(Sms.ADDRESS, Sms.DATE, Sms.BODY), null, null, null)?.use { c ->
+            while (c.moveToNext()) present += "${c.getString(0)}|${c.getLong(1)}|${c.getString(2)}"
+        }
+        var added = 0
+        messages.forEach { message ->
+            val key = "${message.address}|${message.date}|${message.body}"
+            if (key in present) return@forEach
+            val values = ContentValues().apply {
+                put(Sms.ADDRESS, message.address)
+                put(Sms.BODY, message.body)
+                put(Sms.DATE, message.date)
+                put(Sms.DATE_SENT, message.dateSent)
+                put(Sms.TYPE, message.type)
+                put(Sms.READ, if (message.read) 1 else 0)
+                put(Sms.SEEN, 1)
+            }
+            if (runCatching { resolver.insert(Sms.CONTENT_URI, values) }.getOrNull() != null) {
+                added++
+                present += key
+            }
+        }
+        added
     }
 
     /** The conversation with [address], created when there is none yet. */

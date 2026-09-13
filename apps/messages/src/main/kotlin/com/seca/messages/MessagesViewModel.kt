@@ -1,6 +1,8 @@
 package com.seca.messages
 
 import android.app.Application
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +14,8 @@ import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.design.SecaPalette
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
+import com.seca.core.model.backup.BackupCipher
+import com.seca.messages.sms.BackupMessage
 import com.seca.messages.sms.Conversation
 import com.seca.messages.sms.Message
 import com.seca.messages.sms.MessageNotifications
@@ -28,6 +32,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 
 /** The app's screens; the last entry of the back stack is the one shown. */
 sealed interface MessagesScreen {
@@ -166,6 +172,83 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
 
     fun deleteMessage(id: Long) {
         viewModelScope.launch { repository.deleteMessage(id) }
+    }
+
+    /** Writes every message to [uri], encrypted with [passphrase], which is wiped from memory once used. */
+    fun exportBackup(uri: Uri, passphrase: CharArray) {
+        viewModelScope.launch {
+            val messages = repository.allForBackup()
+            val json = JSONObject()
+                .put("app", "seca-messages")
+                .put("version", 1)
+                .put(
+                    "messages",
+                    JSONArray().apply {
+                        messages.forEach { m ->
+                            put(
+                                JSONObject()
+                                    .put("address", m.address)
+                                    .put("body", m.body)
+                                    .put("date", m.date)
+                                    .put("dateSent", m.dateSent)
+                                    .put("type", m.type)
+                                    .put("read", m.read),
+                            )
+                        }
+                    },
+                )
+            val sealed = withContext(Dispatchers.Default) {
+                BackupCipher.encrypt(json.toString().toByteArray(Charsets.UTF_8), passphrase).also { passphrase.fill(' ') }
+            }
+            val written = withContext(Dispatchers.IO) {
+                runCatching {
+                    getApplication<Application>().contentResolver.openOutputStream(uri, "wt")?.use { it.write(sealed) } != null
+                }.getOrDefault(false)
+            }
+            toast(if (written) "Sauvegarde chiffrée : ${plural(messages.size, "message", "messages")}" else "La sauvegarde a échoué")
+        }
+    }
+
+    /** Restores a backup made by [exportBackup]; messages already on the phone are skipped. */
+    fun importBackup(uri: Uri, passphrase: CharArray) {
+        viewModelScope.launch {
+            val bytes = withContext(Dispatchers.IO) {
+                runCatching { getApplication<Application>().contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull()
+            }
+            val plain = bytes?.let { withContext(Dispatchers.Default) { BackupCipher.decrypt(it, passphrase) } }
+            passphrase.fill(' ')
+            val json = plain?.let { runCatching { JSONObject(it.toString(Charsets.UTF_8)) }.getOrNull() }
+            if (json == null || json.optString("app") != "seca-messages") {
+                toast(
+                    when {
+                        bytes == null -> "Ce fichier ne peut pas être lu"
+                        plain == null -> "Mot de passe incorrect, ou fichier abîmé"
+                        else -> "Ce fichier n'est pas une sauvegarde de Seca Messages"
+                    },
+                )
+                return@launch
+            }
+            val list = json.optJSONArray("messages") ?: JSONArray()
+            val messages = (0 until list.length()).map { index ->
+                val item = list.getJSONObject(index)
+                BackupMessage(
+                    address = item.optString("address"),
+                    body = item.optString("body"),
+                    date = item.optLong("date"),
+                    dateSent = item.optLong("dateSent"),
+                    type = item.optInt("type"),
+                    read = item.optBoolean("read", true),
+                )
+            }
+            val added = repository.restore(messages)
+            toast("Sauvegarde restaurée : ${plural(added, "message ajouté", "messages ajoutés")}")
+        }
+    }
+
+    private fun plural(count: Int, one: String, many: String) = if (count == 1) "1 $one" else "$count $many"
+
+    private fun toast(text: String) {
+        Toast.makeText(getApplication(), text, Toast.LENGTH_LONG).show()
     }
 
     /** Sets the palette of every Seca app; null follows the wallpaper. */

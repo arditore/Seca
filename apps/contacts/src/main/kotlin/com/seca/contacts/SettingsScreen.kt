@@ -37,7 +37,9 @@ import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaHint
+import android.net.Uri
 import com.seca.core.design.component.SecaPaletteSwatch
+import com.seca.core.design.component.SecaPassphraseDialog
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
@@ -58,6 +60,13 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { withWrite { viewModel.importContacts(it) } }
     }
+    // An encrypted backup: the file is chosen first, then its passphrase is asked.
+    var backupTarget by remember { mutableStateOf<Uri?>(null) }
+    var restoreSource by remember { mutableStateOf<Uri?>(null) }
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) {
+        backupTarget = it
+    }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { restoreSource = it }
     var adding by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<Profile?>(null) }
     var deleting by remember { mutableStateOf<Profile?>(null) }
@@ -185,14 +194,28 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
             SecaHint("Rangez vos contacts par profil, comme Travail ou Famille. Supprimer un profil ne supprime aucun contact.")
 
             SecaSectionLabel("Sauvegarde")
-            SecaGroupItem(index = 0, count = 2, onClick = { exportLauncher.launch("contacts-seca-${LocalDate.now()}.vcf") }) {
+            SecaGroupItem(index = 0, count = 4, onClick = { backupLauncher.launch("seca-contacts-${LocalDate.now()}.seca") }) {
+                SecaSettingRow(
+                    icon = SecaIcons.Lock,
+                    title = "Sauvegarde chiffrée",
+                    subtitle = "Contacts, profils et Ma fiche, protégés par un mot de passe",
+                )
+            }
+            SecaGroupItem(index = 1, count = 4, onClick = { restoreLauncher.launch(arrayOf("*/*")) }) {
+                SecaSettingRow(
+                    icon = SecaIcons.Download,
+                    title = "Restaurer une sauvegarde",
+                    subtitle = "Remet les contacts manquants, chacun dans son profil",
+                )
+            }
+            SecaGroupItem(index = 2, count = 4, onClick = { exportLauncher.launch("contacts-seca-${LocalDate.now()}.vcf") }) {
                 SecaSettingRow(
                     icon = SecaIcons.Upload,
                     title = "Exporter les contacts",
                     subtitle = "Un fichier .vcf, gardé où vous voulez",
                 )
             }
-            SecaGroupItem(index = 1, count = 2, onClick = { importLauncher.launch(VCardTypes) }) {
+            SecaGroupItem(index = 3, count = 4, onClick = { importLauncher.launch(VCardTypes) }) {
                 SecaSettingRow(
                     icon = SecaIcons.Download,
                     title = "Importer des contacts",
@@ -230,6 +253,31 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                 }
             }
         }
+    }
+
+    backupTarget?.let { uri ->
+        SecaPassphraseDialog(
+            title = "Chiffrer la sauvegarde",
+            confirmLabel = "Chiffrer",
+            creating = true,
+            onDismiss = { backupTarget = null },
+            onConfirm = {
+                viewModel.exportBackup(uri, it)
+                backupTarget = null
+            },
+        )
+    }
+    restoreSource?.let { uri ->
+        SecaPassphraseDialog(
+            title = "Ouvrir la sauvegarde",
+            confirmLabel = "Restaurer",
+            creating = false,
+            onDismiss = { restoreSource = null },
+            onConfirm = { passphrase ->
+                restoreSource = null
+                withWrite { viewModel.importBackup(uri, passphrase) }
+            },
+        )
     }
 
     if (adding) {

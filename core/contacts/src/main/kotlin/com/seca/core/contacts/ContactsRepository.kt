@@ -312,11 +312,23 @@ class ContactsRepository(
     }
 
     /** Every visible contact as a vCard carries it, read in one pass over the provider. */
-    suspend fun exportAll(): List<VCardContact> = withContext(Dispatchers.IO) {
+    suspend fun exportAll(): List<VCardContact> = exportEntries().map { it.second }
+
+    /** Every visible contact with its lookup key, for a backup that keeps each contact's profile. */
+    suspend fun exportEntries(): List<Pair<String, VCardContact>> = withContext(Dispatchers.IO) {
         val cards = linkedMapOf<Long, ExportCard>()
         resolver.query(
             Data.CONTENT_URI,
-            arrayOf(Data.CONTACT_ID, Data.DISPLAY_NAME_PRIMARY, Data.MIMETYPE, Data.DATA1, Data.DATA2, Data.DATA3, Data.DATA4),
+            arrayOf(
+                Data.CONTACT_ID,
+                Data.DISPLAY_NAME_PRIMARY,
+                Data.MIMETYPE,
+                Data.DATA1,
+                Data.DATA2,
+                Data.DATA3,
+                Data.DATA4,
+                Data.LOOKUP_KEY,
+            ),
             "${Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?)",
             arrayOf(
                 StructuredName.CONTENT_ITEM_TYPE,
@@ -330,7 +342,7 @@ class ContactsRepository(
             null,
         )?.use { c ->
             while (c.moveToNext()) {
-                val card = cards.getOrPut(c.getLong(0)) { ExportCard(c.getString(1).orEmpty()) }
+                val card = cards.getOrPut(c.getLong(0)) { ExportCard(c.getString(1).orEmpty(), c.getString(7).orEmpty()) }
                 when (c.getString(2)) {
                     StructuredName.CONTENT_ITEM_TYPE -> if (card.given.isEmpty() && card.family.isEmpty()) {
                         card.given = c.getString(4).orEmpty()
@@ -364,7 +376,7 @@ class ContactsRepository(
         }
         cards.values
             .map { card ->
-                VCardContact(
+                card.lookupKey to VCardContact(
                     givenName = card.given,
                     familyName = card.family,
                     displayName = card.display,
@@ -378,10 +390,10 @@ class ContactsRepository(
                     note = card.note,
                 )
             }
-            .sortedBy { it.displayName.lowercase() }
+            .sortedBy { it.second.displayName.lowercase() }
     }
 
-    private class ExportCard(val display: String) {
+    private class ExportCard(val display: String, val lookupKey: String) {
         var given = ""
         var family = ""
         var organization = ""

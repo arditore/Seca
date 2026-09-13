@@ -1,7 +1,17 @@
 package com.seca.messages
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.seca.core.design.component.SecaPassphraseDialog
+import java.time.LocalDate
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -37,6 +47,13 @@ internal fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val dynamic = ui.palette == null
+    // An encrypted backup: the file is chosen first, then its passphrase is asked.
+    var backupTarget by remember { mutableStateOf<Uri?>(null) }
+    var restoreSource by remember { mutableStateOf<Uri?>(null) }
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) {
+        backupTarget = it
+    }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { restoreSource = it }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
@@ -123,18 +140,70 @@ internal fun SettingsScreen(
                 SecaHint("Installez Seca Contacts pour choisir les couleurs de la suite.")
             }
 
+            SecaSectionLabel("Sauvegarde")
+            SecaGroupItem(index = 0, count = 2, onClick = { backupLauncher.launch("seca-messages-${LocalDate.now()}.seca") }) {
+                SecaSettingRow(
+                    icon = SecaIcons.Lock,
+                    title = "Sauvegarde chiffrée",
+                    subtitle = "Tous les SMS, protégés par un mot de passe",
+                )
+            }
+            SecaGroupItem(
+                index = 1,
+                count = 2,
+                onClick = {
+                    if (isDefaultApp) {
+                        restoreLauncher.launch(arrayOf("*/*"))
+                    } else {
+                        Toast.makeText(context, "Activez d'abord Seca Messages comme application SMS", Toast.LENGTH_LONG).show()
+                    }
+                },
+            ) {
+                SecaSettingRow(
+                    icon = SecaIcons.Download,
+                    title = "Restaurer une sauvegarde",
+                    subtitle = "Remet les messages absents de ce téléphone",
+                )
+            }
+            SecaHint("Rien n'est synchronisé : gardez la sauvegarde ailleurs que sur ce téléphone.")
+
             SecaSectionLabel("Protection")
             SecaPrivacySettingsGroup("Seca Messages")
 
             SecaSectionLabel("Confidentialité")
             SecaGroupItem(index = 0, count = 1) {
                 SecaSettingRow(
-                    icon = SecaIcons.Lock,
+                    icon = SecaIcons.Shield,
                     title = "Tout reste sur ce téléphone",
                     subtitle = "Seca Messages n'a pas accès à Internet. Les SMS restent là où Android les garde : " +
                         "rien n'est copié ailleurs.",
                 )
             }
         }
+    }
+
+    backupTarget?.let { uri ->
+        SecaPassphraseDialog(
+            title = "Chiffrer la sauvegarde",
+            confirmLabel = "Chiffrer",
+            creating = true,
+            onDismiss = { backupTarget = null },
+            onConfirm = {
+                viewModel.exportBackup(uri, it)
+                backupTarget = null
+            },
+        )
+    }
+    restoreSource?.let { uri ->
+        SecaPassphraseDialog(
+            title = "Ouvrir la sauvegarde",
+            confirmLabel = "Restaurer",
+            creating = false,
+            onDismiss = { restoreSource = null },
+            onConfirm = {
+                viewModel.importBackup(uri, it)
+                restoreSource = null
+            },
+        )
     }
 }

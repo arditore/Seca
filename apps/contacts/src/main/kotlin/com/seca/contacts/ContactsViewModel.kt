@@ -16,6 +16,9 @@ import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.contacts.VCard
 import com.seca.core.contacts.VCardContact
 import com.seca.core.design.SecaPalette
+import com.seca.core.model.backup.BackupCipher
+import org.json.JSONArray
+import org.json.JSONObject
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
 import kotlinx.coroutines.Dispatchers
@@ -193,13 +196,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
             val existing = _ui.value.contacts
             var added = 0
             cards.filterNot { card -> existing.any { it.isSameAs(card) } }.forEach { card ->
-                val input = ContactInput(
-                    givenName = card.givenName.ifBlank { if (card.familyName.isBlank()) card.displayName else "" },
-                    familyName = card.familyName,
-                    phones = card.phones,
-                    emails = card.emails,
-                )
-                if (repository.createContact(input) != null) added++
+                if (repository.createContact(card.toInput()) != null) added++
             }
             load()
             toast(
@@ -211,6 +208,103 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
             )
         }
     }
+
+    /**
+     * Writes every contact, its profile, the profiles themselves and "Ma fiche" to [uri],
+     * encrypted with [passphrase]. The passphrase is wiped from memory once used.
+     */
+    fun exportBackup(uri: Uri, passphrase: CharArray) {
+        viewModelScope.launch {
+            val entries = repository.exportEntries()
+            val state = _ui.value
+            val json = JSONObject()
+                .put("app", "seca-contacts")
+                .put("version", 1)
+                .put(
+                    "profiles",
+                    JSONArray().apply { state.profiles.forEach { put(JSONObject().put("id", it.id).put("name", it.name)) } },
+                )
+                .put(
+                    "contacts",
+                    JSONArray().apply {
+                        entries.forEach { (key, card) ->
+                            put(JSONObject().put("profile", state.profileForKey(key).id).put("vcard", VCard.write(listOf(card))))
+                        }
+                    },
+                )
+                .put("myCard", JSONObject().put("name", state.myCard.name).put("numbers", JSONArray(state.myCard.numbers)))
+            val sealed = withContext(Dispatchers.Default) {
+                BackupCipher.encrypt(json.toString().toByteArray(Charsets.UTF_8), passphrase).also { passphrase.fill(' ') }
+            }
+            val written = withContext(Dispatchers.IO) {
+                runCatching { resolver.openOutputStream(uri, "wt")?.use { it.write(sealed) } != null }.getOrDefault(false)
+            }
+            toast(if (written) "Sauvegarde chiffrée : ${plural(entries.size, "contact", "contacts")}" else "La sauvegarde a échoué")
+        }
+    }
+
+    /** Restores a backup made by [exportBackup]: missing profiles and contacts come back, each in its profile. */
+    fun importBackup(uri: Uri, passphrase: CharArray) {
+        viewModelScope.launch {
+            val bytes = withContext(Dispatchers.IO) {
+                runCatching { resolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull()
+            }
+            val plain = bytes?.let { withContext(Dispatchers.Default) { BackupCipher.decrypt(it, passphrase) } }
+            passphrase.fill(' ')
+            val json = plain?.let { runCatching { JSONObject(it.toString(Charsets.UTF_8)) }.getOrNull() }
+            if (json == null || json.optString("app") != "seca-contacts") {
+                toast(
+                    when {
+                        bytes == null -> "Ce fichier ne peut pas être lu"
+                        plain == null -> "Mot de passe incorrect, ou fichier abîmé"
+                        else -> "Ce fichier n'est pas une sauvegarde de Seca Contacts"
+                    },
+                )
+                return@launch
+            }
+            val profiles = json.optJSONArray("profiles") ?: JSONArray()
+            for (i in 0 until profiles.length()) {
+                val item = profiles.getJSONObject(i)
+                store.restoreProfile(Profile(item.getString("id"), item.getString("name")))
+            }
+            val existing = repository.contacts()
+            var added = 0
+            val contacts = json.optJSONArray("contacts") ?: JSONArray()
+            for (i in 0 until contacts.length()) {
+                val item = contacts.getJSONObject(i)
+                val card = VCard.parse(item.optString("vcard")).firstOrNull() ?: continue
+                val contactId = existing.firstOrNull { it.isSameAs(card) }?.id
+                    ?: repository.createContact(card.toInput())?.also { added++ }
+                    ?: continue
+                repository.lookupKeyOf(contactId)?.let { store.assign(it, item.optString("profile", ProfileStore.Principal.id)) }
+            }
+            // "Ma fiche" only comes back onto a phone where it was never filled in.
+            json.optJSONObject("myCard")?.let { card ->
+                val current = _ui.value.myCard
+                if (current.name.isBlank() && current.numbers.isEmpty()) {
+                    val numbers = card.optJSONArray("numbers")
+                    myCards.save(card.optString("name"), (0 until (numbers?.length() ?: 0)).map { numbers!!.getString(it) })
+                    loadMyCard()
+                }
+            }
+            refreshPreferences()
+            load()
+            toast("Sauvegarde restaurée : ${plural(added, "contact ajouté", "contacts ajoutés")}")
+        }
+    }
+
+    private fun VCardContact.toInput() = ContactInput(
+        givenName = givenName.ifBlank { if (familyName.isBlank()) displayName else "" },
+        familyName = familyName,
+        phones = phones,
+        emails = emails,
+        addresses = addresses,
+        organization = organization,
+        jobTitle = jobTitle,
+        website = website,
+        birthday = birthday,
+        note = note,
+    )
 
     /** One contact as a vCard, for sharing it. */
     suspend fun vCardOf(id: Long): String? = repository.contactDetail(id)?.let { detail ->
