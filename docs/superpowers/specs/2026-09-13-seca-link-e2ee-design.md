@@ -90,9 +90,22 @@ Orbot) est prévue pour la masquer.
 ## Dépendances et F-Droid
 
 - **libsignal** (AGPL-3.0), compilée depuis les sources Rust pour F-Droid ; environ 10 Mo de code natif.
+  - Prise sur le dépôt Maven de Signal (Maven Central s'arrête à la 0.86.5), limité au seul groupe `org.signal`.
+  - Seul l'ABI `arm64-v8a` est embarqué, sans la bibliothèque `libsignal_jni_testing`. Le NDK retire les symboles de débogage à l'empaquetage.
+  - Elle exige le desugaring de la bibliothèque Java (`desugar_jdk_libs`, Apache-2.0).
 - **secp256k1-kmp** d'ACINQ (Apache-2.0) pour les signatures Schnorr de Nostr.
-- **Room** (Apache-2.0).
+- **OkHttp** (Apache-2.0) pour les WebSocket vers les relais.
+- **Room** (Apache-2.0), à partir de la phase 3.
 - Aucune dépendance Google Play : le garde-fou Gradle existant s'applique toujours.
+
+## Phase 1 réalisée
+
+- Seca Link est désactivé par défaut. L'activer crée les clés et publie la partie publique. Rien n'est créé ni envoyé avant.
+- Le paquet de pré-clés est un événement NIP-78 (type 30078, étiquette `d` = `seca-link/prekeys`) : chaque relais le remplace au lieu de l'empiler.
+  - Il contient la clé d'identité, une pré-clé signée et une pré-clé Kyber de dernier recours, sans pré-clé à usage unique.
+  - Il est republié chaque semaine.
+- L'identité est scellée en AES-256-GCM par une clé Android Keystore, StrongBox quand la puce existe. Elle est gardée dans `noBackupFilesDir`.
+- Relais : connexions chiffrées (`wss`) uniquement, liste modifiable, réponse de chaque relais affichée.
 
 ## Ajouts de la suite, par priorité décidée
 

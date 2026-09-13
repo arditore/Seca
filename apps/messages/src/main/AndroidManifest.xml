@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Text messages: read, receive and send. No INTERNET permission, ever: the app
-         cannot send a conversation anywhere but to the person it is written to. -->
+    <!-- Text messages: read, receive and send. They never go anywhere but to the person
+         they are written to. -->
     <uses-permission android:name="android.permission.READ_SMS" />
+    <!-- Seca Link only, once the owner turns it on: public keys and encrypted envelopes to
+         the Nostr relays they list. Seca Contacts and Seca Telephone never get this. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.SEND_SMS" />
     <!-- Multimedia messages come later, but the default messaging app must accept them. -->

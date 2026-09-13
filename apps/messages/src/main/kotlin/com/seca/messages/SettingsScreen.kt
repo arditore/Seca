@@ -167,6 +167,51 @@ internal fun SettingsScreen(
             }
             SecaHint("Rien n'est synchronisé : gardez la sauvegarde ailleurs que sur ce téléphone.")
 
+            SecaSectionLabel("Seca Link")
+            val link = ui.link
+            val published = link.statuses.values.count { it.state == RelayState.Published }
+            val linkRows = if (link.enabled) 3 else 1
+            SecaGroupItem(index = 0, count = linkRows) {
+                SecaSettingRow(
+                    icon = SecaIcons.Link,
+                    title = "Chiffrement Seca Link",
+                    subtitle = when {
+                        !link.enabled -> "Messages chiffrés de bout en bout entre téléphones Seca"
+                        link.error != null -> link.error
+                        link.statuses.values.any { it.state == RelayState.Publishing } -> "Publication de votre clé…"
+                        published > 0 -> "Clé publiée sur $published relais"
+                        link.statuses.isNotEmpty() -> "Aucun relais n'a accepté la clé"
+                        else -> "Activé"
+                    },
+                    modifier = Modifier.toggleable(
+                        value = link.enabled,
+                        role = Role.Switch,
+                        onValueChange = viewModel::setLinkEnabled,
+                    ),
+                    trailing = { Switch(checked = link.enabled, onCheckedChange = null) },
+                )
+            }
+            if (link.enabled) {
+                SecaGroupItem(index = 1, count = linkRows, onClick = { viewModel.open(MessagesScreen.Relays) }) {
+                    SecaSettingRow(
+                        icon = SecaIcons.Wifi,
+                        title = "Relais",
+                        subtitle = "${link.relays.size} relais Nostr publics et gratuits",
+                    )
+                }
+                SecaGroupItem(index = 2, count = linkRows) {
+                    SecaSettingRow(
+                        icon = SecaIcons.Shield,
+                        title = "Empreinte de ce téléphone",
+                        subtitle = link.fingerprint ?: "Création des clés…",
+                    )
+                }
+            }
+            SecaHint(
+                "Première étape : ce téléphone crée ses clés, gardées dans sa puce de sécurité, et publie la partie " +
+                    "publique. Les conversations chiffrées arrivent dans une prochaine version ; les SMS ne changent pas.",
+            )
+
             SecaSectionLabel("Protection")
             SecaPrivacySettingsGroup("Seca Messages")
 
@@ -174,9 +219,9 @@ internal fun SettingsScreen(
             SecaGroupItem(index = 0, count = 1) {
                 SecaSettingRow(
                     icon = SecaIcons.Shield,
-                    title = "Tout reste sur ce téléphone",
-                    subtitle = "Seca Messages n'a pas accès à Internet. Les SMS restent là où Android les garde : " +
-                        "rien n'est copié ailleurs.",
+                    title = "Vos SMS restent sur ce téléphone",
+                    subtitle = "Les SMS restent là où Android les garde : rien n'est copié ailleurs. Internet ne sert " +
+                        "qu'à Seca Link, quand vous l'activez, et n'y passent que des clés publiques et du chiffré.",
                 )
             }
         }

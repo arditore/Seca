@@ -12,6 +12,9 @@ import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.SharedProfiles
 import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.design.SecaPalette
+import com.seca.core.link.LinkSettings
+import com.seca.core.link.SecaLink
+import com.seca.core.link.relay.PublishResult
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
 import com.seca.core.model.backup.BackupCipher
@@ -30,6 +33,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
@@ -50,6 +54,7 @@ sealed interface MessagesScreen {
     data object NewMessage : MessagesScreen
     data object Settings : MessagesScreen
     data object Archived : MessagesScreen
+    data object Relays : MessagesScreen
 }
 
 data class MessagesUi(
@@ -68,6 +73,7 @@ data class MessagesUi(
     val searchHits: List<Message> = emptyList(),
     /** Messages waiting for their time, soonest first. */
     val scheduled: List<ScheduledMessage> = emptyList(),
+    val link: LinkUi = LinkUi(),
 ) {
     /** What is waiting to be sent to [address], however the number is written. */
     fun scheduledFor(address: String): List<ScheduledMessage> {
@@ -109,8 +115,89 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private val link = SecaLink(application)
+    private var linkLoaded = false
+    private var publishing: Job? = null
+
+    /** Shows Seca Link as the owner left it, and publishes the keys again when a week has passed. */
+    private fun loadLink() {
+        _ui.update { it.copy(link = it.link.copy(enabled = link.settings.enabled, relays = link.settings.relays())) }
+        if (!link.settings.enabled) return
+        if (link.settings.publishDue()) {
+            publishPrekeys()
+        } else {
+            viewModelScope.launch { showFingerprint() }
+        }
+    }
+
+    fun setLinkEnabled(on: Boolean) {
+        link.settings.enabled = on
+        _ui.update { it.copy(link = it.link.copy(enabled = on, statuses = emptyMap())) }
+        if (on) publishPrekeys()
+    }
+
+    /** Publishes this phone's pre-keys on every relay, showing each relay's answer as it arrives. */
+    fun publishPrekeys() {
+        if (publishing?.isActive == true) return
+        publishing = viewModelScope.launch {
+            if (!showFingerprint()) return@launch
+            val relays = link.settings.relays()
+            _ui.update {
+                it.copy(link = it.link.copy(relays = relays, statuses = relays.associateWith { RelayStatus(RelayState.Publishing) }))
+            }
+            link.publishPrekeys()
+                .catch { error -> _ui.update { it.copy(link = it.link.copy(error = "Publication impossible : ${error.message}")) } }
+                .collect { (url, result) ->
+                    val status = when (result) {
+                        PublishResult.Accepted -> RelayStatus(RelayState.Published)
+                        is PublishResult.Refused -> RelayStatus(RelayState.Refused, result.reason)
+                        is PublishResult.Unreachable -> RelayStatus(RelayState.Unreachable, result.reason)
+                    }
+                    _ui.update { it.copy(link = it.link.copy(statuses = it.link.statuses + (url to status))) }
+                }
+        }
+    }
+
+    /** Creates the keys the first time. False when the phone's Keystore refused. */
+    private suspend fun showFingerprint(): Boolean {
+        // The Keystore reports its failures in several ways, runtime exceptions included.
+        val identity = runCatching { link.identity() }.getOrElse { error ->
+            _ui.update { it.copy(link = it.link.copy(error = "Clés indisponibles : ${error.message}")) }
+            return false
+        }
+        _ui.update { it.copy(link = it.link.copy(fingerprint = identity.fingerprint, error = null)) }
+        return true
+    }
+
+    /** False when [input] cannot be a relay address. */
+    fun addRelay(input: String): Boolean {
+        val url = LinkSettings.normalize(input) ?: return false
+        val relays = link.settings.relays()
+        if (url !in relays) {
+            link.settings.setRelays(relays + url)
+            _ui.update { it.copy(link = it.link.copy(relays = link.settings.relays())) }
+            if (link.settings.enabled) publishPrekeys()
+        }
+        return true
+    }
+
+    fun removeRelay(url: String) {
+        link.settings.setRelays(link.settings.relays() - url)
+        _ui.update { it.copy(link = it.link.copy(relays = link.settings.relays(), statuses = it.link.statuses - url)) }
+    }
+
+    fun resetRelays() {
+        link.settings.resetRelays()
+        _ui.update { it.copy(link = it.link.copy(relays = link.settings.relays())) }
+        if (link.settings.enabled) publishPrekeys()
+    }
+
     /** (Re)loads what the granted permissions allow, then follows every change. */
     fun start(smsGranted: Boolean, contactsGranted: Boolean) {
+        if (!linkLoaded) {
+            linkLoaded = true
+            loadLink()
+        }
         watching?.cancel()
         watching = viewModelScope.launch {
             if (contactsGranted) {

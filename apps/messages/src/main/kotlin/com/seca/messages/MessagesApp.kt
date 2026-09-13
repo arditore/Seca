@@ -103,7 +103,7 @@ fun MessagesApp(
                     icon = SecaIcons.Messages,
                     title = "Vos messages",
                     description = "Seca Messages lit, reçoit et envoie les SMS de ce téléphone. " +
-                        "Rien ne quitte l'appareil : l'application n'a pas accès à Internet.",
+                        "Ils restent sur l'appareil et ne partent que vers leur destinataire.",
                     modifier = Modifier.padding(padding),
                     action = {
                         Column(
@@ -142,6 +142,7 @@ fun MessagesApp(
                     MessagesScreen.NewMessage -> NewMessageScreen(ui, viewModel)
                     MessagesScreen.Settings -> SettingsScreen(ui, viewModel, isDefaultApp, onBecomeDefault)
                     MessagesScreen.Archived -> ArchivedScreen(ui, viewModel)
+                    MessagesScreen.Relays -> RelaysScreen(ui, viewModel)
                 }
             }
         }
