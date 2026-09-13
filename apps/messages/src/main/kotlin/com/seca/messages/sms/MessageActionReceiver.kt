@@ -53,6 +53,16 @@ class MessageActionReceiver : BroadcastReceiver() {
                 if (threadId >= 0) repository.markRead(threadId)
                 MessageNotifications.cancel(context, threadId)
             }
+            SEND_SCHEDULED -> {
+                val scheduled = ScheduledMessages(context)
+                val message = scheduled.find(intent.getLongExtra(ScheduledMessages.EXTRA_ID, -1L)) ?: return
+                if (SmsSender(context).send(message.address, message.body)) {
+                    scheduled.remove(message.id)
+                } else {
+                    // Kept, so the conversation still offers to send it; the owner learns it did not leave.
+                    MessageNotifications.notifyScheduledNotSent(context, message.address)
+                }
+            }
         }
     }
 
@@ -61,5 +71,6 @@ class MessageActionReceiver : BroadcastReceiver() {
         const val REPLY = "com.seca.messages.REPLY"
         const val MARK_READ = "com.seca.messages.MARK_READ"
         const val COPY_CODE = "com.seca.messages.COPY_CODE"
+        const val SEND_SCHEDULED = "com.seca.messages.SEND_SCHEDULED"
     }
 }

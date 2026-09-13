@@ -87,6 +87,12 @@ internal fun openNotificationSettings(context: Context) = startSafely(
     Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
 )
 
+/** Where the owner lets Seca Messages send a scheduled message on the minute. */
+internal fun openExactAlarmSettings(context: Context) = startSafely(
+    context,
+    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.fromParts("package", context.packageName, null)),
+)
+
 internal fun openDefaultAppsSettings(context: Context) =
     startSafely(context, Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
 

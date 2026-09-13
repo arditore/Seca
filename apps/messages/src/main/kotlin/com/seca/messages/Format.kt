@@ -60,3 +60,15 @@ internal fun dayTitleOf(millis: Long): String {
 }
 
 internal fun sameDay(a: Long, b: Long): Boolean = zonedOf(a).toLocalDate() == zonedOf(b).toLocalDate()
+
+/** When a scheduled message leaves: "aujourd'hui à 19:00", "demain à 08:00", "lun. 15 sept. à 08:00". */
+internal fun scheduleTimeOf(context: Context, millis: Long): String {
+    val day = zonedOf(millis).toLocalDate()
+    val today = LocalDate.now()
+    val dayText = when (day) {
+        today -> "aujourd'hui"
+        today.plusDays(1) -> "demain"
+        else -> day.format(DateTimeFormatter.ofPattern(if (day.year == today.year) "EEE d MMM" else "EEE d MMM yyyy", Locale.getDefault()))
+    }
+    return "$dayText à ${timeOf(context, millis)}"
+}

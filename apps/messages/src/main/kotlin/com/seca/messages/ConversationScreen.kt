@@ -2,6 +2,7 @@ package com.seca.messages
 
 import android.telephony.SmsMessage
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -53,6 +55,7 @@ import com.seca.core.model.Profile
 import com.seca.messages.sms.Message
 import com.seca.messages.sms.MessageStatus
 import com.seca.messages.sms.OneTimeCode
+import com.seca.messages.sms.ScheduledMessage
 import kotlin.math.abs
 
 /** Two messages closer than this, from the same side, read as one block. */
@@ -73,6 +76,20 @@ internal fun ConversationScreen(
     LaunchedEffect(screen.threadId, messages.size) { viewModel.markRead(screen.threadId) }
     var text by rememberSaveable(screen.address) { mutableStateOf(screen.draft) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var scheduling by remember { mutableStateOf(false) }
+    // The list grows upwards, so the latest to leave comes first and sits at the very bottom.
+    val scheduled = remember(ui.scheduled, screen.address) { ui.scheduledFor(screen.address).asReversed() }
+
+    if (scheduling) {
+        ScheduleDialog(
+            onDismiss = { scheduling = false },
+            onSchedule = { at ->
+                viewModel.schedule(screen.address, text, at)
+                text = ""
+                scheduling = false
+            },
+        )
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
@@ -93,6 +110,7 @@ internal fun ConversationScreen(
                     viewModel.send(screen.address, text)
                     text = ""
                 },
+                onSchedule = { scheduling = true },
             )
         },
     ) { padding ->
@@ -105,6 +123,18 @@ internal fun ConversationScreen(
                 .padding(padding),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         ) {
+            // What is waiting to leave sits below the last message sent.
+            items(scheduled, key = { "scheduled-${it.id}" }, contentType = { "scheduled" }) { message ->
+                ScheduledBubble(
+                    message = message,
+                    onSendNow = { viewModel.sendScheduledNow(message) },
+                    onEdit = {
+                        viewModel.cancelScheduled(message.id)
+                        text = message.body
+                    },
+                    onCancel = { viewModel.cancelScheduled(message.id) },
+                )
+            }
             itemsIndexed(newestFirst, key = { _, message -> message.id }, contentType = { _, _ -> "message" }) { index, message ->
                 val older = newestFirst.getOrNull(index + 1)
                 val newer = newestFirst.getOrNull(index - 1)
@@ -348,9 +378,76 @@ private fun Bubble(
     }
 }
 
-/** The text field and the send button, lifted above the keyboard. */
+/** A message waiting for its time: outlined rather than filled, with when it leaves. */
 @Composable
-private fun Composer(text: String, onText: (String) -> Unit, enabled: Boolean, onSend: () -> Unit) {
+private fun ScheduledBubble(message: ScheduledMessage, onSendNow: () -> Unit, onEdit: () -> Unit, onCancel: () -> Unit) {
+    val context = LocalContext.current
+    var menuOpen by remember { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(20.dp)
+    // Past its time, the alarm is about to fire, or the phone could not send it and said so.
+    val waiting = message.at <= System.currentTimeMillis()
+    Column(
+        horizontalAlignment = Alignment.End,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+    ) {
+        Box {
+            Text(
+                text = message.body,
+                style = MaterialTheme.typography.bodyLarge,
+                color = colors.onSurface,
+                modifier = Modifier
+                    .widthIn(max = 300.dp)
+                    .border(1.5.dp, colors.primary, shape)
+                    .clip(shape)
+                    .combinedClickable(
+                        onClick = { menuOpen = true },
+                        onLongClickLabel = "Plus d'actions",
+                        onLongClick = { menuOpen = true },
+                    )
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+            )
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                MenuEntry("Envoyer maintenant", SecaIcons.Send) {
+                    menuOpen = false
+                    onSendNow()
+                }
+                MenuEntry("Modifier", SecaIcons.Edit) {
+                    menuOpen = false
+                    onEdit()
+                }
+                MenuEntry("Annuler l'envoi", SecaIcons.Delete) {
+                    menuOpen = false
+                    onCancel()
+                }
+            }
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+        ) {
+            Icon(SecaIcons.Schedule, contentDescription = null, tint = colors.primary, modifier = Modifier.size(14.dp))
+            Text(
+                text = if (waiting) "En attente d'envoi" else "Programmé · ${scheduleTimeOf(context, message.at)}",
+                style = MaterialTheme.typography.labelMedium,
+                color = colors.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp),
+            )
+        }
+    }
+}
+
+/** The text field, the schedule and send buttons, lifted above the keyboard. */
+@Composable
+private fun Composer(
+    text: String,
+    onText: (String) -> Unit,
+    enabled: Boolean,
+    onSend: () -> Unit,
+    onSchedule: () -> Unit,
+) {
     // How many SMS the text takes: past 160 plain characters, or 70 with accents or emoji, it is split.
     val parts = remember(text) { if (text.isEmpty()) 0 else SmsMessage.calculateLength(text, false)[0] }
     Column(
@@ -374,6 +471,16 @@ private fun Composer(text: String, onText: (String) -> Unit, enabled: Boolean, o
                 value = text,
                 onValueChange = onText,
                 placeholder = { Text("Message") },
+                // Once there is something to send, it can also leave later.
+                trailingIcon = if (enabled && text.isNotBlank()) {
+                    {
+                        IconButton(onClick = onSchedule) {
+                            Icon(SecaIcons.Schedule, contentDescription = "Programmer l'envoi")
+                        }
+                    }
+                } else {
+                    null
+                },
                 supportingText = if (parts > 1) {
                     { Text("$parts SMS") }
                 } else {

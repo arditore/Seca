@@ -20,6 +20,8 @@ import com.seca.messages.sms.Conversation
 import com.seca.messages.sms.Message
 import com.seca.messages.sms.MessageNotifications
 import com.seca.messages.sms.MessagesRepository
+import com.seca.messages.sms.ScheduledMessage
+import com.seca.messages.sms.ScheduledMessages
 import com.seca.messages.sms.SmsSender
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -64,7 +66,16 @@ data class MessagesUi(
     val archived: Set<Long> = emptySet(),
     /** Messages whose text matches the search, newest first. */
     val searchHits: List<Message> = emptyList(),
+    /** Messages waiting for their time, soonest first. */
+    val scheduled: List<ScheduledMessage> = emptyList(),
 ) {
+    /** What is waiting to be sent to [address], however the number is written. */
+    fun scheduledFor(address: String): List<ScheduledMessage> {
+        if (scheduled.isEmpty()) return emptyList()
+        val key = numbers.key(address)
+        return scheduled.filter { numbers.key(it.address) == key }
+    }
+
     /** The palette picked in Seca Contacts; null follows the wallpaper. */
     val palette: SecaPalette? get() = SecaPalette.entries.firstOrNull { it.name == profiles.palette }
 
@@ -175,6 +186,37 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
 
     private fun refreshConversationPrefs() {
         _ui.update { it.copy(pinned = conversationPrefs.pinned(), archived = conversationPrefs.archived()) }
+    }
+
+    private val scheduledMessages = ScheduledMessages(application)
+
+    /** Sends [text] to [address] at [at], even when the app is closed by then. */
+    fun schedule(address: String, text: String, at: Long) {
+        val body = text.trim()
+        if (body.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            scheduledMessages.add(address, body, at)
+            refreshScheduled()
+        }
+    }
+
+    fun cancelScheduled(id: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            scheduledMessages.remove(id)
+            refreshScheduled()
+        }
+    }
+
+    fun sendScheduledNow(message: ScheduledMessage) {
+        viewModelScope.launch(Dispatchers.IO) {
+            scheduledMessages.remove(message.id)
+            SmsSender(getApplication()).send(message.address, message.body)
+            refreshScheduled()
+        }
+    }
+
+    private fun refreshScheduled() {
+        _ui.update { it.copy(scheduled = scheduledMessages.all()) }
     }
 
     /** A conversation's messages, reloaded whenever any message changes. */
@@ -309,6 +351,8 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                 loaded = true,
                 pinned = conversationPrefs.pinned(),
                 archived = conversationPrefs.archived(),
+                // A scheduled message that just left shows up as a change to the messages.
+                scheduled = scheduledMessages.all(),
             )
         }
     }

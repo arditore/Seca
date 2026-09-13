@@ -363,6 +363,16 @@ private fun ConversationRow(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
+                    if (ui.scheduledFor(conversation.address).isNotEmpty()) {
+                        Icon(
+                            SecaIcons.Schedule,
+                            contentDescription = "Message programmé",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .size(14.dp),
+                        )
+                    }
                     if (pinned) {
                         Icon(
                             SecaIcons.PushPin,

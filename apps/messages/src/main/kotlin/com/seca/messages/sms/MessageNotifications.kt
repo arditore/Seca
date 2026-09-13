@@ -29,6 +29,7 @@ internal object MessageNotifications {
     const val EXTRA_CODE = "code"
     private const val CHANNEL = "messages"
     private const val MAX_LINES = 8
+    private const val TAG_SCHEDULED = "scheduled"
 
     fun notifyIncoming(context: Context, address: String, body: String) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
@@ -113,6 +114,40 @@ internal object MessageNotifications {
     fun cancel(context: Context, threadId: Long) {
         if (threadId < 0) return
         context.getSystemService(NotificationManager::class.java)?.cancel(codeOf(threadId, ""))
+    }
+
+    /** A scheduled message could not leave, most likely because Seca is no longer the SMS app. */
+    fun notifyScheduledNotSent(context: Context, address: String) {
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        ensureChannel(manager)
+        if (!manager.areNotificationsEnabled()) return
+        val threadId = runCatching { Telephony.Threads.getOrCreateThreadId(context, address) }.getOrNull() ?: -1L
+        val name = nameOf(context, address) ?: PhoneNumbers(PhoneNumbers.detectRegion(context)).display(address)
+        val code = codeOf(threadId, address)
+        val open = PendingIntent.getActivity(
+            context,
+            code,
+            Intent(context, MainActivity::class.java)
+                .setAction(MainActivity.ACTION_OPEN_CONVERSATION)
+                .putExtra(EXTRA_THREAD, threadId)
+                .putExtra(EXTRA_ADDRESS, address)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val notification = Notification.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_message)
+            .setContentTitle("Message programmé non envoyé")
+            .setContentText("Le message pour $name attend toujours. Seca Messages doit être l'application SMS pour l'envoyer.")
+            .setStyle(
+                Notification.BigTextStyle()
+                    .bigText("Le message pour $name attend toujours. Seca Messages doit être l'application SMS pour l'envoyer."),
+            )
+            .setCategory(Notification.CATEGORY_ERROR)
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        // Its own tag, so it does not replace the conversation's messages.
+        manager.notify(TAG_SCHEDULED, code, notification)
     }
 
     private fun actionIntent(context: Context, action: String, threadId: Long, address: String) =
