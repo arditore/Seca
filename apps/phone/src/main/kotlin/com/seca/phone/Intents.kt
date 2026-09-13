@@ -15,7 +15,6 @@ import android.provider.Settings
 import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
 import com.seca.core.design.SecaAppIdentity
-import com.seca.core.design.secaSwitchAnimation
 
 private const val SECA_CONTACTS = "com.seca.contacts"
 private const val SECA_MESSAGES = "com.seca.messages"
@@ -62,14 +61,12 @@ internal fun addContact(context: Context, number: String) {
 internal fun openSibling(context: Context, identity: SecaAppIdentity) {
     if (identity == SecaAppIdentity.Phone) return
     val target = if (identity == SecaAppIdentity.Contacts) SECA_CONTACTS else SECA_MESSAGES
-    val options = secaSwitchAnimation(context, SecaAppIdentity.Phone, identity)
     val seca = context.packageManager.getLaunchIntentForPackage(target)
     if (seca != null) {
-        // In this app's own task rather than a new one: Android reserves the animation of a
-        // task switch for the system, so only inside one task do the screens slide as asked.
+        // The Seca apps share this task and switch like tabs: instantly, both ways.
         // Coming back to an app already open brings its screen forward instead of stacking another.
-        seca.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-        startSafely(context, seca, options)
+        seca.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_NO_ANIMATION
+        startSafely(context, seca)
         return
     }
     val fallback = if (identity == SecaAppIdentity.Contacts) {
@@ -77,7 +74,7 @@ internal fun openSibling(context: Context, identity: SecaAppIdentity) {
     } else {
         Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING)
     }
-    startSafely(context, fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), options)
+    startSafely(context, fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 /** Adds [number] to Android's own blocked list; only the default phone app may. */

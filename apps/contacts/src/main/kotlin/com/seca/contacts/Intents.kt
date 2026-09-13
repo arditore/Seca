@@ -9,7 +9,6 @@ import android.provider.Settings
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import com.seca.core.design.SecaAppIdentity
-import com.seca.core.design.secaSwitchAnimation
 import java.io.File
 
 private const val SECA_PHONE = "com.seca.phone"
@@ -43,14 +42,12 @@ internal fun email(context: Context, address: String) =
 internal fun openSibling(context: Context, identity: SecaAppIdentity) {
     if (identity == SecaAppIdentity.Contacts) return
     val target = if (identity == SecaAppIdentity.Phone) SECA_PHONE else SECA_MESSAGES
-    val options = secaSwitchAnimation(context, SecaAppIdentity.Contacts, identity)
     val seca = context.packageManager.getLaunchIntentForPackage(target)
     if (seca != null) {
-        // In this app's own task rather than a new one: Android reserves the animation of a
-        // task switch for the system, so only inside one task do the screens slide as asked.
+        // The Seca apps share this task and switch like tabs: instantly, both ways.
         // Coming back to an app already open brings its screen forward instead of stacking another.
-        seca.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-        startSafely(context, seca, options)
+        seca.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_NO_ANIMATION
+        startSafely(context, seca)
         return
     }
     val fallback = if (identity == SecaAppIdentity.Phone) {
@@ -58,7 +55,7 @@ internal fun openSibling(context: Context, identity: SecaAppIdentity) {
     } else {
         Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING)
     }
-    startSafely(context, fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), options)
+    startSafely(context, fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 /**

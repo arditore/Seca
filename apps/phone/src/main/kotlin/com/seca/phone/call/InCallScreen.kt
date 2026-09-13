@@ -126,10 +126,12 @@ private fun CallScreen(view: CallView, calls: List<CallView>, audio: AudioView) 
                 .padding(horizontal = 24.dp, vertical = 16.dp),
         ) {
             Badges(view)
+            // The avatar makes room for the keypad, so the caller and the timer stay in view.
+            val avatarSize by animateDpAsState(if (keypad) 72.dp else 148.dp, label = "avatar")
             SecaAvatar(
                 initials = initialsOf(title),
                 photoUri = null,
-                size = 148.dp,
+                size = avatarSize,
                 tone = view.caller?.tone ?: 0,
                 seed = title,
                 expressive = true,
@@ -155,10 +157,10 @@ private fun CallScreen(view: CallView, calls: List<CallView>, audio: AudioView) 
                 view.state == Call.STATE_RINGING || view.state == Call.STATE_SIMULATED_RINGING ->
                     IncomingControls(view, onReplies = { replies = true })
                 view.state == Call.STATE_DISCONNECTED -> Box(Modifier.height(24.dp))
+                keypad -> KeypadPanel(view, onClose = { keypad = false })
                 else -> ActiveControls(view, calls, audio, onKeypad = { keypad = true })
             }
         }
-        if (keypad) InCallKeypad(view, onClose = { keypad = false })
     }
     if (replies) {
         QuickReplyDialog(
@@ -330,18 +332,23 @@ private fun ActiveControls(view: CallView, calls: List<CallView>, audio: AudioVi
                 .fillMaxWidth()
                 .padding(top = 24.dp, bottom = 16.dp),
         ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .width(120.dp)
-                    .height(68.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.error)
-                    .clickable(onClickLabel = "Raccrocher", role = Role.Button) { CallSession.hangUp(view.call) },
-            ) {
-                Icon(SecaIcons.CallEnd, contentDescription = "Raccrocher", tint = MaterialTheme.colorScheme.onError)
-            }
+            HangUpButton(view)
         }
+    }
+}
+
+@Composable
+private fun HangUpButton(view: CallView) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .width(120.dp)
+            .height(68.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.error)
+            .clickable(onClickLabel = "Raccrocher", role = Role.Button) { CallSession.hangUp(view.call) },
+    ) {
+        Icon(SecaIcons.CallEnd, contentDescription = "Raccrocher", tint = MaterialTheme.colorScheme.onError)
     }
 }
 
@@ -479,61 +486,65 @@ private fun AccountChooser(view: CallView) {
     }
 }
 
-/** The keypad during a call, for voice menus; each key is sent down the line. */
+/**
+ * The keypad during a call, for voice menus, in place of the buttons: the
+ * caller, their profile and the timer stay in view above it. Each key is sent
+ * down the line.
+ */
 @Composable
-private fun InCallKeypad(view: CallView, onClose: () -> Unit) {
+private fun KeypadPanel(view: CallView, onClose: () -> Unit) {
     var typed by remember { mutableStateOf("") }
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
-                .padding(24.dp),
-        ) {
-            Text(
-                text = view.title(CallSession.numbers),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = typed.ifEmpty { " " },
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.StartEllipsis,
-                modifier = Modifier.padding(vertical = 16.dp),
-            )
-            Box(Modifier.weight(1f))
-            InCallKeys.chunked(3).forEach { row ->
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.padding(bottom = 12.dp),
-                ) {
-                    row.forEach { key ->
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(76.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                .clickable(role = Role.Button) {
-                                    typed += key
-                                    CallSession.dtmf(view.call, key)
-                                },
-                        ) {
-                            Text(
-                                text = key.toString(),
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+    ) {
+        Text(
+            text = typed.ifEmpty { " " },
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.StartEllipsis,
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
+        InCallKeys.chunked(3).forEach { row ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.padding(bottom = 10.dp),
+            ) {
+                row.forEach { key ->
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(68.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            .clickable(role = Role.Button) {
+                                typed += key
+                                CallSession.dtmf(view.call, key)
+                            },
+                    ) {
+                        Text(
+                            text = key.toString(),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                 }
             }
-            TextButton(onClick = onClose, modifier = Modifier.padding(top = 8.dp)) { Text("Fermer le clavier") }
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+        ) {
+            TextButton(onClick = onClose, modifier = Modifier.width(96.dp)) { Text("Masquer") }
+            HangUpButton(view)
+            // Balances the "Masquer" button, so the red button stays centred.
+            Box(Modifier.width(96.dp))
         }
     }
 }
