@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.withContext
 
+/** How many messages a search shows at most. */
+private const val SEARCH_LIMIT = 50
+
 /** One conversation: the latest message with a number, and how many are still unread. */
 data class Conversation(
     val threadId: Long,
@@ -91,12 +94,23 @@ class MessagesRepository(private val context: Context) {
 
     /** The messages of one conversation, oldest first, as a chat reads. */
     suspend fun messages(threadId: Long): List<Message> = withContext(Dispatchers.IO) {
+        readMessages("${Sms.THREAD_ID} = ?", arrayOf(threadId.toString()), "${Sms.DATE} ASC")
+    }
+
+    /** Messages containing [text], newest first, across every conversation. */
+    suspend fun search(text: String, limit: Int = SEARCH_LIMIT): List<Message> = withContext(Dispatchers.IO) {
+        // Percent signs and underscores typed by the owner are searched for as they are.
+        val escaped = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        readMessages("${Sms.BODY} LIKE ? ESCAPE '\\'", arrayOf("%$escaped%"), "${Sms.DATE} DESC LIMIT $limit")
+    }
+
+    private fun readMessages(selection: String, args: Array<String>, order: String): List<Message> =
         resolver.query(
             Sms.CONTENT_URI,
             arrayOf(Sms._ID, Sms.THREAD_ID, Sms.ADDRESS, Sms.BODY, Sms.DATE, Sms.TYPE),
-            "${Sms.THREAD_ID} = ?",
-            arrayOf(threadId.toString()),
-            "${Sms.DATE} ASC",
+            selection,
+            args,
+            order,
         )?.use { c ->
             buildList {
                 while (c.moveToNext()) {
@@ -113,7 +127,6 @@ class MessagesRepository(private val context: Context) {
                 }
             }
         }.orEmpty()
-    }
 
     /** Every message on the phone, for a backup. */
     suspend fun allForBackup(): List<BackupMessage> = withContext(Dispatchers.IO) {

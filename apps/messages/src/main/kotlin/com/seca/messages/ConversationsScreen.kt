@@ -1,6 +1,7 @@
 package com.seca.messages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,8 +47,14 @@ import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaSearchField
 import com.seca.core.design.component.SecaSectionLabel
+import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaSuiteBar
+import com.seca.core.design.component.SecaTopBar
 import com.seca.messages.sms.Conversation
+import com.seca.messages.sms.Message
+
+/** How many characters of a message to keep before the searched words in a result. */
+private const val EXCERPT_LEAD = 24
 
 @Composable
 internal fun ConversationsScreen(
@@ -117,24 +124,22 @@ internal fun ConversationsScreen(
     }
 
     deleting?.let { conversation ->
-        AlertDialog(
-            onDismissRequest = { deleting = null },
-            icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-            title = { Text("Supprimer la conversation ?") },
-            text = { Text("Tous les messages avec ${ui.nameOf(conversation.address)} seront supprimés de ce téléphone.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deleteConversation(conversation.threadId)
-                        deleting = null
-                    },
-                ) { Text("Supprimer") }
+        DeleteConversationDialog(
+            name = ui.nameOf(conversation.address),
+            onDismiss = { deleting = null },
+            onConfirm = {
+                viewModel.deleteConversation(conversation.threadId)
+                deleting = null
             },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Annuler") } },
         )
     }
 }
 
+/**
+ * Pinned conversations first, then the others by period, then the way into
+ * the archive. While searching: the conversations that match, then the
+ * messages whose text matches, whatever conversation they are in.
+ */
 @Composable
 private fun ConversationList(
     ui: MessagesUi,
@@ -146,8 +151,9 @@ private fun ConversationList(
     onDelete: (Conversation) -> Unit,
 ) {
     val query = ui.query.trim()
-    val shown = remember(ui.conversations, query, ui.index) {
-        if (query.isEmpty()) {
+    val searching = query.isNotEmpty()
+    val matching = remember(ui.conversations, query, ui.index) {
+        if (!searching) {
             ui.conversations
         } else {
             val wanted = searchable(query)
@@ -158,7 +164,33 @@ private fun ConversationList(
             }
         }
     }
-    val sections = remember(shown) { shown.groupBy { periodOf(it.date) } }
+    val pinned = remember(matching, ui.pinned, searching) {
+        if (searching) emptyList() else ui.pinned.mapNotNull { id -> matching.firstOrNull { it.threadId == id } }
+    }
+    val sections = remember(matching, ui.pinned, ui.archived, searching) {
+        if (searching) {
+            if (matching.isEmpty()) emptyMap() else mapOf("Conversations" to matching)
+        } else {
+            matching.filter { it.threadId !in ui.pinned && it.threadId !in ui.archived }.groupBy { periodOf(it.date) }
+        }
+    }
+    val hits = if (searching) ui.searchHits else emptyList()
+    val archivedCount = if (searching) 0 else ui.conversations.count { it.threadId in ui.archived }
+    val nothing = pinned.isEmpty() && sections.isEmpty() && hits.isEmpty() && archivedCount == 0
+
+    val row: @Composable (Conversation) -> Unit = { conversation ->
+        ConversationRow(
+            conversation = conversation,
+            ui = ui,
+            pinned = conversation.threadId in ui.pinned,
+            archived = conversation.threadId in ui.archived,
+            onOpen = { viewModel.openConversation(conversation.address) },
+            onMarkRead = { viewModel.markRead(conversation.threadId) },
+            onPin = { viewModel.setPinned(conversation.threadId, conversation.threadId !in ui.pinned) },
+            onArchive = { viewModel.setArchived(conversation.threadId, conversation.threadId !in ui.archived) },
+            onDelete = { onDelete(conversation) },
+        )
+    }
 
     LazyColumn(
         state = listState,
@@ -169,31 +201,53 @@ private fun ConversationList(
         if (showBanner) {
             item(key = "banner", contentType = "banner") { DefaultAppBanner(onBecomeDefault, onDismissBanner) }
         }
-        if (shown.isEmpty()) {
+        if (nothing) {
             item(key = "empty", contentType = "empty") {
                 SecaEmptyState(
-                    icon = if (query.isEmpty()) SecaIcons.Messages else SecaIcons.Search,
-                    title = if (query.isEmpty()) "Aucune conversation" else "Aucun résultat",
-                    description = if (query.isEmpty()) {
-                        "Les SMS de ce téléphone apparaîtront ici."
-                    } else {
+                    icon = if (searching) SecaIcons.Search else SecaIcons.Messages,
+                    title = if (searching) "Aucun résultat" else "Aucune conversation",
+                    description = if (searching) {
                         "Rien ne correspond à « $query »."
+                    } else {
+                        "Les SMS de ce téléphone apparaîtront ici."
                     },
                     modifier = Modifier.fillParentMaxHeight(0.6f),
                 )
             }
         }
-        sections.forEach { (period, group) ->
-            item(key = "period-$period", contentType = "label") { SecaSectionLabel(period) }
+        if (pinned.isNotEmpty()) {
+            item(key = "pinned-label", contentType = "label") { SecaSectionLabel("Épinglées") }
+            itemsIndexed(pinned, key = { _, c -> "pinned-${c.threadId}" }, contentType = { _, _ -> "conversation" }) { index, c ->
+                SecaGroupItem(index = index, count = pinned.size) { row(c) }
+            }
+        }
+        sections.forEach { (title, group) ->
+            item(key = "section-$title", contentType = "label") { SecaSectionLabel(title) }
             // A shared content type lets the list reuse rows it scrolled past instead of building new ones.
-            itemsIndexed(group, key = { _, c -> c.threadId }, contentType = { _, _ -> "conversation" }) { index, conversation ->
-                SecaGroupItem(index = index, count = group.size) {
-                    ConversationRow(
-                        conversation = conversation,
-                        ui = ui,
-                        onOpen = { viewModel.openConversation(conversation.address) },
-                        onMarkRead = { viewModel.markRead(conversation.threadId) },
-                        onDelete = { onDelete(conversation) },
+            itemsIndexed(group, key = { _, c -> c.threadId }, contentType = { _, _ -> "conversation" }) { index, c ->
+                SecaGroupItem(index = index, count = group.size) { row(c) }
+            }
+        }
+        if (hits.isNotEmpty()) {
+            item(key = "hits-label", contentType = "label") { SecaSectionLabel("Messages") }
+            itemsIndexed(hits, key = { _, m -> "hit-${m.id}" }, contentType = { _, _ -> "hit" }) { index, message ->
+                SecaGroupItem(index = index, count = hits.size) {
+                    MessageHit(message, ui, query, onOpen = { viewModel.openConversation(message.address) })
+                }
+            }
+        }
+        if (archivedCount > 0) {
+            item(key = "archived", contentType = "archived") {
+                SecaGroupItem(
+                    index = 0,
+                    count = 1,
+                    modifier = Modifier.padding(top = 16.dp),
+                    onClick = { viewModel.open(MessagesScreen.Archived) },
+                ) {
+                    SecaSettingRow(
+                        icon = SecaIcons.Archive,
+                        title = "Conversations archivées",
+                        subtitle = if (archivedCount == 1) "1 conversation" else "$archivedCount conversations",
                     )
                 }
             }
@@ -201,13 +255,84 @@ private fun ConversationList(
     }
 }
 
+/** The archive: conversations put away, which come back by themselves when a new message arrives. */
+@Composable
+internal fun ArchivedScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
+    val archived = remember(ui.conversations, ui.archived) { ui.conversations.filter { it.threadId in ui.archived } }
+    var deleting by remember { mutableStateOf<Conversation?>(null) }
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
+        topBar = { SecaTopBar(title = "Archivées", onBack = { viewModel.back() }) },
+    ) { padding ->
+        if (archived.isEmpty()) {
+            SecaEmptyState(
+                icon = SecaIcons.Archive,
+                title = "Aucune conversation archivée",
+                description = "Une conversation archivée revient d'elle-même quand un nouveau message arrive.",
+                modifier = Modifier.padding(padding),
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp),
+            ) {
+                itemsIndexed(archived, key = { _, c -> c.threadId }) { index, conversation ->
+                    SecaGroupItem(index = index, count = archived.size) {
+                        ConversationRow(
+                            conversation = conversation,
+                            ui = ui,
+                            pinned = false,
+                            archived = true,
+                            onOpen = { viewModel.openConversation(conversation.address) },
+                            onMarkRead = { viewModel.markRead(conversation.threadId) },
+                            onPin = { viewModel.setPinned(conversation.threadId, true) },
+                            onArchive = { viewModel.setArchived(conversation.threadId, false) },
+                            onDelete = { deleting = conversation },
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    deleting?.let { conversation ->
+        DeleteConversationDialog(
+            name = ui.nameOf(conversation.address),
+            onDismiss = { deleting = null },
+            onConfirm = {
+                viewModel.deleteConversation(conversation.threadId)
+                deleting = null
+            },
+        )
+    }
+}
+
+@Composable
+private fun DeleteConversationDialog(name: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(SecaIcons.Delete, contentDescription = null) },
+        title = { Text("Supprimer la conversation ?") },
+        text = { Text("Tous les messages avec $name seront supprimés de ce téléphone.") },
+        confirmButton = { TextButton(onClick = onConfirm) { Text("Supprimer") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+    )
+}
+
 /** Who, the latest message, when; unread conversations in bold with their count. */
 @Composable
 private fun ConversationRow(
     conversation: Conversation,
     ui: MessagesUi,
+    pinned: Boolean,
+    archived: Boolean,
     onOpen: () -> Unit,
     onMarkRead: () -> Unit,
+    onPin: () -> Unit,
+    onArchive: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -238,6 +363,16 @@ private fun ConversationRow(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
+                    if (pinned) {
+                        Icon(
+                            SecaIcons.PushPin,
+                            contentDescription = "Épinglée",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .size(14.dp),
+                        )
+                    }
                     Text(
                         text = shortDateOf(context, conversation.date),
                         style = MaterialTheme.typography.labelMedium,
@@ -280,6 +415,14 @@ private fun ConversationRow(
                     onMarkRead()
                 }
             }
+            MenuEntry(if (pinned) "Désépingler" else "Épingler", SecaIcons.PushPin) {
+                menuOpen = false
+                onPin()
+            }
+            MenuEntry(if (archived) "Désarchiver" else "Archiver", SecaIcons.Archive) {
+                menuOpen = false
+                onArchive()
+            }
             MenuEntry("Appeler", SecaIcons.Phone) {
                 menuOpen = false
                 call(context, conversation.address)
@@ -301,6 +444,56 @@ private fun ConversationRow(
             }
         }
     }
+}
+
+/** A message whose text matches the search, shown from just before the words found. */
+@Composable
+private fun MessageHit(message: Message, ui: MessagesUi, query: String, onOpen: () -> Unit) {
+    val context = LocalContext.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpen)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        PersonAvatar(ui.contactOf(message.address), ui, size = 40.dp)
+        Column(
+            Modifier
+                .weight(1f)
+                .padding(start = 16.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = ui.nameOf(message.address),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = shortDateOf(context, message.date),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            Text(
+                text = (if (message.outgoing) "Vous : " else "") + excerptOf(message.body, query),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/** The message from a little before the searched words, so they show even in a long text. */
+private fun excerptOf(body: String, query: String): String {
+    val index = body.indexOf(query, ignoreCase = true)
+    return if (index <= EXCERPT_LEAD) body else "…" + body.substring(index - EXCERPT_LEAD)
 }
 
 @Composable

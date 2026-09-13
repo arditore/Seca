@@ -23,6 +23,7 @@ import com.seca.messages.sms.MessagesRepository
 import com.seca.messages.sms.SmsSender
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +36,9 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 
+/** Searching the text of every message waits for this pause in typing. */
+private const val SEARCH_PAUSE_MILLIS = 250L
+
 /** The app's screens; the last entry of the back stack is the one shown. */
 sealed interface MessagesScreen {
     data object Home : MessagesScreen
@@ -43,6 +47,7 @@ sealed interface MessagesScreen {
     data class Conversation(val threadId: Long, val address: String, val draft: String = "") : MessagesScreen
     data object NewMessage : MessagesScreen
     data object Settings : MessagesScreen
+    data object Archived : MessagesScreen
 }
 
 data class MessagesUi(
@@ -54,6 +59,11 @@ data class MessagesUi(
     val index: NumberIndex? = null,
     val profiles: SharedProfiles = SharedProfiles(),
     val query: String = "",
+    /** Pinned conversations, in pinning order. */
+    val pinned: List<Long> = emptyList(),
+    val archived: Set<Long> = emptySet(),
+    /** Messages whose text matches the search, newest first. */
+    val searchHits: List<Message> = emptyList(),
 ) {
     /** The palette picked in Seca Contacts; null follows the wallpaper. */
     val palette: SecaPalette? get() = SecaPalette.entries.firstOrNull { it.name == profiles.palette }
@@ -134,7 +144,38 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun setQuery(query: String) = _ui.update { it.copy(query = query) }
+    private val conversationPrefs = ConversationPrefs(application)
+    private var searching: Job? = null
+
+    /** Filters the list at once, and searches the text of every message once typing pauses. */
+    fun setQuery(query: String) {
+        _ui.update { it.copy(query = query) }
+        searching?.cancel()
+        val text = query.trim()
+        if (text.length < 2) {
+            _ui.update { it.copy(searchHits = emptyList()) }
+            return
+        }
+        searching = viewModelScope.launch {
+            delay(SEARCH_PAUSE_MILLIS)
+            val hits = repository.search(text)
+            _ui.update { it.copy(searchHits = hits) }
+        }
+    }
+
+    fun setPinned(threadId: Long, pinned: Boolean) {
+        conversationPrefs.setPinned(threadId, pinned)
+        refreshConversationPrefs()
+    }
+
+    fun setArchived(threadId: Long, archived: Boolean) {
+        conversationPrefs.setArchived(threadId, archived)
+        refreshConversationPrefs()
+    }
+
+    private fun refreshConversationPrefs() {
+        _ui.update { it.copy(pinned = conversationPrefs.pinned(), archived = conversationPrefs.archived()) }
+    }
 
     /** A conversation's messages, reloaded whenever any message changes. */
     fun messagesOf(threadId: Long): Flow<List<Message>> = flow {
@@ -261,7 +302,15 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     private suspend fun loadConversations() {
         val list = repository.conversations()
         withContext(Dispatchers.Default) { list.forEach { numbers.prepare(it.address) } }
-        _ui.update { it.copy(conversations = list, loaded = true) }
+        // A message arriving in an archived conversation takes it out of the archive.
+        _ui.update {
+            it.copy(
+                conversations = list,
+                loaded = true,
+                pinned = conversationPrefs.pinned(),
+                archived = conversationPrefs.archived(),
+            )
+        }
     }
 
     private suspend fun loadContacts() {

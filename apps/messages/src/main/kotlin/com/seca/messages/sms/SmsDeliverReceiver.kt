@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.telephony.SubscriptionManager
+import com.seca.messages.ConversationPrefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,6 +31,10 @@ class SmsDeliverReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 MessagesRepository(context).storeIncoming(address, body, sentAt, subscription)
+                // A new message brings an archived conversation back into the list.
+                runCatching { Telephony.Threads.getOrCreateThreadId(context, address) }.getOrNull()?.let {
+                    ConversationPrefs(context).setArchived(it, archived = false)
+                }
                 MessageNotifications.notifyIncoming(context, address, body)
             } finally {
                 pending.finish()

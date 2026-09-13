@@ -141,6 +141,7 @@ fun MessagesApp(
                     is MessagesScreen.Conversation -> ConversationScreen(screen, ui, viewModel, isDefaultApp)
                     MessagesScreen.NewMessage -> NewMessageScreen(ui, viewModel)
                     MessagesScreen.Settings -> SettingsScreen(ui, viewModel, isDefaultApp, onBecomeDefault)
+                    MessagesScreen.Archived -> ArchivedScreen(ui, viewModel)
                 }
             }
         }
