@@ -26,6 +26,7 @@ internal object MessageNotifications {
     const val KEY_REPLY = "reply"
     const val EXTRA_THREAD = "thread_id"
     const val EXTRA_ADDRESS = "address"
+    const val EXTRA_CODE = "code"
     private const val CHANNEL = "messages"
     private const val MAX_LINES = 8
 
@@ -70,6 +71,17 @@ internal object MessageNotifications {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
+        // A verification code gets its own button, so it can be pasted without opening anything.
+        val oneTimeCode = OneTimeCode.find(body)
+        val copyCode = oneTimeCode?.let {
+            PendingIntent.getBroadcast(
+                context,
+                it.hashCode(),
+                actionIntent(context, MessageActionReceiver.COPY_CODE, threadId, address).putExtra(EXTRA_CODE, it),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+        }
+
         val notification = Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_message)
             .setStyle(style)
@@ -77,6 +89,11 @@ internal object MessageNotifications {
             .setContentIntent(open)
             .setAutoCancel(true)
             .setShortcutId(null)
+            .apply {
+                if (oneTimeCode != null && copyCode != null) {
+                    addAction(Notification.Action.Builder(null, "Copier le code $oneTimeCode", copyCode).build())
+                }
+            }
             .addAction(
                 Notification.Action.Builder(null, "Répondre", reply)
                     .addRemoteInput(RemoteInput.Builder(KEY_REPLY).setLabel("Répondre").build())

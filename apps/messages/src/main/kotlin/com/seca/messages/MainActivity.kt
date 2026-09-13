@@ -10,6 +10,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.mutableStateOf
+import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.privacy.SecaAppLock
+import com.seca.core.design.privacy.SecaLockGate
 import com.seca.messages.sms.MessageNotifications
 
 class MainActivity : ComponentActivity() {
@@ -19,6 +22,7 @@ class MainActivity : ComponentActivity() {
     private val contactsGranted = mutableStateOf(false)
     private val defaultApp = mutableStateOf(false)
     private val viewModel: MessagesViewModel by viewModels()
+    private val lock by lazy { SecaAppLock(this, "Seca Messages") }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,19 +33,31 @@ class MainActivity : ComponentActivity() {
         refresh()
         if (savedInstanceState == null) handle(intent)
         setContent {
-            MessagesApp(
-                smsGranted = smsGranted.value,
-                contactsGranted = contactsGranted.value,
-                isDefaultApp = defaultApp.value,
-                onPermissionsResult = ::refresh,
-                viewModel = viewModel,
-            )
+            SecaLockGate(lock, SecaAppIdentity.Messages) {
+                MessagesApp(
+                    smsGranted = smsGranted.value,
+                    contactsGranted = contactsGranted.value,
+                    isDefaultApp = defaultApp.value,
+                    onPermissionsResult = ::refresh,
+                    viewModel = viewModel,
+                )
+            }
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handle(intent)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        lock.onStart()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        lock.onStop()
     }
 
     override fun onResume() {

@@ -36,6 +36,8 @@ import com.seca.core.design.component.SecaPaletteSwatch
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaTopBar
+import com.seca.core.design.privacy.SecaPrivacySettingsGroup
+import com.seca.phone.screening.ScreeningSettings
 
 /** A way into one of the system's own call screens; [intents] are tried in order. */
 private data class SystemEntry(val icon: ImageVector, val title: String, val subtitle: String, val intents: List<Intent>)
@@ -115,6 +117,42 @@ internal fun SettingsScreen(
             }
             SecaHint("Android continue de sonner et de vibrer ; Seca affiche l'appel. Vous pouvez revenir en arrière à tout moment.")
 
+            SecaSectionLabel("Filtrage des appels")
+            val screening = remember { ScreeningSettings(context) }
+            var blockTelemarketing by remember { mutableStateOf(screening.blockTelemarketing) }
+            var silenceUnknown by remember { mutableStateOf(screening.silenceUnknown) }
+            SecaGroupItem(index = 0, count = 2) {
+                SecaSettingRow(
+                    icon = SecaIcons.Shield,
+                    title = "Bloquer le démarchage",
+                    subtitle = "Numéros réservés au démarchage en France (01 62, 01 63, 02 70…), sauf vos contacts",
+                    modifier = Modifier.toggleable(value = blockTelemarketing, role = Role.Switch) {
+                        blockTelemarketing = it
+                        screening.blockTelemarketing = it
+                    },
+                    trailing = { Switch(checked = blockTelemarketing, onCheckedChange = null) },
+                )
+            }
+            SecaGroupItem(index = 1, count = 2) {
+                SecaSettingRow(
+                    icon = SecaIcons.VolumeOff,
+                    title = "Inconnus en silencieux",
+                    subtitle = "Les numéros absents de vos contacts s'affichent sans sonner",
+                    modifier = Modifier.toggleable(value = silenceUnknown, role = Role.Switch) {
+                        silenceUnknown = it
+                        screening.silenceUnknown = it
+                    },
+                    trailing = { Switch(checked = silenceUnknown, onCheckedChange = null) },
+                )
+            }
+            SecaHint(
+                if (isDefaultDialer) {
+                    "Le tri se fait sur ce téléphone : rien n'est envoyé nulle part."
+                } else {
+                    "Fonctionne quand Seca Téléphone est l'application Téléphone par défaut."
+                },
+            )
+
             SecaSectionLabel("Couleurs")
             if (ui.profiles.connected) {
                 SecaGroupItem(index = 0, count = 2) {
@@ -174,6 +212,9 @@ internal fun SettingsScreen(
                     subtitle = "Sur ce téléphone, pour toutes les applications",
                 )
             }
+
+            SecaSectionLabel("Protection")
+            SecaPrivacySettingsGroup("Seca Téléphone")
 
             SecaSectionLabel("Confidentialité")
             SecaGroupItem(index = 0, count = 1) {

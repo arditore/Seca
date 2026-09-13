@@ -1,12 +1,14 @@
 package com.seca.messages
 
 import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.provider.ContactsContract
 import android.provider.Settings
 import com.seca.core.design.SecaAppIdentity
@@ -59,6 +61,14 @@ internal fun addContact(context: Context, number: String) {
     val intent = Intent(Intent.ACTION_INSERT, ContactsContract.Contacts.CONTENT_URI)
         .putExtra(ContactsContract.Intents.Insert.PHONE, number)
     startPreferring(context, intent, SECA_CONTACTS)
+}
+
+/** Copies a verification code, marked sensitive so Android does not show it in the clipboard preview. */
+internal fun copySensitive(context: Context, text: String) {
+    val clip = ClipData.newPlainText("Code", text).apply {
+        description.extras = PersistableBundle().apply { putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true) }
+    }
+    context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(clip)
 }
 
 /** Copies [text]; Android confirms it on screen by itself. */

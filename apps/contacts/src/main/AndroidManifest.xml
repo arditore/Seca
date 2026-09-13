@@ -4,6 +4,8 @@
     <!-- Read to list contacts; write is asked only the first time the user saves a
          change. No INTERNET permission, ever — the app cannot send a contact anywhere. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Fingerprint or phone code, only when the owner turns the app lock on. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <!-- "Appeler" calls in one tap through Seca Phone, when it is signed with the same key. -->
     <uses-permission android:name="com.seca.permission.PLACE_CALLS" />

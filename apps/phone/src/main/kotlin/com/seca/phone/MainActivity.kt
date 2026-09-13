@@ -9,6 +9,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
+import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.privacy.SecaAppLock
+import com.seca.core.design.privacy.SecaLockGate
 
 /** A request to open the keypad, from a tel: link or another app's "dial". */
 data class DialRequest(val number: String, val nonce: Long = System.nanoTime())
@@ -21,6 +24,9 @@ class MainActivity : ComponentActivity() {
     private val defaultDialer = mutableStateOf(false)
     private val dialRequest = mutableStateOf<DialRequest?>(null)
 
+    /** Locks the history and the keypad only; the call screen is never locked, so a call can always be answered. */
+    private val lock by lazy { SecaAppLock(this, "Seca Téléphone") }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Moving between Seca apps, and back from one, happens without animation, as between tabs.
@@ -29,20 +35,32 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         if (savedInstanceState == null) handle(intent)
         setContent {
-            PhoneApp(
-                callLogGranted = callLogGranted.value,
-                contactsGranted = contactsGranted.value,
-                isDefaultDialer = defaultDialer.value,
-                onPermissionsResult = ::refreshPermissions,
-                dialRequest = dialRequest.value,
-                onDialRequestHandled = { dialRequest.value = null },
-            )
+            SecaLockGate(lock, SecaAppIdentity.Phone) {
+                PhoneApp(
+                    callLogGranted = callLogGranted.value,
+                    contactsGranted = contactsGranted.value,
+                    isDefaultDialer = defaultDialer.value,
+                    onPermissionsResult = ::refreshPermissions,
+                    dialRequest = dialRequest.value,
+                    onDialRequestHandled = { dialRequest.value = null },
+                )
+            }
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handle(intent)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        lock.onStart()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        lock.onStop()
     }
 
     override fun onResume() {

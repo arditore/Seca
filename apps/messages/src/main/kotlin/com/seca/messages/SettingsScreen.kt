@@ -26,6 +26,7 @@ import com.seca.core.design.component.SecaPaletteSwatch
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaTopBar
+import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 
 @Composable
 internal fun SettingsScreen(
@@ -121,6 +122,9 @@ internal fun SettingsScreen(
             } else {
                 SecaHint("Installez Seca Contacts pour choisir les couleurs de la suite.")
             }
+
+            SecaSectionLabel("Protection")
+            SecaPrivacySettingsGroup("Seca Messages")
 
             SecaSectionLabel("Confidentialité")
             SecaGroupItem(index = 0, count = 1) {

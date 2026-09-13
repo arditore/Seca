@@ -7,6 +7,8 @@
     <!-- Asked the first time the user deletes a call from the history. -->
     <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Fingerprint or phone code, only when the owner turns the app lock on. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <!-- Asked the first time the user places a call. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <!-- Granted with the phone-app role: names the SIM a call goes through. -->
@@ -116,6 +118,17 @@
                 android:value="false" />
             <intent-filter>
                 <action android:name="android.telecom.InCallService" />
+            </intent-filter>
+        </service>
+
+        <!-- Filters incoming calls before they ring: telemarketing, unknown callers.
+             Android binds it for the default phone app only. -->
+        <service
+            android:name=".screening.SecaCallScreeningService"
+            android:exported="true"
+            android:permission="android.permission.BIND_SCREENING_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService" />
             </intent-filter>
         </service>
 

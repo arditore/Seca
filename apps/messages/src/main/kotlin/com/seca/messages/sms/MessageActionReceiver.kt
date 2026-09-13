@@ -5,6 +5,7 @@ import android.app.RemoteInput
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.seca.messages.copySensitive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -17,6 +18,10 @@ import kotlinx.coroutines.launch
 class MessageActionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == COPY_CODE) {
+            intent.getStringExtra(MessageNotifications.EXTRA_CODE)?.let { copySensitive(context, it) }
+            return
+        }
         val sent = resultCode == Activity.RESULT_OK
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
@@ -55,5 +60,6 @@ class MessageActionReceiver : BroadcastReceiver() {
         const val SENT = "com.seca.messages.SENT"
         const val REPLY = "com.seca.messages.REPLY"
         const val MARK_READ = "com.seca.messages.MARK_READ"
+        const val COPY_CODE = "com.seca.messages.COPY_CODE"
     }
 }

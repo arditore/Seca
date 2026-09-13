@@ -10,12 +10,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.mutableStateOf
+import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.privacy.SecaAppLock
+import com.seca.core.design.privacy.SecaLockGate
 
 class MainActivity : ComponentActivity() {
 
     /** Re-read on every resume: the user may grant or revoke access in Settings. */
     private val permissionGranted = mutableStateOf(false)
     private val viewModel: ContactsViewModel by viewModels()
+    private val lock by lazy { SecaAppLock(this, "Seca Contacts") }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,17 +29,29 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         if (savedInstanceState == null) handle(intent)
         setContent {
-            ContactsApp(
-                permissionGranted = permissionGranted.value,
-                onPermissionResult = { permissionGranted.value = it },
-                viewModel = viewModel,
-            )
+            SecaLockGate(lock, SecaAppIdentity.Contacts) {
+                ContactsApp(
+                    permissionGranted = permissionGranted.value,
+                    onPermissionResult = { permissionGranted.value = it },
+                    viewModel = viewModel,
+                )
+            }
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handle(intent)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        lock.onStart()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        lock.onStop()
     }
 
     override fun onResume() {

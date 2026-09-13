@@ -52,6 +52,7 @@ import com.seca.core.design.SecaIcons
 import com.seca.core.model.Profile
 import com.seca.messages.sms.Message
 import com.seca.messages.sms.MessageStatus
+import com.seca.messages.sms.OneTimeCode
 import kotlin.math.abs
 
 /** Two messages closer than this, from the same side, read as one block. */
@@ -326,6 +327,14 @@ private fun Bubble(
                     menuOpen = false
                     onDelete()
                 }
+            }
+        }
+        // A verification code can be copied straight from the message.
+        val code = remember(message.body) { if (mine) null else OneTimeCode.find(message.body) }
+        code?.let {
+            TextButton(onClick = { copySensitive(context, it) }) {
+                Icon(SecaIcons.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                Text("Copier le code $it", modifier = Modifier.padding(start = 6.dp))
             }
         }
         caption?.let {

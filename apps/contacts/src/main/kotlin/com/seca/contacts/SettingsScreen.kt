@@ -42,6 +42,7 @@ import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaTopBar
+import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 import com.seca.core.model.Profile
 import java.time.LocalDate
 
@@ -199,6 +200,9 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                 )
             }
             SecaHint("Seca ne synchronise rien : gardez une copie de vos contacts ailleurs que sur ce téléphone.")
+
+            SecaSectionLabel("Protection")
+            SecaPrivacySettingsGroup("Seca Contacts")
 
             SecaSectionLabel("Confidentialité")
             SecaGroupItem(index = 0, count = 1) {
