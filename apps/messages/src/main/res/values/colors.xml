@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The colour behind the starting window, matched to the first frame of the app so
+         that opening it shows no flash. -->
+    <color name="seca_launch">#FFF8FAFA</color>
+</resources>

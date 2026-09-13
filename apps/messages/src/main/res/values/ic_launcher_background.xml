@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The same deep teal as the other Seca apps: the three icons read as one family,
+         and only the glyph tells them apart. -->
+    <color name="ic_launcher_background">#FF1F6F74</color>
+</resources>
