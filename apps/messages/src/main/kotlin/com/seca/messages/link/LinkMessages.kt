@@ -44,6 +44,9 @@ class LinkMessages(context: Context) {
 
     fun forNumber(number: String): List<LinkMessage> = query("$NUMBER = ?", arrayOf(number), "$DATE ASC")
 
+    /** Every message kept, oldest first, for a backup. */
+    fun all(): List<LinkMessage> = query(null, null, "$DATE ASC")
+
     /** The newest message of each conversation, by number. */
     fun latestByNumber(): Map<String, LinkMessage> =
         query(null, null, "$DATE ASC").associateBy { it.number }

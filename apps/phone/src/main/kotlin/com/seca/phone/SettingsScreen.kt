@@ -37,6 +37,7 @@ import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
+import com.seca.core.suite.SuiteBackupSection
 import com.seca.phone.screening.BlockMode
 import com.seca.phone.screening.ScreeningSettings
 
@@ -228,6 +229,8 @@ internal fun SettingsScreen(
                     subtitle = "Sur ce téléphone, pour toutes les applications",
                 )
             }
+
+            SuiteBackupSection()
 
             SecaSectionLabel("Protection")
             SecaPrivacySettingsGroup("Seca Téléphone")

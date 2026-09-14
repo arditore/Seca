@@ -152,6 +152,13 @@
             android:name=".call.CallActionReceiver"
             android:exported="false" />
 
+        <!-- This app's part of the suite's backup, for the Seca apps signed with the same key only. -->
+        <provider
+            android:name=".PhoneSuiteBackup"
+            android:authorities="com.seca.phone.backup"
+            android:exported="true"
+            android:permission="com.seca.permission.BACKUP" />
+
         <!-- Missed calls: Android asks the default phone app to announce them. Only
              Telecom, which runs as the system, holds this permission. -->
         <receiver

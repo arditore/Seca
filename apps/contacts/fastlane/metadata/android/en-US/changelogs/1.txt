@@ -1,1 +1,3 @@
-First release.
+First public beta (0.1.0-beta1).
+Colour profiles shared across the suite, duplicate merging, your own card shared by QR code, vCard import and export, encrypted backup, and one backup for all three Seca apps.
+Beta: expect rough edges.

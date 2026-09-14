@@ -16,7 +16,7 @@ extensions.configure<ApplicationExtension> {
         minSdk = 31
         targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "0.1.0-beta1"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -30,6 +30,17 @@ extensions.configure<ApplicationExtension> {
         includeInApk = false
         includeInBundle = false
     }
+    // The key the published APKs are signed with. It never enters the repository: its file
+    // and passwords come from the maintainer's own ~/.gradle/gradle.properties.
+    val releaseStore = providers.gradleProperty("seca.release.storeFile")
+    if (releaseStore.isPresent) {
+        signingConfigs.create("release") {
+            storeFile = file(releaseStore.get())
+            storePassword = providers.gradleProperty("seca.release.storePassword").get()
+            keyAlias = providers.gradleProperty("seca.release.keyAlias").get()
+            keyPassword = providers.gradleProperty("seca.release.keyPassword").get()
+        }
+    }
     buildTypes {
         getByName("release") {
             // R8 shrinks and optimises the code, and the libraries' baseline profiles get
@@ -37,12 +48,14 @@ extensions.configure<ApplicationExtension> {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-            // F-Droid signs releases itself and needs them unsigned. To try a release on
-            // one's own phone, -Pseca.signReleaseWithDebugKey signs it with the debug key,
-            // the one the debug builds use, so it installs over them and the Seca apps
-            // still recognise each other.
-            if (providers.gradleProperty("seca.signReleaseWithDebugKey").isPresent) {
-                signingConfig = signingConfigs.getByName("debug")
+            // F-Droid signs releases itself and needs them unsigned: without the release key,
+            // nothing signs them. To try a release on one's own phone,
+            // -Pseca.signReleaseWithDebugKey signs it with the debug key, the one the debug
+            // builds use, so it installs over them and the Seca apps still recognise each other.
+            when {
+                providers.gradleProperty("seca.signReleaseWithDebugKey").isPresent ->
+                    signingConfig = signingConfigs.getByName("debug")
+                releaseStore.isPresent -> signingConfig = signingConfigs.getByName("release")
             }
         }
     }

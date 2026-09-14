@@ -1,1 +1,3 @@
-Première version.
+Première bêta publique (0.1.0-beta1).
+Conversations aux couleurs des profils, messages programmés, codes effacés après un délai, SMS publicitaires rangés à part. Et Seca Link, chiffré de bout en bout entre téléphones Seca : photos, vocaux, réactions, messages éphémères, option Tor. Sauvegarde commune aux trois applications.
+Version bêta : des défauts peuvent subsister.

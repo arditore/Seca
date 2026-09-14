@@ -17,10 +17,10 @@ import com.seca.core.contacts.VCard
 import com.seca.core.contacts.VCardContact
 import com.seca.core.design.SecaPalette
 import com.seca.core.model.backup.BackupCipher
-import org.json.JSONArray
 import org.json.JSONObject
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
+import com.seca.core.suite.SuiteBackup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -215,31 +215,14 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
      */
     fun exportBackup(uri: Uri, passphrase: CharArray) {
         viewModelScope.launch {
-            val entries = repository.exportEntries()
-            val state = _ui.value
-            val json = JSONObject()
-                .put("app", "seca-contacts")
-                .put("version", 1)
-                .put(
-                    "profiles",
-                    JSONArray().apply { state.profiles.forEach { put(JSONObject().put("id", it.id).put("name", it.name)) } },
-                )
-                .put(
-                    "contacts",
-                    JSONArray().apply {
-                        entries.forEach { (key, card) ->
-                            put(JSONObject().put("profile", state.profileForKey(key).id).put("vcard", VCard.write(listOf(card))))
-                        }
-                    },
-                )
-                .put("myCard", JSONObject().put("name", state.myCard.name).put("numbers", JSONArray(state.myCard.numbers)))
+            val part = ContactsBackup(getApplication()).export()
             val sealed = withContext(Dispatchers.Default) {
-                BackupCipher.encrypt(json.toString().toByteArray(Charsets.UTF_8), passphrase).also { passphrase.fill(' ') }
+                BackupCipher.encrypt(part.toString().toByteArray(Charsets.UTF_8), passphrase).also { passphrase.fill(' ') }
             }
             val written = withContext(Dispatchers.IO) {
                 runCatching { resolver.openOutputStream(uri, "wt")?.use { it.write(sealed) } != null }.getOrDefault(false)
             }
-            toast(if (written) "Sauvegarde chiffrée : ${plural(entries.size, "contact", "contacts")}" else "La sauvegarde a échoué")
+            toast(if (written) "Sauvegarde chiffrée : ${part.optString(SuiteBackup.KEY_SUMMARY)}" else "La sauvegarde a échoué")
         }
     }
 
@@ -262,59 +245,20 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                 )
                 return@launch
             }
-            val profiles = json.optJSONArray("profiles") ?: JSONArray()
-            for (i in 0 until profiles.length()) {
-                val item = profiles.getJSONObject(i)
-                store.restoreProfile(Profile(item.getString("id"), item.getString("name")))
-            }
-            val existing = repository.contacts()
-            var added = 0
-            val contacts = json.optJSONArray("contacts") ?: JSONArray()
-            for (i in 0 until contacts.length()) {
-                val item = contacts.getJSONObject(i)
-                val card = VCard.parse(item.optString("vcard")).firstOrNull() ?: continue
-                val contactId = existing.firstOrNull { it.isSameAs(card) }?.id
-                    ?: repository.createContact(card.toInput())?.also { added++ }
-                    ?: continue
-                repository.lookupKeyOf(contactId)?.let { store.assign(it, item.optString("profile", ProfileStore.Principal.id)) }
-            }
-            // "Ma fiche" only comes back onto a phone where it was never filled in.
-            json.optJSONObject("myCard")?.let { card ->
-                val current = _ui.value.myCard
-                if (current.name.isBlank() && current.numbers.isEmpty()) {
-                    val numbers = card.optJSONArray("numbers")
-                    myCards.save(card.optString("name"), (0 until (numbers?.length() ?: 0)).map { numbers!!.getString(it) })
-                    loadMyCard()
-                }
-            }
+            val restored = ContactsBackup(getApplication()).restore(json)
             refreshPreferences()
+            loadMyCard()
             load()
-            toast("Sauvegarde restaurée : ${plural(added, "contact ajouté", "contacts ajoutés")}")
+            toast("Sauvegarde restaurée : $restored")
         }
     }
-
-    private fun VCardContact.toInput() = ContactInput(
-        givenName = givenName.ifBlank { if (familyName.isBlank()) displayName else "" },
-        familyName = familyName,
-        phones = phones,
-        emails = emails,
-        addresses = addresses,
-        organization = organization,
-        jobTitle = jobTitle,
-        website = website,
-        birthday = birthday,
-        note = note,
-    )
 
     /** One contact as a vCard, for sharing it. */
     suspend fun vCardOf(id: Long): String? = repository.contactDetail(id)?.let { detail ->
         VCard.write(listOf(VCardContact(detail.givenName, detail.familyName, detail.displayName, detail.phones, detail.emails)))
     }
 
-    /** Same name, and a number in common when the card has one: importing the same file twice adds nothing. */
-    private fun SecaContact.isSameAs(card: VCardContact): Boolean =
-        displayName.equals(card.displayName, ignoreCase = true) &&
-            (card.phones.isEmpty() || card.phones.any { phone -> phoneNumbers.any { numbers.key(it.raw) == numbers.key(phone.value) } })
+    private fun SecaContact.isSameAs(card: VCardContact): Boolean = isSameAs(card, numbers)
 
     private fun plural(count: Int, one: String, many: String) = if (count == 1) "1 $one" else "$count $many"
 

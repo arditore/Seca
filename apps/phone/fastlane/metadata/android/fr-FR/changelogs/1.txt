@@ -1,1 +1,3 @@
-Première version.
+Première bêta publique (0.1.0-beta1).
+Écran d'appel avec le profil de l'appelant, recherche T9, blocage du démarchage, profils bloqués pour une durée choisie, SIM mémorisée par contact, refus d'appel avec un message, sorties Bluetooth nommées, et sauvegarde commune aux trois applications Seca.
+Version bêta : des défauts peuvent subsister.

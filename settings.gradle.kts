@@ -33,3 +33,4 @@ include(":apps:phone")
 include(":apps:messages")
 
 include(":core:link")
+include(":core:suite")

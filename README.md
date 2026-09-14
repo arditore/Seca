@@ -27,6 +27,10 @@ Conversations aux couleurs du profil du contact, messages programmés, codes de
 vérification effacés après un délai, SMS publicitaires rangés à part,
 sauvegarde chiffrée. Et, entre téléphones Seca, **Seca Link**.
 
+Depuis n'importe laquelle des trois, une **sauvegarde commune** réunit contacts
+et profils, historique et filtrage des appels, SMS, conversations et réglages
+dans un seul fichier chiffré, pour changer de téléphone.
+
 ## Seca Link
 
 Une messagerie chiffrée de bout en bout entre téléphones Seca, sans compte et
@@ -62,6 +66,19 @@ sans serveur Seca.
 - **Pas de RCS.** Google réserve son API RCS à une liste fermée d'applications.
 - **Pas d'appels Wi-Fi à proprement parler.** Le VoWiFi relève de la pile IMS du
   système et fonctionne quel que soit le composeur ; Seca Téléphone en affiche l'état.
+
+## Installer
+
+Seca est **en bêta**. En attendant F-Droid, les versions sont publiées dans les
+[Releases GitHub](https://github.com/arditore/Seca/releases) : installez les trois
+APK, puis choisissez Seca Téléphone comme application Téléphone et Seca Messages
+comme application SMS. Android 12 ou plus récent.
+
+Les APK sont signés avec ce certificat (empreinte SHA-256) :
+
+```
+2F:DE:A7:B4:6B:EF:FE:16:45:9B:B4:DC:DD:34:DB:5E:0C:B9:12:27:4A:5E:B6:28:E4:B0:D8:A5:96:21:17:90
+```
 
 ## Construire
 

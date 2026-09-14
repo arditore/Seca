@@ -37,6 +37,7 @@ import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
+import com.seca.core.suite.SuiteBackupSection
 
 @Composable
 internal fun SettingsScreen(
@@ -166,6 +167,8 @@ internal fun SettingsScreen(
                 )
             }
             SecaHint("Rien n'est synchronisé : gardez la sauvegarde ailleurs que sur ce téléphone.")
+
+            SuiteBackupSection()
 
             CodeAndSpamSettings()
 

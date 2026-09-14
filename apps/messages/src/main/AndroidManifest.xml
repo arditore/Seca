@@ -115,6 +115,13 @@
             android:name=".sms.MessageActionReceiver"
             android:exported="false" />
 
+        <!-- This app's part of the suite's backup, for the Seca apps signed with the same key only. -->
+        <provider
+            android:name=".MessagesSuiteBackup"
+            android:authorities="com.seca.messages.backup"
+            android:exported="true"
+            android:permission="com.seca.permission.BACKUP" />
+
         <!-- The text of "Refuser et répondre", from Seca Téléphone only: sent at once. -->
         <receiver
             android:name=".sms.QuickReplyReceiver"

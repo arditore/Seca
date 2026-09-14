@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The backup of the whole suite: each Seca app hands over its part, and takes it back,
+         only to apps signed with the same key. Declared by all three apps, so it holds
+         whichever is installed first. -->
+    <permission
+        android:name="com.seca.permission.BACKUP"
+        android:label="Sauvegarder la suite Seca"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.seca.permission.BACKUP" />
+
+    <queries>
+        <package android:name="com.seca.contacts" />
+        <package android:name="com.seca.phone" />
+        <package android:name="com.seca.messages" />
+    </queries>
+
+</manifest>

@@ -23,6 +23,9 @@ class ConversationPrefs(context: Context) {
     /** The owner said this conversation is not advertising: it is never filed away again. */
     fun isTrusted(threadId: Long): Boolean = threadId in ids(KEY_TRUSTED)
 
+    /** Conversations taken out of the advertising folder, trusted for good. */
+    fun trusted(): Set<Long> = ids(KEY_TRUSTED).toSet()
+
     /** Pinning a conversation also takes it out of the archive. */
     fun setPinned(threadId: Long, pinned: Boolean) {
         change(KEY_PINNED) { ids -> ids.filter { it != threadId } + if (pinned) listOf(threadId) else emptyList() }

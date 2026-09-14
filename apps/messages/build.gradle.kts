@@ -37,6 +37,7 @@ dependencies {
     implementation(project(":core:design"))
     implementation(project(":core:contacts"))
     implementation(project(":core:link"))
+    implementation(project(":core:suite"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

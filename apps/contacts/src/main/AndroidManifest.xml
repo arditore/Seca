@@ -79,6 +79,13 @@
             android:authorities="com.seca.contacts.profiles"
             android:exported="true"
             android:permission="com.seca.permission.READ_PROFILES" />
+
+        <!-- This app's part of the suite's backup, for the Seca apps signed with the same key only. -->
+        <provider
+            android:name=".ContactsSuiteBackup"
+            android:authorities="com.seca.contacts.backup"
+            android:exported="true"
+            android:permission="com.seca.permission.BACKUP" />
     </application>
 
 </manifest>
