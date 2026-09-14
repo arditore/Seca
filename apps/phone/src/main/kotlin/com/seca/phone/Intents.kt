@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.provider.BlockedNumberContract
 import android.provider.ContactsContract
 import android.provider.Settings
+import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
 import com.seca.core.design.SecaAppIdentity
@@ -23,12 +24,14 @@ private const val SECA_MESSAGES = "com.seca.messages"
  * Places a call through Android's telephony stack, which also carries it
  * over Wi-Fi when the operator supports it. Returns false when calling is not
  * allowed yet, so the caller can ask. An emergency number is never blocked
- * here: Telecom hands it to the system's own emergency flow.
+ * here: Telecom hands it to the system's own emergency flow. With [account],
+ * the call goes through that SIM without Android asking.
  */
-internal fun placeCall(context: Context, number: String): Boolean {
+internal fun placeCall(context: Context, number: String, account: PhoneAccountHandle? = null): Boolean {
     if (context.checkSelfPermission(Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) return false
     val telecom = context.getSystemService(TelecomManager::class.java) ?: return false
-    return runCatching { telecom.placeCall(Uri.fromParts("tel", number, null), Bundle()) }.isSuccess
+    val extras = Bundle().apply { account?.let { putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, it) } }
+    return runCatching { telecom.placeCall(Uri.fromParts("tel", number, null), extras) }.isSuccess
 }
 
 /** Calls the voicemail, as a long press on 1 does on every dialer. */

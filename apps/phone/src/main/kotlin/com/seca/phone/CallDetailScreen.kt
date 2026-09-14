@@ -129,6 +129,14 @@ internal fun CallDetailScreen(
                     }
                 }
             }
+            item(key = "sim") {
+                SimPreferenceRow(
+                    number = match?.number?.raw ?: number,
+                    lookupKey = contact?.lookupKey,
+                    name = contact?.displayName ?: ui.numbers.display(number),
+                    numbers = ui.numbers,
+                )
+            }
             if (history.isNotEmpty()) {
                 item(key = "history-label") { SecaSectionLabel("Historique") }
                 itemsIndexed(history, key = { _, call -> call.id }) { index, call ->

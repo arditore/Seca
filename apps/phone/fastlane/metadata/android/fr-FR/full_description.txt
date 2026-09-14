@@ -1,0 +1,32 @@
+Seca Téléphone est l'application d'appels de la suite Seca : Contacts, Téléphone et Messages, trois applications au même design Material 3 Expressive, pensées pour la vie privée et pour les téléphones sans Google.
+
+<b>Vos appels restent sur votre téléphone</b>
+<ul>
+<li>Aucune permission Internet : l'historique ne peut partir nulle part.</li>
+<li>Le tri des appels se fait entièrement sur le téléphone.</li>
+</ul>
+
+<b>Filtrage</b>
+<ul>
+<li>Démarchage bloqué : les numéros réservés au démarchage en France (01 62, 01 63, 02 70…) sont refusés avant de sonner, sauf vos contacts.</li>
+<li>Inconnus en silencieux, si vous le souhaitez.</li>
+<li>Profils bloqués : les contacts d'un profil (Travail…) ne peuvent plus appeler, pendant une heure, jusqu'à demain ou jusqu'à réactivation. Appel refusé ou sonnerie en silence, au choix.</li>
+</ul>
+
+<b>Appeler</b>
+<ul>
+<li>Écran d'appel avec la photo et le profil de l'appelant, mains libres, Bluetooth, attente, double appel, conférence.</li>
+<li>Recherche T9 et suggestions au clavier.</li>
+<li>Double SIM : choix de la SIM à chaque appel, mémorisé pour chaque contact.</li>
+<li>Refus d'appel avec un message, envoyé aussitôt par Seca Messages.</li>
+<li>Historique filtrable par type d'appel ou par profil, favoris en un geste.</li>
+</ul>
+
+<b>Et aussi</b>
+<ul>
+<li>Appels Wi-Fi et HD signalés, messagerie vocale, codes de service.</li>
+<li>Verrouillage de l'application (l'écran d'appel reste toujours accessible).</li>
+<li>Couleurs du fond d'écran ou palettes Seca, thème sombre.</li>
+</ul>
+
+Sans publicité, sans pisteur, sans compte. Code source ouvert.

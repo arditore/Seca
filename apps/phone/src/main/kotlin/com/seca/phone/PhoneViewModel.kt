@@ -16,6 +16,7 @@ import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.design.SecaPalette
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
+import com.seca.phone.screening.BlockFor
 import com.seca.phone.screening.BlockMode
 import com.seca.phone.screening.ScreeningSettings
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +73,9 @@ data class PhoneUi(
     /** Profiles whose contacts cannot call, by id, until the owner lets them again. */
     val blockedProfiles: Set<String> = emptySet(),
     val blockMode: BlockMode = BlockMode.Decline,
+    val blockFor: BlockFor = BlockFor.UntilLifted,
+    /** When the block ends, in milliseconds; 0 when it lasts until the owner lifts it. */
+    val blockedUntil: Long = 0L,
 ) {
     /** The palette picked in Seca Contacts; null follows the wallpaper. */
     val palette: SecaPalette? get() = SecaPalette.entries.firstOrNull { it.name == profiles.palette }
@@ -169,21 +173,37 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { sharedProfiles.setPalette(palette?.name) }
     }
 
-    /** Stops or lets again the calls from every contact of [profileId]; it lasts until the owner changes it back. */
+    /** Stops or lets again the calls from every contact of [profileId], for as long as the owner chose. */
     fun setProfileBlocked(profileId: String, blocked: Boolean) {
-        val updated = if (blocked) screening.blockedProfiles + profileId else screening.blockedProfiles - profileId
-        screening.blockedProfiles = updated
-        _ui.update { it.copy(blockedProfiles = updated) }
+        screening.blockedProfiles = if (blocked) screening.blockedProfiles + profileId else screening.blockedProfiles - profileId
+        refreshScreening()
     }
 
     fun unblockProfiles() {
         screening.blockedProfiles = emptySet()
-        _ui.update { it.copy(blockedProfiles = emptySet()) }
+        refreshScreening()
     }
 
     fun setBlockMode(mode: BlockMode) {
         screening.blockMode = mode
-        _ui.update { it.copy(blockMode = mode) }
+        refreshScreening()
+    }
+
+    fun setBlockFor(choice: BlockFor) {
+        screening.setBlockFor(choice)
+        refreshScreening()
+    }
+
+    /** Reads the blocks again: one with an end lifts itself once the end has passed. */
+    fun refreshScreening() {
+        _ui.update {
+            it.copy(
+                blockedProfiles = screening.blockedProfiles,
+                blockMode = screening.blockMode,
+                blockFor = screening.blockFor,
+                blockedUntil = screening.blockedUntil,
+            )
+        }
     }
 
     // Every number is read here, off the main thread, before the screen sees it:

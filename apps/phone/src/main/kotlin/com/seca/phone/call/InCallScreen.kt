@@ -59,6 +59,7 @@ import com.seca.core.design.secaCallColors
 import com.seca.core.design.secaToneColors
 import com.seca.core.model.Profile
 import com.seca.core.model.initialsOf
+import com.seca.phone.RememberChoice
 import kotlinx.coroutines.delay
 
 /** How long the screen stays to say how the call ended. */
@@ -461,17 +462,25 @@ private fun RoundAction(icon: ImageVector, label: String, container: Color, cont
 /** Android asks which SIM places the call; without an answer the call would wait forever. */
 @Composable
 private fun AccountChooser(view: CallView) {
+    // Kept for this contact's next calls, unless the owner unticks it.
+    var keep by remember { mutableStateOf(true) }
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 24.dp),
     ) {
+        RememberChoice(
+            checked = keep,
+            label = "Toujours utiliser cette SIM pour ${view.caller?.name ?: "ce numéro"}",
+            onCheckedChange = { keep = it },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
         view.accountsToChoose.forEachIndexed { index, account ->
             SecaGroupItem(
                 index = index,
                 count = view.accountsToChoose.size,
-                onClick = { CallSession.chooseAccount(view.call, account) },
+                onClick = { CallSession.chooseAccount(view.call, account, remember = keep) },
             ) {
                 SecaSettingRow(
                     icon = SecaIcons.Phone,

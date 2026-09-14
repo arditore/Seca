@@ -1,0 +1,26 @@
+Seca Contacts est le répertoire de la suite Seca : Contacts, Téléphone et Messages, trois applications au même design Material 3 Expressive, pensées pour la vie privée et pour les téléphones sans Google.
+
+<b>Vos contacts restent sur votre téléphone</b>
+<ul>
+<li>Aucune permission Internet : l'application ne peut rien envoyer nulle part.</li>
+<li>Les contacts restent dans le carnet d'Android, là où DAVx⁵ ou une autre synchronisation de votre choix peuvent les retrouver.</li>
+<li>Compatible avec les « Contact Scopes » de GrapheneOS.</li>
+</ul>
+
+<b>Rangés comme vous vivez</b>
+<ul>
+<li>Profils colorés (Famille, Travail…), dont la couleur se retrouve dans Seca Téléphone et Seca Messages.</li>
+<li>Favoris, recherche instantanée, défilement rapide par lettre.</li>
+<li>Doublons repérés par nom ou numéro, et fusionnés sans rien perdre.</li>
+<li>Ma fiche, à partager par QR code.</li>
+</ul>
+
+<b>Et aussi</b>
+<ul>
+<li>Import et export vCard.</li>
+<li>Sauvegarde chiffrée par mot de passe.</li>
+<li>Verrouillage de l'application et écran masqué dans les applications récentes.</li>
+<li>Couleurs du fond d'écran ou palettes Seca, thème sombre.</li>
+</ul>
+
+Sans publicité, sans pisteur, sans compte. Code source ouvert.

@@ -31,11 +31,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaIcons
@@ -43,6 +45,9 @@ import com.seca.core.design.SecaMotion
 import com.seca.core.design.SecaTheme
 import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaSuiteBar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Stands for the voicemail in the pending-call slot, which otherwise holds a number. */
 private const val VOICEMAIL = "voicemail"
@@ -55,10 +60,13 @@ fun PhoneApp(
     onPermissionsResult: () -> Unit,
     dialRequest: DialRequest?,
     onDialRequestHandled: () -> Unit,
+    callRequest: CallRequest?,
+    onCallRequestHandled: () -> Unit,
     viewModel: PhoneViewModel = viewModel(),
 ) {
     val context = LocalContext.current
     val ui by viewModel.ui.collectAsState()
+    val scope = rememberCoroutineScope()
 
     var permanentlyDenied by remember { mutableStateOf(false) }
     val accessLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -66,6 +74,17 @@ fun PhoneApp(
         // After a refusal, no rationale means "don't ask again": only Settings can grant it now.
         permanentlyDenied = result[Manifest.permission.READ_CALL_LOG] != true &&
             (context as? Activity)?.shouldShowRequestPermissionRationale(Manifest.permission.READ_CALL_LOG) == false
+    }
+
+    // With several SIMs, a contact is called with the SIM chosen for them; otherwise the owner picks one.
+    var simChoice by remember { mutableStateOf<SimRoute.Ask?>(null) }
+    val startCall: (String) -> Unit = { number ->
+        scope.launch {
+            when (val route = withContext(Dispatchers.IO) { routeCall(context, number) }) {
+                is SimRoute.Direct -> placeCall(context, number, route.account)
+                is SimRoute.Ask -> simChoice = route
+            }
+        }
     }
 
     // The right to call is asked the first time the user places a call, and the call then goes through.
@@ -76,11 +95,13 @@ fun PhoneApp(
         when {
             !granted -> Toast.makeText(context, "Autorisez les appels pour appeler depuis Seca Téléphone", Toast.LENGTH_LONG).show()
             target == VOICEMAIL -> callVoicemail(context)
-            target != null -> placeCall(context, target)
+            target != null -> startCall(target)
         }
     }
     val onCall: (String) -> Unit = { number ->
-        if (!placeCall(context, number)) {
+        if (context.checkSelfPermission(Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+            startCall(number)
+        } else {
             pendingCall = number
             callLauncher.launch(Manifest.permission.CALL_PHONE)
         }
@@ -134,9 +155,33 @@ fun PhoneApp(
             onDialRequestHandled()
         }
     }
+    LaunchedEffect(callRequest) {
+        if (callRequest != null) {
+            onCall(callRequest.number)
+            onCallRequestHandled()
+        }
+    }
+    // A block with an end may have lifted itself while the app was away.
+    LifecycleResumeEffect(Unit) {
+        viewModel.refreshScreening()
+        onPauseOrDispose { }
+    }
     BackHandler(enabled = viewModel.backStack.size > 1) { viewModel.back() }
 
     SecaTheme(identity = SecaAppIdentity.Phone, palette = ui.palette) {
+        simChoice?.let { ask ->
+            SimChooserDialog(
+                sims = ask.sims,
+                title = "Appeler avec quelle SIM ?",
+                rememberLabel = "Toujours utiliser cette SIM pour ${ask.contactName ?: ui.numbers.display(ask.number)}",
+                onDismiss = { simChoice = null },
+                onPick = { sim, keep ->
+                    if (keep) SimPreferences(context)[ask.key] = sim.handle
+                    placeCall(context, ask.number, sim.handle)
+                    simChoice = null
+                },
+            )
+        }
         // The keypad works without access to the history: calling must never depend on it.
         if (!callLogGranted && viewModel.backStack.last() !is PhoneScreen.Dialer) {
             Scaffold(

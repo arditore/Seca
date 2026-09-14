@@ -33,6 +33,15 @@
         android:label="Passer des appels avec Seca Téléphone"
         android:protectionLevel="signature" />
 
+    <!-- "Refuser et répondre": the text goes to Seca Messages, which sends it at once. Both apps
+         declare the permission, so it holds whichever is installed first; only apps signed with
+         the same key get it. -->
+    <permission
+        android:name="com.seca.permission.SEND_MESSAGES"
+        android:label="Envoyer des messages avec Seca Messages"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.seca.permission.SEND_MESSAGES" />
+
     <!-- Not required: without a SIM the history and the contacts still show, and
          calls simply cannot be placed. -->
     <uses-feature

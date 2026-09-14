@@ -1,0 +1,26 @@
+Seca Contacts is the address book of the Seca suite: Contacts, Phone and Messages, three apps sharing one Material 3 Expressive design, built for privacy and for phones without Google. The interface is in French.
+
+<b>Your contacts stay on your phone</b>
+<ul>
+<li>No Internet permission: the app cannot send anything anywhere.</li>
+<li>Contacts stay in Android's own address book, where DAVx⁵ or any sync of your choice can reach them.</li>
+<li>Works with GrapheneOS Contact Scopes.</li>
+</ul>
+
+<b>Organised the way you live</b>
+<ul>
+<li>Coloured profiles (Family, Work…), whose colour carries over to Seca Phone and Seca Messages.</li>
+<li>Favourites, instant search, fast scrolling by letter.</li>
+<li>Duplicates found by name or number, merged without losing anything.</li>
+<li>Your own card, shared as a QR code.</li>
+</ul>
+
+<b>Also</b>
+<ul>
+<li>vCard import and export.</li>
+<li>Password-encrypted backup.</li>
+<li>App lock, and a hidden preview in recent apps.</li>
+<li>Wallpaper colours or Seca palettes, dark theme.</li>
+</ul>
+
+No ads, no trackers, no account. Open source.

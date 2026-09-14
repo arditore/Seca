@@ -33,6 +33,13 @@
          with the same key hold these. -->
     <uses-permission android:name="com.seca.permission.READ_PROFILES" />
     <uses-permission android:name="com.seca.permission.PLACE_CALLS" />
+
+    <!-- Lets Seca Téléphone hand over the text of "Refuser et répondre". Declared by both apps,
+         so it holds whichever is installed first; only apps signed with the same key get it. -->
+    <permission
+        android:name="com.seca.permission.SEND_MESSAGES"
+        android:label="Envoyer des messages avec Seca Messages"
+        android:protectionLevel="signature" />
     <!-- The camera, asked only when the owner scans a contact's safety number; no image is kept. -->
     <uses-permission android:name="android.permission.CAMERA" />
 
@@ -103,6 +110,16 @@
         <receiver
             android:name=".sms.MessageActionReceiver"
             android:exported="false" />
+
+        <!-- The text of "Refuser et répondre", from Seca Téléphone only: sent at once. -->
+        <receiver
+            android:name=".sms.QuickReplyReceiver"
+            android:exported="true"
+            android:permission="com.seca.permission.SEND_MESSAGES">
+            <intent-filter>
+                <action android:name="com.seca.messages.action.QUICK_REPLY" />
+            </intent-filter>
+        </receiver>
 
         <!-- Scheduled messages get their alarms back after a restart or an update. -->
         <receiver

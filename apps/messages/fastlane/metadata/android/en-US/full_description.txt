@@ -1,0 +1,29 @@
+Seca Messages is the messaging app of the Seca suite: Contacts, Phone and Messages, three apps sharing one Material 3 Expressive design, built for privacy and for phones without Google. The interface is in French.
+
+<b>Seca Link: end-to-end encrypted</b>
+<ul>
+<li>Between two Seca phones, messages travel encrypted with the Signal protocol (libsignal, post-quantum PQXDH), bypassing the carrier.</li>
+<li>No account, no Seca server: encrypted messages travel through public Nostr relays, which see neither who writes nor what is written.</li>
+<li>Two contacts connect through an invisible SMS; everything then goes over the Internet.</li>
+<li>Read receipts and typing indicator, each of which can be turned off.</li>
+<li>Safety number to compare, or to scan as a QR code.</li>
+<li>Off by default: without Seca Link, the app does not use the Internet.</li>
+</ul>
+
+<b>SMS</b>
+<ul>
+<li>Conversations with your contacts' photos and profiles, search across every message.</li>
+<li>Reply from the notification, scheduled messages.</li>
+<li>Verification codes copied in one tap and erased automatically after a while.</li>
+<li>Advertising texts filed as spam.</li>
+<li>Pinned and archived conversations.</li>
+</ul>
+
+<b>Also</b>
+<ul>
+<li>Password-encrypted backup.</li>
+<li>App lock, and a hidden preview in recent apps.</li>
+<li>Wallpaper colours or Seca palettes, dark theme.</li>
+</ul>
+
+No ads, no trackers, no account. Open source.

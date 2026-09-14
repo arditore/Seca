@@ -23,6 +23,8 @@ import androidx.core.os.BundleCompat
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.model.Profile
+import com.seca.phone.SimPreferences
+import com.seca.phone.simKeyOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -233,8 +235,10 @@ object CallSession {
 
     fun answer(call: Call) = call.answer(VideoProfile.STATE_AUDIO_ONLY)
 
-    /** Declines; with a [message], Android texts it to the caller. */
-    fun decline(call: Call, message: String? = null) = call.reject(message != null, message)
+    /** Declines; with a [message], the caller gets it as a text, sent right away. */
+    fun decline(call: Call, message: String? = null) {
+        if (message == null) call.reject(false, null) else QuickReply.decline(appContext, call, message)
+    }
 
     fun hangUp(call: Call) = call.disconnect()
 
@@ -275,7 +279,15 @@ object CallSession {
         }
     }
 
-    fun chooseAccount(call: Call, account: PhoneAccountHandle) = call.phoneAccountSelected(account, false)
+    /** Answers Android's question of which SIM places the call; [remember] keeps it for this contact's next calls. */
+    fun chooseAccount(call: Call, account: PhoneAccountHandle, remember: Boolean = false) {
+        val context = appContext
+        if (remember && context != null) {
+            val number = numberOf(call)
+            SimPreferences(context)[simKeyOf(callers[number]?.lookupKey, number, numbers)] = account
+        }
+        call.phoneAccountSelected(account, false)
+    }
 
     fun accountName(account: PhoneAccountHandle): String =
         runCatching { appContext?.getSystemService(TelecomManager::class.java)?.getPhoneAccount(account)?.label?.toString() }

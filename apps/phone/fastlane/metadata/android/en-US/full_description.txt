@@ -1,0 +1,32 @@
+Seca Phone is the dialer of the Seca suite: Contacts, Phone and Messages, three apps sharing one Material 3 Expressive design, built for privacy and for phones without Google. The interface is in French.
+
+<b>Your calls stay on your phone</b>
+<ul>
+<li>No Internet permission: the call history cannot go anywhere.</li>
+<li>Calls are screened entirely on the phone.</li>
+</ul>
+
+<b>Screening</b>
+<ul>
+<li>Telemarketing blocked: numbers reserved for telemarketing in France (01 62, 01 63, 02 70…) are refused before ringing, except your contacts.</li>
+<li>Unknown callers on silent, if you wish.</li>
+<li>Blocked profiles: contacts of a profile (Work…) cannot call for an hour, until tomorrow, or until you lift it. Refused or ringing silently, your choice.</li>
+</ul>
+
+<b>Calling</b>
+<ul>
+<li>Call screen with the caller's photo and profile, speaker, Bluetooth, hold, call waiting, conference.</li>
+<li>T9 search and keypad suggestions.</li>
+<li>Dual SIM: pick the SIM on each call, remembered for each contact.</li>
+<li>Decline with a message, sent at once by Seca Messages.</li>
+<li>History filtered by call type or by profile, favourites one tap away.</li>
+</ul>
+
+<b>Also</b>
+<ul>
+<li>Wi-Fi and HD calls shown, voicemail, service codes.</li>
+<li>App lock (the call screen always stays reachable).</li>
+<li>Wallpaper colours or Seca palettes, dark theme.</li>
+</ul>
+
+No ads, no trackers, no account. Open source.

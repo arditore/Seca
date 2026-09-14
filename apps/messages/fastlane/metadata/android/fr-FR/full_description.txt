@@ -1,0 +1,29 @@
+Seca Messages est la messagerie de la suite Seca : Contacts, Téléphone et Messages, trois applications au même design Material 3 Expressive, pensées pour la vie privée et pour les téléphones sans Google.
+
+<b>Seca Link : chiffré de bout en bout</b>
+<ul>
+<li>Entre deux téléphones Seca, les messages partent chiffrés avec le protocole de Signal (libsignal, PQXDH résistant au quantique), sans passer par l'opérateur.</li>
+<li>Aucun compte, aucun serveur Seca : les messages chiffrés transitent par des relais Nostr publics, qui ne voient ni qui écrit, ni ce qui est écrit.</li>
+<li>La connexion entre deux contacts se fait par un SMS invisible, puis tout passe par Internet.</li>
+<li>Accusés de lecture et indicateur d'écriture, désactivables.</li>
+<li>Numéro de sécurité à comparer ou à scanner par QR code.</li>
+<li>Désactivé par défaut : sans Seca Link, l'application n'utilise pas Internet.</li>
+</ul>
+
+<b>SMS</b>
+<ul>
+<li>Conversations avec la photo et le profil de vos contacts, recherche dans tous les messages.</li>
+<li>Réponse depuis la notification, messages programmés.</li>
+<li>Codes de vérification copiables en un geste et effacés automatiquement après un délai.</li>
+<li>SMS publicitaires rangés dans Indésirables.</li>
+<li>Conversations épinglées et archivées.</li>
+</ul>
+
+<b>Et aussi</b>
+<ul>
+<li>Sauvegarde chiffrée par mot de passe.</li>
+<li>Verrouillage de l'application et écran masqué dans les applications récentes.</li>
+<li>Couleurs du fond d'écran ou palettes Seca, thème sombre.</li>
+</ul>
+
+Sans publicité, sans pisteur, sans compte. Code source ouvert.
