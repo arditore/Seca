@@ -139,6 +139,7 @@ fun MessagesApp(
                     SpamRoute -> SpamScreen(ui, viewModel)
                     MessagesScreen.Relays -> RelaysScreen(ui, viewModel)
                     is SafetyNumberRoute -> SafetyNumberScreen(screen, ui, viewModel)
+                    is SafetyScanRoute -> SafetyScanScreen(screen, ui, viewModel)
                 }
             }
         }

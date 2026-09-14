@@ -1,9 +1,6 @@
 package com.seca.messages
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -23,24 +19,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.createBitmap
-import androidx.core.graphics.set
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.EncodeHintType
-import com.google.zxing.qrcode.QRCodeWriter
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaEmptyState
+import com.seca.core.design.component.SecaQrCode
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.link.SafetyNumber
 import kotlin.io.encoding.Base64
@@ -90,7 +76,11 @@ internal fun SafetyNumberScreen(route: SafetyNumberRoute, ui: MessagesUi, viewMo
                 modifier = Modifier.padding(top = 12.dp),
             )
             VerifiedMark(peer.verified, Modifier.padding(top = 8.dp))
-            QrCode(number.code, Modifier.padding(top = 24.dp))
+            SecaQrCode(
+                content = Base64.encode(number.code),
+                contentDescription = "Code de sécurité à scanner",
+                modifier = Modifier.padding(top = 24.dp),
+            )
             SafetyDigits(number.digits, Modifier.padding(top = 24.dp))
             Text(
                 text = "Comparez ces chiffres avec ceux du téléphone de $name, ou montrez-lui ce code. " +
@@ -108,15 +98,19 @@ internal fun SafetyNumberScreen(route: SafetyNumberRoute, ui: MessagesUi, viewMo
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp),
             )
+            Button(
+                onClick = { viewModel.open(SafetyScanRoute(route.address)) },
+                modifier = Modifier.padding(top = 24.dp),
+            ) { Text("Scanner son code") }
             if (peer.verified) {
                 OutlinedButton(
                     onClick = { links.setVerified(route.address, false) },
-                    modifier = Modifier.padding(top = 24.dp),
+                    modifier = Modifier.padding(top = 8.dp),
                 ) { Text("Retirer la vérification") }
             } else {
-                Button(
+                OutlinedButton(
                     onClick = { links.setVerified(route.address, true) },
-                    modifier = Modifier.padding(top = 24.dp),
+                    modifier = Modifier.padding(top = 8.dp),
                 ) { Text("Marquer comme vérifié") }
             }
         }
@@ -143,34 +137,6 @@ private fun VerifiedMark(verified: Boolean, modifier: Modifier = Modifier) {
                 modifier = Modifier.padding(start = 6.dp),
             )
         }
-    }
-}
-
-/** Dark modules on white, whatever the theme, so any camera reads it. */
-@Composable
-private fun QrCode(bytes: ByteArray, modifier: Modifier = Modifier) {
-    val image = remember(bytes) {
-        val matrix = QRCodeWriter().encode(Base64.encode(bytes), BarcodeFormat.QR_CODE, 0, 0, mapOf(EncodeHintType.MARGIN to 0))
-        val dark = Color.Black.toArgb()
-        val light = Color.White.toArgb()
-        val bitmap = createBitmap(matrix.width, matrix.height)
-        for (x in 0 until matrix.width) {
-            for (y in 0 until matrix.height) bitmap[x, y] = if (matrix[x, y]) dark else light
-        }
-        bitmap.asImageBitmap()
-    }
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(28.dp))
-            .background(Color.White)
-            .padding(20.dp),
-    ) {
-        Image(
-            bitmap = image,
-            contentDescription = "Code de sécurité à scanner",
-            filterQuality = FilterQuality.None,
-            modifier = Modifier.size(200.dp),
-        )
     }
 }
 

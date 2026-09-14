@@ -1,6 +1,7 @@
 package com.seca.contacts
 
 import android.content.pm.PackageManager
+import android.provider.ContactsContract.CommonDataKinds.Phone
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -20,6 +21,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,11 +43,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.seca.core.contacts.ContactField
+import com.seca.core.contacts.VCard
+import com.seca.core.contacts.VCardContact
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaHint
+import com.seca.core.design.component.SecaQrCode
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.model.initialsOf
@@ -56,12 +64,15 @@ internal const val MY_CARD_SEED = "ma-fiche"
  * "Ma fiche": the owner's name, photo and numbers. The SIM lines are read only
  * when the owner asks; many operators leave the number off the card, so
  * numbers can also be typed in. Everything is saved when leaving the screen.
+ * A QR code hands the card to someone standing by, without any network.
  */
 @Composable
 internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
     val context = LocalContext.current
     var name by remember { mutableStateOf(ui.myCard.name) }
     val typed = remember { mutableStateListOf<String>().apply { addAll(ui.myCard.numbers.ifEmpty { listOf("") }) } }
+    var sharing by remember { mutableStateOf(false) }
+    val shareable = myCardNumbers(ui, typed)
     val leave: () -> Unit = {
         viewModel.saveMyCard(name, typed.toList())
         viewModel.back()
@@ -127,6 +138,14 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                         Text("Retirer la photo")
                     }
                 }
+                FilledTonalButton(
+                    onClick = { sharing = true },
+                    enabled = shareable.isNotEmpty(),
+                    modifier = Modifier.padding(top = 12.dp),
+                ) {
+                    Icon(SecaIcons.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text("Partager par QR code", modifier = Modifier.padding(start = 8.dp))
+                }
             }
 
             SecaSectionLabel("Nom")
@@ -189,9 +208,55 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                     Text("Ajouter un numéro", modifier = Modifier.padding(start = 8.dp))
                 }
             }
-            SecaHint("Ma fiche reste dans Seca Contacts : elle n'est ni partagée avec les autres applications, ni synchronisée.")
+            SecaHint(
+                "Ma fiche reste dans Seca Contacts : elle n'est ni partagée avec les autres applications, ni synchronisée. " +
+                    "Seul le QR code, quand vous le montrez, la donne à quelqu'un.",
+            )
         }
     }
+
+    if (sharing) {
+        val card = remember(name, shareable) { myCardVCard(name, shareable) }
+        AlertDialog(
+            onDismissRequest = { sharing = false },
+            title = { Text(name.ifBlank { "Ma fiche" }) },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    SecaQrCode(card, contentDescription = "QR code de votre fiche")
+                    Text(
+                        text = "Scannez-le avec l'appareil photo de l'autre téléphone pour ajouter votre fiche. " +
+                            "Rien ne passe par Internet, et la photo n'est pas incluse.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                }
+            },
+            confirmButton = { TextButton(onClick = { sharing = false }) { Text("Fermer") } },
+        )
+    }
+}
+
+/** The owner's numbers, from the SIM cards and typed in, each once and in international format. */
+private fun myCardNumbers(ui: ContactsUi, typed: List<String>): List<String> =
+    (ui.simLines.mapNotNull { it.number } + typed)
+        .map(String::trim)
+        .filter(String::isNotEmpty)
+        .map { ui.numbers.toE164(it) ?: it }
+        .distinct()
+
+/** A vCard with the name and numbers only: small enough for a QR code any camera reads. */
+private fun myCardVCard(name: String, numbers: List<String>): String {
+    val shown = name.trim()
+    val contact = VCardContact(
+        givenName = shown.substringBefore(' '),
+        familyName = shown.substringAfter(' ', ""),
+        displayName = shown,
+        phones = numbers.map { ContactField(id = null, value = it, type = Phone.TYPE_MOBILE) },
+        emails = emptyList(),
+    )
+    return VCard.write(listOf(contact))
 }
 
 @Composable

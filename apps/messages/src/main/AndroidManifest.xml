@@ -22,6 +22,12 @@
          with the same key hold these. -->
     <uses-permission android:name="com.seca.permission.READ_PROFILES" />
     <uses-permission android:name="com.seca.permission.PLACE_CALLS" />
+    <!-- The camera, asked only when the owner scans a contact's safety number; no image is kept. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
 
     <uses-feature
         android:name="android.hardware.telephony"
