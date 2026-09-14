@@ -56,6 +56,9 @@ import com.seca.messages.sms.Message
 /** How many characters of a message to keep before the searched words in a result. */
 private const val EXCERPT_LEAD = 24
 
+/** The conversations filed as advertising. */
+data object SpamRoute : MessagesScreen
+
 @Composable
 internal fun ConversationsScreen(
     ui: MessagesUi,
@@ -136,9 +139,9 @@ internal fun ConversationsScreen(
 }
 
 /**
- * Pinned conversations first, then the others by period, then the way into
- * the archive. While searching: the conversations that match, then the
- * messages whose text matches, whatever conversation they are in.
+ * Pinned conversations first, then the others by period, then the ways into
+ * the archive and the advertising. While searching: the conversations that
+ * match, then the messages whose text matches, whatever conversation they are in.
  */
 @Composable
 private fun ConversationList(
@@ -167,16 +170,19 @@ private fun ConversationList(
     val pinned = remember(matching, ui.pinned, searching) {
         if (searching) emptyList() else ui.pinned.mapNotNull { id -> matching.firstOrNull { it.threadId == id } }
     }
-    val sections = remember(matching, ui.pinned, ui.archived, searching) {
+    val sections = remember(matching, ui.pinned, ui.archived, ui.spam, searching) {
         if (searching) {
             if (matching.isEmpty()) emptyMap() else mapOf("Conversations" to matching)
         } else {
-            matching.filter { it.threadId !in ui.pinned && it.threadId !in ui.archived }.groupBy { periodOf(it.date) }
+            matching
+                .filter { it.threadId !in ui.pinned && it.threadId !in ui.archived && it.threadId !in ui.spam }
+                .groupBy { periodOf(it.date) }
         }
     }
     val hits = if (searching) ui.searchHits else emptyList()
-    val archivedCount = if (searching) 0 else ui.conversations.count { it.threadId in ui.archived }
-    val nothing = pinned.isEmpty() && sections.isEmpty() && hits.isEmpty() && archivedCount == 0
+    val archivedCount = if (searching) 0 else ui.conversations.count { it.threadId in ui.archived && it.threadId !in ui.spam }
+    val spamCount = if (searching) 0 else ui.conversations.count { it.threadId in ui.spam }
+    val nothing = pinned.isEmpty() && sections.isEmpty() && hits.isEmpty() && archivedCount == 0 && spamCount == 0
 
     val row: @Composable (Conversation) -> Unit = { conversation ->
         ConversationRow(
@@ -184,10 +190,12 @@ private fun ConversationList(
             ui = ui,
             pinned = conversation.threadId in ui.pinned,
             archived = conversation.threadId in ui.archived,
+            spam = conversation.threadId in ui.spam,
             onOpen = { viewModel.openConversation(conversation.address) },
             onMarkRead = { viewModel.markRead(conversation.threadId) },
             onPin = { viewModel.setPinned(conversation.threadId, conversation.threadId !in ui.pinned) },
             onArchive = { viewModel.setArchived(conversation.threadId, conversation.threadId !in ui.archived) },
+            onSpam = { viewModel.setSpam(conversation.threadId, conversation.threadId !in ui.spam) },
             onDelete = { onDelete(conversation) },
         )
     }
@@ -236,11 +244,12 @@ private fun ConversationList(
                 }
             }
         }
+        val folders = (if (archivedCount > 0) 1 else 0) + (if (spamCount > 0) 1 else 0)
         if (archivedCount > 0) {
-            item(key = "archived", contentType = "archived") {
+            item(key = "archived", contentType = "folder") {
                 SecaGroupItem(
                     index = 0,
-                    count = 1,
+                    count = folders,
                     modifier = Modifier.padding(top = 16.dp),
                     onClick = { viewModel.open(MessagesScreen.Archived) },
                 ) {
@@ -252,24 +261,71 @@ private fun ConversationList(
                 }
             }
         }
+        if (spamCount > 0) {
+            item(key = "spam", contentType = "folder") {
+                SecaGroupItem(
+                    index = folders - 1,
+                    count = folders,
+                    modifier = if (folders == 1) Modifier.padding(top = 16.dp) else Modifier,
+                    onClick = { viewModel.open(SpamRoute) },
+                ) {
+                    SecaSettingRow(
+                        icon = SecaIcons.Block,
+                        title = "Indésirables",
+                        subtitle = if (spamCount == 1) "1 conversation publicitaire" else "$spamCount conversations publicitaires",
+                    )
+                }
+            }
+        }
     }
 }
 
 /** The archive: conversations put away, which come back by themselves when a new message arrives. */
 @Composable
-internal fun ArchivedScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
-    val archived = remember(ui.conversations, ui.archived) { ui.conversations.filter { it.threadId in ui.archived } }
+internal fun ArchivedScreen(ui: MessagesUi, viewModel: MessagesViewModel) = FolderScreen(
+    ui = ui,
+    viewModel = viewModel,
+    title = "Archivées",
+    ids = ui.archived - ui.spam,
+    icon = SecaIcons.Archive,
+    emptyTitle = "Aucune conversation archivée",
+    emptyDescription = "Une conversation archivée revient d'elle-même quand un nouveau message arrive.",
+)
+
+/** Advertising, kept out of the way and silent until the owner takes a conversation back out. */
+@Composable
+internal fun SpamScreen(ui: MessagesUi, viewModel: MessagesViewModel) = FolderScreen(
+    ui = ui,
+    viewModel = viewModel,
+    title = "Indésirables",
+    ids = ui.spam,
+    icon = SecaIcons.Block,
+    emptyTitle = "Aucun SMS indésirable",
+    emptyDescription = "Les SMS publicitaires sont rangés ici, sans notification. « Pas indésirable » ramène une conversation dans la liste.",
+)
+
+@Composable
+private fun FolderScreen(
+    ui: MessagesUi,
+    viewModel: MessagesViewModel,
+    title: String,
+    ids: Set<Long>,
+    icon: ImageVector,
+    emptyTitle: String,
+    emptyDescription: String,
+) {
+    val shown = remember(ui.conversations, ids) { ui.conversations.filter { it.threadId in ids } }
     var deleting by remember { mutableStateOf<Conversation?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "Archivées", onBack = { viewModel.back() }) },
+        topBar = { SecaTopBar(title = title, onBack = { viewModel.back() }) },
     ) { padding ->
-        if (archived.isEmpty()) {
+        if (shown.isEmpty()) {
             SecaEmptyState(
-                icon = SecaIcons.Archive,
-                title = "Aucune conversation archivée",
-                description = "Une conversation archivée revient d'elle-même quand un nouveau message arrive.",
+                icon = icon,
+                title = emptyTitle,
+                description = emptyDescription,
                 modifier = Modifier.padding(padding),
             )
         } else {
@@ -279,17 +335,19 @@ internal fun ArchivedScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                     .padding(padding),
                 contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp),
             ) {
-                itemsIndexed(archived, key = { _, c -> c.threadId }) { index, conversation ->
-                    SecaGroupItem(index = index, count = archived.size) {
+                itemsIndexed(shown, key = { _, c -> c.threadId }) { index, conversation ->
+                    SecaGroupItem(index = index, count = shown.size) {
                         ConversationRow(
                             conversation = conversation,
                             ui = ui,
                             pinned = false,
-                            archived = true,
+                            archived = conversation.threadId in ui.archived,
+                            spam = conversation.threadId in ui.spam,
                             onOpen = { viewModel.openConversation(conversation.address) },
                             onMarkRead = { viewModel.markRead(conversation.threadId) },
                             onPin = { viewModel.setPinned(conversation.threadId, true) },
-                            onArchive = { viewModel.setArchived(conversation.threadId, false) },
+                            onArchive = { viewModel.setArchived(conversation.threadId, conversation.threadId !in ui.archived) },
+                            onSpam = { viewModel.setSpam(conversation.threadId, conversation.threadId !in ui.spam) },
                             onDelete = { deleting = conversation },
                         )
                     }
@@ -329,10 +387,12 @@ private fun ConversationRow(
     ui: MessagesUi,
     pinned: Boolean,
     archived: Boolean,
+    spam: Boolean,
     onOpen: () -> Unit,
     onMarkRead: () -> Unit,
     onPin: () -> Unit,
     onArchive: () -> Unit,
+    onSpam: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -425,13 +485,24 @@ private fun ConversationRow(
                     onMarkRead()
                 }
             }
-            MenuEntry(if (pinned) "Désépingler" else "Épingler", SecaIcons.PushPin) {
-                menuOpen = false
-                onPin()
-            }
-            MenuEntry(if (archived) "Désarchiver" else "Archiver", SecaIcons.Archive) {
-                menuOpen = false
-                onArchive()
+            if (spam) {
+                MenuEntry("Pas indésirable", SecaIcons.Check) {
+                    menuOpen = false
+                    onSpam()
+                }
+            } else {
+                MenuEntry(if (pinned) "Désépingler" else "Épingler", SecaIcons.PushPin) {
+                    menuOpen = false
+                    onPin()
+                }
+                MenuEntry(if (archived) "Désarchiver" else "Archiver", SecaIcons.Archive) {
+                    menuOpen = false
+                    onArchive()
+                }
+                MenuEntry("Indésirable", SecaIcons.Block) {
+                    menuOpen = false
+                    onSpam()
+                }
             }
             MenuEntry("Appeler", SecaIcons.Phone) {
                 menuOpen = false

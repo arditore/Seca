@@ -104,6 +104,15 @@ class MessagesRepository(private val context: Context) {
         readMessages("${Sms.BODY} LIKE ? ESCAPE '\\'", arrayOf("%$escaped%"), "${Sms.DATE} DESC LIMIT $limit")
     }
 
+    /** Messages received before [before], newest first, for erasing old verification codes. */
+    suspend fun receivedBefore(before: Long): List<Message> = withContext(Dispatchers.IO) {
+        readMessages(
+            "${Sms.TYPE} = ? AND ${Sms.DATE} < ?",
+            arrayOf(Sms.MESSAGE_TYPE_INBOX.toString(), before.toString()),
+            "${Sms.DATE} DESC",
+        )
+    }
+
     private fun readMessages(selection: String, args: Array<String>, order: String): List<Message> =
         resolver.query(
             Sms.CONTENT_URI,

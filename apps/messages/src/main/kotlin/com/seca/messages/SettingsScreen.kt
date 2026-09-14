@@ -167,6 +167,8 @@ internal fun SettingsScreen(
             }
             SecaHint("Rien n'est synchronisé : gardez la sauvegarde ailleurs que sur ce téléphone.")
 
+            CodeAndSpamSettings()
+
             SecaSectionLabel("Seca Link")
             val link = ui.link
             var askNetwork by remember { mutableStateOf(false) }

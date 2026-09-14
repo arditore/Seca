@@ -136,6 +136,7 @@ fun MessagesApp(
                     MessagesScreen.NewMessage -> NewMessageScreen(ui, viewModel)
                     MessagesScreen.Settings -> SettingsScreen(ui, viewModel, isDefaultApp, onBecomeDefault)
                     MessagesScreen.Archived -> ArchivedScreen(ui, viewModel)
+                    SpamRoute -> SpamScreen(ui, viewModel)
                     MessagesScreen.Relays -> RelaysScreen(ui, viewModel)
                     is SafetyNumberRoute -> SafetyNumberScreen(screen, ui, viewModel)
                 }

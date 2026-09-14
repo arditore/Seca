@@ -10,11 +10,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.lifecycleScope
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.privacy.SecaAppLock
 import com.seca.core.design.privacy.SecaLockGate
 import com.seca.core.design.switchWithoutAnimation
+import com.seca.messages.sms.CodeCleanup
 import com.seca.messages.sms.MessageNotifications
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -30,7 +33,11 @@ class MainActivity : ComponentActivity() {
         switchWithoutAnimation()
         enableEdgeToEdge()
         refresh()
-        if (savedInstanceState == null) handle(intent)
+        if (savedInstanceState == null) {
+            handle(intent)
+            // Verification codes past the delay the owner chose go as the app opens.
+            lifecycleScope.launch { runCatching { CodeCleanup.sweep(applicationContext) } }
+        }
         setContent {
             SecaLockGate(lock, SecaAppIdentity.Messages) {
                 MessagesApp(

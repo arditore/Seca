@@ -53,6 +53,10 @@ class MessageActionReceiver : BroadcastReceiver() {
                 if (threadId >= 0) repository.markRead(threadId)
                 MessageNotifications.cancel(context, threadId)
             }
+            ERASE_CODE -> {
+                intent.data?.lastPathSegment?.toLongOrNull()?.let { repository.deleteMessage(it) }
+                MessageNotifications.cancel(context, threadId)
+            }
             SEND_SCHEDULED -> {
                 val scheduled = ScheduledMessages(context)
                 val message = scheduled.find(intent.getLongExtra(ScheduledMessages.EXTRA_ID, -1L)) ?: return
@@ -72,5 +76,6 @@ class MessageActionReceiver : BroadcastReceiver() {
         const val MARK_READ = "com.seca.messages.MARK_READ"
         const val COPY_CODE = "com.seca.messages.COPY_CODE"
         const val SEND_SCHEDULED = "com.seca.messages.SEND_SCHEDULED"
+        const val ERASE_CODE = "com.seca.messages.ERASE_CODE"
     }
 }

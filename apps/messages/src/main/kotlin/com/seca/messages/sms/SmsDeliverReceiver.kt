@@ -30,11 +30,19 @@ class SmsDeliverReceiver : BroadcastReceiver() {
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                MessagesRepository(context).storeIncoming(address, body, sentAt, subscription)
-                // A new message brings an archived conversation back into the list.
-                runCatching { Telephony.Threads.getOrCreateThreadId(context, address) }.getOrNull()?.let {
-                    ConversationPrefs(context).setArchived(it, archived = false)
+                val stored = MessagesRepository(context).storeIncoming(address, body, sentAt, subscription)
+                val threadId = runCatching { Telephony.Threads.getOrCreateThreadId(context, address) }.getOrNull()
+                val prefs = ConversationPrefs(context)
+                val code = OneTimeCode.find(body)
+
+                if (threadId != null && isAdvertising(context, prefs, threadId, address, body, code)) {
+                    // Filed away quietly: no notification, no invitation to Seca Link.
+                    prefs.setSpam(threadId, spam = true)
+                    return@launch
                 }
+                // A new message brings an archived conversation back into the list.
+                threadId?.let { prefs.setArchived(it, archived = false) }
+                if (code != null && stored != null && threadId != null) CodeCleanup.schedule(context, stored, threadId)
                 MessageNotifications.notifyIncoming(context, address, body)
                 // A conversation with someone new also offers them Seca Link, discreetly, when it is on.
                 LinkSms.inviteIfDue(context, address)
@@ -42,5 +50,18 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                 pending.finish()
             }
         }
+    }
+
+    private fun isAdvertising(
+        context: Context,
+        prefs: ConversationPrefs,
+        threadId: Long,
+        address: String,
+        body: String,
+        code: String?,
+    ): Boolean {
+        if (threadId in prefs.spam()) return true
+        if (code != null || prefs.isTrusted(threadId) || !SpamFilter.enabled(context)) return false
+        return SpamFilter.isCommercial(address, body) && !SpamFilter.isContact(context, address)
     }
 }

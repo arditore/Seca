@@ -70,6 +70,8 @@ data class MessagesUi(
     /** Pinned conversations, in pinning order. */
     val pinned: List<Long> = emptyList(),
     val archived: Set<Long> = emptySet(),
+    /** Conversations filed as advertising. */
+    val spam: Set<Long> = emptySet(),
     /** Messages whose text matches the search, newest first. */
     val searchHits: List<Message> = emptyList(),
     /** Messages waiting for their time, soonest first. */
@@ -306,8 +308,17 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         refreshConversationPrefs()
     }
 
+    /** Files a conversation as advertising, or takes it back out, which trusts it from then on. */
+    fun setSpam(threadId: Long, spam: Boolean) {
+        conversationPrefs.setSpam(threadId, spam)
+        refreshConversationPrefs()
+        if (spam) MessageNotifications.cancel(getApplication(), threadId)
+    }
+
     private fun refreshConversationPrefs() {
-        _ui.update { it.copy(pinned = conversationPrefs.pinned(), archived = conversationPrefs.archived()) }
+        _ui.update {
+            it.copy(pinned = conversationPrefs.pinned(), archived = conversationPrefs.archived(), spam = conversationPrefs.spam())
+        }
     }
 
     private val scheduledMessages = ScheduledMessages(application)
@@ -473,6 +484,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                 loaded = true,
                 pinned = conversationPrefs.pinned(),
                 archived = conversationPrefs.archived(),
+                spam = conversationPrefs.spam(),
                 // A scheduled message that just left shows up as a change to the messages.
                 scheduled = scheduledMessages.all(),
             )
