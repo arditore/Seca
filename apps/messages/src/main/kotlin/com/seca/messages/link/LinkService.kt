@@ -47,6 +47,7 @@ class LinkService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var following: Job? = null
+    private var sweeping: Job? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -72,6 +73,8 @@ class LinkService : Service() {
         following = scope.launch { follow(link) }
         // Handshakes that came while the network was away get their session now, and their answer.
         scope.launch { LinkSms.connectWaiting(this@LinkService) }
+        // Messages whose time is up leave this phone even while the app stays closed.
+        if (sweeping?.isActive != true) sweeping = scope.launch { sweepExpired() }
         return START_STICKY
     }
 
@@ -120,6 +123,14 @@ class LinkService : Service() {
         }
     }
 
+    private suspend fun sweepExpired() {
+        val conversations = LinkConversations(this)
+        while (true) {
+            runCatching { conversations.sweepExpired() }
+            delay(SWEEP_MILLIS)
+        }
+    }
+
     private suspend fun handle(link: SecaLink, event: NostrEvent) {
         val messages = LinkMessages(this)
         val kept = event.kind == Envelope.KIND
@@ -130,33 +141,55 @@ class LinkService : Service() {
             rememberLastSeen()
         }
         val number = incoming.number
+        val now = System.currentTimeMillis()
         when (val payload = incoming.payload) {
             is LinkPayload.Text -> received(
                 link,
                 messages,
-                LinkMessage(payload.id, number, payload.body, System.currentTimeMillis(), LinkStatus.Received, read = false),
-                preview = payload.body,
+                LinkMessage(
+                    id = payload.id,
+                    number = number,
+                    body = payload.body,
+                    date = now,
+                    status = LinkStatus.Received,
+                    read = false,
+                    replyTo = payload.replyTo,
+                    expiresAt = LinkTimers.expiryAt(payload.expiresInSeconds, now),
+                ),
             )
-            // A photo arrives piece by piece, and becomes a message once the last piece is in.
+            // A photo or a voice message arrives piece by piece, and becomes a message once the last piece is in.
             is LinkPayload.MediaPart -> if (LinkMedia(this).accept(number, payload)) {
                 received(
                     link,
                     messages,
-                    LinkMessage(payload.id, number, "", System.currentTimeMillis(), LinkStatus.Received, read = false, media = payload.mime),
-                    preview = LinkConversations.PHOTO,
+                    LinkMessage(
+                        id = payload.id,
+                        number = number,
+                        body = "",
+                        date = now,
+                        status = LinkStatus.Received,
+                        read = false,
+                        media = payload.mime,
+                        expiresAt = LinkTimers.expiryAt(payload.expiresInSeconds, now),
+                    ),
                 )
             }
             is LinkPayload.Delivered -> messages.setStatus(payload.ids, LinkStatus.Delivered)
             is LinkPayload.Read -> messages.setStatus(payload.ids, LinkStatus.Read)
             LinkPayload.Typing -> LinkTyping.typing(number)
+            is LinkPayload.Reaction -> messages.setTheirReaction(payload.targetId, number, payload.emoji.ifEmpty { null })
+            // Either side sets how long messages are kept; both phones then follow it.
+            is LinkPayload.ExpiryTimer -> LinkTimers.of(this).set(number, payload.seconds)
         }
     }
 
-    private fun received(link: SecaLink, messages: LinkMessages, message: LinkMessage, preview: String) {
+    private fun received(link: SecaLink, messages: LinkMessages, message: LinkMessage) {
         if (!messages.add(message)) return
         LinkTyping.stopped(message.number)
         // The conversation already on screen shows it; a notification would only repeat it.
-        if (!ActiveConversation.isShown(message.number)) runCatching { MessageNotifications.notifyLink(this, message.number, preview) }
+        if (!ActiveConversation.isShown(message.number)) {
+            runCatching { MessageNotifications.notifyLink(this, message.number, LinkConversations.previewOf(message)) }
+        }
         // Sent aside, so the notices that follow on this relay do not wait for every relay to answer.
         scope.launch { runCatching { link.send(message.number, LinkPayload.Delivered(listOf(message.id))) } }
     }
@@ -182,6 +215,7 @@ class LinkService : Service() {
         private const val FIRST_LOOKBACK_SECONDS = 24L * 60 * 60
         private const val RETRY_MIN_MILLIS = 5_000L
         private const val RETRY_MAX_MILLIS = 60_000L
+        private const val SWEEP_MILLIS = 30_000L
 
         /**
          * Starts listening when Seca Link is on: in the background when the owner allowed it, in the

@@ -43,6 +43,14 @@ data class Message(
     val linkId: String? = null,
     /** The photo a Seca Link message carries, as a file on this phone; null for text. */
     val image: String? = null,
+    /** The voice message a Seca Link message carries, as a file on this phone. */
+    val audio: String? = null,
+    /** The Seca Link id of the message this one answers. */
+    val replyTo: String? = null,
+    val myReaction: String? = null,
+    val theirReaction: String? = null,
+    /** When the message goes from both phones, in milliseconds; 0 keeps it. */
+    val expiresAt: Long = 0L,
 ) {
     val outgoing: Boolean get() = status != MessageStatus.Received
 }

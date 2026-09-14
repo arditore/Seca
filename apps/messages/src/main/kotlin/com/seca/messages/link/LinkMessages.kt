@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 enum class LinkStatus(val code: Int) { Sending(0), Sent(1), Delivered(2), Read(3), Failed(4), Received(5) }
 
 data class LinkMessage(
-    /** The id both phones know the message by, for receipts. */
+    /** The id both phones know the message by, for receipts and reactions. */
     val id: String,
     /** International format. */
     val number: String,
@@ -20,8 +20,16 @@ data class LinkMessage(
     val date: Long,
     val status: LinkStatus,
     val read: Boolean,
-    /** The type of the photo the message carries, kept by [LinkMedia]; null for text. */
+    /** The type of the photo or recording the message carries, kept by [LinkMedia]; null for text. */
     val media: String? = null,
+    /** The id of the message this one answers. */
+    val replyTo: String? = null,
+    /** This phone's reaction to the message. */
+    val myReaction: String? = null,
+    /** The contact's reaction to the message. */
+    val theirReaction: String? = null,
+    /** When both phones let the message go, in milliseconds; 0 keeps it. */
+    val expiresAt: Long = 0L,
 ) {
     val outgoing: Boolean get() = status != LinkStatus.Received
 }
@@ -58,6 +66,8 @@ class LinkMessages(context: Context) {
             put(STATUS, message.status.code)
             put(READ, if (message.read) 1 else 0)
             put(MEDIA, message.media)
+            put(REPLY_TO, message.replyTo)
+            put(EXPIRES_AT, message.expiresAt)
         }
         val added = database.insertWithOnConflict(MESSAGES, null, values, SQLiteDatabase.CONFLICT_IGNORE) != -1L
         if (added) changed.tryEmit(Unit)
@@ -80,6 +90,17 @@ class LinkMessages(context: Context) {
         changed.tryEmit(Unit)
     }
 
+    fun setMyReaction(id: String, emoji: String?) {
+        val values = ContentValues().apply { put(MY_REACTION, emoji) }
+        if (database.update(MESSAGES, values, "$ID = ?", arrayOf(id)) > 0) changed.tryEmit(Unit)
+    }
+
+    /** Only a message of the conversation with [number] takes that contact's reaction. */
+    fun setTheirReaction(id: String, number: String, emoji: String?) {
+        val values = ContentValues().apply { put(THEIR_REACTION, emoji) }
+        if (database.update(MESSAGES, values, "$ID = ? AND $NUMBER = ?", arrayOf(id, number)) > 0) changed.tryEmit(Unit)
+    }
+
     /** Marks the conversation read; returns the ids that were still unread, for the read receipt. */
     fun markRead(number: String): List<String> {
         val ids = unread(number).map { it.id }
@@ -88,6 +109,17 @@ class LinkMessages(context: Context) {
         database.update(MESSAGES, values, "$NUMBER = ? AND $READ = 0", arrayOf(number))
         changed.tryEmit(Unit)
         return ids
+    }
+
+    /** Removes the messages whose time is up, and returns them so their photos and recordings go too. */
+    fun deleteExpired(now: Long = System.currentTimeMillis()): List<LinkMessage> {
+        val selection = "$EXPIRES_AT > 0 AND $EXPIRES_AT <= ?"
+        val args = arrayOf(now.toString())
+        val expired = query(selection, args, "$DATE ASC")
+        if (expired.isEmpty()) return expired
+        database.delete(MESSAGES, selection, args)
+        changed.tryEmit(Unit)
+        return expired
     }
 
     fun delete(id: String) {
@@ -115,7 +147,7 @@ class LinkMessages(context: Context) {
     }
 
     private fun query(selection: String?, args: Array<String>?, order: String): List<LinkMessage> =
-        database.query(MESSAGES, arrayOf(ID, NUMBER, BODY, DATE, STATUS, READ, MEDIA), selection, args, null, null, order).use { c ->
+        database.query(MESSAGES, COLUMNS, selection, args, null, null, order).use { c ->
             buildList {
                 while (c.moveToNext()) {
                     add(
@@ -127,6 +159,10 @@ class LinkMessages(context: Context) {
                             status = LinkStatus.entries.firstOrNull { it.code == c.getInt(4) } ?: LinkStatus.Failed,
                             read = c.getInt(5) == 1,
                             media = if (c.isNull(6)) null else c.getString(6),
+                            replyTo = if (c.isNull(7)) null else c.getString(7),
+                            myReaction = if (c.isNull(8)) null else c.getString(8),
+                            theirReaction = if (c.isNull(9)) null else c.getString(9),
+                            expiresAt = c.getLong(10),
                         ),
                     )
                 }
@@ -137,7 +173,8 @@ class LinkMessages(context: Context) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 "CREATE TABLE $MESSAGES ($ID TEXT PRIMARY KEY, $NUMBER TEXT NOT NULL, $BODY TEXT NOT NULL, " +
-                    "$DATE INTEGER NOT NULL, $STATUS INTEGER NOT NULL, $READ INTEGER NOT NULL DEFAULT 0, $MEDIA TEXT)",
+                    "$DATE INTEGER NOT NULL, $STATUS INTEGER NOT NULL, $READ INTEGER NOT NULL DEFAULT 0, $MEDIA TEXT, " +
+                    "$REPLY_TO TEXT, $MY_REACTION TEXT, $THEIR_REACTION TEXT, $EXPIRES_AT INTEGER NOT NULL DEFAULT 0)",
             )
             db.execSQL("CREATE INDEX messages_by_number ON $MESSAGES ($NUMBER, $DATE)")
             db.execSQL("CREATE TABLE $SEEN ($EVENT TEXT PRIMARY KEY, $AT INTEGER NOT NULL)")
@@ -146,6 +183,13 @@ class LinkMessages(context: Context) {
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
             // Version 2: photos.
             if (oldVersion < 2) db.execSQL("ALTER TABLE $MESSAGES ADD COLUMN $MEDIA TEXT")
+            // Version 3: replies, reactions and messages that expire.
+            if (oldVersion < 3) {
+                db.execSQL("ALTER TABLE $MESSAGES ADD COLUMN $REPLY_TO TEXT")
+                db.execSQL("ALTER TABLE $MESSAGES ADD COLUMN $MY_REACTION TEXT")
+                db.execSQL("ALTER TABLE $MESSAGES ADD COLUMN $THEIR_REACTION TEXT")
+                db.execSQL("ALTER TABLE $MESSAGES ADD COLUMN $EXPIRES_AT INTEGER NOT NULL DEFAULT 0")
+            }
         }
 
         companion object {
@@ -160,7 +204,7 @@ class LinkMessages(context: Context) {
 
     companion object {
         private const val NAME = "seca_link.db"
-        private const val VERSION = 2
+        private const val VERSION = 3
         private const val MESSAGES = "messages"
         private const val SEEN = "seen"
         private const val ID = "id"
@@ -170,9 +214,14 @@ class LinkMessages(context: Context) {
         private const val STATUS = "status"
         private const val READ = "read"
         private const val MEDIA = "media"
+        private const val REPLY_TO = "reply_to"
+        private const val MY_REACTION = "my_reaction"
+        private const val THEIR_REACTION = "their_reaction"
+        private const val EXPIRES_AT = "expires_at"
         private const val EVENT = "event"
         private const val AT = "at"
         private const val SEEN_KEPT_MILLIS = 7L * 24 * 60 * 60 * 1000
+        private val COLUMNS = arrayOf(ID, NUMBER, BODY, DATE, STATUS, READ, MEDIA, REPLY_TO, MY_REACTION, THEIR_REACTION, EXPIRES_AT)
 
         private val changed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 

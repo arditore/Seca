@@ -42,6 +42,8 @@
         android:protectionLevel="signature" />
     <!-- The camera, asked only when the owner scans a contact's safety number; no image is kept. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- The microphone, asked only when the owner records a voice message for Seca Link. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <uses-feature
         android:name="android.hardware.camera.any"

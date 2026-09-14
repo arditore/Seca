@@ -59,8 +59,7 @@ internal object MessageNotifications {
     /** A Seca Link message arrived, shown in the conversation's notification with its lock. */
     fun notifyLink(context: Context, number: String, body: String) {
         val threadId = threadOf(context, number)
-        val unread = LinkMessages(context).unread(number).takeLast(MAX_LINES)
-            .map { (if (it.media != null && it.body.isEmpty()) LinkConversations.PHOTO else it.body) to it.date }
+        val unread = LinkMessages(context).unread(number).takeLast(MAX_LINES).map { LinkConversations.previewOf(it) to it.date }
             .ifEmpty { listOf(body to System.currentTimeMillis()) }
         showConversation(context, number, threadId, unread, code = OneTimeCode.find(body), encrypted = true)
     }

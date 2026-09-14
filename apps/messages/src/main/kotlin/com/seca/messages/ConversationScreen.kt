@@ -1,8 +1,12 @@
 package com.seca.messages
 
+import android.Manifest
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.ImageDecoder
+import android.media.MediaMetadataRetriever
+import android.media.MediaPlayer
 import android.provider.MediaStore
 import android.telephony.SmsMessage
 import android.widget.Toast
@@ -25,6 +29,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -33,6 +38,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -41,16 +47,20 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -67,6 +77,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -78,6 +90,7 @@ import com.seca.core.design.SecaIcons
 import com.seca.core.design.secaToneColors
 import com.seca.core.link.handshake.Handshake
 import com.seca.core.model.Profile
+import com.seca.messages.link.LinkTimers
 import com.seca.messages.link.LinkTyping
 import com.seca.messages.sms.LinkSms
 import com.seca.messages.sms.Message
@@ -106,6 +119,11 @@ private const val TYPING_SHOWN_MILLIS = 6_000L
 /** A photo in a bubble is decoded no larger than this; the viewer takes a larger one. */
 private const val PREVIEW_EDGE_PX = 900
 private const val VIEWER_EDGE_PX = 2400
+
+private const val TICK_MILLIS = 200L
+
+/** The reactions a long press offers, as the most used ones. */
+private val QuickReactions = listOf("❤️", "👍", "😂", "😮", "😢", "🙏")
 
 @Composable
 internal fun ConversationScreen(
@@ -143,15 +161,21 @@ internal fun ConversationContent(
     var text by rememberSaveable(screen.address) { mutableStateOf(screen.draft) }
     var confirmDelete by remember { mutableStateOf(false) }
     var scheduling by remember { mutableStateOf(false) }
+    var choosingTimer by remember { mutableStateOf(false) }
     var viewing by remember { mutableStateOf<String?>(null) }
+    var replyingTo by remember { mutableStateOf<Message?>(null) }
     // The list grows upwards, so the latest to leave comes first and sits at the very bottom.
     val scheduled = remember(ui.scheduled, screen.address) { ui.scheduledFor(screen.address).asReversed() }
+    val byLinkId = remember(messages) { messages.filter { it.linkId != null }.associateBy { it.linkId } }
+    val name = ui.nameOf(screen.address)
 
     val peer = rememberLinkPeer(screen.address)
     // Once the contact is connected, messages go encrypted through Seca Link, which needs no SMS role.
     val linked = ui.link.enabled && peer?.ready == true
     val canInvite = ui.link.enabled && peer?.ready != true && remember(screen.address) { LinkSms.keyOf(context, screen.address) != null }
     val invitationPending = canInvite && (peer?.invitedAt ?: 0L) > 0L
+    val timers by LinkTimers.of(context).timers.collectAsState()
+    val timer = peer?.number?.let { timers[it] } ?: 0
     val typingNotices by LinkTyping.typing.collectAsState()
     val typingAt = peer?.number?.let { typingNotices[it] }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -164,9 +188,45 @@ internal fun ConversationContent(
     }
     val typing = linked && typingAt != null && now - typingAt < TYPING_SHOWN_MILLIS
 
+    // A message whose time is up leaves the screen as soon as it goes.
+    val nextExpiry = remember(messages) { messages.filter { it.expiresAt > 0 }.minOfOrNull { it.expiresAt } }
+    LaunchedEffect(nextExpiry) {
+        val at = nextExpiry ?: return@LaunchedEffect
+        delay((at - System.currentTimeMillis()).coerceAtLeast(0))
+        viewModel.sweepExpired()
+    }
+
     // Photos come from the system's photo picker: the app never reads the gallery itself.
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) viewModel.sendPhoto(screen.address, uri)
+    }
+
+    // Voice messages: the microphone is asked for the first time one is recorded.
+    val recorder = remember { VoiceRecorder(context) }
+    var recording by remember { mutableStateOf(false) }
+    var recordingMillis by remember { mutableLongStateOf(0L) }
+    val finishRecording: () -> Unit = {
+        recording = false
+        recorder.stop()?.let { viewModel.sendVoice(screen.address, it.absolutePath) }
+    }
+    LaunchedEffect(recording) {
+        while (recording) {
+            recordingMillis = recorder.elapsedMillis
+            if (recordingMillis >= VoiceRecorder.MAX_MILLIS) finishRecording()
+            delay(TICK_MILLIS)
+        }
+    }
+    DisposableEffect(Unit) { onDispose { recorder.cancel() } }
+    val startRecording = {
+        if (recorder.start()) {
+            recordingMillis = 0L
+            recording = true
+        } else {
+            Toast.makeText(context, "Le micro est indisponible", Toast.LENGTH_SHORT).show()
+        }
+    }
+    val askMicrophone = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) startRecording()
     }
 
     if (scheduling) {
@@ -176,6 +236,16 @@ internal fun ConversationContent(
                 viewModel.schedule(screen.address, text, at)
                 text = ""
                 scheduling = false
+            },
+        )
+    }
+    if (choosingTimer) {
+        TimerDialog(
+            current = timer,
+            onDismiss = { choosingTimer = false },
+            onChoose = { seconds ->
+                viewModel.setTimer(screen.address, seconds)
+                choosingTimer = false
             },
         )
     }
@@ -205,6 +275,7 @@ internal fun ConversationContent(
                         verified = peer?.verified == true,
                         typing = typing,
                         invitationPending = invitationPending,
+                        timerSeconds = if (linked) timer else 0,
                         onBack = { viewModel.back() },
                         onDelete = { confirmDelete = true },
                         onSafetyNumber = openSafetyNumber,
@@ -213,9 +284,14 @@ internal fun ConversationContent(
                         } else {
                             null
                         },
+                        onTimer = if (linked) {
+                            { choosingTimer = true }
+                        } else {
+                            null
+                        },
                     )
                     if (peer != null && peer.keyChangedAt > 0) {
-                        KeyChangedBanner(screen.address, ui.nameOf(screen.address), onVerify = openSafetyNumber)
+                        KeyChangedBanner(screen.address, name, onVerify = openSafetyNumber)
                     }
                 }
             },
@@ -229,8 +305,9 @@ internal fun ConversationContent(
                     enabled = isDefaultApp || linked,
                     encrypted = linked,
                     onSend = {
-                        viewModel.send(screen.address, text)
+                        viewModel.send(screen.address, text, replyingTo?.linkId)
                         text = ""
+                        replyingTo = null
                     },
                     onSchedule = { scheduling = true },
                     onAttach = if (linked) {
@@ -238,6 +315,27 @@ internal fun ConversationContent(
                     } else {
                         null
                     },
+                    replyingTo = replyingTo,
+                    replyName = name,
+                    onCancelReply = { replyingTo = null },
+                    recording = recording,
+                    recordingMillis = recordingMillis,
+                    onStartVoice = if (linked) {
+                        {
+                            if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                                startRecording()
+                            } else {
+                                askMicrophone.launch(Manifest.permission.RECORD_AUDIO)
+                            }
+                        }
+                    } else {
+                        null
+                    },
+                    onCancelVoice = {
+                        recording = false
+                        recorder.cancel()
+                    },
+                    onSendVoice = finishRecording,
                 )
             },
         ) { padding ->
@@ -284,9 +382,13 @@ internal fun ConversationContent(
                         if (older == null || !sameDay(older.date, message.date)) DaySeparator(message.date)
                         Bubble(
                             message = message,
+                            quoted = message.replyTo?.let { byLinkId[it] },
+                            contactName = name,
                             joinedAbove = older != null && joined(older, message),
                             joinedBelow = newer != null && joined(message, newer),
                             isLatestOutgoing = message.outgoing && (newer == null || !newer.outgoing),
+                            canReact = linked && message.linkId != null &&
+                                message.status != MessageStatus.Failed && message.status != MessageStatus.Sending,
                             onRetry = { viewModel.retry(message) },
                             onSendAsSms = { viewModel.sendAsSms(message) },
                             onCopy = { copyText(context, "Message", message.body) },
@@ -302,6 +404,8 @@ internal fun ConversationContent(
                                     ).show()
                                 }
                             },
+                            onReply = { replyingTo = message },
+                            onReact = { emoji -> viewModel.react(message, emoji) },
                         )
                     }
                 }
@@ -316,7 +420,7 @@ internal fun ConversationContent(
             onDismissRequest = { confirmDelete = false },
             icon = { Icon(SecaIcons.Delete, contentDescription = null) },
             title = { Text("Supprimer la conversation ?") },
-            text = { Text("Tous les messages avec ${ui.nameOf(screen.address)} seront supprimés de ce téléphone.") },
+            text = { Text("Tous les messages avec $name seront supprimés de ce téléphone.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -334,6 +438,13 @@ internal fun ConversationContent(
 private fun joined(first: Message, second: Message): Boolean =
     first.outgoing == second.outgoing && abs(second.date - first.date) < JOIN_MILLIS && sameDay(first.date, second.date)
 
+/** A message as a quote or a notice reads it: a photo and a voice message by what they are. */
+private fun previewOf(message: Message): String = when {
+    message.audio != null -> LinkConversations.VOICE
+    message.image != null -> LinkConversations.PHOTO
+    else -> message.body.ifEmpty { LinkConversations.PHOTO }
+}
+
 /** Back, who the conversation is with and their profile, a call button and the rest in a menu. */
 @Composable
 private fun ConversationTopBar(
@@ -343,10 +454,12 @@ private fun ConversationTopBar(
     verified: Boolean,
     typing: Boolean,
     invitationPending: Boolean,
+    timerSeconds: Int,
     onBack: () -> Unit,
     onDelete: () -> Unit,
     onSafetyNumber: () -> Unit,
     onInvite: (() -> Unit)?,
+    onTimer: (() -> Unit)?,
 ) {
     val context = LocalContext.current
     var menuOpen by remember { mutableStateOf(false) }
@@ -390,7 +503,7 @@ private fun ConversationTopBar(
                 )
                 linked || invitationPending -> Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        SecaIcons.Lock,
+                        if (linked && timerSeconds > 0) SecaIcons.Timer else SecaIcons.Lock,
                         contentDescription = null,
                         tint = if (linked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(14.dp),
@@ -398,12 +511,14 @@ private fun ConversationTopBar(
                     Text(
                         text = when {
                             !linked -> "Invitation Seca Link envoyée"
+                            timerSeconds > 0 -> "Chiffré · éphémères ${LinkTimers.label(timerSeconds)}"
                             verified -> "Chiffré · Vérifié"
                             else -> "Chiffré par Seca Link"
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (linked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(start = 4.dp),
                     )
                 }
@@ -431,6 +546,12 @@ private fun ConversationTopBar(
                     MenuEntry("Connecter en face à face", SecaIcons.Link) {
                         menuOpen = false
                         onSafetyNumber()
+                    }
+                }
+                if (onTimer != null) {
+                    MenuEntry("Messages éphémères", SecaIcons.Timer) {
+                        menuOpen = false
+                        onTimer()
                     }
                 }
                 if (linked) {
@@ -480,21 +601,26 @@ private fun DaySeparator(date: Long) {
  * One message. Sent ones sit on the right in the accent, received ones on the
  * left; a block of messages shares its inner corners, and the latest sent one
  * says whether it went through, and for Seca Link whether it was received and
- * read. A lock marks what travelled encrypted. A Seca Link handshake sent as
- * text reads as a short notice rather than its code.
+ * read. A lock marks what travelled encrypted, a timer what will go. A Seca
+ * Link handshake sent as text reads as a short notice rather than its code.
  */
 @Composable
 private fun Bubble(
     message: Message,
+    quoted: Message?,
+    contactName: String,
     joinedAbove: Boolean,
     joinedBelow: Boolean,
     isLatestOutgoing: Boolean,
+    canReact: Boolean,
     onRetry: () -> Unit,
     onSendAsSms: () -> Unit,
     onCopy: () -> Unit,
     onDelete: () -> Unit,
     onOpenPhoto: (String) -> Unit,
     onSavePhoto: (String) -> Unit,
+    onReply: () -> Unit,
+    onReact: (String) -> Unit,
 ) {
     val handshake = remember(message.body) { if (message.encrypted) null else Handshake.fromText(message.body) }
     if (handshake != null) {
@@ -545,6 +671,7 @@ private fun Bubble(
         else -> null
     }
     val image = message.image
+    val audio = message.audio
 
     Column(
         horizontalAlignment = if (mine) Alignment.End else Alignment.Start,
@@ -563,29 +690,53 @@ private fun Bubble(
                 onLongClickLabel = "Plus d'actions",
                 onLongClick = { menuOpen = true },
             )
-            if (image != null) {
-                PhotoBubble(image, shape, container, touch)
-            } else {
-                Text(
-                    text = message.body.ifEmpty { LinkConversations.PHOTO },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = content,
-                    modifier = Modifier
+            when {
+                image != null -> PhotoBubble(image, shape, container, modifier = touch)
+                audio != null -> VoiceBubble(audio, shape, container, content, modifier = touch)
+                else -> Column(
+                    Modifier
                         .widthIn(max = 300.dp)
                         .clip(shape)
                         .background(container)
                         .then(touch)
                         .padding(horizontal = 14.dp, vertical = 10.dp),
-                )
+                ) {
+                    if (message.replyTo != null) QuoteBox(quoted, contactName, content)
+                    Text(
+                        text = message.body.ifEmpty { LinkConversations.PHOTO },
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = content,
+                    )
+                }
             }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                if (image != null) {
-                    MenuEntry("Enregistrer dans la galerie", SecaIcons.Download) {
+                if (canReact) {
+                    Row(Modifier.padding(horizontal = 8.dp)) {
+                        QuickReactions.forEach { emoji ->
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(if (message.myReaction == emoji) colors.primaryContainer else Color.Transparent)
+                                    .clickable(onClickLabel = "Réagir $emoji") {
+                                        menuOpen = false
+                                        onReact(emoji)
+                                    },
+                            ) { Text(emoji, style = MaterialTheme.typography.titleLarge) }
+                        }
+                    }
+                    MenuEntry("Répondre", SecaIcons.Reply) {
+                        menuOpen = false
+                        onReply()
+                    }
+                }
+                when {
+                    image != null -> MenuEntry("Enregistrer dans la galerie", SecaIcons.Download) {
                         menuOpen = false
                         onSavePhoto(image)
                     }
-                } else {
-                    MenuEntry("Copier", SecaIcons.ContentCopy) {
+                    audio == null -> MenuEntry("Copier", SecaIcons.ContentCopy) {
                         menuOpen = false
                         onCopy()
                     }
@@ -595,7 +746,7 @@ private fun Bubble(
                         menuOpen = false
                         onRetry()
                     }
-                    if (message.encrypted && image == null) {
+                    if (message.encrypted && image == null && audio == null) {
                         MenuEntry("Envoyer en SMS non chiffré", SecaIcons.Messages) {
                             menuOpen = false
                             onSendAsSms()
@@ -607,6 +758,20 @@ private fun Bubble(
                     onDelete()
                 }
             }
+        }
+        // Reactions sit on the bubble's lower edge, as in every messaging app.
+        val reactions = listOfNotNull(message.theirReaction, message.myReaction).distinct()
+        if (reactions.isNotEmpty()) {
+            Text(
+                text = reactions.joinToString(" "),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .offset(y = (-6).dp)
+                    .padding(horizontal = 8.dp)
+                    .clip(CircleShape)
+                    .background(colors.surfaceContainerHighest)
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            )
         }
         // A verification code can be copied straight from the message.
         val code = remember(message.body) { if (mine) null else OneTimeCode.find(message.body) }
@@ -621,6 +786,16 @@ private fun Bubble(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
             ) {
+                if (message.expiresAt > 0) {
+                    Icon(
+                        SecaIcons.Timer,
+                        contentDescription = "Éphémère",
+                        tint = colors.onSurfaceVariant,
+                        modifier = Modifier
+                            .padding(end = 4.dp)
+                            .size(12.dp),
+                    )
+                }
                 if (message.encrypted) {
                     Icon(
                         SecaIcons.Lock,
@@ -638,6 +813,37 @@ private fun Bubble(
                 )
             }
         }
+    }
+}
+
+/** The message a reply answers, above the reply, in the bubble's own colour. */
+@Composable
+private fun QuoteBox(quoted: Message?, contactName: String, content: Color) {
+    Column(
+        Modifier
+            .padding(bottom = 6.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(content.copy(alpha = 0.08f))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    ) {
+        Text(
+            text = when {
+                quoted == null -> "Message"
+                quoted.outgoing -> "Vous"
+                else -> contactName
+            },
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = content,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = quoted?.let(::previewOf) ?: "Message effacé",
+            style = MaterialTheme.typography.bodyMedium,
+            color = content.copy(alpha = 0.8f),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -662,6 +868,92 @@ private fun PhotoBubble(path: String, shape: RoundedCornerShape, container: Colo
                 .aspectRatio(photo.width.toFloat() / photo.height, matchHeightConstraintsFirst = photo.height > photo.width),
         )
     }
+}
+
+/** A voice message: play and pause, how far it has played, and how long it lasts. */
+@Composable
+private fun VoiceBubble(path: String, shape: RoundedCornerShape, container: Color, content: Color, modifier: Modifier = Modifier) {
+    var player by remember(path) { mutableStateOf<MediaPlayer?>(null) }
+    var playing by remember(path) { mutableStateOf(false) }
+    var progress by remember(path) { mutableFloatStateOf(0f) }
+    val duration by produceState(initialValue = 0L, path) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                MediaMetadataRetriever().use { retriever ->
+                    retriever.setDataSource(path)
+                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+                }
+            }.getOrNull() ?: 0L
+        }
+    }
+    DisposableEffect(path) {
+        onDispose {
+            player?.release()
+            player = null
+        }
+    }
+    LaunchedEffect(playing) {
+        while (playing) {
+            player?.let { if (it.duration > 0) progress = it.currentPosition.toFloat() / it.duration }
+            delay(TICK_MILLIS / 2)
+        }
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .widthIn(min = 220.dp, max = 280.dp)
+            .clip(shape)
+            .background(container)
+            .then(modifier)
+            .padding(start = 4.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
+    ) {
+        IconButton(
+            onClick = {
+                val current = player ?: runCatching {
+                    MediaPlayer().apply {
+                        setDataSource(path)
+                        setOnCompletionListener {
+                            playing = false
+                            progress = 0f
+                        }
+                        prepare()
+                    }
+                }.getOrNull()?.also { player = it }
+                when {
+                    current == null -> Unit
+                    playing -> {
+                        current.pause()
+                        playing = false
+                    }
+                    else -> {
+                        current.start()
+                        playing = true
+                    }
+                }
+            },
+        ) { Icon(if (playing) SecaIcons.Pause else SecaIcons.Play, contentDescription = if (playing) "Pause" else "Écouter", tint = content) }
+        LinearProgressIndicator(
+            progress = { progress },
+            color = content,
+            trackColor = content.copy(alpha = 0.25f),
+            modifier = Modifier
+                .weight(1f)
+                .height(4.dp)
+                .clip(CircleShape),
+        )
+        Text(
+            text = durationText(duration),
+            style = MaterialTheme.typography.labelMedium,
+            color = content,
+            modifier = Modifier.padding(start = 10.dp),
+        )
+    }
+}
+
+/** "0:42", "3:05". */
+private fun durationText(millis: Long): String {
+    val seconds = millis / 1000
+    return "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
 }
 
 /** Seca Link's handshake as the conversation shows it: a short centred notice. */
@@ -694,6 +986,44 @@ private fun HandshakeNotice(handshake: Handshake, mine: Boolean) {
             )
         }
     }
+}
+
+/** How long new messages are kept, on both phones. */
+@Composable
+private fun TimerDialog(current: Int, onDismiss: () -> Unit, onChoose: (Int) -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(SecaIcons.Timer, contentDescription = null) },
+        title = { Text("Messages éphémères") },
+        text = {
+            Column {
+                Text(
+                    text = "Les nouveaux messages s'effacent des deux téléphones après ce délai.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                LinkTimers.Choices.forEach { seconds ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.large)
+                            .selectable(selected = seconds == current, role = Role.RadioButton) { onChoose(seconds) }
+                            .padding(vertical = 4.dp),
+                    ) {
+                        RadioButton(selected = seconds == current, onClick = null)
+                        Text(
+                            text = LinkTimers.label(seconds),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 12.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Fermer") } },
+    )
 }
 
 /** A photo opened on its own, on black, the whole screen; a touch closes it. */
@@ -815,9 +1145,10 @@ private fun ScheduledBubble(message: ScheduledMessage, onSendNow: () -> Unit, on
 }
 
 /**
- * The text field, the photo, schedule and send buttons, lifted above the
- * keyboard. With Seca Link, it says the message leaves encrypted, photos can
- * go too, and SMS counting and scheduling, which belong to SMS, step aside.
+ * The text field and its buttons, lifted above the keyboard: photo, schedule,
+ * send, or with nothing typed in an encrypted conversation, the microphone.
+ * With Seca Link it says the message leaves encrypted, a reply shows what it
+ * answers, and SMS counting and scheduling, which belong to SMS, step aside.
  */
 @Composable
 private fun Composer(
@@ -828,13 +1159,22 @@ private fun Composer(
     onSend: () -> Unit,
     onSchedule: () -> Unit,
     onAttach: (() -> Unit)?,
+    replyingTo: Message?,
+    replyName: String,
+    onCancelReply: () -> Unit,
+    recording: Boolean,
+    recordingMillis: Long,
+    onStartVoice: (() -> Unit)?,
+    onCancelVoice: () -> Unit,
+    onSendVoice: () -> Unit,
 ) {
     // How many SMS the text takes: past 160 plain characters, or 70 with accents or emoji, it is split.
     val parts = remember(text, encrypted) { if (text.isEmpty() || encrypted) 0 else SmsMessage.calculateLength(text, false)[0] }
+    val colors = MaterialTheme.colorScheme
     Column(
         Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
+            .background(colors.surface)
             .navigationBarsPadding()
             .imePadding()
             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -843,9 +1183,74 @@ private fun Composer(
             Text(
                 text = "Activez Seca Messages comme application SMS pour envoyer.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = colors.onSurfaceVariant,
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp),
             )
+        }
+        replyingTo?.let { target ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(colors.surfaceContainerHigh)
+                    .padding(start = 12.dp),
+            ) {
+                Icon(SecaIcons.Reply, contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp))
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) {
+                    Text(
+                        text = if (target.outgoing) "Réponse à vous-même" else "Réponse à $replyName",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = colors.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = previewOf(target),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                IconButton(onClick = onCancelReply) { Icon(SecaIcons.Close, contentDescription = "Annuler la réponse") }
+            }
+        }
+        if (recording) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+            ) {
+                IconButton(onClick = onCancelVoice) {
+                    Icon(SecaIcons.Delete, contentDescription = "Annuler l'enregistrement", tint = colors.error)
+                }
+                Box(
+                    Modifier
+                        .padding(start = 4.dp)
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(colors.error),
+                )
+                Text(
+                    text = "Enregistrement · ${durationText(recordingMillis)}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = colors.onSurface,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp),
+                )
+                FilledIconButton(onClick = onSendVoice, modifier = Modifier.size(56.dp)) {
+                    Icon(SecaIcons.Send, contentDescription = "Envoyer le message vocal")
+                }
+            }
+            return@Column
         }
         Row(verticalAlignment = Alignment.Bottom) {
             if (onAttach != null) {
@@ -884,22 +1289,30 @@ private fun Composer(
                 maxLines = 6,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    focusedContainerColor = colors.surfaceContainerHigh,
+                    unfocusedContainerColor = colors.surfaceContainerHigh,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent,
                 ),
                 modifier = Modifier.weight(1f),
             )
+            val startVoice = onStartVoice.takeIf { text.isBlank() }
             FilledIconButton(
-                onClick = onSend,
-                enabled = enabled && text.isNotBlank(),
+                onClick = startVoice ?: onSend,
+                enabled = startVoice != null || (enabled && text.isNotBlank()),
                 modifier = Modifier
                     .padding(start = 8.dp, bottom = if (parts > 1) 24.dp else 0.dp)
                     .size(56.dp),
             ) {
-                Icon(SecaIcons.Send, contentDescription = if (encrypted) "Envoyer chiffré" else "Envoyer")
+                Icon(
+                    if (startVoice != null) SecaIcons.Mic else SecaIcons.Send,
+                    contentDescription = when {
+                        startVoice != null -> "Enregistrer un message vocal"
+                        encrypted -> "Envoyer chiffré"
+                        else -> "Envoyer"
+                    },
+                )
             }
         }
     }

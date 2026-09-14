@@ -402,11 +402,36 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     /** A conversation's messages, SMS and Seca Link together, reloaded whenever either changes. */
     fun messagesOf(threadId: Long, address: String): Flow<List<Message>> = links.conversation(threadId, address, repository)
 
-    /** Goes encrypted through Seca Link when the contact is connected, by SMS otherwise. */
-    fun send(address: String, text: String) {
+    /** Goes encrypted through Seca Link when the contact is connected, answering [replyTo] when given; by SMS otherwise. */
+    fun send(address: String, text: String, replyTo: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (!links.sendText(address, text)) SmsSender(getApplication()).send(address, text)
+            if (!links.sendText(address, text, replyTo)) SmsSender(getApplication()).send(address, text)
         }
+    }
+
+    /** Sends the voice message recorded at [path] through Seca Link, then lets the recording go. */
+    fun sendVoice(address: String, path: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val sent = links.sendVoice(address, path)
+            java.io.File(path).delete()
+            if (!sent) withContext(Dispatchers.Main) { toast("Le message vocal n'a pas pu être envoyé") }
+        }
+    }
+
+    /** Reacts to a Seca Link message, or takes the same reaction back. */
+    fun react(message: Message, emoji: String) {
+        val id = message.linkId ?: return
+        viewModelScope.launch(Dispatchers.IO) { links.react(id, emoji) }
+    }
+
+    /** Sets how long new messages with [address] are kept, on both phones. */
+    fun setTimer(address: String, seconds: Int) {
+        viewModelScope.launch(Dispatchers.IO) { links.setTimer(address, seconds) }
+    }
+
+    /** Lets go of the messages whose time is up. */
+    fun sweepExpired() {
+        viewModelScope.launch(Dispatchers.IO) { links.sweepExpired() }
     }
 
     /** Sends a photo through Seca Link, which only an encrypted conversation carries. */

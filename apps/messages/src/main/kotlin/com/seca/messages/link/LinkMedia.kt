@@ -13,11 +13,12 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * Photos sent and received through Seca Link, in this app's own storage.
+ * Photos and voice messages sent and received through Seca Link, in this
+ * app's own storage.
  *
  * A photo is drawn again before it leaves: smaller, and rid of the location
- * and camera details a picture file carries. It then travels in pieces small
- * enough for every relay, each encrypted in its own envelope.
+ * and camera details a picture file carries. Everything then travels in pieces
+ * small enough for every relay, each encrypted in its own envelope.
  */
 class LinkMedia(context: Context) {
 
@@ -25,8 +26,11 @@ class LinkMedia(context: Context) {
     private val parts = File(folder, PARTS)
     private val resolver = context.applicationContext.contentResolver
 
-    /** Where the photo of message [id] with [number] is kept; named so no contact can overwrite another's. */
-    fun fileOf(number: String, id: String): File = File(folder, digest("$number/$id".toByteArray()).toHexString() + ".webp")
+    /** Where message [id] with [number] keeps its file; named so no contact can overwrite another's. */
+    fun fileOf(number: String, id: String, mime: String): File {
+        val name = digest("$number/$id".toByteArray()).toHexString()
+        return File(folder, name + if (mime.startsWith("audio/")) ".ogg" else ".webp")
+    }
 
     /** The photo at [uri], resized and re-encoded; null when it cannot be read or stays too large. */
     fun prepare(uri: Uri): ByteArray? = runCatching {
@@ -45,35 +49,36 @@ class LinkMedia(context: Context) {
             quality -= QUALITY_STEP
         } while (bytes.size > TARGET_BYTES && quality >= MIN_QUALITY)
         bitmap.recycle()
-        bytes.takeIf { it.size <= LinkPayload.MEDIA_PART_BYTES * LinkPayload.MAX_MEDIA_PARTS }
+        bytes.takeIf { it.size <= MAX_BYTES }
     }.getOrNull()
 
-    fun save(number: String, id: String, bytes: ByteArray) {
+    fun save(number: String, id: String, mime: String, bytes: ByteArray) {
         folder.mkdirs()
-        fileOf(number, id).writeBytes(bytes)
+        fileOf(number, id, mime).writeBytes(bytes)
     }
 
-    fun delete(number: String, id: String) {
-        fileOf(number, id).delete()
+    fun delete(number: String, id: String, mime: String) {
+        fileOf(number, id, mime).delete()
     }
 
-    /** The pieces [bytes] travel in, each with the whole photo's digest. */
-    fun split(id: String, bytes: ByteArray, sentAt: Long, mime: String): List<LinkPayload.MediaPart> {
+    /** The pieces [bytes] travel in, each with the whole file's digest. */
+    fun split(id: String, bytes: ByteArray, sentAt: Long, mime: String, expiresInSeconds: Int): List<LinkPayload.MediaPart> {
         val size = LinkPayload.MEDIA_PART_BYTES
         val count = max(1, (bytes.size + size - 1) / size)
         val whole = digest(bytes)
         return List(count) { index ->
             val data = bytes.copyOfRange(index * size, min(bytes.size, (index + 1) * size))
-            LinkPayload.MediaPart(id, index, count, sentAt, mime, whole, data)
+            LinkPayload.MediaPart(id, index, count, sentAt, mime, whole, data, expiresInSeconds)
         }
     }
 
     /**
      * Keeps one piece received from [number]. Returns true once every piece is
-     * in and the photo put back together matches its digest; false while
-     * pieces are missing, or when they do not add up.
+     * in and the file put back together matches its digest; false while pieces
+     * are missing, when they do not add up, or for a kind of file Seca does not open.
      */
     fun accept(number: String, part: LinkPayload.MediaPart): Boolean = synchronized(lock) {
+        if (part.mime != IMAGE && part.mime != VOICE) return false
         val pending = File(parts, digest("$number/${part.id}".toByteArray()).toHexString()).apply { mkdirs() }
         File(pending, part.index.toString()).writeBytes(part.data)
         val pieces = (0 until part.count).map { File(pending, it.toString()) }
@@ -85,11 +90,11 @@ class LinkMedia(context: Context) {
         pending.deleteRecursively()
         forgetStaleParts()
         if (!MessageDigest.isEqual(digest(whole), part.digest)) return false
-        save(number, part.id, whole)
+        save(number, part.id, part.mime, whole)
         true
     }
 
-    /** A photo whose last pieces never came is dropped after a week. */
+    /** A file whose last pieces never came is dropped after a week. */
     private fun forgetStaleParts() {
         val limit = System.currentTimeMillis() - STALE_MILLIS
         parts.listFiles()?.filter { it.lastModified() < limit }?.forEach { it.deleteRecursively() }
@@ -98,7 +103,12 @@ class LinkMedia(context: Context) {
     private fun digest(bytes: ByteArray): ByteArray = MessageDigest.getInstance("SHA-256").digest(bytes)
 
     companion object {
-        const val MIME = "image/webp"
+        const val IMAGE = "image/webp"
+        const val VOICE = "audio/ogg"
+
+        /** The most a photo or a voice message may weigh once ready to leave. */
+        const val MAX_BYTES = LinkPayload.MEDIA_PART_BYTES * LinkPayload.MAX_MEDIA_PARTS
+
         private const val FOLDER = "link-media"
         private const val PARTS = "parts"
         private const val MAX_EDGE = 1600
