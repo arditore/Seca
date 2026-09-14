@@ -40,6 +40,8 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    // Apache-2.0, pure Java: draws the safety number's QR code, on the phone.
+    implementation(libs.zxing.core)
     // Apache-2.0, open source: the Java APIs that libsignal needs.
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 }

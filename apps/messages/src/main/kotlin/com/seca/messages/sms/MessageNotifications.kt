@@ -30,6 +30,7 @@ internal object MessageNotifications {
     private const val CHANNEL = "messages"
     private const val MAX_LINES = 8
     private const val TAG_SCHEDULED = "scheduled"
+    private const val TAG_KEY_CHANGED = "link-key"
 
     fun notifyIncoming(context: Context, address: String, body: String) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
@@ -148,6 +149,37 @@ internal object MessageNotifications {
             .build()
         // Its own tag, so it does not replace the conversation's messages.
         manager.notify(TAG_SCHEDULED, code, notification)
+    }
+
+    /** A contact's Seca Link key changed: a new phone or a reinstall, or someone trying to sit in between. */
+    fun notifyKeyChanged(context: Context, address: String) {
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        ensureChannel(manager)
+        if (!manager.areNotificationsEnabled()) return
+        val threadId = runCatching { Telephony.Threads.getOrCreateThreadId(context, address) }.getOrNull() ?: -1L
+        val name = nameOf(context, address) ?: PhoneNumbers(PhoneNumbers.detectRegion(context)).display(address)
+        val code = codeOf(threadId, address)
+        val open = PendingIntent.getActivity(
+            context,
+            code,
+            Intent(context, MainActivity::class.java)
+                .setAction(MainActivity.ACTION_OPEN_CONVERSATION)
+                .putExtra(EXTRA_THREAD, threadId)
+                .putExtra(EXTRA_ADDRESS, address)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val text = "La clé de sécurité de $name a changé. Si vous ne l'attendiez pas, comparez vos numéros de sécurité."
+        val notification = Notification.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_message)
+            .setContentTitle("Clé de sécurité modifiée")
+            .setContentText(text)
+            .setStyle(Notification.BigTextStyle().bigText(text))
+            .setCategory(Notification.CATEGORY_STATUS)
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        manager.notify(TAG_KEY_CHANGED, code, notification)
     }
 
     private fun actionIntent(context: Context, action: String, threadId: Long, address: String) =

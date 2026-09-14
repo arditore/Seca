@@ -6,6 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.telephony.SmsManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Sends a text message through the SIM. A long text is split into the parts
@@ -35,10 +38,13 @@ class SmsSender(private val context: Context) {
                 .setData(stored),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        return runCatching {
+        val sent = runCatching {
             manager.sendMultipartTextMessage(address, null, parts, ArrayList(parts.map { onSent }), null)
         }.onFailure {
             stored?.let { repository.setSent(it, sent = false) }
         }.isSuccess
+        // Writing to someone also offers them Seca Link, discreetly, when it is on.
+        if (sent) CoroutineScope(Dispatchers.IO).launch { LinkSms.inviteIfDue(context.applicationContext, address) }
+        return sent
     }
 }

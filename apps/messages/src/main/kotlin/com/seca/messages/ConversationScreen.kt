@@ -94,12 +94,22 @@ internal fun ConversationScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            ConversationTopBar(
-                address = screen.address,
-                ui = ui,
-                onBack = { viewModel.back() },
-                onDelete = { confirmDelete = true },
-            )
+            Column {
+                val peer = rememberLinkPeer(screen.address)
+                val openSafetyNumber = { viewModel.open(SafetyNumberRoute(screen.address)) }
+                ConversationTopBar(
+                    address = screen.address,
+                    ui = ui,
+                    linked = peer?.ready == true,
+                    verified = peer?.verified == true,
+                    onBack = { viewModel.back() },
+                    onDelete = { confirmDelete = true },
+                    onSafetyNumber = openSafetyNumber,
+                )
+                if (peer != null && peer.keyChangedAt > 0) {
+                    KeyChangedBanner(screen.address, ui.nameOf(screen.address), onVerify = openSafetyNumber)
+                }
+            }
         },
         bottomBar = {
             Composer(
@@ -179,7 +189,15 @@ private fun joined(first: Message, second: Message): Boolean =
 
 /** Back, who the conversation is with and their profile, a call button and the rest in a menu. */
 @Composable
-private fun ConversationTopBar(address: String, ui: MessagesUi, onBack: () -> Unit, onDelete: () -> Unit) {
+private fun ConversationTopBar(
+    address: String,
+    ui: MessagesUi,
+    linked: Boolean,
+    verified: Boolean,
+    onBack: () -> Unit,
+    onDelete: () -> Unit,
+    onSafetyNumber: () -> Unit,
+) {
     val context = LocalContext.current
     var menuOpen by remember { mutableStateOf(false) }
     val contact = ui.contactOf(address)
@@ -214,20 +232,44 @@ private fun ConversationTopBar(address: String, ui: MessagesUi, onBack: () -> Un
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            subtitle?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+            if (linked) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        SecaIcons.Link,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        text = if (verified) "Seca Link · Vérifié" else "Seca Link",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 4.dp),
+                    )
+                }
+            } else {
+                subtitle?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
         IconButton(onClick = { call(context, address) }) { Icon(SecaIcons.Phone, contentDescription = "Appeler") }
         Box {
             IconButton(onClick = { menuOpen = true }) { Icon(SecaIcons.MoreVert, contentDescription = "Plus d'options") }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                if (linked) {
+                    MenuEntry("Numéro de sécurité", SecaIcons.Shield) {
+                        menuOpen = false
+                        onSafetyNumber()
+                    }
+                }
                 if (contact != null) {
                     MenuEntry("Voir la fiche", SecaIcons.Contacts) {
                         menuOpen = false

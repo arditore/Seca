@@ -10,6 +10,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import org.json.JSONArray
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.resume
 
 /** What a relay made of one event. */
@@ -32,8 +33,7 @@ class RelayClient {
 
     /** Sends [event] to [url] and waits for the relay's verdict. */
     suspend fun publish(url: String, event: NostrEvent): PublishResult {
-        val request = runCatching { Request.Builder().url(url).build() }.getOrNull()
-            ?: return PublishResult.Unreachable("Adresse invalide")
+        val request = requestFor(url) ?: return PublishResult.Unreachable("Adresse invalide")
         return withTimeoutOrNull(TIMEOUT_MILLIS) {
             suspendCancellableCoroutine { continuation ->
                 val listener = object : WebSocketListener() {
@@ -70,10 +70,57 @@ class RelayClient {
         } ?: PublishResult.Unreachable("Pas de réponse")
     }
 
+    /**
+     * The events stored on [url] that match [filter], a NIP-01 filter written
+     * as JSON, up to the relay's end of stored events. Null when the relay
+     * could not be reached. Signatures are for the caller to check.
+     */
+    suspend fun fetch(url: String, filter: String): List<NostrEvent>? {
+        val request = requestFor(url) ?: return null
+        val subscription = "seca-${subscriptions.incrementAndGet()}"
+        return withTimeoutOrNull(TIMEOUT_MILLIS) {
+            suspendCancellableCoroutine<List<NostrEvent>?> { continuation ->
+                val events = mutableListOf<NostrEvent>()
+                val listener = object : WebSocketListener() {
+                    override fun onOpen(webSocket: WebSocket, response: Response) {
+                        webSocket.send("[\"REQ\",\"$subscription\",$filter]")
+                    }
+
+                    override fun onMessage(webSocket: WebSocket, text: String) {
+                        val message = runCatching { JSONArray(text) }.getOrNull() ?: return
+                        if (message.optString(1) != subscription) return
+                        when (message.optString(0)) {
+                            "EVENT" -> message.optJSONObject(2)?.let(NostrEvent::fromJson)?.let(events::add)
+                            "EOSE", "CLOSED" -> {
+                                if (continuation.isActive) continuation.resume(events.toList())
+                                webSocket.send("[\"CLOSE\",\"$subscription\"]")
+                                webSocket.close(NORMAL_CLOSURE, null)
+                            }
+                        }
+                    }
+
+                    override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                        if (continuation.isActive) continuation.resume(events.toList().ifEmpty { null })
+                    }
+
+                    override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                        if (continuation.isActive) continuation.resume(null)
+                    }
+                }
+                val socket = http.newWebSocket(request, listener)
+                continuation.invokeOnCancellation { socket.cancel() }
+            }
+        }
+    }
+
+    private fun requestFor(url: String): Request? = runCatching { Request.Builder().url(url).build() }.getOrNull()
+
     private companion object {
         const val TIMEOUT_MILLIS = 15_000L
         const val CONNECT_TIMEOUT_SECONDS = 10L
         const val NORMAL_CLOSURE = 1000
+
+        val subscriptions = AtomicInteger()
 
         val http: OkHttpClient by lazy {
             OkHttpClient.Builder()

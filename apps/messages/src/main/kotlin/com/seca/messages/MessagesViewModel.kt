@@ -20,6 +20,7 @@ import com.seca.core.model.SecaContact
 import com.seca.core.model.backup.BackupCipher
 import com.seca.messages.sms.BackupMessage
 import com.seca.messages.sms.Conversation
+import com.seca.messages.sms.LinkSms
 import com.seca.messages.sms.Message
 import com.seca.messages.sms.MessageNotifications
 import com.seca.messages.sms.MessagesRepository
@@ -139,6 +140,13 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         if (on) {
             watchNetwork()
             publishPrekeys()
+            // Contacts who invited this phone while Seca Link was off get their answer, once the keys are out.
+            viewModelScope.launch(Dispatchers.IO) {
+                publishing?.join()
+                runCatching { link.connectWaiting() }.getOrDefault(emptyList()).forEach { (number, reply) ->
+                    LinkSms.send(getApplication(), number, reply)
+                }
+            }
         } else {
             watchingNetwork?.cancel()
         }

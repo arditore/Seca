@@ -143,6 +143,7 @@ fun MessagesApp(
                     MessagesScreen.Settings -> SettingsScreen(ui, viewModel, isDefaultApp, onBecomeDefault)
                     MessagesScreen.Archived -> ArchivedScreen(ui, viewModel)
                     MessagesScreen.Relays -> RelaysScreen(ui, viewModel)
+                    is SafetyNumberRoute -> SafetyNumberScreen(screen, ui, viewModel)
                 }
             }
         }

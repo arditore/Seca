@@ -98,6 +98,20 @@
             </intent-filter>
         </receiver>
 
+        <!-- Seca Link invitations: data SMS on their own port, which phones without Seca ignore. -->
+        <receiver
+            android:name=".sms.LinkHandshakeReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.intent.action.DATA_SMS_RECEIVED" />
+                <data
+                    android:host="localhost"
+                    android:port="19734"
+                    android:scheme="sms" />
+            </intent-filter>
+        </receiver>
+
         <!-- Declining a call with a text, from the call screen. -->
         <service
             android:name=".sms.RespondViaMessageService"

@@ -17,8 +17,10 @@ libsignal = "0.102.2"
 secp256k1 = "0.24.0"
 okhttp = "5.5.0"
 desugarJdkLibs = "2.1.5"
+zxing = "3.5.4"
 
 [libraries]
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
 compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics", version.ref = "compose" }

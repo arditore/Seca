@@ -36,6 +36,8 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                     ConversationPrefs(context).setArchived(it, archived = false)
                 }
                 MessageNotifications.notifyIncoming(context, address, body)
+                // A conversation with someone new also offers them Seca Link, discreetly, when it is on.
+                LinkSms.inviteIfDue(context, address)
             } finally {
                 pending.finish()
             }

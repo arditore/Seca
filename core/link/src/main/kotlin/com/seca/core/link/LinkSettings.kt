@@ -30,7 +30,10 @@ class LinkSettings(context: Context) {
     fun resetRelays() = prefs.edit { remove(KEY_RELAYS) }
 
     companion object {
-        /** Public, free relays run by volunteers, which keep app data and encrypted envelopes. */
+        /**
+         * Public, free relays run by volunteers, which keep app data and encrypted envelopes.
+         * Invitations name them by their place in this list: new ones only ever go at the end.
+         */
         val DefaultRelays = listOf(
             "wss://relay.damus.io",
             "wss://nos.lol",
