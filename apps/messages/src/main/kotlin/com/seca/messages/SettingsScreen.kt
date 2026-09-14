@@ -169,6 +169,7 @@ internal fun SettingsScreen(
 
             SecaSectionLabel("Seca Link")
             val link = ui.link
+            var askNetwork by remember { mutableStateOf(false) }
             val published = link.statuses.values.count { it.state == RelayState.Published }
             val linkRows = if (link.enabled) 3 else 1
             SecaGroupItem(index = 0, count = linkRows) {
@@ -178,6 +179,7 @@ internal fun SettingsScreen(
                     subtitle = when {
                         !link.enabled -> "Messages chiffrés de bout en bout entre téléphones Seca"
                         link.error != null -> link.error
+                        link.offline -> "En attente du réseau"
                         link.statuses.values.any { it.state == RelayState.Publishing } -> "Publication de votre clé…"
                         published > 0 -> "Clé publiée sur $published relais"
                         link.statuses.isNotEmpty() -> "Aucun relais n'a accepté la clé"
@@ -186,7 +188,11 @@ internal fun SettingsScreen(
                     modifier = Modifier.toggleable(
                         value = link.enabled,
                         role = Role.Switch,
-                        onValueChange = viewModel::setLinkEnabled,
+                        onValueChange = { on ->
+                            viewModel.setLinkEnabled(on)
+                            // Android has no prompt for network access, which GrapheneOS lets the owner take away.
+                            if (on && !viewModel.networkAvailable()) askNetwork = true
+                        },
                     ),
                     trailing = { Switch(checked = link.enabled, onCheckedChange = null) },
                 )
@@ -206,11 +212,13 @@ internal fun SettingsScreen(
                         subtitle = link.fingerprint ?: "Création des clés…",
                     )
                 }
+                if (link.offline) NetworkBlockedCard(Modifier.padding(top = 8.dp))
             }
             SecaHint(
                 "Première étape : ce téléphone crée ses clés, gardées dans sa puce de sécurité, et publie la partie " +
                     "publique. Les conversations chiffrées arrivent dans une prochaine version ; les SMS ne changent pas.",
             )
+            if (askNetwork) NetworkAccessDialog(onDismiss = { askNetwork = false })
 
             SecaSectionLabel("Protection")
             SecaPrivacySettingsGroup("Seca Messages")

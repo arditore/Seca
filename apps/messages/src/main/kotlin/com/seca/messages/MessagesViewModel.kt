@@ -119,10 +119,13 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     private var linkLoaded = false
     private var publishing: Job? = null
 
+    private var watchingNetwork: Job? = null
+
     /** Shows Seca Link as the owner left it, and publishes the keys again when a week has passed. */
     private fun loadLink() {
         _ui.update { it.copy(link = it.link.copy(enabled = link.settings.enabled, relays = link.settings.relays())) }
         if (!link.settings.enabled) return
+        watchNetwork()
         if (link.settings.publishDue()) {
             publishPrekeys()
         } else {
@@ -133,7 +136,27 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     fun setLinkEnabled(on: Boolean) {
         link.settings.enabled = on
         _ui.update { it.copy(link = it.link.copy(enabled = on, statuses = emptyMap())) }
-        if (on) publishPrekeys()
+        if (on) {
+            watchNetwork()
+            publishPrekeys()
+        } else {
+            watchingNetwork?.cancel()
+        }
+    }
+
+    /** False without a connection, or when the owner has not let this app on the network. */
+    fun networkAvailable(): Boolean = link.network.available()
+
+    /** Follows network access while Seca Link is on: keys that could not leave go as soon as they can. */
+    private fun watchNetwork() {
+        if (watchingNetwork?.isActive == true) return
+        watchingNetwork = viewModelScope.launch {
+            link.network.changes().collect { online ->
+                val wasOffline = _ui.value.link.offline
+                _ui.update { it.copy(link = it.link.copy(offline = !online)) }
+                if (online && wasOffline) publishPrekeys()
+            }
+        }
     }
 
     /** Publishes this phone's pre-keys on every relay, showing each relay's answer as it arrives. */
@@ -141,6 +164,10 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         if (publishing?.isActive == true) return
         publishing = viewModelScope.launch {
             if (!showFingerprint()) return@launch
+            if (!link.network.available()) {
+                _ui.update { it.copy(link = it.link.copy(offline = true, statuses = emptyMap())) }
+                return@launch
+            }
             val relays = link.settings.relays()
             _ui.update {
                 it.copy(link = it.link.copy(relays = relays, statuses = relays.associateWith { RelayStatus(RelayState.Publishing) }))

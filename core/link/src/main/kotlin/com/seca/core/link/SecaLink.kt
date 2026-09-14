@@ -20,6 +20,7 @@ class SecaLink(context: Context) {
     private val vault = IdentityVault(context.applicationContext)
     private val relayClient = RelayClient()
     val settings = LinkSettings(context.applicationContext)
+    val network = NetworkAccess(context.applicationContext)
 
     @Volatile
     private var identity: LinkIdentity? = null
