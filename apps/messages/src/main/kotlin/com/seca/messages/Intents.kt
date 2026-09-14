@@ -63,10 +63,13 @@ internal fun addContact(context: Context, number: String) {
     startPreferring(context, intent, SECA_CONTACTS)
 }
 
+/** ClipDescription.EXTRA_IS_SENSITIVE, written out: Android 13 honours it, older versions ignore it. */
+private const val EXTRA_IS_SENSITIVE = "android.content.extra.IS_SENSITIVE"
+
 /** Copies a verification code, marked sensitive so Android does not show it in the clipboard preview. */
 internal fun copySensitive(context: Context, text: String) {
     val clip = ClipData.newPlainText("Code", text).apply {
-        description.extras = PersistableBundle().apply { putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true) }
+        description.extras = PersistableBundle().apply { putBoolean(EXTRA_IS_SENSITIVE, true) }
     }
     context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(clip)
 }

@@ -176,6 +176,7 @@ internal object MessageNotifications {
      */
     private fun publishShortcut(context: Context, threadId: Long, address: String, name: String, person: Person, icon: Icon): String {
         val id = if (threadId >= 0) "conversation-$threadId" else "conversation-${address.hashCode()}"
+        if (!conversationShortcutsAllowed) return id
         val shortcuts = context.getSystemService(ShortcutManager::class.java) ?: return id
         val intent = Intent(context, MainActivity::class.java)
             .setAction(MainActivity.ACTION_OPEN_CONVERSATION)
@@ -190,7 +191,7 @@ internal object MessageNotifications {
                     .setIcon(icon)
                     .setIntent(intent)
                     .setCategories(setOf(ShortcutInfo.SHORTCUT_CATEGORY_CONVERSATION))
-                    .setExcludedFromSurfaces(ShortcutInfo.SURFACE_LAUNCHER)
+                    .keptOffLauncher()
                     .build(),
             )
         }

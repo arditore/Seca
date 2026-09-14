@@ -82,7 +82,9 @@ internal fun DetailScreen(
     // The system's own ringtone picker: Seca never reads the music on the phone.
     val ringtonePicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val picked = result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+            // The typed variant needs Android 13; this one reads the same extra on every version.
+            @Suppress("DEPRECATION")
+            val picked = result.data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
             withWrite { viewModel.setRingtone(id, picked?.toString()) }
         }
     }

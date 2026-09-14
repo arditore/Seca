@@ -79,13 +79,7 @@ fun MessagesApp(
     val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         requestRole()
     }
-    val onBecomeDefault: () -> Unit = {
-        if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-            requestRole()
-        } else {
-            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-    }
+    val onBecomeDefault: () -> Unit = { withNotificationPermission(context, notificationLauncher, requestRole) }
 
     // Held above the screen transitions, so the list keeps its scroll position.
     val homeListState = rememberLazyListState()

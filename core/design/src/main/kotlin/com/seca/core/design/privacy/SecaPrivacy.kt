@@ -116,7 +116,7 @@ class SecaAppLock(private val activity: Activity, val appName: String) {
             } else {
                 activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
-            activity.setRecentsScreenshotEnabled(!on)
+            activity.showInRecentsPreview(!on)
         }
     }
 }

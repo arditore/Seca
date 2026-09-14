@@ -8,7 +8,7 @@ extensions.configure<LibraryExtension> {
     compileSdk = 37
     buildToolsVersion = "36.0.0"
     defaultConfig {
-        minSdk = 34
+        minSdk = 31
         testOptions.targetSdk = 36
     }
     compileOptions {

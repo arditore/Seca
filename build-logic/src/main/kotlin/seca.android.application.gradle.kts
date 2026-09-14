@@ -10,7 +10,10 @@ extensions.configure<ApplicationExtension> {
     compileSdk = 37
     buildToolsVersion = "36.0.0"
     defaultConfig {
-        minSdk = 34
+        // Android 12: the first with Material You colours and call-style notifications, and
+        // still what many phones run. GrapheneOS phones are far newer; newer APIs are checked
+        // for and fall back gracefully.
+        minSdk = 31
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"

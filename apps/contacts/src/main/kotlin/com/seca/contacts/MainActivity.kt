@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.privacy.SecaAppLock
 import com.seca.core.design.privacy.SecaLockGate
+import com.seca.core.design.switchWithoutAnimation
 
 class MainActivity : ComponentActivity() {
 
@@ -23,9 +24,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Moving between Seca apps, and back from one, happens without animation, as between tabs.
-        overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0)
-        overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
+        switchWithoutAnimation()
         enableEdgeToEdge()
         if (savedInstanceState == null) handle(intent)
         setContent {

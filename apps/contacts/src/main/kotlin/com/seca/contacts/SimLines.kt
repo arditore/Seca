@@ -3,6 +3,7 @@ package com.seca.contacts
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import android.telephony.SubscriptionManager
 
 /** A SIM or eSIM in the phone, with its number when the operator wrote it on the card. */
@@ -16,6 +17,7 @@ internal val SimPermissions = arrayOf(Manifest.permission.READ_PHONE_STATE, Mani
  * Many operators leave the number off the card, so a line may come back
  * without one: the owner then types it in "Ma fiche".
  */
+@Suppress("DEPRECATION") // SubscriptionInfo.number is the only way to read it before Android 13.
 internal fun readSimLines(context: Context): List<SimLine> {
     val granted = PackageManager.PERMISSION_GRANTED
     if (context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != granted ||
@@ -30,7 +32,9 @@ internal fun readSimLines(context: Context): List<SimLine> {
             SimLine(
                 slot = info.simSlotIndex,
                 label = (info.displayName ?: info.carrierName)?.toString()?.takeIf { it.isNotBlank() } ?: "SIM",
-                number = runCatching { manager.getPhoneNumber(info.subscriptionId) }.getOrNull()?.takeIf { it.isNotBlank() },
+                number = runCatching {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) manager.getPhoneNumber(info.subscriptionId) else info.number
+                }.getOrNull()?.takeIf { it.isNotBlank() },
                 isEsim = info.isEmbedded,
             )
         }

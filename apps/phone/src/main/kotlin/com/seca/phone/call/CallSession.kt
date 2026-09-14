@@ -1,18 +1,23 @@
 package com.seca.phone.call
 
 import android.Manifest
+import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.OutcomeReceiver
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.PhoneLookup
 import android.telecom.Call
+import android.telecom.CallAudioState
 import android.telecom.CallEndpoint
 import android.telecom.CallEndpointException
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.telecom.VideoProfile
+import androidx.annotation.RequiresApi
+import androidx.core.os.BundleCompat
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.model.Profile
@@ -64,10 +69,30 @@ data class CallView(
     val caller: Caller?,
 )
 
+/** Where the call's sound goes. */
+enum class AudioKind { Earpiece, Speaker, Bluetooth, Headset }
+
+/**
+ * One place the call's sound can go. Android 14 describes it as a call
+ * endpoint; before, as a route of the call's audio state, with a Bluetooth
+ * device when there are several.
+ */
+class AudioRoute internal constructor(
+    val kind: AudioKind,
+    val name: String,
+    internal val endpoint: Any? = null,
+    internal val legacyRoute: Int = 0,
+    internal val bluetooth: BluetoothDevice? = null,
+) {
+    override fun equals(other: Any?): Boolean = other is AudioRoute && other.kind == kind && other.name == name
+
+    override fun hashCode(): Int = 31 * kind.hashCode() + name.hashCode()
+}
+
 data class AudioView(
     val muted: Boolean = false,
-    val endpoint: CallEndpoint? = null,
-    val endpoints: List<CallEndpoint> = emptyList(),
+    val route: AudioRoute? = null,
+    val routes: List<AudioRoute> = emptyList(),
 )
 
 /** The call the screen is about: one ringing first, then one waiting for a SIM, then the one in progress. */
@@ -147,9 +172,40 @@ object CallSession {
 
     internal fun onMuted(muted: Boolean) = _audio.update { it.copy(muted = muted) }
 
-    internal fun onEndpoint(endpoint: CallEndpoint) = _audio.update { it.copy(endpoint = endpoint) }
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    internal fun onEndpoint(endpoint: CallEndpoint) = _audio.update { it.copy(route = routeOf(endpoint)) }
 
-    internal fun onEndpoints(endpoints: List<CallEndpoint>) = _audio.update { it.copy(endpoints = endpoints) }
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    internal fun onEndpoints(endpoints: List<CallEndpoint>) = _audio.update { it.copy(routes = endpoints.map(::routeOf)) }
+
+    /** Before Android 14, where the sound goes and whether it is muted come as one audio state. */
+    internal fun onAudioState(state: CallAudioState) {
+        val mask = state.supportedRouteMask
+        val routes = buildList {
+            if (mask and CallAudioState.ROUTE_EARPIECE != 0) {
+                add(AudioRoute(AudioKind.Earpiece, "Téléphone", legacyRoute = CallAudioState.ROUTE_EARPIECE))
+            }
+            if (mask and CallAudioState.ROUTE_WIRED_HEADSET != 0) {
+                add(AudioRoute(AudioKind.Headset, "Écouteurs", legacyRoute = CallAudioState.ROUTE_WIRED_HEADSET))
+            }
+            if (mask and CallAudioState.ROUTE_SPEAKER != 0) {
+                add(AudioRoute(AudioKind.Speaker, "Haut-parleur", legacyRoute = CallAudioState.ROUTE_SPEAKER))
+            }
+            if (mask and CallAudioState.ROUTE_BLUETOOTH != 0) {
+                val devices = state.supportedBluetoothDevices.toList()
+                if (devices.size <= 1) {
+                    add(AudioRoute(AudioKind.Bluetooth, "Bluetooth", legacyRoute = CallAudioState.ROUTE_BLUETOOTH, bluetooth = devices.firstOrNull()))
+                } else {
+                    devices.forEachIndexed { index, device ->
+                        add(AudioRoute(AudioKind.Bluetooth, "Bluetooth ${index + 1}", legacyRoute = CallAudioState.ROUTE_BLUETOOTH, bluetooth = device))
+                    }
+                }
+            }
+        }
+        val current = routes.firstOrNull { it.legacyRoute == state.route && (it.bluetooth == null || it.bluetooth == state.activeBluetoothDevice) }
+            ?: routes.firstOrNull { it.legacyRoute == state.route }
+        _audio.update { it.copy(muted = state.isMuted, route = current, routes = routes) }
+    }
 
     fun ringing(): Call? = tracked.firstOrNull {
         it.details.state == Call.STATE_RINGING || it.details.state == Call.STATE_SIMULATED_RINGING
@@ -177,9 +233,17 @@ object CallSession {
         service?.setMuted(muted)
     }
 
-    fun route(endpoint: CallEndpoint) {
+    @Suppress("DEPRECATION") // Before Android 14, the route and the Bluetooth device are chosen this way.
+    fun route(route: AudioRoute) {
         val service = service ?: return
-        service.requestCallEndpointChange(endpoint, service.mainExecutor, IgnoreOutcome)
+        val endpoint = route.endpoint
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && endpoint is CallEndpoint) {
+            service.requestCallEndpointChange(endpoint, service.mainExecutor, IgnoreOutcome)
+        } else if (route.bluetooth != null) {
+            service.requestBluetoothAudio(route.bluetooth)
+        } else {
+            service.setAudioRoute(route.legacyRoute)
+        }
     }
 
     /** Plays a keypad tone to the other side, for voice menus. */
@@ -206,6 +270,17 @@ object CallSession {
     private fun changed() {
         _calls.value = tracked.map(::viewOf)
         appContext?.let { CallNotifications.update(it, _calls.value, service) }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun routeOf(endpoint: CallEndpoint): AudioRoute {
+        val kind = when (endpoint.endpointType) {
+            CallEndpoint.TYPE_SPEAKER, CallEndpoint.TYPE_STREAMING -> AudioKind.Speaker
+            CallEndpoint.TYPE_BLUETOOTH -> AudioKind.Bluetooth
+            CallEndpoint.TYPE_WIRED_HEADSET -> AudioKind.Headset
+            else -> AudioKind.Earpiece
+        }
+        return AudioRoute(kind, endpoint.endpointName.toString(), endpoint = endpoint)
     }
 
     private fun viewOf(call: Call): CallView {
@@ -247,7 +322,8 @@ object CallSession {
     private fun accountsOf(details: Call.Details): List<PhoneAccountHandle> {
         if (details.state != Call.STATE_SELECT_PHONE_ACCOUNT) return emptyList()
         val offered = listOfNotNull(details.intentExtras, details.extras).firstNotNullOfOrNull { extras ->
-            extras.getParcelableArrayList(Call.AVAILABLE_PHONE_ACCOUNTS, PhoneAccountHandle::class.java)?.takeIf { it.isNotEmpty() }
+            BundleCompat.getParcelableArrayList(extras, Call.AVAILABLE_PHONE_ACCOUNTS, PhoneAccountHandle::class.java)
+                ?.takeIf { it.isNotEmpty() }
         }
         if (offered != null) return offered
         val context = appContext ?: return emptyList()
@@ -299,6 +375,7 @@ object CallSession {
 
     private class FoundContact(val id: Long, val lookupKey: String, val name: String, val photoUri: String?, val label: String)
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private object IgnoreOutcome : OutcomeReceiver<Void, CallEndpointException> {
         override fun onResult(result: Void?) = Unit
         override fun onError(error: CallEndpointException) = Unit

@@ -1,7 +1,6 @@
 package com.seca.phone.call
 
 import android.telecom.Call
-import android.telecom.CallEndpoint
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
@@ -94,7 +93,7 @@ internal fun InCallRoot(onScreenOffNearEar: (Boolean) -> Unit, onDone: () -> Uni
     }
     // The screen only darkens against the ear while talking through the earpiece.
     val talking = shown?.state == Call.STATE_ACTIVE
-    val earpiece = audio.endpoint?.endpointType.let { it == null || it == CallEndpoint.TYPE_EARPIECE }
+    val earpiece = audio.route?.kind.let { it == null || it == AudioKind.Earpiece }
     LaunchedEffect(talking, earpiece) { onScreenOffNearEar(talking && earpiece) }
 
     SecaTheme(identity = SecaAppIdentity.Phone, palette = rememberSuitePalette()) {
@@ -356,28 +355,28 @@ private fun HangUpButton(view: CallView) {
 @Composable
 private fun AudioControl(audio: AudioView) {
     var open by remember { mutableStateOf(false) }
-    val type = audio.endpoint?.endpointType ?: CallEndpoint.TYPE_EARPIECE
+    val kind = audio.route?.kind ?: AudioKind.Earpiece
     Box {
         CallControl(
-            icon = iconFor(type),
+            icon = iconFor(kind),
             label = "Haut-parleur",
-            checked = type == CallEndpoint.TYPE_SPEAKER || type == CallEndpoint.TYPE_BLUETOOTH,
+            checked = kind == AudioKind.Speaker || kind == AudioKind.Bluetooth,
         ) {
-            if (audio.endpoints.size > 2) open = true else toggleSpeaker(audio)
+            if (audio.routes.size > 2) open = true else toggleSpeaker(audio)
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            audio.endpoints.forEach { endpoint ->
+            audio.routes.forEach { route ->
                 DropdownMenuItem(
-                    text = { Text(endpoint.endpointName.toString()) },
-                    leadingIcon = { Icon(iconFor(endpoint.endpointType), contentDescription = null) },
-                    trailingIcon = if (endpoint == audio.endpoint) {
+                    text = { Text(route.name) },
+                    leadingIcon = { Icon(iconFor(route.kind), contentDescription = null) },
+                    trailingIcon = if (route == audio.route) {
                         { Icon(SecaIcons.Check, contentDescription = "Sortie actuelle") }
                     } else {
                         null
                     },
                     onClick = {
                         open = false
-                        CallSession.route(endpoint)
+                        CallSession.route(route)
                     },
                 )
             }
@@ -385,17 +384,17 @@ private fun AudioControl(audio: AudioView) {
     }
 }
 
-private fun iconFor(type: Int): ImageVector = when (type) {
-    CallEndpoint.TYPE_BLUETOOTH -> SecaIcons.Bluetooth
-    CallEndpoint.TYPE_WIRED_HEADSET -> SecaIcons.Headset
+private fun iconFor(kind: AudioKind): ImageVector = when (kind) {
+    AudioKind.Bluetooth -> SecaIcons.Bluetooth
+    AudioKind.Headset -> SecaIcons.Headset
     else -> SecaIcons.VolumeUp
 }
 
 private fun toggleSpeaker(audio: AudioView) {
-    val speaker = audio.endpoints.firstOrNull { it.endpointType == CallEndpoint.TYPE_SPEAKER }
-    val quiet = audio.endpoints.firstOrNull { it.endpointType == CallEndpoint.TYPE_WIRED_HEADSET }
-        ?: audio.endpoints.firstOrNull { it.endpointType == CallEndpoint.TYPE_EARPIECE }
-    val target = if (audio.endpoint?.endpointType == CallEndpoint.TYPE_SPEAKER) quiet else speaker
+    val speaker = audio.routes.firstOrNull { it.kind == AudioKind.Speaker }
+    val quiet = audio.routes.firstOrNull { it.kind == AudioKind.Headset }
+        ?: audio.routes.firstOrNull { it.kind == AudioKind.Earpiece }
+    val target = if (audio.route?.kind == AudioKind.Speaker) quiet else speaker
     target?.let(CallSession::route)
 }
 

@@ -63,7 +63,7 @@ internal object CallNotifications {
             .setContentTitle(title)
             .setContentText(view.subtitle(CallSession.numbers) ?: "Appel entrant")
             .setContentIntent(screen)
-        if (manager.canUseFullScreenIntent()) {
+        if (manager.fullScreenAllowed()) {
             builder
                 .setFullScreenIntent(screen, true)
                 .setStyle(
