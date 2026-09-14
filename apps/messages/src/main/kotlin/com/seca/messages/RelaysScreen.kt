@@ -53,6 +53,8 @@ data class LinkUi(
     val error: String? = null,
     /** No connection, or the app is not allowed on the network. */
     val offline: Boolean = false,
+    val readReceipts: Boolean = true,
+    val typingIndicator: Boolean = true,
 )
 
 /** The relays that receive for this phone: how each answered, and adding or removing one. */

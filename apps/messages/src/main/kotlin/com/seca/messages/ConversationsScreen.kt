@@ -131,7 +131,7 @@ internal fun ConversationsScreen(
             name = ui.nameOf(conversation.address),
             onDismiss = { deleting = null },
             onConfirm = {
-                viewModel.deleteConversation(conversation.threadId)
+                viewModel.deleteConversation(conversation.threadId, conversation.address)
                 deleting = null
             },
         )
@@ -361,7 +361,7 @@ private fun FolderScreen(
             name = ui.nameOf(conversation.address),
             onDismiss = { deleting = null },
             onConfirm = {
-                viewModel.deleteConversation(conversation.threadId)
+                viewModel.deleteConversation(conversation.threadId, conversation.address)
                 deleting = null
             },
         )

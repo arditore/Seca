@@ -4,6 +4,9 @@ import android.content.Context
 import com.seca.core.link.handshake.Handshake
 import com.seca.core.link.identity.IdentityVault
 import com.seca.core.link.identity.LinkIdentity
+import com.seca.core.link.message.Envelope
+import com.seca.core.link.message.LinkPayload
+import com.seca.core.link.nostr.NostrEvent
 import com.seca.core.link.relay.PublishResult
 import com.seca.core.link.relay.RelayClient
 import com.seca.core.link.session.LinkProtocolStore
@@ -13,19 +16,28 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.InvalidKeyException
 import org.signal.libsignal.protocol.SessionBuilder
+import org.signal.libsignal.protocol.SessionCipher
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.UntrustedIdentityException
 import org.signal.libsignal.protocol.fingerprint.NumericFingerprintGenerator
+import org.signal.libsignal.protocol.message.CiphertextMessage
+import org.signal.libsignal.protocol.message.PreKeySignalMessage
+import org.signal.libsignal.protocol.message.SignalMessage
 import kotlin.io.encoding.Base64
 
 /**
  * Seca Link on this phone: its identity and relays, the invitations it sends
- * and answers by data SMS, and the sessions they open.
+ * and answers by data SMS, the sessions they open, and the encrypted messages
+ * that travel through them.
  *
  * Numbers are given in international format, so a contact is the same however
  * their number was written.
@@ -133,7 +145,7 @@ class SecaLink(context: Context) {
         if (keyChanged) peers.update(number) { it.copy(verified = false) }
         val store = store()
         try {
-            SessionBuilder(store, store, store, store, addressOf(number), localAddress()).process(bundle)
+            sessions.withLock { SessionBuilder(store, store, store, store, addressOf(number), localAddress()).process(bundle) }
         } catch (invalid: InvalidKeyException) {
             return@withContext Received.Failed("Clés invalides : ${invalid.message}")
         } catch (untrusted: UntrustedIdentityException) {
@@ -141,6 +153,81 @@ class SecaLink(context: Context) {
         }
         peers.update(number) { it.copy(ready = true) }
         Received.Connected(reply = if (answer) handshakeOf(Handshake.Type.Accept).encode() else null, keyChanged = keyChanged)
+    }
+
+    /** Whether a message to [number] goes through Seca Link: it is on, and a session is open. */
+    fun canSend(number: String): Boolean = settings.enabled && peers[number]?.ready == true
+
+    /** What became of a message handed to Seca Link. */
+    sealed interface Sent {
+        /** At least one of the contact's relays took the envelope. */
+        data object Published : Sent
+
+        /** No session with this number: the message should go by SMS. */
+        data object NotConnected : Sent
+
+        data class Failed(val reason: String) : Sent
+    }
+
+    /** Encrypts [payload] for [number] and hands it to every relay that contact named, at once. */
+    suspend fun send(number: String, payload: LinkPayload): Sent = withContext(Dispatchers.IO) {
+        val peer = peers[number]?.takeIf { settings.enabled && it.ready } ?: return@withContext Sent.NotConnected
+        val recipient = peer.nostrPublicKey ?: return@withContext Sent.NotConnected
+        if (!network.available()) return@withContext Sent.Failed("Pas d'accès au réseau")
+        val own = identity()
+        val store = store()
+        val ciphertext = sessions.withLock {
+            runCatching {
+                SessionCipher(store, store, store, store, store, localAddress(), addressOf(number)).encrypt(LinkPayload.encode(payload))
+            }.getOrNull()
+        } ?: return@withContext Sent.Failed("Chiffrement impossible")
+        val event = Envelope.wrap(own.nostr, recipient, ciphertext.type, ciphertext.serialize(), ephemeral = payload == LinkPayload.Typing)
+        val relays = peer.relays.ifEmpty { LinkSettings.DefaultRelays }
+        val results = coroutineScope { relays.map { url -> async { relayClient.publish(url, event) } }.awaitAll() }
+        if (results.any { it == PublishResult.Accepted }) Sent.Published else Sent.Failed("Aucun relais n'a accepté le message")
+    }
+
+    /** A message or a notice from a contact, decrypted. */
+    class Incoming(val number: String, val payload: LinkPayload)
+
+    /**
+     * Opens an envelope a relay handed over. Null when it is not for this
+     * phone, not from a contact Seca Link knows, or does not decrypt, such as a
+     * copy already opened from another relay.
+     */
+    suspend fun open(event: NostrEvent): Incoming? = withContext(Dispatchers.IO) {
+        val own = identity()
+        val opened = Envelope.open(own.nostr, event) ?: return@withContext null
+        val peer = peers.all().values.firstOrNull { it.nostrPublicKey == opened.from } ?: return@withContext null
+        val store = store()
+        val plain = sessions.withLock {
+            runCatching {
+                val cipher = SessionCipher(store, store, store, store, store, localAddress(), addressOf(peer.number))
+                when (opened.signalType) {
+                    CiphertextMessage.PREKEY_TYPE -> cipher.decrypt(PreKeySignalMessage(opened.ciphertext))
+                    CiphertextMessage.WHISPER_TYPE -> cipher.decrypt(SignalMessage(opened.ciphertext))
+                    else -> null
+                }
+            }.getOrNull()
+        } ?: return@withContext null
+        val payload = LinkPayload.decode(plain) ?: return@withContext null
+        // A first message from a phone this one had not reached yet: the session now works both ways.
+        if (!peer.ready) peers.update(peer.number) { it.copy(ready = true) }
+        Incoming(peer.number, payload)
+    }
+
+    /**
+     * Follows [url] for the envelopes addressed to this phone, from [since]
+     * (seconds) on. Relays that ask who is listening get a signed answer.
+     */
+    fun inbox(url: String, since: Long): Flow<NostrEvent> = flow {
+        val own = identity()
+        val filter = "{\"kinds\":[${Envelope.KIND},${Envelope.EPHEMERAL_KIND}],\"#p\":[\"${own.nostr.publicKey}\"],\"since\":$since}"
+        emitAll(
+            relayClient.subscribe(url, filter) { relay, challenge ->
+                own.nostr.sign(AUTH_KIND, listOf(listOf("relay", relay), listOf("challenge", challenge)), "")
+            },
+        )
     }
 
     /** The 60 digits both phones show for [number], and the code one scans on the other; null before a session. */
@@ -182,5 +269,9 @@ class SecaLink(context: Context) {
         const val INVITE_INTERVAL_MILLIS = 30L * 24 * 60 * 60 * 1000
         const val FINGERPRINT_ITERATIONS = 5200
         const val FINGERPRINT_VERSION = 2
+        const val AUTH_KIND = 22242
+
+        /** Sessions change with every message: one change at a time, whichever screen or service makes it. */
+        val sessions = Mutex()
     }
 }

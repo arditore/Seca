@@ -35,7 +35,9 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -52,14 +54,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaIcons
 import com.seca.core.model.Profile
+import com.seca.messages.link.LinkTyping
 import com.seca.messages.sms.Message
 import com.seca.messages.sms.MessageStatus
 import com.seca.messages.sms.OneTimeCode
 import com.seca.messages.sms.ScheduledMessage
+import kotlinx.coroutines.delay
 import kotlin.math.abs
 
 /** Two messages closer than this, from the same side, read as one block. */
 private const val JOIN_MILLIS = 2 * 60 * 1000L
+
+/** How long "écrit…" stays after the contact's last typing notice. */
+private const val TYPING_SHOWN_MILLIS = 6_000L
 
 @Composable
 internal fun ConversationScreen(
@@ -69,16 +76,31 @@ internal fun ConversationScreen(
     isDefaultApp: Boolean,
 ) {
     val context = LocalContext.current
-    val messages by produceState(initialValue = emptyList<Message>(), screen.threadId) {
-        viewModel.messagesOf(screen.threadId).collect { value = it }
+    val messages by produceState(initialValue = emptyList<Message>(), screen.threadId, screen.address) {
+        viewModel.messagesOf(screen.threadId, screen.address).collect { value = it }
     }
     // Opening the conversation, and every message arriving while it is open, counts as read.
-    LaunchedEffect(screen.threadId, messages.size) { viewModel.markRead(screen.threadId) }
+    LaunchedEffect(screen.threadId, messages.size) { viewModel.markRead(screen.threadId, screen.address) }
     var text by rememberSaveable(screen.address) { mutableStateOf(screen.draft) }
     var confirmDelete by remember { mutableStateOf(false) }
     var scheduling by remember { mutableStateOf(false) }
     // The list grows upwards, so the latest to leave comes first and sits at the very bottom.
     val scheduled = remember(ui.scheduled, screen.address) { ui.scheduledFor(screen.address).asReversed() }
+
+    val peer = rememberLinkPeer(screen.address)
+    // Once the contact is connected, messages go encrypted through Seca Link, which needs no SMS role.
+    val linked = ui.link.enabled && peer?.ready == true
+    val typingNotices by LinkTyping.typing.collectAsState()
+    val typingAt = peer?.number?.let { typingNotices[it] }
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(typingAt) {
+        now = System.currentTimeMillis()
+        if (typingAt != null) {
+            delay(TYPING_SHOWN_MILLIS)
+            now = System.currentTimeMillis()
+        }
+    }
+    val typing = linked && typingAt != null && now - typingAt < TYPING_SHOWN_MILLIS
 
     if (scheduling) {
         ScheduleDialog(
@@ -95,13 +117,13 @@ internal fun ConversationScreen(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             Column {
-                val peer = rememberLinkPeer(screen.address)
                 val openSafetyNumber = { viewModel.open(SafetyNumberRoute(screen.address)) }
                 ConversationTopBar(
                     address = screen.address,
                     ui = ui,
                     linked = peer?.ready == true,
                     verified = peer?.verified == true,
+                    typing = typing,
                     onBack = { viewModel.back() },
                     onDelete = { confirmDelete = true },
                     onSafetyNumber = openSafetyNumber,
@@ -114,8 +136,12 @@ internal fun ConversationScreen(
         bottomBar = {
             Composer(
                 text = text,
-                onText = { text = it },
-                enabled = isDefaultApp,
+                onText = {
+                    text = it
+                    if (linked && it.isNotBlank()) viewModel.typing(screen.address)
+                },
+                enabled = isDefaultApp || linked,
+                encrypted = linked,
                 onSend = {
                     viewModel.send(screen.address, text)
                     text = ""
@@ -156,8 +182,9 @@ internal fun ConversationScreen(
                         joinedBelow = newer != null && joined(message, newer),
                         isLatestOutgoing = message.outgoing && (newer == null || !newer.outgoing),
                         onRetry = { viewModel.retry(message) },
+                        onSendAsSms = { viewModel.sendAsSms(message) },
                         onCopy = { copyText(context, "Message", message.body) },
-                        onDelete = { viewModel.deleteMessage(message.id) },
+                        onDelete = { viewModel.deleteMessage(message) },
                     )
                 }
             }
@@ -174,7 +201,7 @@ internal fun ConversationScreen(
                 TextButton(
                     onClick = {
                         confirmDelete = false
-                        viewModel.deleteConversation(screen.threadId)
+                        viewModel.deleteConversation(screen.threadId, screen.address)
                         viewModel.back()
                     },
                 ) { Text("Supprimer") }
@@ -194,6 +221,7 @@ private fun ConversationTopBar(
     ui: MessagesUi,
     linked: Boolean,
     verified: Boolean,
+    typing: Boolean,
     onBack: () -> Unit,
     onDelete: () -> Unit,
     onSafetyNumber: () -> Unit,
@@ -232,24 +260,29 @@ private fun ConversationTopBar(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (linked) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            when {
+                typing -> Text(
+                    text = "écrit…",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                )
+                linked -> Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        SecaIcons.Link,
+                        SecaIcons.Lock,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(14.dp),
                     )
                     Text(
-                        text = if (verified) "Seca Link · Vérifié" else "Seca Link",
+                        text = if (verified) "Chiffré · Vérifié" else "Chiffré par Seca Link",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         modifier = Modifier.padding(start = 4.dp),
                     )
                 }
-            } else {
-                subtitle?.let {
+                else -> subtitle?.let {
                     Text(
                         text = it,
                         style = MaterialTheme.typography.bodyMedium,
@@ -310,7 +343,8 @@ private fun DaySeparator(date: Long) {
 /**
  * One message. Sent ones sit on the right in the accent, received ones on the
  * left; a block of messages shares its inner corners, and the latest sent one
- * says whether it went through.
+ * says whether it went through, and for Seca Link whether it was received and
+ * read. A lock marks what travelled encrypted.
  */
 @Composable
 private fun Bubble(
@@ -319,6 +353,7 @@ private fun Bubble(
     joinedBelow: Boolean,
     isLatestOutgoing: Boolean,
     onRetry: () -> Unit,
+    onSendAsSms: () -> Unit,
     onCopy: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -354,11 +389,15 @@ private fun Bubble(
         mine -> colors.onPrimaryContainer
         else -> colors.onSurface
     }
+    val time = timeOf(context, message.date)
     val caption = when {
+        failed && message.encrypted -> "Non envoyé · Toucher pour réessayer"
         failed -> "Échec de l'envoi · Toucher pour réessayer"
         message.status == MessageStatus.Sending -> "Envoi…"
-        isLatestOutgoing -> "Envoyé · ${timeOf(context, message.date)}"
-        !joinedBelow -> timeOf(context, message.date)
+        isLatestOutgoing && message.status == MessageStatus.Read -> "Lu · $time"
+        isLatestOutgoing && message.status == MessageStatus.Delivered -> "Reçu · $time"
+        isLatestOutgoing -> "Envoyé · $time"
+        !joinedBelow -> time
         else -> null
     }
 
@@ -394,6 +433,12 @@ private fun Bubble(
                         menuOpen = false
                         onRetry()
                     }
+                    if (message.encrypted) {
+                        MenuEntry("Envoyer en SMS non chiffré", SecaIcons.Messages) {
+                            menuOpen = false
+                            onSendAsSms()
+                        }
+                    }
                 }
                 MenuEntry("Supprimer", SecaIcons.Delete) {
                     menuOpen = false
@@ -410,12 +455,26 @@ private fun Bubble(
             }
         }
         caption?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.labelMedium,
-                color = if (failed) colors.error else colors.onSurfaceVariant,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-            )
+            ) {
+                if (message.encrypted) {
+                    Icon(
+                        SecaIcons.Lock,
+                        contentDescription = "Chiffré",
+                        tint = if (failed) colors.error else colors.onSurfaceVariant,
+                        modifier = Modifier
+                            .padding(end = 4.dp)
+                            .size(12.dp),
+                    )
+                }
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (failed) colors.error else colors.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -481,17 +540,22 @@ private fun ScheduledBubble(message: ScheduledMessage, onSendNow: () -> Unit, on
     }
 }
 
-/** The text field, the schedule and send buttons, lifted above the keyboard. */
+/**
+ * The text field, the schedule and send buttons, lifted above the keyboard.
+ * With Seca Link, it says the message leaves encrypted, and SMS counting and
+ * scheduling, which belong to SMS, step aside.
+ */
 @Composable
 private fun Composer(
     text: String,
     onText: (String) -> Unit,
     enabled: Boolean,
+    encrypted: Boolean,
     onSend: () -> Unit,
     onSchedule: () -> Unit,
 ) {
     // How many SMS the text takes: past 160 plain characters, or 70 with accents or emoji, it is split.
-    val parts = remember(text) { if (text.isEmpty()) 0 else SmsMessage.calculateLength(text, false)[0] }
+    val parts = remember(text, encrypted) { if (text.isEmpty() || encrypted) 0 else SmsMessage.calculateLength(text, false)[0] }
     Column(
         Modifier
             .fillMaxWidth()
@@ -512,9 +576,14 @@ private fun Composer(
             TextField(
                 value = text,
                 onValueChange = onText,
-                placeholder = { Text("Message") },
-                // Once there is something to send, it can also leave later.
-                trailingIcon = if (enabled && text.isNotBlank()) {
+                placeholder = { Text(if (encrypted) "Message chiffré" else "Message") },
+                leadingIcon = if (encrypted) {
+                    { Icon(SecaIcons.Lock, contentDescription = "Chiffré par Seca Link", modifier = Modifier.size(18.dp)) }
+                } else {
+                    null
+                },
+                // Once there is something to send, an SMS can also leave later.
+                trailingIcon = if (enabled && !encrypted && text.isNotBlank()) {
                     {
                         IconButton(onClick = onSchedule) {
                             Icon(SecaIcons.Schedule, contentDescription = "Programmer l'envoi")
@@ -547,7 +616,7 @@ private fun Composer(
                     .padding(start = 8.dp, bottom = if (parts > 1) 24.dp else 0.dp)
                     .size(56.dp),
             ) {
-                Icon(SecaIcons.Send, contentDescription = "Envoyer")
+                Icon(SecaIcons.Send, contentDescription = if (encrypted) "Envoyer chiffré" else "Envoyer")
             }
         }
     }

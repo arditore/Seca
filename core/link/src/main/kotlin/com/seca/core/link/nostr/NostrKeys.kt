@@ -27,9 +27,24 @@ class NostrKeys(secret: ByteArray) {
         createdAt: Long = System.currentTimeMillis() / MILLIS_PER_SECOND,
     ): NostrEvent {
         val id = NostrEvent.idOf(publicKey, createdAt, kind, tags, content)
-        val auxiliary = ByteArray(KEY_SIZE).also(random::nextBytes)
-        val signature = Secp256k1.signSchnorr(id, secret, auxiliary)
+        val signature = signDigest(id)
         return NostrEvent(id.toHexString(), publicKey, createdAt, kind, tags, content, signature.toHexString())
+    }
+
+    /** A Schnorr signature over 32 bytes, such as a SHA-256 digest. */
+    fun signDigest(digest: ByteArray): ByteArray {
+        val auxiliary = ByteArray(KEY_SIZE).also(random::nextBytes)
+        return Secp256k1.signSchnorr(digest, secret, auxiliary)
+    }
+
+    /**
+     * The secret this key shares with [publicKey]'s owner: the x coordinate of
+     * this secret times their point. Both sides reach the same value, whatever
+     * the parity each point was taken with.
+     */
+    fun sharedSecretWith(publicKey: String): ByteArray {
+        val point = Secp256k1.pubKeyTweakMul(byteArrayOf(EVEN_Y) + publicKey.hexToByteArray(), secret)
+        return point.copyOfRange(1, KEY_SIZE + 1)
     }
 
     /** A copy of the secret, for the vault to seal. */
@@ -38,6 +53,7 @@ class NostrKeys(secret: ByteArray) {
     companion object {
         private const val KEY_SIZE = 32
         private const val MILLIS_PER_SECOND = 1000
+        private const val EVEN_Y: Byte = 0x02
         private val random = SecureRandom()
 
         fun generate(): NostrKeys {
@@ -53,6 +69,10 @@ class NostrKeys(secret: ByteArray) {
             val id = NostrEvent.idOf(event.pubkey, event.createdAt, event.kind, event.tags, event.content)
             id.toHexString() == event.id &&
                 Secp256k1.verifySchnorr(event.sig.hexToByteArray(), id, event.pubkey.hexToByteArray())
+        }.getOrDefault(false)
+
+        fun verifyDigest(signature: ByteArray, digest: ByteArray, publicKey: String): Boolean = runCatching {
+            Secp256k1.verifySchnorr(signature, digest, publicKey.hexToByteArray())
         }.getOrDefault(false)
     }
 }

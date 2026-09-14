@@ -107,6 +107,25 @@ Orbot) est prévue pour la masquer.
 - L'identité est scellée en AES-256-GCM par une clé Android Keystore, StrongBox quand la puce existe. Elle est gardée dans `noBackupFilesDir`.
 - Relais : connexions chiffrées (`wss`) uniquement, liste modifiable, réponse de chaque relais affichée.
 
+## Phases 2 et 3 réalisées
+
+- **Invitation** : SMS de données sur le port 19734, 130 octets au plus. Elle porte la clé Nostr, huit octets de l'empreinte de l'identité et jusqu'à trois relais.
+- **Session** :
+  - le paquet de pré-clés n'est accepté que signé par la clé Nostr annoncée et portant l'identité dont l'empreinte est arrivée par SMS ;
+  - confiance au premier usage, alerte quand la clé d'un contact change ;
+  - rien n'est envoyé à un contact vérifié dont la clé a changé, tant que le propriétaire n'a pas revérifié.
+- **Numéro de sécurité** : 60 chiffres et un QR code, que l'autre téléphone scanne à l'appareil photo.
+- **Enveloppe** :
+  - événement Nostr de type 1059, signé par une clé jetable ; type 21059 pour « en train d'écrire », que les relais ne gardent pas ;
+  - horodatage avancé jusqu'à 15 minutes ;
+  - l'intérieur est scellé en AES-256-GCM, avec une clé HKDF-SHA256 dérivée d'un ECDH secp256k1 entre la clé jetable et le destinataire. On n'utilise pas NIP-44 : seul Seca ouvre ces enveloppes, et le message est déjà chiffré par libsignal ;
+  - l'expéditeur signe, à l'intérieur, le destinataire et le message.
+- **Contenu** : texte, accusé de réception, accusé de lecture, écriture. Chaque contenu est arrondi au multiple de 128 octets.
+- **Stockage** : une base SQLite privée de Seca Messages, séparée des SMS d'Android. Room n'est pas utilisé, pour ne pas ajouter de générateur de code.
+- **Réception** : service au premier plan de type `remoteMessaging`, une connexion par relais, reconnexion avec attente croissante, authentification NIP-42 quand un relais la demande.
+- **Secours** : un message qui ne part pas propose « Envoyer en SMS non chiffré ». Le secours par SMS de données chiffrés reste à faire : un premier message PQXDH, avec sa clé Kyber, prendrait une quinzaine de SMS.
+- **Tests** : format, enveloppe, et une session libsignal complète dans les deux sens, sur le paquet tel que Seca le publie. Ils tournent sur JDK 25, libsignal étant compilé pour Java 21.
+
 ## Ajouts de la suite, par priorité décidée
 
 1. **Anti-démarchage** (Seca Téléphone) : blocage des préfixes réservés au démarchage en France, inconnus en silencieux, sur le téléphone via `CallScreeningService`.

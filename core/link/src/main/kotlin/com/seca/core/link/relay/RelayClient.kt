@@ -1,6 +1,10 @@
 package com.seca.core.link.relay
 
 import com.seca.core.link.nostr.NostrEvent
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
@@ -25,9 +29,9 @@ sealed interface PublishResult {
 }
 
 /**
- * Talks to Nostr relays (NIP-01) over WebSocket, one short connection per
- * request. Only what Seca Link publishes goes out: public keys, and later
- * encrypted envelopes.
+ * Talks to Nostr relays (NIP-01) over WebSocket. Publishing and fetching use a
+ * short connection each; following an inbox keeps one open. Only what Seca Link
+ * publishes goes out: public keys and encrypted envelopes.
  */
 class RelayClient {
 
@@ -113,11 +117,65 @@ class RelayClient {
         }
     }
 
+    /**
+     * Follows [url] for the events matching [filter]: those kept first, then
+     * new ones as they arrive. The flow ends when the connection drops; the
+     * caller connects again. A relay that asks for authentication (NIP-42), as
+     * some do before handing out encrypted envelopes, gets [authenticate]'s
+     * answer, and the request is made again.
+     */
+    fun subscribe(url: String, filter: String, authenticate: suspend (relay: String, challenge: String) -> NostrEvent): Flow<NostrEvent> =
+        callbackFlow {
+            val request = requestFor(url)
+            if (request == null) {
+                close()
+                return@callbackFlow
+            }
+            val subscription = "seca-${subscriptions.incrementAndGet()}"
+            val ask = "[\"REQ\",\"$subscription\",$filter]"
+            val listener = object : WebSocketListener() {
+                override fun onOpen(webSocket: WebSocket, response: Response) {
+                    webSocket.send(ask)
+                }
+
+                override fun onMessage(webSocket: WebSocket, text: String) {
+                    val message = runCatching { JSONArray(text) }.getOrNull() ?: return
+                    when (message.optString(0)) {
+                        "EVENT" -> if (message.optString(1) == subscription) {
+                            message.optJSONObject(2)?.let(NostrEvent::fromJson)?.let { trySend(it) }
+                        }
+                        "AUTH" -> {
+                            val challenge = message.optString(1)
+                            launch {
+                                webSocket.send("[\"AUTH\",${authenticate(url, challenge).toJson()}]")
+                                webSocket.send(ask)
+                            }
+                        }
+                        // Closed for want of authentication: asked again once the AUTH answer is sent.
+                        "CLOSED" -> if (message.optString(1) == subscription && !message.optString(2).startsWith("auth-required")) {
+                            close()
+                        }
+                    }
+                }
+
+                override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                    close()
+                }
+
+                override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                    close()
+                }
+            }
+            val socket = http.newWebSocket(request, listener)
+            awaitClose { socket.close(NORMAL_CLOSURE, null) }
+        }
+
     private fun requestFor(url: String): Request? = runCatching { Request.Builder().url(url).build() }.getOrNull()
 
     private companion object {
         const val TIMEOUT_MILLIS = 15_000L
         const val CONNECT_TIMEOUT_SECONDS = 10L
+        const val PING_SECONDS = 45L
         const val NORMAL_CLOSURE = 1000
 
         val subscriptions = AtomicInteger()
@@ -125,6 +183,8 @@ class RelayClient {
         val http: OkHttpClient by lazy {
             OkHttpClient.Builder()
                 .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                // Keeps a followed inbox alive through routers that drop quiet connections.
+                .pingInterval(PING_SECONDS, TimeUnit.SECONDS)
                 .build()
         }
     }

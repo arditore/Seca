@@ -5,6 +5,7 @@ import android.app.RemoteInput
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.seca.messages.LinkConversations
 import com.seca.messages.copySensitive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,21 +37,25 @@ class MessageActionReceiver : BroadcastReceiver() {
     private suspend fun handle(context: Context, intent: Intent, sent: Boolean) {
         val repository = MessagesRepository(context)
         val threadId = intent.getLongExtra(MessageNotifications.EXTRA_THREAD, -1L)
+        val address = intent.getStringExtra(MessageNotifications.EXTRA_ADDRESS)
         when (intent.action) {
             SENT -> intent.data?.let { repository.setSent(it, sent) }
             REPLY -> {
                 val text = RemoteInput.getResultsFromIntent(intent)
                     ?.getCharSequence(MessageNotifications.KEY_REPLY)
                     ?.toString()
-                val address = intent.getStringExtra(MessageNotifications.EXTRA_ADDRESS)
                 if (text.isNullOrBlank() || address.isNullOrBlank()) return
-                SmsSender(context).send(address, text)
+                val links = LinkConversations(context)
+                // Encrypted through Seca Link when the contact is connected, by SMS otherwise.
+                if (!links.sendText(address, text)) SmsSender(context).send(address, text)
                 // Replying means the conversation was read.
                 if (threadId >= 0) repository.markRead(threadId)
+                links.markRead(address)
                 MessageNotifications.cancel(context, threadId)
             }
             MARK_READ -> {
                 if (threadId >= 0) repository.markRead(threadId)
+                address?.let { LinkConversations(context).markRead(it) }
                 MessageNotifications.cancel(context, threadId)
             }
             ERASE_CODE -> {

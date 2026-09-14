@@ -18,6 +18,10 @@
     <!-- Scheduled messages: sent on the minute when the owner allows it, and set again after a restart. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Seca Link, while it is on, keeps listening to its relays in a foreground service
+         with a quiet notification: a phone without Google has no push service. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
     <!-- Seca Contacts profiles, and one-tap calls through Seca Telephone: only apps signed
          with the same key hold these. -->
     <uses-permission android:name="com.seca.permission.READ_PROFILES" />
@@ -117,6 +121,12 @@
                     android:scheme="sms" />
             </intent-filter>
         </receiver>
+
+        <!-- Seca Link listening to its relays, only while Seca Link is on. -->
+        <service
+            android:name=".link.LinkService"
+            android:exported="false"
+            android:foregroundServiceType="remoteMessaging" />
 
         <!-- Declining a call with a text, from the call screen. -->
         <service

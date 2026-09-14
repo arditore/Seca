@@ -18,6 +18,16 @@ class LinkSettings(context: Context) {
         get() = prefs.getLong(KEY_PUBLISHED_AT, 0L)
         set(value) = prefs.edit { putLong(KEY_PUBLISHED_AT, value) }
 
+    /** Tells contacts when their messages were read. On by default, as the owner chose. */
+    var readReceipts: Boolean
+        get() = prefs.getBoolean("read_receipts", true)
+        set(value) = prefs.edit { putBoolean("read_receipts", value) }
+
+    /** Shows contacts that a message is being written. On by default. */
+    var typingIndicator: Boolean
+        get() = prefs.getBoolean("typing_indicator", true)
+        set(value) = prefs.edit { putBoolean("typing_indicator", value) }
+
     /** Pre-keys are published again once a week, so relays that dropped them get them back. */
     fun publishDue(now: Long = System.currentTimeMillis()): Boolean = now - publishedAt > REPUBLISH_MILLIS
 

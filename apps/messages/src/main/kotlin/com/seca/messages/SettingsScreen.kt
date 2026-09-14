@@ -214,11 +214,38 @@ internal fun SettingsScreen(
                         subtitle = link.fingerprint ?: "Création des clés…",
                     )
                 }
+                SecaGroupItem(index = 0, count = 2, modifier = Modifier.padding(top = 8.dp)) {
+                    SecaSettingRow(
+                        icon = SecaIcons.Check,
+                        title = "Accusés de lecture",
+                        subtitle = "Vos contacts voient quand vous avez lu leurs messages",
+                        modifier = Modifier.toggleable(
+                            value = link.readReceipts,
+                            role = Role.Switch,
+                            onValueChange = viewModel::setReadReceipts,
+                        ),
+                        trailing = { Switch(checked = link.readReceipts, onCheckedChange = null) },
+                    )
+                }
+                SecaGroupItem(index = 1, count = 2) {
+                    SecaSettingRow(
+                        icon = SecaIcons.Edit,
+                        title = "Indicateur d'écriture",
+                        subtitle = "Vos contacts voient quand vous leur écrivez",
+                        modifier = Modifier.toggleable(
+                            value = link.typingIndicator,
+                            role = Role.Switch,
+                            onValueChange = viewModel::setTypingIndicator,
+                        ),
+                        trailing = { Switch(checked = link.typingIndicator, onCheckedChange = null) },
+                    )
+                }
                 if (link.offline) NetworkBlockedCard(Modifier.padding(top = 8.dp))
             }
             SecaHint(
-                "Première étape : ce téléphone crée ses clés, gardées dans sa puce de sécurité, et publie la partie " +
-                    "publique. Les conversations chiffrées arrivent dans une prochaine version ; les SMS ne changent pas.",
+                "Avec un contact qui a aussi Seca, les messages partent chiffrés de bout en bout, sans passer par " +
+                    "l'opérateur. Les clés restent dans la puce de sécurité du téléphone ; les relais ne voient ni qui " +
+                    "écrit, ni ce qui est écrit.",
             )
             if (askNetwork) NetworkAccessDialog(onDismiss = { askNetwork = false })
 

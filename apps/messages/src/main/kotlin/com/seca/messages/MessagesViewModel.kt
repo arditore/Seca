@@ -126,7 +126,16 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
 
     /** Shows Seca Link as the owner left it, and publishes the keys again when a week has passed. */
     private fun loadLink() {
-        _ui.update { it.copy(link = it.link.copy(enabled = link.settings.enabled, relays = link.settings.relays())) }
+        _ui.update {
+            it.copy(
+                link = it.link.copy(
+                    enabled = link.settings.enabled,
+                    relays = link.settings.relays(),
+                    readReceipts = link.settings.readReceipts,
+                    typingIndicator = link.settings.typingIndicator,
+                ),
+            )
+        }
         if (!link.settings.enabled) return
         watchNetwork()
         if (link.settings.publishDue()) {
@@ -136,9 +145,21 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun setReadReceipts(on: Boolean) {
+        link.settings.readReceipts = on
+        _ui.update { it.copy(link = it.link.copy(readReceipts = on)) }
+    }
+
+    fun setTypingIndicator(on: Boolean) {
+        link.settings.typingIndicator = on
+        _ui.update { it.copy(link = it.link.copy(typingIndicator = on)) }
+    }
+
     fun setLinkEnabled(on: Boolean) {
         link.settings.enabled = on
         _ui.update { it.copy(link = it.link.copy(enabled = on, statuses = emptyMap())) }
+        // Listening to the relays starts and stops with Seca Link.
+        links.listen(on)
         if (on) {
             watchNetwork()
             publishPrekeys()
@@ -246,7 +267,8 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
             if (smsGranted) {
                 launch {
                     loadConversations()
-                    repository.changes().conflate().collect { loadConversations() }
+                    // Seca Link messages change the list too: a newer snippet, more unread.
+                    links.changes(repository).conflate().collect { loadConversations() }
                 }
             }
         }
@@ -352,42 +374,66 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         _ui.update { it.copy(scheduled = scheduledMessages.all()) }
     }
 
-    /** A conversation's messages, reloaded whenever any message changes. */
-    fun messagesOf(threadId: Long): Flow<List<Message>> = flow {
-        if (threadId < 0) {
-            emit(emptyList())
-            return@flow
-        }
-        emit(repository.messages(threadId))
-        repository.changes().conflate().collect { emit(repository.messages(threadId)) }
-    }
+    private val links = LinkConversations(application)
 
+    /** A conversation's messages, SMS and Seca Link together, reloaded whenever either changes. */
+    fun messagesOf(threadId: Long, address: String): Flow<List<Message>> = links.conversation(threadId, address, repository)
+
+    /** Goes encrypted through Seca Link when the contact is connected, by SMS otherwise. */
     fun send(address: String, text: String) {
-        viewModelScope.launch(Dispatchers.IO) { SmsSender(getApplication()).send(address, text) }
+        viewModelScope.launch(Dispatchers.IO) {
+            if (!links.sendText(address, text)) SmsSender(getApplication()).send(address, text)
+        }
     }
 
-    /** Sends a failed message again, in place of the failed one. */
+    /** Sends a failed message again: through Seca Link if it went that way, else as an SMS in place of the failed one. */
     fun retry(message: Message) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.deleteMessage(message.id)
+            val linkId = message.linkId
+            if (linkId != null) {
+                links.retry(linkId)
+            } else {
+                repository.deleteMessage(message.id)
+                SmsSender(getApplication()).send(message.address, message.body)
+            }
+        }
+    }
+
+    /** Sends a Seca Link message that could not leave as an ordinary, unencrypted SMS, as the owner chose. */
+    fun sendAsSms(message: Message) {
+        viewModelScope.launch(Dispatchers.IO) {
+            message.linkId?.let(links::delete)
             SmsSender(getApplication()).send(message.address, message.body)
         }
     }
 
-    fun markRead(threadId: Long) {
-        if (threadId < 0) return
+    fun markRead(threadId: Long, address: String? = null) {
         viewModelScope.launch {
-            repository.markRead(threadId)
-            MessageNotifications.cancel(getApplication(), threadId)
+            if (threadId >= 0) {
+                repository.markRead(threadId)
+                MessageNotifications.cancel(getApplication(), threadId)
+            }
+            address?.let { withContext(Dispatchers.IO) { links.markRead(it) } }
         }
     }
 
-    fun deleteConversation(threadId: Long) {
-        viewModelScope.launch { repository.deleteConversation(threadId) }
+    /** Tells the contact the owner is writing, when both use Seca Link and the owner allows it. */
+    fun typing(address: String) {
+        viewModelScope.launch(Dispatchers.IO) { links.typing(address) }
     }
 
-    fun deleteMessage(id: Long) {
-        viewModelScope.launch { repository.deleteMessage(id) }
+    fun deleteConversation(threadId: Long, address: String? = null) {
+        viewModelScope.launch {
+            repository.deleteConversation(threadId)
+            address?.let { withContext(Dispatchers.IO) { links.deleteConversation(it) } }
+        }
+    }
+
+    fun deleteMessage(message: Message) {
+        viewModelScope.launch {
+            val linkId = message.linkId
+            if (linkId != null) withContext(Dispatchers.IO) { links.delete(linkId) } else repository.deleteMessage(message.id)
+        }
     }
 
     /** Writes every message to [uri], encrypted with [passphrase], which is wiped from memory once used. */
@@ -475,7 +521,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     // Numbers are read here, off the main thread, before the screen sees them:
     // the lists then only look results up, and scrolling never waits on parsing.
     private suspend fun loadConversations() {
-        val list = repository.conversations()
+        val list = withContext(Dispatchers.IO) { links.withLatest(repository.conversations()) }
         withContext(Dispatchers.Default) { list.forEach { numbers.prepare(it.address) } }
         // A message arriving in an archived conversation takes it out of the archive.
         _ui.update {

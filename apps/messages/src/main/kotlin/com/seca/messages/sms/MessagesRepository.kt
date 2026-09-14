@@ -28,7 +28,7 @@ data class Conversation(
     val outgoing: Boolean,
 )
 
-enum class MessageStatus { Received, Sending, Sent, Failed }
+enum class MessageStatus { Received, Sending, Sent, Delivered, Read, Failed }
 
 data class Message(
     val id: Long,
@@ -37,6 +37,10 @@ data class Message(
     val body: String,
     val date: Long,
     val status: MessageStatus,
+    /** Travelled encrypted through Seca Link rather than by SMS. */
+    val encrypted: Boolean = false,
+    /** The id both phones know a Seca Link message by; null for an SMS. */
+    val linkId: String? = null,
 ) {
     val outgoing: Boolean get() = status != MessageStatus.Received
 }

@@ -4,14 +4,15 @@ import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.seca.messages.link.LinkService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * Sets the alarms of scheduled messages again when Android dropped them: after
- * a restart or an update, and once the exact-time permission changes. The
- * verification codes whose erasure a restart cancelled are erased then.
+ * Picks up again what a restart or an update stopped: the alarms of scheduled
+ * messages, the erasure of verification codes, and Seca Link's listening.
+ * The alarms are set again too once the exact-time permission changes.
  * Not exported: only the system reaches it.
  */
 class ScheduleRestoreReceiver : BroadcastReceiver() {
@@ -20,6 +21,7 @@ class ScheduleRestoreReceiver : BroadcastReceiver() {
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED -> {
                 ScheduledMessages(context).rearmAll()
+                LinkService.start(context)
                 val pending = goAsync()
                 CoroutineScope(Dispatchers.IO).launch {
                     try {

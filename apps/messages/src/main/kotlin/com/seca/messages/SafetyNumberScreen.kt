@@ -91,8 +91,8 @@ internal fun SafetyNumberScreen(route: SafetyNumberRoute, ui: MessagesUi, viewMo
                 modifier = Modifier.padding(top = 24.dp),
             )
             Text(
-                text = "Les messages chiffrés par Seca Link arrivent dans une prochaine version : pour l'instant, " +
-                    "la conversation passe encore par SMS.",
+                text = "Vos messages à $name passent chiffrés par Seca Link. S'ils ne peuvent pas partir, " +
+                    "Seca vous propose de les envoyer en SMS, sans chiffrement.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

@@ -15,6 +15,7 @@ import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.privacy.SecaAppLock
 import com.seca.core.design.privacy.SecaLockGate
 import com.seca.core.design.switchWithoutAnimation
+import com.seca.messages.link.LinkService
 import com.seca.messages.sms.CodeCleanup
 import com.seca.messages.sms.MessageNotifications
 import kotlinx.coroutines.launch
@@ -69,6 +70,8 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refresh()
+        // Seca Link listens again if Android stopped it, now that the app is in front and may start it.
+        LinkService.start(this)
     }
 
     private fun refresh() {

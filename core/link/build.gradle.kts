@@ -9,6 +9,11 @@ android {
     }
 }
 
+// libsignal's classes need Java 21 or later to run: the tests run on a newer JDK, the build stays on 17.
+tasks.withType<Test>().configureEach {
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     // Exposed as api: publishing reports each relay's answer through a Flow.

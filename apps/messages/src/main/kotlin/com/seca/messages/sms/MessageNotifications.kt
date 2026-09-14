@@ -21,16 +21,18 @@ import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.design.notification.NotificationAvatars
 import com.seca.messages.MainActivity
 import com.seca.messages.R
+import com.seca.messages.link.LinkMessages
 
 /**
  * The notifications of Seca Messages, drawn as Android draws conversations:
  * - one per conversation, with the sender's photo or initials, the unread
  *   messages, a reply field, "Marquer comme lu" and, for a verification code,
- *   "Copier le code";
+ *   "Copier le code"; a Seca Link message joins the same notification;
  * - each tied to a conversation shortcut, so Android files it under
  *   "Conversations" and the owner can make it a priority one;
  * - alerts apart: a scheduled message that could not leave, a changed
- *   Seca Link key.
+ *   Seca Link key;
+ * - the quiet one Seca Link needs to keep listening.
  *
  * Android hides the text on the lock screen when the owner asked it to.
  */
@@ -42,16 +44,37 @@ internal object MessageNotifications {
     const val EXTRA_CODE = "code"
     private const val CHANNEL = "messages"
     private const val ALERTS = "message_alerts"
+    private const val LINK_SERVICE = "link_service"
     private const val MAX_LINES = 8
     private const val TAG_SCHEDULED = "scheduled"
     private const val TAG_KEY_CHANGED = "link-key"
 
     fun notifyIncoming(context: Context, address: String, body: String) {
+        val threadId = threadOf(context, address)
+        val unread = unreadOf(context, threadId).ifEmpty { listOf(body to System.currentTimeMillis()) }
+        showConversation(context, address, threadId, unread, code = OneTimeCode.find(body), encrypted = false)
+    }
+
+    /** A Seca Link message arrived, shown in the conversation's notification with its lock. */
+    fun notifyLink(context: Context, number: String, body: String) {
+        val threadId = threadOf(context, number)
+        val unread = LinkMessages(context).unread(number).takeLast(MAX_LINES).map { it.body to it.date }
+            .ifEmpty { listOf(body to System.currentTimeMillis()) }
+        showConversation(context, number, threadId, unread, code = OneTimeCode.find(body), encrypted = true)
+    }
+
+    private fun showConversation(
+        context: Context,
+        address: String,
+        threadId: Long,
+        messages: List<Pair<String, Long>>,
+        code: String?,
+        encrypted: Boolean,
+    ) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         ensureChannels(manager)
         if (!manager.areNotificationsEnabled()) return
 
-        val threadId = threadOf(context, address)
         val contact = contactOf(context, address)
         val name = contact?.name ?: PhoneNumbers(PhoneNumbers.detectRegion(context)).display(address)
         val icon = NotificationAvatars.iconFor(context, name, contact?.id)
@@ -63,25 +86,20 @@ internal object MessageNotifications {
             .apply { contact?.let { setUri(ContactsContract.Contacts.getLookupUri(it.id, it.lookupKey).toString()) } }
             .build()
         val style = Notification.MessagingStyle(Person.Builder().setName("Vous").build())
-        val unread = unreadOf(context, threadId)
-        if (unread.isEmpty()) {
-            style.addMessage(body, System.currentTimeMillis(), sender)
-        } else {
-            unread.forEach { (text, date) -> style.addMessage(text, date, sender) }
-        }
+        messages.forEach { (text, date) -> style.addMessage(text, date, sender) }
 
-        val code = codeOf(threadId, address)
+        val notificationCode = codeOf(threadId, address)
         val shortcut = publishShortcut(context, threadId, address, name, sender, icon)
         // A reply field needs a mutable intent to carry the typed text; it only ever reaches this app.
         val reply = PendingIntent.getBroadcast(
             context,
-            code,
+            notificationCode,
             actionIntent(context, MessageActionReceiver.REPLY, threadId, address),
             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val markRead = PendingIntent.getBroadcast(
             context,
-            code,
+            notificationCode,
             actionIntent(context, MessageActionReceiver.MARK_READ, threadId, address),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
@@ -91,13 +109,14 @@ internal object MessageNotifications {
             .setColor(NotificationAvatars.accentOf(context))
             .setStyle(style)
             .setCategory(Notification.CATEGORY_MESSAGE)
-            .setContentIntent(openIntent(context, threadId, address, code))
+            .setContentIntent(openIntent(context, threadId, address, notificationCode))
             .setAutoCancel(true)
             .setShortcutId(shortcut)
             .setLocusId(LocusId(shortcut))
             .apply {
+                if (encrypted) setSubText("Chiffré · Seca Link")
                 // A verification code gets its own button, so it can be pasted without opening anything.
-                OneTimeCode.find(body)?.let { oneTimeCode ->
+                code?.let { oneTimeCode ->
                     val copy = PendingIntent.getBroadcast(
                         context,
                         oneTimeCode.hashCode(),
@@ -119,7 +138,7 @@ internal object MessageNotifications {
                     .build(),
             )
             .build()
-        manager.notify(code, notification)
+        manager.notify(notificationCode, notification)
     }
 
     /** Clears a conversation's notification, once it has been read or answered. */
@@ -145,6 +164,27 @@ internal object MessageNotifications {
         title = "Clé de sécurité modifiée",
         text = { name -> "La clé de sécurité de $name a changé. Si vous ne l'attendiez pas, comparez vos numéros de sécurité." },
     )
+
+    /** The notification Seca Link keeps while it listens: silent, at the bottom of the shade, and hideable. */
+    fun linkServiceNotification(context: Context): Notification {
+        context.getSystemService(NotificationManager::class.java)?.let(::ensureChannels)
+        val open = PendingIntent.getActivity(
+            context,
+            0,
+            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        return Notification.Builder(context, LINK_SERVICE)
+            .setSmallIcon(R.drawable.ic_stat_message)
+            .setColor(NotificationAvatars.accentOf(context))
+            .setContentTitle("Seca Link")
+            .setContentText("Prêt à recevoir les messages chiffrés")
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .setContentIntent(open)
+            .setOngoing(true)
+            .setShowWhen(false)
+            .build()
+    }
 
     private fun alert(context: Context, address: String, tag: String, title: String, text: (String) -> String) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
@@ -266,6 +306,14 @@ internal object MessageNotifications {
                 NotificationChannel(ALERTS, "Alertes", NotificationManager.IMPORTANCE_DEFAULT).apply {
                     description = "Un message programmé qui n'est pas parti, une clé Seca Link qui a changé."
                     lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+                },
+            )
+        }
+        if (manager.getNotificationChannel(LINK_SERVICE) == null) {
+            manager.createNotificationChannel(
+                NotificationChannel(LINK_SERVICE, "Seca Link en écoute", NotificationManager.IMPORTANCE_MIN).apply {
+                    description = "Discrète et silencieuse, elle permet de recevoir les messages chiffrés. Vous pouvez la masquer."
+                    setShowBadge(false)
                 },
             )
         }
