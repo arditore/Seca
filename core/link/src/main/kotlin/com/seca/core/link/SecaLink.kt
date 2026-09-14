@@ -46,8 +46,10 @@ class SecaLink(context: Context) {
 
     private val appContext = context.applicationContext
     private val vault = IdentityVault(appContext)
-    private val relayClient = RelayClient()
     val settings = LinkSettings(appContext)
+
+    /** Through Tor when the owner asked for it, read at each use so the choice applies at once. */
+    private val relayClient: RelayClient get() = RelayClient(throughTor = settings.useTor)
     val network = NetworkAccess(appContext)
     val peers = LinkPeers(appContext)
 
@@ -77,55 +79,78 @@ class SecaLink(context: Context) {
     }
 
     /**
-     * The invitation to send [number] by data SMS, or null: only while Seca
-     * Link is on, before a session exists, and at most once a month.
+     * The invitation to send [number], or null: only while Seca Link is on and
+     * before a session exists. Sent on its own at most once a week; [force], when
+     * the owner asks, sends it again at once.
      */
-    suspend fun invitationFor(number: String): ByteArray? {
+    suspend fun invitationFor(number: String, force: Boolean = false): Handshake? {
         if (!settings.enabled) return null
         val peer = peers[number]
         val now = System.currentTimeMillis()
-        if (peer?.ready == true || (peer != null && now - peer.invitedAt < INVITE_INTERVAL_MILLIS)) return null
-        val invitation = handshakeOf(Handshake.Type.Invite).encode()
+        if (peer?.ready == true) return null
+        if (!force && peer != null && now - peer.invitedAt < INVITE_INTERVAL_MILLIS) return null
+        val invitation = handshakeOf(Handshake.Type.Invite)
         peers.update(number) { it.copy(invitedAt = now) }
         return invitation
     }
 
-    /** What came of a data SMS on Seca Link's port. */
+    /** What came of a handshake. */
     sealed interface Received {
         /** Not an invitation, or Seca Link is off: what it said is kept, nothing is sent. */
         data object Ignored : Received
 
         /** The session is open. [reply] is the answer to send back when this phone was invited. */
-        class Connected(val reply: ByteArray?, val keyChanged: Boolean) : Received
+        class Connected(val reply: Handshake?, val keyChanged: Boolean) : Received
 
-        /** The keys could not be fetched, or did not match: nothing was trusted. */
+        /** The keys could not be fetched, or did not match: nothing was trusted yet, and it is tried again later. */
         data class Failed(val reason: String) : Received
     }
 
+    /** A data SMS on Seca Link's port. */
     suspend fun receive(number: String, payload: ByteArray): Received {
         val handshake = Handshake.decode(payload) ?: return Received.Ignored
+        return receive(number, handshake, byText = false)
+    }
+
+    /** A handshake from [number], by data SMS or, with [byText], written in a text message. */
+    suspend fun receive(number: String, handshake: Handshake, byText: Boolean): Received {
         val before = peers[number]
         // Kept even while Seca Link is off, so that turning it on can still connect.
         peers.update(number) {
-            it.copy(nostrPublicKey = handshake.nostrPublicKey, relays = handshake.relays, identityHash = handshake.identityHash)
+            it.copy(
+                nostrPublicKey = handshake.nostrPublicKey,
+                relays = handshake.relays,
+                identityHash = handshake.identityHash,
+                textHandshake = it.textHandshake || byText,
+            )
         }
         if (!settings.enabled) return Received.Ignored
         val answer = handshake.type == Handshake.Type.Invite
-        // Already connected to this very key: only the answer is still owed.
+        // Already connected to this very key: only the answer is still owed, in case the first one was lost.
         if (before?.ready == true && before.identityHash == handshake.identityHash) {
-            return Received.Connected(reply = if (answer) handshakeOf(Handshake.Type.Accept).encode() else null, keyChanged = false)
+            return Received.Connected(reply = if (answer) handshakeOf(Handshake.Type.Accept) else null, keyChanged = false)
         }
-        if (!network.available()) return Received.Failed("Pas d'accès au réseau")
+        if (!network.available()) {
+            peers.update(number) { it.copy(attemptedAt = System.currentTimeMillis()) }
+            return Received.Failed("Pas d'accès au réseau")
+        }
         return connect(number, answer)
     }
 
-    /** Numbers that invited this phone while Seca Link was off, connected now; each with the answer to send. */
-    suspend fun connectWaiting(): List<Pair<String, ByteArray>> {
+    /**
+     * Contacts whose handshake came but whose session could not open, while
+     * Seca Link was off or the network away: tried again, at most once an hour
+     * each. Returns those now connected, with the answer to send them.
+     */
+    suspend fun connectWaiting(): List<Pair<LinkPeer, Handshake>> {
         if (!settings.enabled || !network.available()) return emptyList()
+        val now = System.currentTimeMillis()
         return peers.all().values
-            .filter { !it.ready && it.nostrPublicKey != null }
+            .filter { !it.ready && it.nostrPublicKey != null && now - it.attemptedAt > RETRY_INTERVAL_MILLIS }
             .mapNotNull { peer ->
-                (connect(peer.number, answer = true) as? Received.Connected)?.reply?.let { peer.number to it }
+                peers.update(peer.number) { it.copy(attemptedAt = now) }
+                val reply = (connect(peer.number, answer = true) as? Received.Connected)?.reply ?: return@mapNotNull null
+                peers[peer.number]?.let { it to reply }
             }
     }
 
@@ -152,7 +177,7 @@ class SecaLink(context: Context) {
             return@withContext Received.Failed("Clé non approuvée : ${untrusted.message}")
         }
         peers.update(number) { it.copy(ready = true) }
-        Received.Connected(reply = if (answer) handshakeOf(Handshake.Type.Accept).encode() else null, keyChanged = keyChanged)
+        Received.Connected(reply = if (answer) handshakeOf(Handshake.Type.Accept) else null, keyChanged = keyChanged)
     }
 
     /** Whether a message to [number] goes through Seca Link: it is on, and a session is open. */
@@ -266,7 +291,8 @@ class SecaLink(context: Context) {
     private suspend fun localAddress() = SignalProtocolAddress(identity().nostr.publicKey, LinkProtocolStore.DEVICE_ID)
 
     private companion object {
-        const val INVITE_INTERVAL_MILLIS = 30L * 24 * 60 * 60 * 1000
+        const val INVITE_INTERVAL_MILLIS = 7L * 24 * 60 * 60 * 1000
+        const val RETRY_INTERVAL_MILLIS = 60L * 60 * 1000
         const val FINGERPRINT_ITERATIONS = 5200
         const val FINGERPRINT_VERSION = 2
         const val AUTH_KIND = 22242

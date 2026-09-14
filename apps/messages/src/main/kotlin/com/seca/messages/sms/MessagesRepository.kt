@@ -41,6 +41,8 @@ data class Message(
     val encrypted: Boolean = false,
     /** The id both phones know a Seca Link message by; null for an SMS. */
     val linkId: String? = null,
+    /** The photo a Seca Link message carries, as a file on this phone; null for text. */
+    val image: String? = null,
 ) {
     val outgoing: Boolean get() = status != MessageStatus.Received
 }
@@ -227,6 +229,15 @@ class MessagesRepository(private val context: Context) {
     }
 
     /** Stores a message that just arrived, unread. Null when this app is not the default one. */
+    /** Marks one stored message read, such as a Seca Link notice nobody needs to open. */
+    fun markStoredRead(uri: Uri) {
+        val values = ContentValues().apply {
+            put(Sms.READ, 1)
+            put(Sms.SEEN, 1)
+        }
+        runCatching { resolver.update(uri, values, null, null) }
+    }
+
     fun storeIncoming(address: String, body: String, sentAt: Long, subscriptionId: Int): Uri? {
         val values = ContentValues().apply {
             put(Sms.ADDRESS, address)

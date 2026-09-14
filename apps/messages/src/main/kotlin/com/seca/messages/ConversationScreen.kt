@@ -1,16 +1,28 @@
 package com.seca.messages
 
+import android.content.ContentValues
+import android.content.Context
+import android.graphics.ImageDecoder
+import android.provider.MediaStore
 import android.telephony.SmsMessage
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -21,6 +33,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -42,19 +55,28 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.seca.core.design.SecaIcons
+import com.seca.core.design.secaToneColors
+import com.seca.core.link.handshake.Handshake
 import com.seca.core.model.Profile
 import com.seca.messages.link.LinkTyping
 import com.seca.messages.sms.LinkSms
@@ -62,8 +84,15 @@ import com.seca.messages.sms.Message
 import com.seca.messages.sms.MessageStatus
 import com.seca.messages.sms.OneTimeCode
 import com.seca.messages.sms.ScheduledMessage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 /** Two messages closer than this, from the same side, read as one block. */
 private const val JOIN_MILLIS = 2 * 60 * 1000L
@@ -73,6 +102,10 @@ private const val NEAR_BOTTOM_ITEMS = 2
 
 /** How long "écrit…" stays after the contact's last typing notice. */
 private const val TYPING_SHOWN_MILLIS = 6_000L
+
+/** A photo in a bubble is decoded no larger than this; the viewer takes a larger one. */
+private const val PREVIEW_EDGE_PX = 900
+private const val VIEWER_EDGE_PX = 2400
 
 @Composable
 internal fun ConversationScreen(
@@ -106,15 +139,19 @@ internal fun ConversationContent(
     messages: List<Message>,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var text by rememberSaveable(screen.address) { mutableStateOf(screen.draft) }
     var confirmDelete by remember { mutableStateOf(false) }
     var scheduling by remember { mutableStateOf(false) }
+    var viewing by remember { mutableStateOf<String?>(null) }
     // The list grows upwards, so the latest to leave comes first and sits at the very bottom.
     val scheduled = remember(ui.scheduled, screen.address) { ui.scheduledFor(screen.address).asReversed() }
 
     val peer = rememberLinkPeer(screen.address)
     // Once the contact is connected, messages go encrypted through Seca Link, which needs no SMS role.
     val linked = ui.link.enabled && peer?.ready == true
+    val canInvite = ui.link.enabled && peer?.ready != true && remember(screen.address) { LinkSms.keyOf(context, screen.address) != null }
+    val invitationPending = canInvite && (peer?.invitedAt ?: 0L) > 0L
     val typingNotices by LinkTyping.typing.collectAsState()
     val typingAt = peer?.number?.let { typingNotices[it] }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -127,6 +164,11 @@ internal fun ConversationContent(
     }
     val typing = linked && typingAt != null && now - typingAt < TYPING_SHOWN_MILLIS
 
+    // Photos come from the system's photo picker: the app never reads the gallery itself.
+    val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) viewModel.sendPhoto(screen.address, uri)
+    }
+
     if (scheduling) {
         ScheduleDialog(
             onDismiss = { scheduling = false },
@@ -138,98 +180,136 @@ internal fun ConversationContent(
         )
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        topBar = {
-            Column {
-                val openSafetyNumber = { viewModel.open(SafetyNumberRoute(screen.address)) }
-                ConversationTopBar(
-                    address = screen.address,
-                    ui = ui,
-                    linked = peer?.ready == true,
-                    verified = peer?.verified == true,
-                    typing = typing,
-                    onBack = { viewModel.back() },
-                    onDelete = { confirmDelete = true },
-                    onSafetyNumber = openSafetyNumber,
+    // A contact filed under a profile gives the conversation that profile's colour, faintly, from the top.
+    val contact = ui.contactOf(screen.address)
+    val profiled = contact != null && ui.profileOf(contact).id != Profile.Principal.id
+    val (wash, _) = secaToneColors(contact?.let { ui.toneOf(it) } ?: 0)
+    val surface = MaterialTheme.colorScheme.surface
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(surface)
+            .then(if (profiled) Modifier.background(Brush.verticalGradient(0f to wash.copy(alpha = 0.55f), 0.32f to surface)) else Modifier),
+    ) {
+        Scaffold(
+            // Transparent over the profile's colour; the icons keep the theme's colour rather than black.
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            topBar = {
+                Column {
+                    val openSafetyNumber = { viewModel.open(SafetyNumberRoute(screen.address)) }
+                    ConversationTopBar(
+                        address = screen.address,
+                        ui = ui,
+                        linked = peer?.ready == true,
+                        verified = peer?.verified == true,
+                        typing = typing,
+                        invitationPending = invitationPending,
+                        onBack = { viewModel.back() },
+                        onDelete = { confirmDelete = true },
+                        onSafetyNumber = openSafetyNumber,
+                        onInvite = if (canInvite) {
+                            { viewModel.inviteToLink(screen.address) }
+                        } else {
+                            null
+                        },
+                    )
+                    if (peer != null && peer.keyChangedAt > 0) {
+                        KeyChangedBanner(screen.address, ui.nameOf(screen.address), onVerify = openSafetyNumber)
+                    }
+                }
+            },
+            bottomBar = {
+                Composer(
+                    text = text,
+                    onText = {
+                        text = it
+                        if (linked && it.isNotBlank()) viewModel.typing(screen.address)
+                    },
+                    enabled = isDefaultApp || linked,
+                    encrypted = linked,
+                    onSend = {
+                        viewModel.send(screen.address, text)
+                        text = ""
+                    },
+                    onSchedule = { scheduling = true },
+                    onAttach = if (linked) {
+                        { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                    } else {
+                        null
+                    },
                 )
-                if (peer != null && peer.keyChangedAt > 0) {
-                    KeyChangedBanner(screen.address, ui.nameOf(screen.address), onVerify = openSafetyNumber)
+            },
+        ) { padding ->
+            // Newest at the bottom, where the eye and the keyboard are; the list grows upwards.
+            val newestFirst = remember(messages) { messages.asReversed() }
+            val listState = rememberLazyListState()
+            // The list keeps its place by message, so one arriving at the bottom would slide in below the
+            // screen, unseen: it is brought into view. Someone reading further up stays put, unless it is theirs.
+            val newest = messages.lastOrNull()
+            var followed by remember { mutableStateOf<Long?>(null) }
+            LaunchedEffect(newest?.id) {
+                val before = followed
+                followed = newest?.id
+                // The first load already opens at the bottom.
+                if (before == null || newest == null) return@LaunchedEffect
+                if (newest.outgoing || listState.firstVisibleItemIndex <= scheduled.size + NEAR_BOTTOM_ITEMS) {
+                    listState.animateScrollToItem(0)
                 }
             }
-        },
-        bottomBar = {
-            Composer(
-                text = text,
-                onText = {
-                    text = it
-                    if (linked && it.isNotBlank()) viewModel.typing(screen.address)
-                },
-                enabled = isDefaultApp || linked,
-                encrypted = linked,
-                onSend = {
-                    viewModel.send(screen.address, text)
-                    text = ""
-                },
-                onSchedule = { scheduling = true },
-            )
-        },
-    ) { padding ->
-        // Newest at the bottom, where the eye and the keyboard are; the list grows upwards.
-        val newestFirst = remember(messages) { messages.asReversed() }
-        val listState = rememberLazyListState()
-        // The list keeps its place by message, so one arriving at the bottom would slide in below the
-        // screen, unseen: it is brought into view. Someone reading further up stays put, unless it is theirs.
-        val newest = messages.lastOrNull()
-        var followed by remember { mutableStateOf<Long?>(null) }
-        LaunchedEffect(newest?.id) {
-            val before = followed
-            followed = newest?.id
-            // The first load already opens at the bottom.
-            if (before == null || newest == null) return@LaunchedEffect
-            if (newest.outgoing || listState.firstVisibleItemIndex <= scheduled.size + NEAR_BOTTOM_ITEMS) {
-                listState.animateScrollToItem(0)
-            }
-        }
-        LazyColumn(
-            state = listState,
-            reverseLayout = true,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            // What is waiting to leave sits below the last message sent.
-            items(scheduled, key = { "scheduled-${it.id}" }, contentType = { "scheduled" }) { message ->
-                ScheduledBubble(
-                    message = message,
-                    onSendNow = { viewModel.sendScheduledNow(message) },
-                    onEdit = {
-                        viewModel.cancelScheduled(message.id)
-                        text = message.body
-                    },
-                    onCancel = { viewModel.cancelScheduled(message.id) },
-                )
-            }
-            itemsIndexed(newestFirst, key = { _, message -> message.id }, contentType = { _, _ -> "message" }) { index, message ->
-                val older = newestFirst.getOrNull(index + 1)
-                val newer = newestFirst.getOrNull(index - 1)
-                Column {
-                    if (older == null || !sameDay(older.date, message.date)) DaySeparator(message.date)
-                    Bubble(
+            LazyColumn(
+                state = listState,
+                reverseLayout = true,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                // What is waiting to leave sits below the last message sent.
+                items(scheduled, key = { "scheduled-${it.id}" }, contentType = { "scheduled" }) { message ->
+                    ScheduledBubble(
                         message = message,
-                        joinedAbove = older != null && joined(older, message),
-                        joinedBelow = newer != null && joined(message, newer),
-                        isLatestOutgoing = message.outgoing && (newer == null || !newer.outgoing),
-                        onRetry = { viewModel.retry(message) },
-                        onSendAsSms = { viewModel.sendAsSms(message) },
-                        onCopy = { copyText(context, "Message", message.body) },
-                        onDelete = { viewModel.deleteMessage(message) },
+                        onSendNow = { viewModel.sendScheduledNow(message) },
+                        onEdit = {
+                            viewModel.cancelScheduled(message.id)
+                            text = message.body
+                        },
+                        onCancel = { viewModel.cancelScheduled(message.id) },
                     )
+                }
+                itemsIndexed(newestFirst, key = { _, message -> message.id }, contentType = { _, _ -> "message" }) { index, message ->
+                    val older = newestFirst.getOrNull(index + 1)
+                    val newer = newestFirst.getOrNull(index - 1)
+                    Column {
+                        if (older == null || !sameDay(older.date, message.date)) DaySeparator(message.date)
+                        Bubble(
+                            message = message,
+                            joinedAbove = older != null && joined(older, message),
+                            joinedBelow = newer != null && joined(message, newer),
+                            isLatestOutgoing = message.outgoing && (newer == null || !newer.outgoing),
+                            onRetry = { viewModel.retry(message) },
+                            onSendAsSms = { viewModel.sendAsSms(message) },
+                            onCopy = { copyText(context, "Message", message.body) },
+                            onDelete = { viewModel.deleteMessage(message) },
+                            onOpenPhoto = { viewing = it },
+                            onSavePhoto = { path ->
+                                scope.launch {
+                                    val saved = saveToGallery(context, path)
+                                    Toast.makeText(
+                                        context,
+                                        if (saved) "Photo enregistrée dans la galerie" else "Enregistrement impossible",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
     }
+
+    viewing?.let { path -> PhotoViewer(path, onDismiss = { viewing = null }) }
 
     if (confirmDelete) {
         AlertDialog(
@@ -262,9 +342,11 @@ private fun ConversationTopBar(
     linked: Boolean,
     verified: Boolean,
     typing: Boolean,
+    invitationPending: Boolean,
     onBack: () -> Unit,
     onDelete: () -> Unit,
     onSafetyNumber: () -> Unit,
+    onInvite: (() -> Unit)?,
 ) {
     val context = LocalContext.current
     var menuOpen by remember { mutableStateOf(false) }
@@ -281,7 +363,6 @@ private fun ConversationTopBar(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
             .height(64.dp)
             .padding(horizontal = 4.dp),
@@ -307,17 +388,21 @@ private fun ConversationTopBar(
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
                 )
-                linked -> Row(verticalAlignment = Alignment.CenterVertically) {
+                linked || invitationPending -> Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         SecaIcons.Lock,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = if (linked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(14.dp),
                     )
                     Text(
-                        text = if (verified) "Chiffré · Vérifié" else "Chiffré par Seca Link",
+                        text = when {
+                            !linked -> "Invitation Seca Link envoyée"
+                            verified -> "Chiffré · Vérifié"
+                            else -> "Chiffré par Seca Link"
+                        },
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = if (linked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         modifier = Modifier.padding(start = 4.dp),
                     )
@@ -337,6 +422,12 @@ private fun ConversationTopBar(
         Box {
             IconButton(onClick = { menuOpen = true }) { Icon(SecaIcons.MoreVert, contentDescription = "Plus d'options") }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                if (onInvite != null) {
+                    MenuEntry(if (invitationPending) "Renvoyer l'invitation Seca Link" else "Chiffrer avec Seca Link", SecaIcons.Lock) {
+                        menuOpen = false
+                        onInvite()
+                    }
+                }
                 if (linked) {
                     MenuEntry("Numéro de sécurité", SecaIcons.Shield) {
                         menuOpen = false
@@ -384,7 +475,8 @@ private fun DaySeparator(date: Long) {
  * One message. Sent ones sit on the right in the accent, received ones on the
  * left; a block of messages shares its inner corners, and the latest sent one
  * says whether it went through, and for Seca Link whether it was received and
- * read. A lock marks what travelled encrypted.
+ * read. A lock marks what travelled encrypted. A Seca Link handshake sent as
+ * text reads as a short notice rather than its code.
  */
 @Composable
 private fun Bubble(
@@ -396,7 +488,14 @@ private fun Bubble(
     onSendAsSms: () -> Unit,
     onCopy: () -> Unit,
     onDelete: () -> Unit,
+    onOpenPhoto: (String) -> Unit,
+    onSavePhoto: (String) -> Unit,
 ) {
+    val handshake = remember(message.body) { if (message.encrypted) null else Handshake.fromText(message.body) }
+    if (handshake != null) {
+        HandshakeNotice(handshake, mine = message.outgoing)
+        return
+    }
     val context = LocalContext.current
     var menuOpen by remember { mutableStateOf(false) }
     val mine = message.outgoing
@@ -440,6 +539,7 @@ private fun Bubble(
         !joinedBelow -> time
         else -> null
     }
+    val image = message.image
 
     Column(
         horizontalAlignment = if (mine) Alignment.End else Alignment.Start,
@@ -448,32 +548,49 @@ private fun Bubble(
             .padding(top = if (joinedAbove) 2.dp else 8.dp),
     ) {
         Box {
-            Text(
-                text = message.body,
-                style = MaterialTheme.typography.bodyLarge,
-                color = content,
-                modifier = Modifier
-                    .widthIn(max = 300.dp)
-                    .clip(shape)
-                    .background(container)
-                    .combinedClickable(
-                        onClick = { if (failed) onRetry() },
-                        onLongClickLabel = "Plus d'actions",
-                        onLongClick = { menuOpen = true },
-                    )
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
+            val touch = Modifier.combinedClickable(
+                onClick = {
+                    when {
+                        failed -> onRetry()
+                        image != null -> onOpenPhoto(image)
+                    }
+                },
+                onLongClickLabel = "Plus d'actions",
+                onLongClick = { menuOpen = true },
             )
+            if (image != null) {
+                PhotoBubble(image, shape, container, touch)
+            } else {
+                Text(
+                    text = message.body.ifEmpty { LinkConversations.PHOTO },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = content,
+                    modifier = Modifier
+                        .widthIn(max = 300.dp)
+                        .clip(shape)
+                        .background(container)
+                        .then(touch)
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                )
+            }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                MenuEntry("Copier", SecaIcons.ContentCopy) {
-                    menuOpen = false
-                    onCopy()
+                if (image != null) {
+                    MenuEntry("Enregistrer dans la galerie", SecaIcons.Download) {
+                        menuOpen = false
+                        onSavePhoto(image)
+                    }
+                } else {
+                    MenuEntry("Copier", SecaIcons.ContentCopy) {
+                        menuOpen = false
+                        onCopy()
+                    }
                 }
                 if (failed) {
                     MenuEntry("Réessayer", SecaIcons.Send) {
                         menuOpen = false
                         onRetry()
                     }
-                    if (message.encrypted) {
+                    if (message.encrypted && image == null) {
                         MenuEntry("Envoyer en SMS non chiffré", SecaIcons.Messages) {
                             menuOpen = false
                             onSendAsSms()
@@ -517,6 +634,118 @@ private fun Bubble(
             }
         }
     }
+}
+
+/** A photo in the conversation, at its own proportions within the bubble's width. */
+@Composable
+private fun PhotoBubble(path: String, shape: RoundedCornerShape, container: Color, modifier: Modifier = Modifier) {
+    val photo = rememberPhoto(path, PREVIEW_EDGE_PX)
+    val frame = Modifier
+        .widthIn(max = 260.dp)
+        .clip(shape)
+        .background(container)
+        .then(modifier)
+    if (photo == null) {
+        Box(frame.size(width = 220.dp, height = 160.dp))
+    } else {
+        Image(
+            bitmap = photo,
+            contentDescription = "Photo",
+            contentScale = ContentScale.Crop,
+            modifier = frame
+                .heightIn(max = 360.dp)
+                .aspectRatio(photo.width.toFloat() / photo.height, matchHeightConstraintsFirst = photo.height > photo.width),
+        )
+    }
+}
+
+/** Seca Link's handshake as the conversation shows it: a short centred notice. */
+@Composable
+private fun HandshakeNotice(handshake: Handshake, mine: Boolean) {
+    val label = when {
+        handshake.type == Handshake.Type.Accept -> "Conversation chiffrée par Seca Link"
+        mine -> "Invitation Seca Link envoyée"
+        else -> "Invitation Seca Link reçue"
+    }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+        ) {
+            Icon(SecaIcons.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
+    }
+}
+
+/** A photo opened on its own, on black, the whole screen; a touch closes it. */
+@Composable
+private fun PhotoViewer(path: String, onDismiss: () -> Unit) {
+    val photo = rememberPhoto(path, VIEWER_EDGE_PX)
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .clickable(onClickLabel = "Fermer", onClick = onDismiss),
+        ) {
+            photo?.let { Image(bitmap = it, contentDescription = "Photo", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize()) }
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .statusBarsPadding()
+                    .padding(8.dp),
+            ) { Icon(SecaIcons.Close, contentDescription = "Fermer", tint = Color.White) }
+        }
+    }
+}
+
+/** The photo at [path], decoded off the main thread no larger than [maxEdge] pixels; null until it is ready. */
+@Composable
+private fun rememberPhoto(path: String, maxEdge: Int): ImageBitmap? {
+    val photo by produceState<ImageBitmap?>(initialValue = null, path, maxEdge) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                ImageDecoder.decodeBitmap(ImageDecoder.createSource(File(path))) { decoder, info, _ ->
+                    val scale = min(1f, maxEdge.toFloat() / max(info.size.width, info.size.height))
+                    if (scale < 1f) decoder.setTargetSize((info.size.width * scale).roundToInt(), (info.size.height * scale).roundToInt())
+                }.asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    return photo
+}
+
+/** Copies a Seca Link photo into the phone's gallery, under Pictures/Seca, only when the owner asks. */
+private suspend fun saveToGallery(context: Context, path: String): Boolean = withContext(Dispatchers.IO) {
+    runCatching {
+        val resolver = context.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "Seca-${System.currentTimeMillis()}.webp")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/webp")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Seca")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return@runCatching false
+        resolver.openOutputStream(uri)?.use { out -> File(path).inputStream().use { it.copyTo(out) } }
+        resolver.update(uri, ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }, null, null)
+        true
+    }.getOrDefault(false)
 }
 
 /** A message waiting for its time: outlined rather than filled, with when it leaves. */
@@ -581,9 +810,9 @@ private fun ScheduledBubble(message: ScheduledMessage, onSendNow: () -> Unit, on
 }
 
 /**
- * The text field, the schedule and send buttons, lifted above the keyboard.
- * With Seca Link, it says the message leaves encrypted, and SMS counting and
- * scheduling, which belong to SMS, step aside.
+ * The text field, the photo, schedule and send buttons, lifted above the
+ * keyboard. With Seca Link, it says the message leaves encrypted, photos can
+ * go too, and SMS counting and scheduling, which belong to SMS, step aside.
  */
 @Composable
 private fun Composer(
@@ -593,6 +822,7 @@ private fun Composer(
     encrypted: Boolean,
     onSend: () -> Unit,
     onSchedule: () -> Unit,
+    onAttach: (() -> Unit)?,
 ) {
     // How many SMS the text takes: past 160 plain characters, or 70 with accents or emoji, it is split.
     val parts = remember(text, encrypted) { if (text.isEmpty() || encrypted) 0 else SmsMessage.calculateLength(text, false)[0] }
@@ -613,6 +843,14 @@ private fun Composer(
             )
         }
         Row(verticalAlignment = Alignment.Bottom) {
+            if (onAttach != null) {
+                IconButton(
+                    onClick = onAttach,
+                    modifier = Modifier
+                        .padding(end = 4.dp, bottom = 4.dp)
+                        .size(48.dp),
+                ) { Icon(SecaIcons.Photo, contentDescription = "Envoyer une photo chiffrée") }
+            }
             TextField(
                 value = text,
                 onValueChange = onText,

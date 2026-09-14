@@ -28,6 +28,11 @@ class LinkSettings(context: Context) {
         get() = prefs.getBoolean("typing_indicator", true)
         set(value) = prefs.edit { putBoolean("typing_indicator", value) }
 
+    /** Reaches the relays through Tor, with Orbot, so they never see the phone's address. Off by default. */
+    var useTor: Boolean
+        get() = prefs.getBoolean("use_tor", false)
+        set(value) = prefs.edit { putBoolean("use_tor", value) }
+
     /** Pre-keys are published again once a week, so relays that dropped them get them back. */
     fun publishDue(now: Long = System.currentTimeMillis()): Boolean = now - publishedAt > REPUBLISH_MILLIS
 

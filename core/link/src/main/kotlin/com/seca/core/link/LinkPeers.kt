@@ -9,7 +9,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
-/** What this phone knows of another Seca phone, reached through a data SMS invitation. */
+/** What this phone knows of another Seca phone, reached through an SMS invitation. */
 data class LinkPeer(
     /** International format, the same however the number was written. */
     val number: String,
@@ -26,6 +26,10 @@ data class LinkPeer(
     val keyChangedAt: Long = 0,
     /** When this phone last sent an invitation; 0 when never. */
     val invitedAt: Long = 0,
+    /** The contact's handshake came as a text message: answers go the same way, which reaches them. */
+    val textHandshake: Boolean = false,
+    /** When opening the session was last tried and failed, so it is tried again later, not at every turn. */
+    val attemptedAt: Long = 0,
 )
 
 /** The peers, sealed in one file and kept in memory, shared by the screens and the SMS receivers. */
@@ -69,6 +73,8 @@ class LinkPeers(context: Context) {
                 verified = item.optBoolean("verified"),
                 keyChangedAt = item.optLong("keyChangedAt"),
                 invitedAt = item.optLong("invitedAt"),
+                textHandshake = item.optBoolean("textHandshake"),
+                attemptedAt = item.optLong("attemptedAt"),
             )
             peer.number to peer
         }
@@ -87,7 +93,9 @@ class LinkPeers(context: Context) {
                     .put("ready", peer.ready)
                     .put("verified", peer.verified)
                     .put("keyChangedAt", peer.keyChangedAt)
-                    .put("invitedAt", peer.invitedAt),
+                    .put("invitedAt", peer.invitedAt)
+                    .put("textHandshake", peer.textHandshake)
+                    .put("attemptedAt", peer.attemptedAt),
             )
         }
         Sealer.write(file, array.toString().toByteArray(Charsets.UTF_8))

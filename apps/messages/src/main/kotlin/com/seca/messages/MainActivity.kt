@@ -69,9 +69,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        ActiveConversation.appInFront(true)
         refresh()
         // Seca Link listens again if Android stopped it, now that the app is in front and may start it.
         LinkService.start(this)
+    }
+
+    override fun onPause() {
+        // Out of sight, messages are announced again.
+        ActiveConversation.appInFront(false)
+        super.onPause()
     }
 
     private fun refresh() {

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.telephony.SubscriptionManager
+import com.seca.core.link.handshake.Handshake
 import com.seca.messages.ActiveConversation
 import com.seca.messages.ConversationPrefs
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +33,12 @@ class SmsDeliverReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val stored = MessagesRepository(context).storeIncoming(address, body, sentAt, subscription)
+                // A Seca Link handshake written as text opens the session: no notification, no spam check.
+                Handshake.fromText(body)?.let { handshake ->
+                    stored?.let { MessagesRepository(context).markStoredRead(it) }
+                    LinkSms.receive(context, address, handshake, byText = true)
+                    return@launch
+                }
                 val threadId = runCatching { Telephony.Threads.getOrCreateThreadId(context, address) }.getOrNull()
                 val prefs = ConversationPrefs(context)
                 val code = OneTimeCode.find(body)

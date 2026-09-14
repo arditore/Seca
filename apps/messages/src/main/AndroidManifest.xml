@@ -54,6 +54,8 @@
     <queries>
         <package android:name="com.seca.contacts" />
         <package android:name="com.seca.phone" />
+        <!-- Orbot, when the owner routes Seca Link through Tor: to see it is there and ask it to start. -->
+        <package android:name="org.torproject.android" />
     </queries>
 
     <application

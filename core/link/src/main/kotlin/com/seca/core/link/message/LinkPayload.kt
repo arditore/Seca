@@ -20,16 +20,40 @@ sealed interface LinkPayload {
     /** The other person is typing. */
     data object Typing : LinkPayload
 
+    /**
+     * One piece of a photo. A photo travels in [count] pieces small enough for
+     * every relay, each in an envelope of its own; [digest], the SHA-256 of the
+     * whole file, lets the receiver check what it put back together. [id] is the
+     * message's, for receipts.
+     */
+    class MediaPart(
+        val id: String,
+        val index: Int,
+        val count: Int,
+        val sentAt: Long,
+        val mime: String,
+        val digest: ByteArray,
+        val data: ByteArray,
+    ) : LinkPayload
+
     companion object {
         private const val VERSION = 1
         private const val TEXT = 1
         private const val DELIVERED = 2
         private const val READ = 3
         private const val TYPING = 4
+        private const val MEDIA_PART = 5
         private const val PAD_BLOCK = 128
         private const val PAD_MARK = 0x80
         private const val MAX_FIELD = 64 * 1024
         private const val MAX_IDS = 500
+        private const val DIGEST_SIZE = 32
+
+        /** The most a photo piece carries: its envelope stays under the 131 kB some relays accept. */
+        const val MEDIA_PART_BYTES = 48 * 1024
+
+        /** The most pieces a photo may take, about three megabytes. */
+        const val MAX_MEDIA_PARTS = 64
 
         /** Written out, then padded to a multiple of 128 bytes, so a message's length gives little away. */
         fun encode(payload: LinkPayload): ByteArray {
@@ -52,6 +76,19 @@ sealed interface LinkPayload {
                         out.writeIds(payload.ids)
                     }
                     Typing -> out.writeByte(TYPING)
+                    is MediaPart -> {
+                        require(payload.count in 1..MAX_MEDIA_PARTS && payload.index in 0 until payload.count)
+                        require(payload.digest.size == DIGEST_SIZE && payload.data.size <= MEDIA_PART_BYTES)
+                        out.writeByte(MEDIA_PART)
+                        out.writeField(payload.id)
+                        out.writeInt(payload.index)
+                        out.writeInt(payload.count)
+                        out.writeLong(payload.sentAt)
+                        out.writeField(payload.mime)
+                        out.write(payload.digest)
+                        out.writeInt(payload.data.size)
+                        out.write(payload.data)
+                    }
                 }
             }
             return pad(bytes.toByteArray())
@@ -67,6 +104,18 @@ sealed interface LinkPayload {
                     DELIVERED -> Delivered(input.readIds())
                     READ -> Read(input.readIds())
                     TYPING -> Typing
+                    MEDIA_PART -> {
+                        val id = input.readField()
+                        val index = input.readInt()
+                        val count = input.readInt()
+                        check(count in 1..MAX_MEDIA_PARTS && index in 0 until count)
+                        val sentAt = input.readLong()
+                        val mime = input.readField()
+                        val digest = ByteArray(DIGEST_SIZE).also(input::readFully)
+                        val size = input.readInt()
+                        check(size in 0..MEDIA_PART_BYTES)
+                        MediaPart(id, index, count, sentAt, mime, digest, ByteArray(size).also(input::readFully))
+                    }
                     else -> null
                 }
             }

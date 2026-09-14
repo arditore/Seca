@@ -19,6 +19,7 @@ import android.provider.Telephony
 import android.provider.Telephony.Sms
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.design.notification.NotificationAvatars
+import com.seca.messages.LinkConversations
 import com.seca.messages.MainActivity
 import com.seca.messages.R
 import com.seca.messages.link.LinkMessages
@@ -58,7 +59,8 @@ internal object MessageNotifications {
     /** A Seca Link message arrived, shown in the conversation's notification with its lock. */
     fun notifyLink(context: Context, number: String, body: String) {
         val threadId = threadOf(context, number)
-        val unread = LinkMessages(context).unread(number).takeLast(MAX_LINES).map { it.body to it.date }
+        val unread = LinkMessages(context).unread(number).takeLast(MAX_LINES)
+            .map { (if (it.media != null && it.body.isEmpty()) LinkConversations.PHOTO else it.body) to it.date }
             .ifEmpty { listOf(body to System.currentTimeMillis()) }
         showConversation(context, number, threadId, unread, code = OneTimeCode.find(body), encrypted = true)
     }

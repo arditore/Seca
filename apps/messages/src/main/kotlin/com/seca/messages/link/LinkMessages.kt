@@ -20,6 +20,8 @@ data class LinkMessage(
     val date: Long,
     val status: LinkStatus,
     val read: Boolean,
+    /** The type of the photo the message carries, kept by [LinkMedia]; null for text. */
+    val media: String? = null,
 ) {
     val outgoing: Boolean get() = status != LinkStatus.Received
 }
@@ -55,6 +57,7 @@ class LinkMessages(context: Context) {
             put(DATE, message.date)
             put(STATUS, message.status.code)
             put(READ, if (message.read) 1 else 0)
+            put(MEDIA, message.media)
         }
         val added = database.insertWithOnConflict(MESSAGES, null, values, SQLiteDatabase.CONFLICT_IGNORE) != -1L
         if (added) changed.tryEmit(Unit)
@@ -112,7 +115,7 @@ class LinkMessages(context: Context) {
     }
 
     private fun query(selection: String?, args: Array<String>?, order: String): List<LinkMessage> =
-        database.query(MESSAGES, arrayOf(ID, NUMBER, BODY, DATE, STATUS, READ), selection, args, null, null, order).use { c ->
+        database.query(MESSAGES, arrayOf(ID, NUMBER, BODY, DATE, STATUS, READ, MEDIA), selection, args, null, null, order).use { c ->
             buildList {
                 while (c.moveToNext()) {
                     add(
@@ -123,6 +126,7 @@ class LinkMessages(context: Context) {
                             date = c.getLong(3),
                             status = LinkStatus.entries.firstOrNull { it.code == c.getInt(4) } ?: LinkStatus.Failed,
                             read = c.getInt(5) == 1,
+                            media = if (c.isNull(6)) null else c.getString(6),
                         ),
                     )
                 }
@@ -133,13 +137,16 @@ class LinkMessages(context: Context) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 "CREATE TABLE $MESSAGES ($ID TEXT PRIMARY KEY, $NUMBER TEXT NOT NULL, $BODY TEXT NOT NULL, " +
-                    "$DATE INTEGER NOT NULL, $STATUS INTEGER NOT NULL, $READ INTEGER NOT NULL DEFAULT 0)",
+                    "$DATE INTEGER NOT NULL, $STATUS INTEGER NOT NULL, $READ INTEGER NOT NULL DEFAULT 0, $MEDIA TEXT)",
             )
             db.execSQL("CREATE INDEX messages_by_number ON $MESSAGES ($NUMBER, $DATE)")
             db.execSQL("CREATE TABLE $SEEN ($EVENT TEXT PRIMARY KEY, $AT INTEGER NOT NULL)")
         }
 
-        override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+        override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+            // Version 2: photos.
+            if (oldVersion < 2) db.execSQL("ALTER TABLE $MESSAGES ADD COLUMN $MEDIA TEXT")
+        }
 
         companion object {
             @Volatile
@@ -153,7 +160,7 @@ class LinkMessages(context: Context) {
 
     companion object {
         private const val NAME = "seca_link.db"
-        private const val VERSION = 1
+        private const val VERSION = 2
         private const val MESSAGES = "messages"
         private const val SEEN = "seen"
         private const val ID = "id"
@@ -162,6 +169,7 @@ class LinkMessages(context: Context) {
         private const val DATE = "date"
         private const val STATUS = "status"
         private const val READ = "read"
+        private const val MEDIA = "media"
         private const val EVENT = "event"
         private const val AT = "at"
         private const val SEEN_KEPT_MILLIS = 7L * 24 * 60 * 60 * 1000

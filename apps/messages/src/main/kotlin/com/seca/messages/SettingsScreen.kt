@@ -173,7 +173,7 @@ internal fun SettingsScreen(
             val link = ui.link
             var askNetwork by remember { mutableStateOf(false) }
             val published = link.statuses.values.count { it.state == RelayState.Published }
-            val linkRows = if (link.enabled) 4 else 1
+            val linkRows = if (link.enabled) 5 else 1
             SecaGroupItem(index = 0, count = linkRows) {
                 SecaSettingRow(
                     icon = SecaIcons.Link,
@@ -208,7 +208,8 @@ internal fun SettingsScreen(
                     )
                 }
                 BackgroundAccessRow(index = 2, count = linkRows)
-                SecaGroupItem(index = 3, count = linkRows) {
+                TorRow(link, viewModel, index = 3, count = linkRows)
+                SecaGroupItem(index = 4, count = linkRows) {
                     SecaSettingRow(
                         icon = SecaIcons.Shield,
                         title = "Empreinte de ce téléphone",

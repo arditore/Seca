@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import com.seca.core.link.SecaLink
+import com.seca.core.link.handshake.Handshake
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,16 +21,12 @@ class LinkHandshakeReceiver : BroadcastReceiver() {
         val parts = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         val address = parts.firstOrNull()?.originatingAddress ?: return
         val payload = parts.fold(ByteArray(0)) { all, part -> all + (part.userData ?: ByteArray(0)) }
+        val handshake = Handshake.decode(payload) ?: return
 
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val number = LinkSms.keyOf(context, address) ?: return@launch
-                val received = runCatching { SecaLink(context).receive(number, payload) }.getOrNull()
-                if (received is SecaLink.Received.Connected) {
-                    received.reply?.let { LinkSms.send(context, address, it) }
-                    if (received.keyChanged) MessageNotifications.notifyKeyChanged(context, address)
-                }
+                LinkSms.receive(context, address, handshake, byText = false)
             } finally {
                 pending.finish()
             }

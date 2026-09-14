@@ -1,5 +1,6 @@
 package com.seca.core.link.relay
 
+import com.seca.core.link.TorAccess
 import com.seca.core.link.nostr.NostrEvent
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -32,13 +33,19 @@ sealed interface PublishResult {
  * Talks to Nostr relays (NIP-01) over WebSocket. Publishing and fetching use a
  * short connection each; following an inbox keeps one open. Only what Seca Link
  * publishes goes out: public keys and encrypted envelopes.
+ *
+ * Through Tor, with [throughTor], every connection goes by Orbot, and waits
+ * longer for answers.
  */
-class RelayClient {
+class RelayClient(throughTor: Boolean = false) {
+
+    private val http: OkHttpClient = if (throughTor) tor else direct
+    private val timeoutMillis = if (throughTor) TOR_TIMEOUT_MILLIS else TIMEOUT_MILLIS
 
     /** Sends [event] to [url] and waits for the relay's verdict. */
     suspend fun publish(url: String, event: NostrEvent): PublishResult {
         val request = requestFor(url) ?: return PublishResult.Unreachable("Adresse invalide")
-        return withTimeoutOrNull(TIMEOUT_MILLIS) {
+        return withTimeoutOrNull(timeoutMillis) {
             suspendCancellableCoroutine { continuation ->
                 val listener = object : WebSocketListener() {
                     override fun onOpen(webSocket: WebSocket, response: Response) {
@@ -82,7 +89,7 @@ class RelayClient {
     suspend fun fetch(url: String, filter: String): List<NostrEvent>? {
         val request = requestFor(url) ?: return null
         val subscription = "seca-${subscriptions.incrementAndGet()}"
-        return withTimeoutOrNull(TIMEOUT_MILLIS) {
+        return withTimeoutOrNull(timeoutMillis) {
             suspendCancellableCoroutine<List<NostrEvent>?> { continuation ->
                 val events = mutableListOf<NostrEvent>()
                 val listener = object : WebSocketListener() {
@@ -181,17 +188,29 @@ class RelayClient {
 
     private companion object {
         const val TIMEOUT_MILLIS = 15_000L
+        const val TOR_TIMEOUT_MILLIS = 45_000L
         const val CONNECT_TIMEOUT_SECONDS = 10L
+        const val TOR_CONNECT_TIMEOUT_SECONDS = 30L
         const val PING_SECONDS = 45L
         const val NORMAL_CLOSURE = 1000
 
         val subscriptions = AtomicInteger()
 
-        val http: OkHttpClient by lazy {
+        val direct: OkHttpClient by lazy {
             OkHttpClient.Builder()
+                // Every answer tells the relay's time, which corrects a phone clock that lags.
+                .addNetworkInterceptor { chain -> chain.proceed(chain.request()).also { RelayClock.observe(it.header("Date")) } }
                 .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 // Keeps a followed inbox alive through routers that drop quiet connections.
                 .pingInterval(PING_SECONDS, TimeUnit.SECONDS)
+                .build()
+        }
+
+        /** Through Orbot's SOCKS proxy, which also resolves the relays' names inside Tor. */
+        val tor: OkHttpClient by lazy {
+            direct.newBuilder()
+                .proxy(TorAccess.proxy)
+                .connectTimeout(TOR_CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .build()
         }
     }

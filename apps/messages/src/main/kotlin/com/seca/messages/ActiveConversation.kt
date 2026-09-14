@@ -1,13 +1,23 @@
 package com.seca.messages
 
 /**
- * The conversation on screen while the app is in front, by its number in
- * international format: what arrives in it needs no notification.
+ * Whether the owner is looking at Seca Messages: while the app is in front,
+ * on any of its screens, what arrives shows up there and needs no
+ * notification. The conversation on screen is known by its number in
+ * international format.
  */
 internal object ActiveConversation {
 
     @Volatile
     private var shown: String? = null
+
+    @Volatile
+    private var inFront = false
+
+    /** From the activity: true while it is resumed. */
+    fun appInFront(resumed: Boolean) {
+        inFront = resumed
+    }
 
     fun show(number: String) {
         shown = number
@@ -17,5 +27,6 @@ internal object ActiveConversation {
         if (shown == number) shown = null
     }
 
-    fun isShown(number: String?): Boolean = number != null && number == shown
+    /** True when a message from [number] would only repeat what the screen already shows. */
+    fun isShown(number: String?): Boolean = inFront || (number != null && number == shown)
 }

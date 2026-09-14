@@ -2,6 +2,7 @@ package com.seca.core.link.message
 
 import com.seca.core.link.nostr.NostrEvent
 import com.seca.core.link.nostr.NostrKeys
+import com.seca.core.link.relay.RelayClock
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -30,7 +31,6 @@ object Envelope {
     private const val SIGNATURE_SIZE = 64
     private const val HEADER_SIZE = 1 + KEY_SIZE + 1 + SIGNATURE_SIZE
     private const val BYTE_MASK = 0xFF
-    private const val MILLIS_PER_SECOND = 1000
     private const val MAX_BACKDATE_SECONDS = 900
 
     private val random = SecureRandom()
@@ -42,7 +42,8 @@ object Envelope {
         val inside = insideOf(sender, recipient, signalType, ciphertext)
         val oneTime = NostrKeys.generate()
         val sealed = EnvelopeCipher.seal(oneTime.sharedSecretWith(recipient), inside, associatedOf(oneTime.publicKey, recipient))
-        val now = System.currentTimeMillis() / MILLIS_PER_SECOND
+        // The relays' time: a typing notice with a lagging clock would be turned away as already old.
+        val now = RelayClock.now()
         // A kept envelope carries a time a few minutes off, so the relay does not record the exact moment.
         val createdAt = if (ephemeral) now else now - random.nextInt(MAX_BACKDATE_SECONDS)
         return oneTime.sign(

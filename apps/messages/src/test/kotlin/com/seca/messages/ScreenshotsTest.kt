@@ -2,6 +2,10 @@ package com.seca.messages
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.Shader
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -15,6 +19,8 @@ import com.seca.core.contacts.SharedProfiles
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.SecaTheme
+import com.seca.core.link.handshake.Handshake
+import com.seca.core.link.LinkSettings
 import com.seca.core.model.PhoneNumber
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
@@ -111,27 +117,42 @@ class ScreenshotsTest {
                 connected = true,
             ),
             conversations = listOf(
-                Conversation(1, CAMILLE, "Super, à tout à l'heure !", now - 4 * minute, unread = 2, outgoing = false),
+                Conversation(1, CAMILLE, "📷 Photo", now - 4 * minute, unread = 2, outgoing = false),
                 Conversation(2, "06 98 76 54 32", "Merci pour le document, je regarde ce soir.", now - hour, unread = 0, outgoing = true),
                 Conversation(3, "38123", "Votre code de vérification est 482913", now - 3 * hour, unread = 0, outgoing = false),
-                Conversation(4, "07 11 22 33 44", "Bonne soirée !", now - 26 * hour, unread = 0, outgoing = false),
+                Conversation(4, "07 11 22 33 44", "🔒 Seca Link", now - 26 * hour, unread = 0, outgoing = false),
                 Conversation(5, "06 55 44 33 22", "Tu peux me rappeler quand tu as un moment ?", now - 3 * 24 * hour, unread = 0, outgoing = false),
             ),
+            link = LinkUi(enabled = true),
         )
     }
 
     private fun sampleMessages(): List<Message> {
         val now = System.currentTimeMillis()
         val minute = 60_000L
+        val invite = Handshake(Handshake.Type.Invite, "ab".repeat(32), "0123456789abcdef", LinkSettings.DefaultRelays.take(3))
         return listOf(
             Message(1, 1, CAMILLE, "Tu as vu le programme de samedi ?", now - 26 * 60 * minute, MessageStatus.Received),
-            Message(2, 1, CAMILLE, "Pas encore, je regarde demain", now - 26 * 60 * minute + 3 * minute, MessageStatus.Delivered),
-            Message(3, 1, CAMILLE, "Coucou ! Tu es dispo ce soir ?", now - 50 * minute, MessageStatus.Received),
-            Message(4, 1, CAMILLE, "Il y a un nouveau café près de la gare", now - 49 * minute, MessageStatus.Received),
-            Message(5, 1, CAMILLE, "Oui, après 19 h", now - 40 * minute, MessageStatus.Sent),
-            Message(-6, 1, CAMILLE, "Je réserve une table pour quatre.", now - 10 * minute, MessageStatus.Read, encrypted = true, linkId = "a"),
-            Message(-7, 1, CAMILLE, "Super, à tout à l'heure !", now - 4 * minute, MessageStatus.Received, encrypted = true, linkId = "b"),
+            Message(2, 1, CAMILLE, invite.text(), now - 26 * 60 * minute + 2 * minute, MessageStatus.Sent),
+            Message(3, 1, CAMILLE, invite.copy(type = Handshake.Type.Accept).text(), now - 26 * 60 * minute + 3 * minute, MessageStatus.Received),
+            Message(4, 1, CAMILLE, "Coucou ! Tu es dispo ce soir ?", now - 50 * minute, MessageStatus.Received),
+            Message(-5, 1, CAMILLE, "Oui, après 19 h", now - 40 * minute, MessageStatus.Read, encrypted = true, linkId = "a"),
+            Message(-6, 1, CAMILLE, "", now - 12 * minute, MessageStatus.Received, encrypted = true, linkId = "b", image = samplePhoto()),
+            Message(-7, 1, CAMILLE, "Super, à tout à l'heure !", now - 4 * minute, MessageStatus.Received, encrypted = true, linkId = "c"),
         )
+    }
+
+    /** A landscape made up of two gradients, standing in for a photo. */
+    private fun samplePhoto(): String {
+        val bitmap = Bitmap.createBitmap(1200, 900, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val sky = Paint().apply { shader = LinearGradient(0f, 0f, 0f, 540f, 0xFF7FB3E0.toInt(), 0xFFF6C99B.toInt(), Shader.TileMode.CLAMP) }
+        canvas.drawRect(0f, 0f, 1200f, 540f, sky)
+        val sea = Paint().apply { shader = LinearGradient(0f, 540f, 0f, 900f, 0xFF2E6E8E.toInt(), 0xFF0E3448.toInt(), Shader.TileMode.CLAMP) }
+        canvas.drawRect(0f, 540f, 1200f, 900f, sea)
+        val file = File(ApplicationProvider.getApplicationContext<Application>().cacheDir, "sample-photo.webp")
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 85, it) }
+        return file.absolutePath
     }
 
     private companion object {

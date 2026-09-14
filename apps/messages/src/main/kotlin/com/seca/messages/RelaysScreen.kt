@@ -55,6 +55,11 @@ data class LinkUi(
     val offline: Boolean = false,
     val readReceipts: Boolean = true,
     val typingIndicator: Boolean = true,
+    /** The relays are reached through Tor, with Orbot. */
+    val useTor: Boolean = false,
+    val orbotInstalled: Boolean = false,
+    /** Orbot takes connections right now; null until checked. */
+    val orbotRunning: Boolean? = null,
 )
 
 /** The relays that receive for this phone: how each answered, and adding or removing one. */

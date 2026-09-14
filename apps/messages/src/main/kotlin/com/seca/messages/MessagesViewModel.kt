@@ -14,10 +14,12 @@ import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.design.SecaPalette
 import com.seca.core.link.LinkSettings
 import com.seca.core.link.SecaLink
+import com.seca.core.link.TorAccess
 import com.seca.core.link.relay.PublishResult
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
 import com.seca.core.model.backup.BackupCipher
+import com.seca.messages.link.LinkService
 import com.seca.messages.sms.BackupMessage
 import com.seca.messages.sms.Conversation
 import com.seca.messages.sms.LinkSms
@@ -36,7 +38,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.conflate
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -133,11 +134,13 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                     relays = link.settings.relays(),
                     readReceipts = link.settings.readReceipts,
                     typingIndicator = link.settings.typingIndicator,
+                    useTor = link.settings.useTor,
                 ),
             )
         }
         if (!link.settings.enabled) return
         watchNetwork()
+        if (link.settings.useTor) refreshTor()
         if (link.settings.publishDue()) {
             publishPrekeys()
         } else {
@@ -155,6 +158,28 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         _ui.update { it.copy(link = it.link.copy(typingIndicator = on)) }
     }
 
+    /** Routes Seca Link through Tor, with Orbot, or back to a direct connection; listening reconnects at once. */
+    fun setUseTor(on: Boolean) {
+        val context = getApplication<Application>()
+        link.settings.useTor = on
+        _ui.update { it.copy(link = it.link.copy(useTor = on, orbotRunning = null)) }
+        if (on) TorAccess(context).requestStart()
+        if (link.settings.enabled) LinkService.start(context)
+        refreshTor()
+    }
+
+    /** Checks again whether Orbot is installed and takes connections. */
+    fun refreshTor() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val tor = TorAccess(getApplication())
+            val installed = tor.installed()
+            val running = installed && tor.state() == TorAccess.State.Ready
+            _ui.update { it.copy(link = it.link.copy(orbotInstalled = installed, orbotRunning = running)) }
+        }
+    }
+
+    fun openOrbot() = TorAccess(getApplication()).open()
+
     fun setLinkEnabled(on: Boolean) {
         link.settings.enabled = on
         _ui.update { it.copy(link = it.link.copy(enabled = on, statuses = emptyMap())) }
@@ -166,9 +191,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
             // Contacts who invited this phone while Seca Link was off get their answer, once the keys are out.
             viewModelScope.launch(Dispatchers.IO) {
                 publishing?.join()
-                runCatching { link.connectWaiting() }.getOrDefault(emptyList()).forEach { (number, reply) ->
-                    LinkSms.send(getApplication(), number, reply)
-                }
+                LinkSms.connectWaiting(getApplication())
             }
         } else {
             watchingNetwork?.cancel()
@@ -386,6 +409,23 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /** Sends a photo through Seca Link, which only an encrypted conversation carries. */
+    fun sendPhoto(address: String, uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (!links.sendPhoto(address, uri)) withContext(Dispatchers.Main) { toast("La photo n'a pas pu être envoyée") }
+        }
+    }
+
+    /** Sends the owner's Seca Link invitation to [address] now, also as a text, which every network carries. */
+    fun inviteToLink(address: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val sent = LinkSms.inviteNow(getApplication(), address)
+            withContext(Dispatchers.Main) {
+                toast(if (sent) "Invitation Seca Link envoyée" else "Invitation impossible : activez Seca Link dans les réglages")
+            }
+        }
+    }
+
     /** Sends a failed message again: through Seca Link if it went that way, else as an SMS in place of the failed one. */
     fun retry(message: Message) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -521,7 +561,10 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     // Numbers are read here, off the main thread, before the screen sees them:
     // the lists then only look results up, and scrolling never waits on parsing.
     private suspend fun loadConversations() {
-        val list = withContext(Dispatchers.IO) { links.withLatest(repository.conversations()) }
+        val list = withContext(Dispatchers.IO) {
+            // A Seca Link handshake written as text reads as a short notice rather than its code.
+            links.withLatest(repository.conversations()).map { it.copy(snippet = LinkSms.snippetOf(it.snippet)) }
+        }
         withContext(Dispatchers.Default) { list.forEach { numbers.prepare(it.address) } }
         // A message arriving in an archived conversation takes it out of the archive.
         _ui.update {

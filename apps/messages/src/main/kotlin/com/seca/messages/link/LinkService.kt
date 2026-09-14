@@ -13,6 +13,8 @@ import com.seca.core.link.message.Envelope
 import com.seca.core.link.message.LinkPayload
 import com.seca.core.link.nostr.NostrEvent
 import com.seca.messages.ActiveConversation
+import com.seca.messages.LinkConversations
+import com.seca.messages.sms.LinkSms
 import com.seca.messages.sms.MessageNotifications
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -68,6 +70,8 @@ class LinkService : Service() {
         // Each start connects afresh, so a connection a relay dropped without a word is never waited on.
         following?.cancel()
         following = scope.launch { follow(link) }
+        // Handshakes that came while the network was away get their session now, and their answer.
+        scope.launch { LinkSms.connectWaiting(this@LinkService) }
         return START_STICKY
     }
 
@@ -118,19 +122,34 @@ class LinkService : Service() {
         }
         val number = incoming.number
         when (val payload = incoming.payload) {
-            is LinkPayload.Text -> {
-                val message = LinkMessage(payload.id, number, payload.body, System.currentTimeMillis(), LinkStatus.Received, read = false)
-                if (!messages.add(message)) return
-                LinkTyping.stopped(number)
-                // The conversation already on screen shows it; a notification would only repeat it.
-                if (!ActiveConversation.isShown(number)) runCatching { MessageNotifications.notifyLink(this, number, payload.body) }
-                // Sent aside, so the notices that follow on this relay do not wait for every relay to answer.
-                scope.launch { runCatching { link.send(number, LinkPayload.Delivered(listOf(payload.id))) } }
+            is LinkPayload.Text -> received(
+                link,
+                messages,
+                LinkMessage(payload.id, number, payload.body, System.currentTimeMillis(), LinkStatus.Received, read = false),
+                preview = payload.body,
+            )
+            // A photo arrives piece by piece, and becomes a message once the last piece is in.
+            is LinkPayload.MediaPart -> if (LinkMedia(this).accept(number, payload)) {
+                received(
+                    link,
+                    messages,
+                    LinkMessage(payload.id, number, "", System.currentTimeMillis(), LinkStatus.Received, read = false, media = payload.mime),
+                    preview = LinkConversations.PHOTO,
+                )
             }
             is LinkPayload.Delivered -> messages.setStatus(payload.ids, LinkStatus.Delivered)
             is LinkPayload.Read -> messages.setStatus(payload.ids, LinkStatus.Read)
             LinkPayload.Typing -> LinkTyping.typing(number)
         }
+    }
+
+    private fun received(link: SecaLink, messages: LinkMessages, message: LinkMessage, preview: String) {
+        if (!messages.add(message)) return
+        LinkTyping.stopped(message.number)
+        // The conversation already on screen shows it; a notification would only repeat it.
+        if (!ActiveConversation.isShown(message.number)) runCatching { MessageNotifications.notifyLink(this, message.number, preview) }
+        // Sent aside, so the notices that follow on this relay do not wait for every relay to answer.
+        scope.launch { runCatching { link.send(message.number, LinkPayload.Delivered(listOf(message.id))) } }
     }
 
     /** From a while before the last envelope seen: envelopes carry a time a few minutes early. */

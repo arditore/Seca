@@ -3,6 +3,7 @@ package com.seca.core.link.handshake
 import com.seca.core.link.LinkSettings
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
+import java.util.Base64
 
 /**
  * The discreet invitation two Seca phones exchange by data SMS: where to find
@@ -23,6 +24,19 @@ data class Handshake(
     val relays: List<String>,
 ) {
     enum class Type(val code: Byte) { Invite(1), Accept(2) }
+
+    /**
+     * The same handshake written into an ordinary text message, for when a
+     * data SMS does not get through, as some networks drop them. A phone with
+     * Seca reads it and sets it aside; anyone else sees a short explanation.
+     */
+    fun text(): String {
+        val intro = when (type) {
+            Type.Invite -> "Seca Link : je t'invite à discuter en chiffré avec Seca Messages."
+            Type.Accept -> "Seca Link : invitation acceptée, nos messages sont chiffrés."
+        }
+        return "$intro $TEXT_MARKER${Base64.getUrlEncoder().withoutPadding().encodeToString(encode())}"
+    }
 
     fun encode(): ByteArray {
         val out = ByteArrayOutputStream()
@@ -71,6 +85,15 @@ data class Handshake(
         private const val INDEX_MASK = 0x7F
         private const val ASCII_LIMIT = 0x80
         private const val SCHEME = "wss://"
+
+        private const val TEXT_MARKER = "seca-link:"
+        private val TextHandshake = Regex("seca-link:([A-Za-z0-9_-]{40,240})")
+
+        /** The handshake a text message carries, written by [text]; null for any other message. */
+        fun fromText(body: String): Handshake? {
+            val encoded = TextHandshake.find(body)?.groupValues?.get(1) ?: return null
+            return runCatching { decode(Base64.getUrlDecoder().decode(encoded)) }.getOrNull()
+        }
 
         /** What an invitation says of an identity key, enough to recognise it on the relays. */
         fun identityHashOf(serializedIdentityKey: ByteArray): String =
