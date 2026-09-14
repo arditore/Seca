@@ -5,79 +5,171 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Person
+import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.graphics.drawable.Icon
+import android.net.Uri
+import android.provider.ContactsContract
+import android.provider.ContactsContract.PhoneLookup
 import android.telecom.Call
+import com.seca.core.contacts.PhoneNumbers
+import com.seca.core.design.notification.NotificationAvatars
+import com.seca.phone.MainActivity
 import com.seca.phone.R
 
 /**
- * The notifications of a call. An incoming call gets a call-style
- * notification that turns into the full screen when the phone is locked;
- * the call in progress gets a quiet one with "Raccrocher".
+ * The notifications of calls, drawn as Android draws a phone's own:
+ * - an incoming call rings with the caller's photo and the answer and decline
+ *   buttons, filling the screen when the phone is locked;
+ * - the call in progress stays as a call notification, which puts Android's
+ *   call chip in the status bar: one tap from anywhere brings the call back;
+ * - missed calls, with "Rappeler" and "Message".
  *
- * Neither makes a sound: Android keeps ringing and vibrating as usual.
+ * None of them makes a sound: Android keeps ringing and vibrating as usual.
  */
 internal object CallNotifications {
 
     private const val INCOMING = "incoming_calls"
     private const val ONGOING = "ongoing_calls"
-    private const val NOTIFICATION_ID = 7
+    private const val MISSED = "missed_calls"
+    const val NOTIFICATION_ID = 7
+    private const val MISSED_ID = 8
 
-    fun update(context: Context, calls: List<CallView>) {
+    /** Decoding a photo takes a moment; each caller's is drawn once per call. */
+    private val icons = HashMap<String, Icon>()
+
+    fun update(context: Context, calls: List<CallView>, service: Service?) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         ensureChannels(manager)
         val primary = calls.primary()
         when {
-            primary == null || primary.state == Call.STATE_DISCONNECTED -> manager.cancel(NOTIFICATION_ID)
+            primary == null || primary.state == Call.STATE_DISCONNECTED -> {
+                service?.stopForeground(Service.STOP_FOREGROUND_REMOVE)
+                manager.cancel(NOTIFICATION_ID)
+                icons.clear()
+            }
             primary.state == Call.STATE_RINGING || primary.state == Call.STATE_SIMULATED_RINGING ->
                 manager.notify(NOTIFICATION_ID, incoming(context, manager, primary))
-            else -> manager.notify(NOTIFICATION_ID, ongoing(context, primary))
+            else -> showOngoing(context, manager, service, primary)
         }
     }
 
     private fun incoming(context: Context, manager: NotificationManager, view: CallView): Notification {
         val title = view.title(CallSession.numbers)
         val screen = screenIntent(context, answer = false)
-        val builder = Notification.Builder(context, INCOMING)
-            .setSmallIcon(R.drawable.ic_stat_call)
+        val builder = base(context, INCOMING)
             .setContentTitle(title)
             .setContentText(view.subtitle(CallSession.numbers) ?: "Appel entrant")
-            .setCategory(Notification.CATEGORY_CALL)
-            .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
             .setContentIntent(screen)
         if (manager.canUseFullScreenIntent()) {
-            val person = Person.Builder().setName(title).setImportant(true).build()
             builder
                 .setFullScreenIntent(screen, true)
-                .setStyle(Notification.CallStyle.forIncomingCall(person, declineIntent(context), screenIntent(context, answer = true)))
+                .setStyle(
+                    Notification.CallStyle.forIncomingCall(
+                        personOf(context, view, title),
+                        declineIntent(context),
+                        screenIntent(context, answer = true),
+                    ),
+                )
         } else {
             // Android refuses a call-style notification without a full-screen intent: plain buttons then.
             builder
+                .setLargeIcon(iconOf(context, view, title))
                 .addAction(Notification.Action.Builder(null, "Refuser", declineIntent(context)).build())
                 .addAction(Notification.Action.Builder(null, "Répondre", screenIntent(context, answer = true)).build())
         }
         return builder.build()
     }
 
-    private fun ongoing(context: Context, view: CallView): Notification {
+    /**
+     * As the in-call service's own notification, the call gets the chip in the status bar and
+     * a coloured call notification. Should Android refuse, a plain one still leads back to the call.
+     */
+    private fun showOngoing(context: Context, manager: NotificationManager, service: Service?, view: CallView) {
+        val shown = service != null && runCatching {
+            service.startForeground(NOTIFICATION_ID, ongoing(context, view, callStyle = true), ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
+        }.isSuccess
+        if (!shown) manager.notify(NOTIFICATION_ID, ongoing(context, view, callStyle = false))
+    }
+
+    private fun ongoing(context: Context, view: CallView, callStyle: Boolean): Notification {
+        val title = view.title(CallSession.numbers)
         val answered = view.connectTime > 0 && view.state == Call.STATE_ACTIVE
-        return Notification.Builder(context, ONGOING)
-            .setSmallIcon(R.drawable.ic_stat_call)
-            .setContentTitle(view.title(CallSession.numbers))
+        val hangUp = broadcast(context, CallActionReceiver.HANG_UP, 3)
+        val builder = base(context, ONGOING)
+            .setContentTitle(title)
             .setContentText(view.status())
-            .setCategory(Notification.CATEGORY_CALL)
-            .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
             .setUsesChronometer(answered)
             .setShowWhen(answered)
             .setWhen(if (answered) view.connectTime else System.currentTimeMillis())
             .setContentIntent(screenIntent(context, answer = false))
-            .addAction(Notification.Action.Builder(null, "Raccrocher", broadcast(context, CallActionReceiver.HANG_UP, 3)).build())
+        if (callStyle) {
+            builder
+                .setStyle(Notification.CallStyle.forOngoingCall(personOf(context, view, title), hangUp))
+                .setColorized(true)
+        } else {
+            builder
+                .setLargeIcon(iconOf(context, view, title))
+                .addAction(Notification.Action.Builder(null, "Raccrocher", hangUp).build())
+        }
+        return builder.build()
+    }
+
+    /** Missed calls, as Android asks the phone app to show them; "Rappeler" and "Message" when one number called. */
+    fun showMissed(context: Context, count: Int, number: String?, callBack: PendingIntent?, clear: PendingIntent?) {
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        ensureChannels(manager)
+        val known = number?.takeIf { it.isNotBlank() }
+        val contact = known?.let { lookUp(context, it) }
+        val who = contact?.name ?: known?.let { PhoneNumbers(PhoneNumbers.detectRegion(context)).display(it) }
+        val builder = Notification.Builder(context, MISSED)
+            .setSmallIcon(R.drawable.ic_stat_call)
+            .setColor(NotificationAvatars.accentOf(context))
+            .setContentTitle(if (count == 1) "Appel manqué" else "$count appels manqués")
+            .setContentText(who ?: "Ouvrez l'historique pour voir qui a appelé")
+            .setCategory(Notification.CATEGORY_MISSED_CALL)
+            .setContentIntent(historyIntent(context))
+            .setAutoCancel(true)
+            .setShowWhen(true)
+        clear?.let(builder::setDeleteIntent)
+        if (who != null) builder.setLargeIcon(NotificationAvatars.iconFor(context, who, contact?.id))
+        if (known != null) {
+            builder
+                .addAction(Notification.Action.Builder(null, "Rappeler", callBack ?: dialIntent(context, known)).build())
+                .addAction(Notification.Action.Builder(null, "Message", messageIntent(context, known)).build())
+        }
+        manager.notify(MISSED_ID, builder.build())
+    }
+
+    fun cancelMissed(context: Context) {
+        context.getSystemService(NotificationManager::class.java)?.cancel(MISSED_ID)
+    }
+
+    private fun base(context: Context, channel: String) = Notification.Builder(context, channel)
+        .setSmallIcon(R.drawable.ic_stat_call)
+        .setColor(NotificationAvatars.accentOf(context))
+        .setCategory(Notification.CATEGORY_CALL)
+        .setVisibility(Notification.VISIBILITY_PUBLIC)
+        .setOngoing(true)
+        .setOnlyAlertOnce(true)
+
+    /** The caller as Android shows them, with their photo; a contact is tied to its card, so "Ne pas déranger" lets favourites through. */
+    private fun personOf(context: Context, view: CallView, title: String): Person {
+        val caller = view.caller
+        return Person.Builder()
+            .setName(title)
+            .setIcon(iconOf(context, view, title))
+            .setImportant(caller != null)
+            .apply { caller?.let { setUri(ContactsContract.Contacts.getLookupUri(it.contactId, it.lookupKey).toString()) } }
             .build()
     }
+
+    private fun iconOf(context: Context, view: CallView, title: String): Icon =
+        icons.getOrPut("${view.number}|${view.caller?.contactId}") {
+            NotificationAvatars.iconFor(context, title, view.caller?.contactId, view.caller?.tone ?: 0)
+        }
 
     /**
      * Opens the in-call screen; with [answer], the screen answers as it opens.
@@ -93,6 +185,29 @@ internal object CallNotifications {
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
+    private fun historyIntent(context: Context): PendingIntent = PendingIntent.getActivity(
+        context,
+        4,
+        Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+
+    private fun dialIntent(context: Context, number: String): PendingIntent = PendingIntent.getActivity(
+        context,
+        5,
+        Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", number, null))
+            .setClass(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+
+    private fun messageIntent(context: Context, number: String): PendingIntent = PendingIntent.getActivity(
+        context,
+        6,
+        Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", number, null)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+
     private fun declineIntent(context: Context) = broadcast(context, CallActionReceiver.DECLINE, 2)
 
     private fun broadcast(context: Context, action: String, code: Int): PendingIntent = PendingIntent.getBroadcast(
@@ -101,6 +216,18 @@ internal object CallNotifications {
         Intent(context, CallActionReceiver::class.java).setAction(action),
         PendingIntent.FLAG_IMMUTABLE,
     )
+
+    private class Contact(val id: Long, val name: String)
+
+    private fun lookUp(context: Context, number: String): Contact? = runCatching {
+        context.contentResolver.query(
+            Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number)),
+            arrayOf(PhoneLookup._ID, PhoneLookup.DISPLAY_NAME),
+            null,
+            null,
+            null,
+        )?.use { if (it.moveToFirst()) Contact(it.getLong(0), it.getString(1).orEmpty()) else null }
+    }.getOrNull()?.takeIf { it.name.isNotBlank() }
 
     private fun ensureChannels(manager: NotificationManager) {
         if (manager.getNotificationChannel(INCOMING) == null) {
@@ -118,6 +245,14 @@ internal object CallNotifications {
                 NotificationChannel(ONGOING, "Appel en cours", NotificationManager.IMPORTANCE_LOW).apply {
                     description = "Pendant un appel, pour revenir à l'écran d'appel ou raccrocher."
                     lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                },
+            )
+        }
+        if (manager.getNotificationChannel(MISSED) == null) {
+            manager.createNotificationChannel(
+                NotificationChannel(MISSED, "Appels manqués", NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = "Qui a appelé pendant votre absence, pour rappeler ou écrire."
+                    lockscreenVisibility = Notification.VISIBILITY_PRIVATE
                 },
             )
         }

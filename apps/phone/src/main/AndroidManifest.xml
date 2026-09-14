@@ -21,6 +21,10 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- During a call, the call notification belongs to the call service, which gives it
+         Android's call chip in the status bar. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
 
     <!-- Lets Seca Contacts place a call in one tap through PlaceCallActivity. Only apps
          signed with the same key get it, so no other app can call without CALL_PHONE. -->
@@ -91,12 +95,13 @@
             </intent-filter>
         </activity>
 
-        <!-- The call screen lives in its own task: it shows over the lock screen and
-             never mixes with the app's own back stack. -->
+        <!-- The call screen lives in its own task: it shows over the lock screen and never
+             mixes with the app's own back stack. It stays in the recent apps while the call
+             lasts, so it can always be found again; it removes itself when the call ends. -->
         <activity
             android:name=".call.InCallActivity"
-            android:excludeFromRecents="true"
             android:exported="false"
+            android:label="Appel en cours"
             android:launchMode="singleInstance"
             android:showWhenLocked="true"
             android:taskAffinity="com.seca.phone.incall"
@@ -108,6 +113,7 @@
         <service
             android:name=".call.SecaInCallService"
             android:exported="true"
+            android:foregroundServiceType="phoneCall"
             android:permission="android.permission.BIND_INCALL_SERVICE">
             <meta-data
                 android:name="android.telecom.IN_CALL_SERVICE_UI"
@@ -136,6 +142,17 @@
         <receiver
             android:name=".call.CallActionReceiver"
             android:exported="false" />
+
+        <!-- Missed calls: Android asks the default phone app to announce them. Only
+             Telecom, which runs as the system, holds this permission. -->
+        <receiver
+            android:name=".call.MissedCallReceiver"
+            android:exported="true"
+            android:permission="android.permission.MODIFY_PHONE_STATE">
+            <intent-filter>
+                <action android:name="android.telecom.action.SHOW_MISSED_CALLS_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

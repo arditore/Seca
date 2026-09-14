@@ -1,10 +1,12 @@
 package com.seca.phone
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.telecom.TelecomManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -66,6 +68,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refreshPermissions()
+        if (defaultDialer.value) clearMissedCalls()
     }
 
     private fun refreshPermissions() {
@@ -75,11 +78,19 @@ class MainActivity : ComponentActivity() {
         defaultDialer.value = getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_DIALER) == true
     }
 
+    /** Opening the history counts as having seen the missed calls; Android then takes their notification away. */
+    @SuppressLint("MissingPermission") // The default phone app may do it without MODIFY_PHONE_STATE.
+    private fun clearMissedCalls() {
+        runCatching { getSystemService(TelecomManager::class.java)?.cancelMissedCallsNotification() }
+    }
+
     private fun granted(permission: String) = checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 
     private fun handle(intent: Intent?) {
-        if (intent?.action == Intent.ACTION_DIAL || intent?.action == Intent.ACTION_VIEW) {
-            dialRequest.value = DialRequest(number = intent.data?.schemeSpecificPart.orEmpty())
+        when (intent?.action) {
+            Intent.ACTION_DIAL, Intent.ACTION_VIEW -> dialRequest.value = DialRequest(number = intent.data?.schemeSpecificPart.orEmpty())
+            // The app's icon, touched during a call, brings the call back, as on any phone.
+            Intent.ACTION_MAIN -> if (callInProgress()) openCallScreen(this)
         }
     }
 }

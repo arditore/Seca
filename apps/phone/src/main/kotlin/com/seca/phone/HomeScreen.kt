@@ -90,6 +90,8 @@ internal fun HomeScreen(
                     .statusBarsPadding()
                     .padding(top = 8.dp, bottom = 8.dp),
             ) {
+                // Left the call screen during a call: the way back, and hanging up, stay at the top.
+                OngoingCallBanner(Modifier.padding(bottom = 8.dp))
                 SecaSearchField(
                     query = ui.query,
                     onQueryChange = viewModel::setQuery,

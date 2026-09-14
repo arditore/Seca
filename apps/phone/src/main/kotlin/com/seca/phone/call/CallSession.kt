@@ -205,7 +205,7 @@ object CallSession {
 
     private fun changed() {
         _calls.value = tracked.map(::viewOf)
-        appContext?.let { CallNotifications.update(it, _calls.value) }
+        appContext?.let { CallNotifications.update(it, _calls.value, service) }
     }
 
     private fun viewOf(call: Call): CallView {
