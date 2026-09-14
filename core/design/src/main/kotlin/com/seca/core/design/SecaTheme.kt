@@ -7,6 +7,8 @@ import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.seca.core.design.color.darkSchemeFor
 import com.seca.core.design.color.lightSchemeFor
@@ -39,6 +41,16 @@ fun SecaTheme(
         else -> lightSchemeFor(palette, identity)
     }
 
+    // Profile colours start from the palette itself rather than from each app's shifted hue,
+    // so a profile wears the same colour in all three apps.
+    val toneScheme = remember(palette, darkTheme, colorScheme) {
+        when {
+            palette == null -> colorScheme
+            darkTheme -> darkSchemeFor(palette, SecaAppIdentity.Contacts)
+            else -> lightSchemeFor(palette, SecaAppIdentity.Contacts)
+        }
+    }
+
     // The expressive motion scheme gives components their springy, slightly
     // overshooting movement: the other half of M3 Expressive, besides shape.
     MaterialExpressiveTheme(
@@ -46,6 +58,7 @@ fun SecaTheme(
         motionScheme = MotionScheme.expressive(),
         shapes = SecaShapes,
         typography = SecaTypography,
-        content = content,
-    )
+    ) {
+        CompositionLocalProvider(LocalToneScheme provides toneScheme, content = content)
+    }
 }

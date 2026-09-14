@@ -73,6 +73,8 @@ internal fun HomeScreen(
 ) {
     val context = LocalContext.current
     var bannerDismissed by remember { mutableStateOf(false) }
+    var managingBlocked by remember { mutableStateOf(false) }
+    if (managingBlocked) BlockedProfilesDialog(ui, viewModel, onDismiss = { managingBlocked = false })
     // The button carries its label at the top of the list and shrinks to an icon once scrolled.
     val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
     val actions = RowActions(
@@ -102,7 +104,16 @@ internal fun HomeScreen(
                         Icon(SecaIcons.Settings, contentDescription = "Paramètres")
                     }
                 }
-                if (ui.query.isBlank()) FilterRow(ui, onSelect = viewModel::setFilter)
+                if (ui.query.isBlank()) {
+                    FilterRow(ui, onSelect = viewModel::setFilter)
+                    // Blocked profiles stay in sight, so a quiet phone is never a mystery.
+                    BlockedProfilesBanner(
+                        ui = ui,
+                        onManage = { managingBlocked = true },
+                        onUnblock = viewModel::unblockProfiles,
+                        modifier = Modifier.padding(top = 12.dp),
+                    )
+                }
             }
         },
         bottomBar = { SecaSuiteBar(current = SecaAppIdentity.Phone, onSelect = { openSibling(context, it) }) },

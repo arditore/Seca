@@ -93,6 +93,19 @@ internal fun ConversationScreen(
         ActiveConversation.show(shownKey)
         onPauseOrDispose { ActiveConversation.hide(shownKey) }
     }
+    ConversationContent(screen, ui, viewModel, isDefaultApp, messages)
+}
+
+/** The conversation as drawn from its [messages], oldest first; apart from their loading, so any can be drawn. */
+@Composable
+internal fun ConversationContent(
+    screen: MessagesScreen.Conversation,
+    ui: MessagesUi,
+    viewModel: MessagesViewModel,
+    isDefaultApp: Boolean,
+    messages: List<Message>,
+) {
+    val context = LocalContext.current
     var text by rememberSaveable(screen.address) { mutableStateOf(screen.draft) }
     var confirmDelete by remember { mutableStateOf(false) }
     var scheduling by remember { mutableStateOf(false) }

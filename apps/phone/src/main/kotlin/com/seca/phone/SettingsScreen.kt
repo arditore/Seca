@@ -37,6 +37,7 @@ import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
+import com.seca.phone.screening.BlockMode
 import com.seca.phone.screening.ScreeningSettings
 
 /** A way into one of the system's own call screens; [intents] are tried in order. */
@@ -121,7 +122,7 @@ internal fun SettingsScreen(
             val screening = remember { ScreeningSettings(context) }
             var blockTelemarketing by remember { mutableStateOf(screening.blockTelemarketing) }
             var silenceUnknown by remember { mutableStateOf(screening.silenceUnknown) }
-            SecaGroupItem(index = 0, count = 2) {
+            SecaGroupItem(index = 0, count = 3) {
                 SecaSettingRow(
                     icon = SecaIcons.Shield,
                     title = "Bloquer le démarchage",
@@ -133,7 +134,7 @@ internal fun SettingsScreen(
                     trailing = { Switch(checked = blockTelemarketing, onCheckedChange = null) },
                 )
             }
-            SecaGroupItem(index = 1, count = 2) {
+            SecaGroupItem(index = 1, count = 3) {
                 SecaSettingRow(
                     icon = SecaIcons.VolumeOff,
                     title = "Inconnus en silencieux",
@@ -145,6 +146,21 @@ internal fun SettingsScreen(
                     trailing = { Switch(checked = silenceUnknown, onCheckedChange = null) },
                 )
             }
+            var managingBlocked by remember { mutableStateOf(false) }
+            val blockedProfiles = ui.blockedProfileList
+            SecaGroupItem(index = 2, count = 3, onClick = if (ui.profiles.connected) ({ managingBlocked = true }) else null) {
+                SecaSettingRow(
+                    icon = SecaIcons.Block,
+                    title = "Profils bloqués",
+                    subtitle = when {
+                        !ui.profiles.connected -> "Installez Seca Contacts pour bloquer un profil entier"
+                        blockedProfiles.isEmpty() -> "Aucun : tous vos contacts peuvent appeler"
+                        ui.blockMode == BlockMode.Decline -> blockedProfiles.joinToString(", ") { it.name } + " · appels refusés"
+                        else -> blockedProfiles.joinToString(", ") { it.name } + " · appels en silence"
+                    },
+                )
+            }
+            if (managingBlocked) BlockedProfilesDialog(ui, viewModel, onDismiss = { managingBlocked = false })
             SecaHint(
                 if (isDefaultDialer) {
                     "Le tri se fait sur ce téléphone : rien n'est envoyé nulle part."

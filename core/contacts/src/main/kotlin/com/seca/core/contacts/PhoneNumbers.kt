@@ -80,7 +80,9 @@ class PhoneNumbers(val homeRegion: String) {
         val digits = raw.filter(Char::isDigit)
         if (digits.isEmpty()) return null
         countryOf(raw)?.let { return "${it.flag} ${it.displayName}" }
-        return if (digits.length <= SHORT_NUMBER_DIGITS) "Numéro court" else "Numéro incomplet ou inconnu"
+        // A number starting with a trunk or country prefix is a long one still being written, never a short one.
+        val prefixed = raw.trimStart().let { it.startsWith("0") || it.startsWith("+") }
+        return if (digits.length <= SHORT_NUMBER_DIGITS && !prefixed) "Numéro court" else "Numéro incomplet ou inconnu"
     }
 
     /**

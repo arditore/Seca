@@ -169,6 +169,8 @@ private fun NumberDisplay(typed: String, ui: PhoneUi, exact: NumberMatch?, onPas
             exact.contact.displayName,
             ui.profileOf(exact.contact).takeIf { it.id != Profile.Principal.id }?.name,
         ).joinToString(" · ")
+        // While a long number is still being typed, saying it is incomplete would only be noise.
+        ui.numbers.countryOf(typed) == null && typed.trimStart().let { it.startsWith("0") || it.startsWith("+") } -> null
         else -> ui.numbers.describe(typed)
     }
     Column(

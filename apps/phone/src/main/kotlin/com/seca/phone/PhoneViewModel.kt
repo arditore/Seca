@@ -16,6 +16,8 @@ import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.design.SecaPalette
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
+import com.seca.phone.screening.BlockMode
+import com.seca.phone.screening.ScreeningSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,6 +69,9 @@ data class PhoneUi(
     val filter: CallFilter = CallFilter.All,
     /** SIM name by account, filled only when the phone holds more than one SIM. */
     val simLabels: Map<String, String> = emptyMap(),
+    /** Profiles whose contacts cannot call, by id, until the owner lets them again. */
+    val blockedProfiles: Set<String> = emptySet(),
+    val blockMode: BlockMode = BlockMode.Decline,
 ) {
     /** The palette picked in Seca Contacts; null follows the wallpaper. */
     val palette: SecaPalette? get() = SecaPalette.entries.firstOrNull { it.name == profiles.palette }
@@ -96,7 +101,8 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
     private val callLog = CallLogRepository(application.contentResolver)
     private val contacts = ContactsRepository(application.contentResolver, numbers)
     private val sharedProfiles = SharedProfilesClient(application.contentResolver)
-    private val _ui = MutableStateFlow(PhoneUi(numbers))
+    private val screening = ScreeningSettings(application)
+    private val _ui = MutableStateFlow(PhoneUi(numbers, blockedProfiles = screening.blockedProfiles, blockMode = screening.blockMode))
     val ui: StateFlow<PhoneUi> = _ui.asStateFlow()
 
     /** Kept here rather than in the composition, so it survives rotation. */
@@ -161,6 +167,23 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
     /** Sets the palette of every Seca app; null follows the wallpaper. */
     fun setPalette(palette: SecaPalette?) {
         viewModelScope.launch { sharedProfiles.setPalette(palette?.name) }
+    }
+
+    /** Stops or lets again the calls from every contact of [profileId]; it lasts until the owner changes it back. */
+    fun setProfileBlocked(profileId: String, blocked: Boolean) {
+        val updated = if (blocked) screening.blockedProfiles + profileId else screening.blockedProfiles - profileId
+        screening.blockedProfiles = updated
+        _ui.update { it.copy(blockedProfiles = updated) }
+    }
+
+    fun unblockProfiles() {
+        screening.blockedProfiles = emptySet()
+        _ui.update { it.copy(blockedProfiles = emptySet()) }
+    }
+
+    fun setBlockMode(mode: BlockMode) {
+        screening.blockMode = mode
+        _ui.update { it.copy(blockMode = mode) }
     }
 
     // Every number is read here, off the main thread, before the screen sees it:

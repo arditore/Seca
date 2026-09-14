@@ -44,6 +44,8 @@ class PhoneNumbersTest {
     fun `the editor line names the country or says why the number is not recognised`() {
         assertEquals("🇫🇷 France", france.describe("06 12 34 56 78"))
         assertEquals("Numéro court", france.describe("3639"))
+        // A long number still being typed is not a short one.
+        assertEquals("Numéro incomplet ou inconnu", france.describe("0612"))
         assertNull(france.describe(""))
     }
 
