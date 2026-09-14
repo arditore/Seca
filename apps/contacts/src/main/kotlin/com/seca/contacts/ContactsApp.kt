@@ -121,6 +121,7 @@ fun ContactsApp(
                     is Screen.Edit -> EditScreen(screen.id, ui, viewModel, withWrite, prefillPhone = screen.prefillPhone)
                     Screen.Settings -> SettingsScreen(ui, viewModel, withWrite)
                     Screen.MyCard -> MyCardScreen(ui, viewModel)
+                    DuplicatesRoute -> DuplicatesScreen(ui, viewModel, withWrite)
                 }
             }
         }

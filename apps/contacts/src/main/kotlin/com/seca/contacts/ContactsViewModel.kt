@@ -397,6 +397,22 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /** Joins contacts that are the same person; the joined contact keeps the first one's profile. */
+    fun merge(group: List<SecaContact>) {
+        viewModelScope.launch {
+            val profileId = _ui.value.profileOf(group.first()).id
+            val merged = runCatching { repository.mergeContacts(group.map { it.id }) }.getOrNull()
+            if (merged == null) {
+                toast("La fusion n'a pas pu se faire")
+                return@launch
+            }
+            // Joining changes the contact's lookup key, which carries its profile.
+            repository.lookupKeyOf(merged)?.let { assignProfile(it, profileId) }
+            load()
+            toast("${group.size} fiches réunies")
+        }
+    }
+
     fun setStarred(id: Long, starred: Boolean) {
         viewModelScope.launch {
             repository.setStarred(id, starred)

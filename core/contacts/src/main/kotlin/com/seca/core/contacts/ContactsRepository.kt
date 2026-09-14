@@ -301,6 +301,42 @@ class ContactsRepository(
         }
     }
 
+    /**
+     * Joins several contacts into one, as any phone's contacts app does: Android keeps every
+     * original entry and shows them together, so nothing is deleted and no account is touched.
+     * Returns the id of the joined contact, or null when there was nothing to join.
+     */
+    suspend fun mergeContacts(ids: List<Long>): Long? = withContext(Dispatchers.IO) {
+        val raws = ids.flatMap { id ->
+            resolver.query(
+                ContactsContract.RawContacts.CONTENT_URI,
+                arrayOf(ContactsContract.RawContacts._ID),
+                "${ContactsContract.RawContacts.CONTACT_ID} = ?",
+                arrayOf(id.toString()),
+                null,
+            )?.use { c -> buildList { while (c.moveToNext()) add(c.getLong(0)) } }.orEmpty()
+        }.distinct()
+        if (raws.size < 2) return@withContext null
+        val first = raws.first()
+        val operations = ArrayList(
+            raws.drop(1).map { other ->
+                ContentProviderOperation.newUpdate(ContactsContract.AggregationExceptions.CONTENT_URI)
+                    .withValue(ContactsContract.AggregationExceptions.TYPE, ContactsContract.AggregationExceptions.TYPE_KEEP_TOGETHER)
+                    .withValue(ContactsContract.AggregationExceptions.RAW_CONTACT_ID1, first)
+                    .withValue(ContactsContract.AggregationExceptions.RAW_CONTACT_ID2, other)
+                    .build()
+            },
+        )
+        resolver.applyBatch(ContactsContract.AUTHORITY, operations)
+        resolver.query(
+            ContentUris.withAppendedId(ContactsContract.RawContacts.CONTENT_URI, first),
+            arrayOf(ContactsContract.RawContacts.CONTACT_ID),
+            null,
+            null,
+            null,
+        )?.use { if (it.moveToFirst()) it.getLong(0) else null }
+    }
+
     suspend fun lookupKeyOf(contactId: Long): String? = withContext(Dispatchers.IO) {
         resolver.query(
             ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId),

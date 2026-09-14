@@ -224,6 +224,15 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
             }
             SecaHint("Seca ne synchronise rien : gardez une copie de vos contacts ailleurs que sur ce téléphone.")
 
+            SecaSectionLabel("Rangement")
+            SecaGroupItem(index = 0, count = 1, onClick = { viewModel.open(DuplicatesRoute) }) {
+                SecaSettingRow(
+                    icon = SecaIcons.Contacts,
+                    title = "Doublons",
+                    subtitle = "Réunir les fiches d'une même personne",
+                )
+            }
+
             SecaSectionLabel("Protection")
             SecaPrivacySettingsGroup("Seca Contacts")
 
