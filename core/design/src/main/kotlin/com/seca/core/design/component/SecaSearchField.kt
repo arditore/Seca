@@ -9,13 +9,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -29,7 +30,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.seca.core.design.SecaIcons
+
+private val PlaceholderMinSize = 12.sp
+private val PlaceholderStep = 0.5.sp
 
 /**
  * The search bar shared by the Seca apps: a full pill, as Material 3 draws
@@ -64,11 +69,17 @@ fun SecaSearchField(
             contentAlignment = Alignment.CenterStart,
         ) {
             if (query.isEmpty()) {
-                Text(
+                // The whole hint always shows: next to the screen's buttons, or with a large
+                // font setting, it gets a little smaller instead of being cut off.
+                BasicText(
                     text = placeholder,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                     maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = PlaceholderMinSize,
+                        maxFontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                        stepSize = PlaceholderStep,
+                    ),
                 )
             }
             BasicTextField(
