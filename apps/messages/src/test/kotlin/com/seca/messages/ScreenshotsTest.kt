@@ -3,9 +3,6 @@ package com.seca.messages
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.LinearGradient
-import android.graphics.Paint
-import android.graphics.Shader
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -19,8 +16,8 @@ import com.seca.core.contacts.SharedProfiles
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.SecaTheme
-import com.seca.core.link.handshake.Handshake
 import com.seca.core.link.LinkSettings
+import com.seca.core.link.handshake.Handshake
 import com.seca.core.model.PhoneNumber
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
@@ -82,6 +79,18 @@ class ScreenshotsTest {
         SettingsScreen(sampleUi(), viewModel(), isDefaultApp = true, onBecomeDefault = {})
     }
 
+    /** The launcher icon at the size app stores ask for. */
+    @Test
+    fun icon() {
+        val drawable = ApplicationProvider.getApplicationContext<Application>().getDrawable(R.mipmap.ic_launcher) ?: return
+        val bitmap = Bitmap.createBitmap(ICON_PX, ICON_PX, Bitmap.Config.ARGB_8888)
+        drawable.setBounds(0, 0, ICON_PX, ICON_PX)
+        drawable.draw(Canvas(bitmap))
+        val target = folder ?: return
+        target.mkdirs()
+        File(target, "messages-icon.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
     private fun viewModel() = MessagesViewModel(ApplicationProvider.getApplicationContext<Application>())
 
     private fun shoot(name: String, dark: Boolean = false, content: @Composable () -> Unit) {
@@ -117,7 +126,7 @@ class ScreenshotsTest {
                 connected = true,
             ),
             conversations = listOf(
-                Conversation(1, CAMILLE, "📷 Photo", now - 4 * minute, unread = 2, outgoing = false),
+                Conversation(1, CAMILLE, "Super, à tout à l'heure !", now - 4 * minute, unread = 2, outgoing = false),
                 Conversation(2, "06 98 76 54 32", "Merci pour le document, je regarde ce soir.", now - hour, unread = 0, outgoing = true),
                 Conversation(3, "38123", "Votre code de vérification est 482913", now - 3 * hour, unread = 0, outgoing = false),
                 Conversation(4, "07 11 22 33 44", "🔒 Seca Link", now - 26 * hour, unread = 0, outgoing = false),
@@ -137,8 +146,6 @@ class ScreenshotsTest {
             Message(3, 1, CAMILLE, invite.copy(type = Handshake.Type.Accept).text(), now - 26 * 60 * minute + 3 * minute, MessageStatus.Received),
             Message(4, 1, CAMILLE, "Coucou ! Tu es dispo ce soir ?", now - 50 * minute, MessageStatus.Received),
             Message(-5, 1, CAMILLE, "Oui, après 19 h", now - 40 * minute, MessageStatus.Read, encrypted = true, linkId = "a", theirReaction = "❤️"),
-            Message(-6, 1, CAMILLE, "", now - 12 * minute, MessageStatus.Received, encrypted = true, linkId = "b", image = samplePhoto()),
-            Message(-7, 1, CAMILLE, "", now - 8 * minute, MessageStatus.Received, encrypted = true, linkId = "d", audio = "/sans/fichier.ogg"),
             Message(
                 -8, 1, CAMILLE, "Super, à tout à l'heure !", now - 4 * minute, MessageStatus.Received,
                 encrypted = true, linkId = "c", replyTo = "a", myReaction = "👍", expiresAt = now + 60 * minute,
@@ -146,20 +153,8 @@ class ScreenshotsTest {
         )
     }
 
-    /** A landscape made up of two gradients, standing in for a photo. */
-    private fun samplePhoto(): String {
-        val bitmap = Bitmap.createBitmap(1200, 900, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val sky = Paint().apply { shader = LinearGradient(0f, 0f, 0f, 540f, 0xFF7FB3E0.toInt(), 0xFFF6C99B.toInt(), Shader.TileMode.CLAMP) }
-        canvas.drawRect(0f, 0f, 1200f, 540f, sky)
-        val sea = Paint().apply { shader = LinearGradient(0f, 540f, 0f, 900f, 0xFF2E6E8E.toInt(), 0xFF0E3448.toInt(), Shader.TileMode.CLAMP) }
-        canvas.drawRect(0f, 540f, 1200f, 900f, sea)
-        val file = File(ApplicationProvider.getApplicationContext<Application>().cacheDir, "sample-photo.webp")
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 85, it) }
-        return file.absolutePath
-    }
-
     private companion object {
         const val CAMILLE = "06 12 34 56 78"
+        const val ICON_PX = 512
     }
 }

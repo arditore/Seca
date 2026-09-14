@@ -61,6 +61,22 @@ class ScreenshotsTest {
         HomeScreen(sampleUi().copy(currentProfileId = "famille"), viewModel(), rememberLazyListState(), onOpenSibling = {})
     }
 
+    /** The launcher icon at the size app stores ask for. */
+    @Test
+    fun icon() {
+        val drawable = ApplicationProvider.getApplicationContext<Application>().getDrawable(R.mipmap.ic_launcher) ?: return
+        val bitmap = Bitmap.createBitmap(ICON_PX, ICON_PX, Bitmap.Config.ARGB_8888)
+        drawable.setBounds(0, 0, ICON_PX, ICON_PX)
+        drawable.draw(android.graphics.Canvas(bitmap))
+        val target = folder ?: return
+        target.mkdirs()
+        File(target, "contacts-icon.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    private companion object {
+        const val ICON_PX = 512
+    }
+
     private fun viewModel() = ContactsViewModel(ApplicationProvider.getApplicationContext<Application>())
 
     private fun shoot(name: String, dark: Boolean = false, content: @Composable () -> Unit) {
