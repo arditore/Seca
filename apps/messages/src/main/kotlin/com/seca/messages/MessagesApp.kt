@@ -88,6 +88,7 @@ fun MessagesApp(
     BackHandler(enabled = viewModel.backStack.size > 1) { viewModel.back() }
 
     SecaTheme(identity = SecaAppIdentity.Messages, palette = ui.palette) {
+        BackgroundAccessPrompt()
         if (!smsGranted) {
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.surface,

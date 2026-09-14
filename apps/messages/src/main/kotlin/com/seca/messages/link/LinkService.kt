@@ -6,15 +6,18 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import androidx.core.content.edit
 import com.seca.core.link.SecaLink
 import com.seca.core.link.message.Envelope
 import com.seca.core.link.message.LinkPayload
 import com.seca.core.link.nostr.NostrEvent
+import com.seca.messages.ActiveConversation
 import com.seca.messages.sms.MessageNotifications
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
@@ -26,15 +29,17 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Keeps Seca Link listening while it is on: one connection to each relay of
  * this phone, which first hands over what arrived while the phone was away,
  * then each envelope as it comes.
  *
- * It runs in the foreground with a quiet notification. Without one Android
- * would cut the connection, and a phone without Google has no push service to
- * wake the app instead.
+ * Once the owner lets the app run in the background, it listens without any
+ * notification. Until then it runs in the foreground with a quiet one: without
+ * either, Android would cut the connection, and a phone without Google has no
+ * push service to wake the app instead.
  */
 class LinkService : Service() {
 
@@ -44,13 +49,25 @@ class LinkService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Started as a foreground service, it must show its notification at once, even to take it away just after.
+        if (intent?.getBooleanExtra(EXTRA_FOREGROUND, false) == true && !startInForeground()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         val link = SecaLink(this)
         if (!link.settings.enabled) {
             stopSelf()
             return START_NOT_STICKY
         }
-        startInForeground()
-        if (following?.isActive != true) following = scope.launch { follow(link) }
+        if (runsFreely(this)) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else if (!startInForeground()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        // Each start connects afresh, so a connection a relay dropped without a word is never waited on.
+        following?.cancel()
+        following = scope.launch { follow(link) }
         return START_STICKY
     }
 
@@ -59,14 +76,15 @@ class LinkService : Service() {
         super.onDestroy()
     }
 
-    private fun startInForeground() {
+    /** False when Android refuses a foreground service at this moment, as it does from the background. */
+    private fun startInForeground(): Boolean = runCatching {
         val notification = MessageNotifications.linkServiceNotification(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING)
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
-    }
+    }.isSuccess
 
     /** One loop per relay, which connects again after a drop, waiting a little longer each time. */
     private suspend fun follow(link: SecaLink) = coroutineScope {
@@ -77,7 +95,9 @@ class LinkService : Service() {
                     if (link.network.available()) {
                         link.inbox(url, since()).catch { }.collect { event ->
                             wait = RETRY_MIN_MILLIS
-                            handle(link, event)
+                            // Opening an envelope moves the session on: it is kept whole, even when listening restarts.
+                            // One envelope that cannot be handled must never stop the listening.
+                            withContext(NonCancellable) { runCatching { handle(link, event) } }
                         }
                     }
                     delay(wait)
@@ -102,8 +122,10 @@ class LinkService : Service() {
                 val message = LinkMessage(payload.id, number, payload.body, System.currentTimeMillis(), LinkStatus.Received, read = false)
                 if (!messages.add(message)) return
                 LinkTyping.stopped(number)
-                MessageNotifications.notifyLink(this, number, payload.body)
-                link.send(number, LinkPayload.Delivered(listOf(payload.id)))
+                // The conversation already on screen shows it; a notification would only repeat it.
+                if (!ActiveConversation.isShown(number)) runCatching { MessageNotifications.notifyLink(this, number, payload.body) }
+                // Sent aside, so the notices that follow on this relay do not wait for every relay to answer.
+                scope.launch { runCatching { link.send(number, LinkPayload.Delivered(listOf(payload.id))) } }
             }
             is LinkPayload.Delivered -> messages.setStatus(payload.ids, LinkStatus.Delivered)
             is LinkPayload.Read -> messages.setStatus(payload.ids, LinkStatus.Read)
@@ -124,6 +146,7 @@ class LinkService : Service() {
 
     companion object {
         private const val NOTIFICATION_ID = 91
+        private const val EXTRA_FOREGROUND = "foreground"
         private const val PREFS = "seca_link_service"
         private const val KEY_LAST_SEEN = "last_seen"
         private const val MILLIS_PER_SECOND = 1000
@@ -132,15 +155,30 @@ class LinkService : Service() {
         private const val RETRY_MIN_MILLIS = 5_000L
         private const val RETRY_MAX_MILLIS = 60_000L
 
-        /** Starts listening when Seca Link is on; Android refuses it from the background, which is harmless. */
+        /**
+         * Starts listening when Seca Link is on: in the background when the owner allowed it, in the
+         * foreground otherwise. Android refuses both at some moments, which is harmless: the next opening
+         * of the app starts it again.
+         */
         fun start(context: Context) {
             if (!SecaLink(context).settings.enabled) return
-            runCatching { context.startForegroundService(Intent(context, LinkService::class.java)) }
+            val intent = Intent(context, LinkService::class.java)
+            runCatching {
+                if (runsFreely(context)) {
+                    context.startService(intent)
+                } else {
+                    context.startForegroundService(intent.putExtra(EXTRA_FOREGROUND, true))
+                }
+            }
         }
 
         fun stop(context: Context) {
             context.stopService(Intent(context, LinkService::class.java))
         }
+
+        /** Whether Android lets the app run in the background: the owner lifted its battery optimisation. */
+        fun runsFreely(context: Context): Boolean =
+            context.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(context.packageName) == true
     }
 }
 

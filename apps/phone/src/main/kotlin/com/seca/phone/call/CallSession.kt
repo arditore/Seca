@@ -4,6 +4,8 @@ import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.os.OutcomeReceiver
@@ -80,13 +82,15 @@ enum class AudioKind { Earpiece, Speaker, Bluetooth, Headset }
 class AudioRoute internal constructor(
     val kind: AudioKind,
     val name: String,
+    /** Tells two devices apart even when Android names them alike, or not at all. */
+    internal val key: String,
     internal val endpoint: Any? = null,
     internal val legacyRoute: Int = 0,
     internal val bluetooth: BluetoothDevice? = null,
 ) {
-    override fun equals(other: Any?): Boolean = other is AudioRoute && other.kind == kind && other.name == name
+    override fun equals(other: Any?): Boolean = other is AudioRoute && other.key == key
 
-    override fun hashCode(): Int = 31 * kind.hashCode() + name.hashCode()
+    override fun hashCode(): Int = key.hashCode()
 }
 
 data class AudioView(
@@ -173,32 +177,48 @@ object CallSession {
     internal fun onMuted(muted: Boolean) = _audio.update { it.copy(muted = muted) }
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    internal fun onEndpoint(endpoint: CallEndpoint) = _audio.update { it.copy(route = routeOf(endpoint)) }
+    internal fun onEndpoint(endpoint: CallEndpoint) {
+        val key = endpoint.identifier.toString()
+        val named = routesOf(listOf(endpoint)).first()
+        // The route as the list names it, so the button and the list agree.
+        _audio.update { audio -> audio.copy(route = audio.routes.firstOrNull { it.key == key } ?: named) }
+    }
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    internal fun onEndpoints(endpoints: List<CallEndpoint>) = _audio.update { it.copy(routes = endpoints.map(::routeOf)) }
+    internal fun onEndpoints(endpoints: List<CallEndpoint>) {
+        val routes = routesOf(endpoints)
+        _audio.update { audio -> audio.copy(routes = routes, route = routes.firstOrNull { it.key == audio.route?.key } ?: audio.route) }
+    }
 
     /** Before Android 14, where the sound goes and whether it is muted come as one audio state. */
     internal fun onAudioState(state: CallAudioState) {
         val mask = state.supportedRouteMask
         val routes = buildList {
             if (mask and CallAudioState.ROUTE_EARPIECE != 0) {
-                add(AudioRoute(AudioKind.Earpiece, "Téléphone", legacyRoute = CallAudioState.ROUTE_EARPIECE))
+                add(AudioRoute(AudioKind.Earpiece, EARPIECE, "earpiece", legacyRoute = CallAudioState.ROUTE_EARPIECE))
             }
             if (mask and CallAudioState.ROUTE_WIRED_HEADSET != 0) {
-                add(AudioRoute(AudioKind.Headset, "Écouteurs", legacyRoute = CallAudioState.ROUTE_WIRED_HEADSET))
+                add(AudioRoute(AudioKind.Headset, HEADSET, "headset", legacyRoute = CallAudioState.ROUTE_WIRED_HEADSET))
             }
             if (mask and CallAudioState.ROUTE_SPEAKER != 0) {
-                add(AudioRoute(AudioKind.Speaker, "Haut-parleur", legacyRoute = CallAudioState.ROUTE_SPEAKER))
+                add(AudioRoute(AudioKind.Speaker, SPEAKER, "speaker", legacyRoute = CallAudioState.ROUTE_SPEAKER))
             }
             if (mask and CallAudioState.ROUTE_BLUETOOTH != 0) {
                 val devices = state.supportedBluetoothDevices.toList()
-                if (devices.size <= 1) {
-                    add(AudioRoute(AudioKind.Bluetooth, "Bluetooth", legacyRoute = CallAudioState.ROUTE_BLUETOOTH, bluetooth = devices.firstOrNull()))
-                } else {
-                    devices.forEachIndexed { index, device ->
-                        add(AudioRoute(AudioKind.Bluetooth, "Bluetooth ${index + 1}", legacyRoute = CallAudioState.ROUTE_BLUETOOTH, bluetooth = device))
-                    }
+                val names = bluetoothNames(devices.size.coerceAtLeast(1))
+                if (devices.isEmpty()) {
+                    add(AudioRoute(AudioKind.Bluetooth, names.first(), "bluetooth", legacyRoute = CallAudioState.ROUTE_BLUETOOTH))
+                }
+                devices.forEachIndexed { index, device ->
+                    add(
+                        AudioRoute(
+                            AudioKind.Bluetooth,
+                            names[index],
+                            "bluetooth-${device.hashCode()}",
+                            legacyRoute = CallAudioState.ROUTE_BLUETOOTH,
+                            bluetooth = device,
+                        ),
+                    )
                 }
             }
         }
@@ -273,15 +293,52 @@ object CallSession {
     }
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private fun routeOf(endpoint: CallEndpoint): AudioRoute {
-        val kind = when (endpoint.endpointType) {
-            CallEndpoint.TYPE_SPEAKER, CallEndpoint.TYPE_STREAMING -> AudioKind.Speaker
-            CallEndpoint.TYPE_BLUETOOTH -> AudioKind.Bluetooth
-            CallEndpoint.TYPE_WIRED_HEADSET -> AudioKind.Headset
-            else -> AudioKind.Earpiece
+    private fun routesOf(endpoints: List<CallEndpoint>): List<AudioRoute> {
+        val bluetooth = endpoints.filter { it.endpointType == CallEndpoint.TYPE_BLUETOOTH }
+        val bluetoothNames = bluetoothNames(bluetooth.size, bluetooth.map { it.endpointName.toString() })
+        return endpoints.map { endpoint ->
+            val given = endpoint.endpointName.toString().trim()
+            val (kind, name) = when (endpoint.endpointType) {
+                CallEndpoint.TYPE_SPEAKER, CallEndpoint.TYPE_STREAMING -> AudioKind.Speaker to given.ifEmpty { SPEAKER }
+                CallEndpoint.TYPE_BLUETOOTH -> AudioKind.Bluetooth to bluetoothNames[bluetooth.indexOfFirst { it === endpoint }]
+                CallEndpoint.TYPE_WIRED_HEADSET -> AudioKind.Headset to given.ifEmpty { HEADSET }
+                else -> AudioKind.Earpiece to given.ifEmpty { EARPIECE }
+            }
+            AudioRoute(kind, name, endpoint.identifier.toString(), endpoint = endpoint)
         }
-        return AudioRoute(kind, endpoint.endpointName.toString(), endpoint = endpoint)
     }
+
+    /**
+     * Names for [count] Bluetooth routes. Telecom often calls every device just
+     * "Bluetooth"; the audio system knows the headset's or the car's own name,
+     * and tells it without any permission.
+     */
+    private fun bluetoothNames(count: Int, given: List<String?> = emptyList()): List<String> {
+        val known = runCatching { appContext?.getSystemService(AudioManager::class.java)?.availableCommunicationDevices }
+            .getOrNull()
+            .orEmpty()
+            .filter { it.type in BluetoothTypes }
+            .map { it.productName?.toString()?.trim().orEmpty() }
+            .filter { it.isNotEmpty() }
+            .distinct()
+        return List(count) { index ->
+            given.getOrNull(index)?.trim()?.takeUnless { it.isEmpty() || it.equals(BLUETOOTH, ignoreCase = true) }
+                ?: known.getOrNull(index)?.takeIf { known.size == count }
+                ?: if (count == 1) BLUETOOTH else "$BLUETOOTH ${index + 1}"
+        }
+    }
+
+    private val BluetoothTypes = setOf(
+        AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+        AudioDeviceInfo.TYPE_BLE_HEADSET,
+        AudioDeviceInfo.TYPE_BLE_SPEAKER,
+        AudioDeviceInfo.TYPE_HEARING_AID,
+    )
+
+    private const val EARPIECE = "Téléphone"
+    private const val SPEAKER = "Haut-parleur"
+    private const val HEADSET = "Écouteurs"
+    private const val BLUETOOTH = "Bluetooth"
 
     private fun viewOf(call: Call): CallView {
         val details = call.details

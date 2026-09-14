@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.telephony.SubscriptionManager
+import com.seca.messages.ActiveConversation
 import com.seca.messages.ConversationPrefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +44,10 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                 // A new message brings an archived conversation back into the list.
                 threadId?.let { prefs.setArchived(it, archived = false) }
                 if (code != null && stored != null && threadId != null) CodeCleanup.schedule(context, stored, threadId)
-                MessageNotifications.notifyIncoming(context, address, body)
+                // The conversation already on screen shows it; a notification would only repeat it.
+                if (!ActiveConversation.isShown(LinkSms.keyOf(context, address) ?: address)) {
+                    MessageNotifications.notifyIncoming(context, address, body)
+                }
                 // A conversation with someone new also offers them Seca Link, discreetly, when it is on.
                 LinkSms.inviteIfDue(context, address)
             } finally {

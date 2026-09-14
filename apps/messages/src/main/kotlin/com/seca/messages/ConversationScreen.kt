@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -52,9 +53,11 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.seca.core.design.SecaIcons
 import com.seca.core.model.Profile
 import com.seca.messages.link.LinkTyping
+import com.seca.messages.sms.LinkSms
 import com.seca.messages.sms.Message
 import com.seca.messages.sms.MessageStatus
 import com.seca.messages.sms.OneTimeCode
@@ -64,6 +67,9 @@ import kotlin.math.abs
 
 /** Two messages closer than this, from the same side, read as one block. */
 private const val JOIN_MILLIS = 2 * 60 * 1000L
+
+/** How many messages up the list still counts as reading the latest, which a new message then joins. */
+private const val NEAR_BOTTOM_ITEMS = 2
 
 /** How long "écrit…" stays after the contact's last typing notice. */
 private const val TYPING_SHOWN_MILLIS = 6_000L
@@ -81,6 +87,12 @@ internal fun ConversationScreen(
     }
     // Opening the conversation, and every message arriving while it is open, counts as read.
     LaunchedEffect(screen.threadId, messages.size) { viewModel.markRead(screen.threadId, screen.address) }
+    // While it is on screen, what arrives in it is shown here rather than notified.
+    val shownKey = remember(screen.address) { LinkSms.keyOf(context, screen.address) ?: screen.address }
+    LifecycleResumeEffect(shownKey) {
+        ActiveConversation.show(shownKey)
+        onPauseOrDispose { ActiveConversation.hide(shownKey) }
+    }
     var text by rememberSaveable(screen.address) { mutableStateOf(screen.draft) }
     var confirmDelete by remember { mutableStateOf(false) }
     var scheduling by remember { mutableStateOf(false) }
@@ -152,7 +164,22 @@ internal fun ConversationScreen(
     ) { padding ->
         // Newest at the bottom, where the eye and the keyboard are; the list grows upwards.
         val newestFirst = remember(messages) { messages.asReversed() }
+        val listState = rememberLazyListState()
+        // The list keeps its place by message, so one arriving at the bottom would slide in below the
+        // screen, unseen: it is brought into view. Someone reading further up stays put, unless it is theirs.
+        val newest = messages.lastOrNull()
+        var followed by remember { mutableStateOf<Long?>(null) }
+        LaunchedEffect(newest?.id) {
+            val before = followed
+            followed = newest?.id
+            // The first load already opens at the bottom.
+            if (before == null || newest == null) return@LaunchedEffect
+            if (newest.outgoing || listState.firstVisibleItemIndex <= scheduled.size + NEAR_BOTTOM_ITEMS) {
+                listState.animateScrollToItem(0)
+            }
+        }
         LazyColumn(
+            state = listState,
             reverseLayout = true,
             modifier = Modifier
                 .fillMaxSize()

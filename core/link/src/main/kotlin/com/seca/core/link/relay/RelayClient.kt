@@ -158,6 +158,13 @@ class RelayClient {
                     }
                 }
 
+                // The relay is closing: close back at once, or the connection would hang half-closed and no
+                // event would ever come again. The flow ends, and the caller connects anew.
+                override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                    webSocket.close(NORMAL_CLOSURE, null)
+                    close()
+                }
+
                 override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                     close()
                 }

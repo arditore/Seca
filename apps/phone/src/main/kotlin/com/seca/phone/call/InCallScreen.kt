@@ -356,13 +356,15 @@ private fun HangUpButton(view: CallView) {
 private fun AudioControl(audio: AudioView) {
     var open by remember { mutableStateOf(false) }
     val kind = audio.route?.kind ?: AudioKind.Earpiece
+    // With a headset or a car connected there is more than a speaker to switch: the button names where the sound goes.
+    val choices = audio.routes.size > 2
     Box {
         CallControl(
             icon = iconFor(kind),
-            label = "Haut-parleur",
-            checked = kind == AudioKind.Speaker || kind == AudioKind.Bluetooth,
+            label = if (choices) audio.route?.name ?: "Sortie audio" else "Haut-parleur",
+            checked = kind == AudioKind.Speaker || (choices && kind != AudioKind.Earpiece),
         ) {
-            if (audio.routes.size > 2) open = true else toggleSpeaker(audio)
+            if (choices) open = true else toggleSpeaker(audio)
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             audio.routes.forEach { route ->
