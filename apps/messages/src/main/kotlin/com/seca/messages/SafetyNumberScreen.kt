@@ -51,11 +51,16 @@ internal fun SafetyNumberScreen(route: SafetyNumberRoute, ui: MessagesUi, viewMo
         topBar = { SecaTopBar(title = "Numéro de sécurité", onBack = { viewModel.back() }) },
     ) { padding ->
         val number = safety
-        if (peer?.ready != true || number == null) {
+        if (peer?.ready != true) {
+            // No session yet: the way to open one, face to face.
+            ConnectInPerson(route.address, ui, viewModel, Modifier.padding(padding))
+            return@Scaffold
+        }
+        if (number == null) {
             SecaEmptyState(
                 icon = SecaIcons.Link,
-                title = "Pas encore connecté",
-                description = "Seca Link se connecte à $name après un premier SMS, quand vous l'avez activé tous les deux.",
+                title = "Numéro de sécurité en préparation",
+                description = "Il s'affiche dès que la clé de $name est lue.",
                 modifier = Modifier.padding(padding),
             )
             return@Scaffold

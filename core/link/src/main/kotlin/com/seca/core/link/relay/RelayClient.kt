@@ -129,9 +129,15 @@ class RelayClient(throughTor: Boolean = false) {
      * new ones as they arrive. The flow ends when the connection drops; the
      * caller connects again. A relay that asks for authentication (NIP-42), as
      * some do before handing out encrypted envelopes, gets [authenticate]'s
-     * answer, and the request is made again.
+     * answer, and the request is made again. [onOpen] runs once the
+     * connection is up.
      */
-    fun subscribe(url: String, filter: String, authenticate: suspend (relay: String, challenge: String) -> NostrEvent): Flow<NostrEvent> =
+    fun subscribe(
+        url: String,
+        filter: String,
+        onOpen: () -> Unit = {},
+        authenticate: suspend (relay: String, challenge: String) -> NostrEvent,
+    ): Flow<NostrEvent> =
         callbackFlow {
             val request = requestFor(url)
             if (request == null) {
@@ -143,6 +149,7 @@ class RelayClient(throughTor: Boolean = false) {
             val listener = object : WebSocketListener() {
                 override fun onOpen(webSocket: WebSocket, response: Response) {
                     webSocket.send(ask)
+                    onOpen()
                 }
 
                 override fun onMessage(webSocket: WebSocket, text: String) {

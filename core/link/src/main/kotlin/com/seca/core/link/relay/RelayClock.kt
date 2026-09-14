@@ -20,6 +20,9 @@ object RelayClock {
     /** Now, in seconds, as the relays count it. */
     fun now(): Long = System.currentTimeMillis() / MILLIS_PER_SECOND + offsetSeconds
 
+    /** How far ahead of this phone the relays' clock is, in seconds; 0 when close enough. */
+    val offset: Long get() = offsetSeconds
+
     /** Reads the Date header of a relay's answer. */
     fun observe(dateHeader: String?) {
         val server = runCatching { ZonedDateTime.parse(dateHeader, DateTimeFormatter.RFC_1123_DATE_TIME).toEpochSecond() }.getOrNull() ?: return

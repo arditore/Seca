@@ -427,6 +427,11 @@ private fun ConversationTopBar(
                         menuOpen = false
                         onInvite()
                     }
+                    // The safety number screen offers the QR codes while no session is open.
+                    MenuEntry("Connecter en face à face", SecaIcons.Link) {
+                        menuOpen = false
+                        onSafetyNumber()
+                    }
                 }
                 if (linked) {
                     MenuEntry("Numéro de sécurité", SecaIcons.Shield) {

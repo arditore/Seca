@@ -141,6 +141,7 @@ fun MessagesApp(
                     MessagesScreen.Relays -> RelaysScreen(ui, viewModel)
                     is SafetyNumberRoute -> SafetyNumberScreen(screen, ui, viewModel)
                     is SafetyScanRoute -> SafetyScanScreen(screen, ui, viewModel)
+                    LinkStatusRoute -> LinkStatusScreen(ui, viewModel)
                 }
             }
         }

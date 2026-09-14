@@ -92,20 +92,29 @@ class LinkService : Service() {
 
     /** One loop per relay, which connects again after a drop, waiting a little longer each time. */
     private suspend fun follow(link: SecaLink) = coroutineScope {
-        link.settings.relays().forEach { url ->
+        val relays = link.settings.relays()
+        LinkListening.keep(relays)
+        relays.forEach { url ->
             launch {
                 var wait = RETRY_MIN_MILLIS
-                while (isActive) {
-                    if (link.network.available()) {
-                        link.inbox(url, since()).catch { }.collect { event ->
-                            wait = RETRY_MIN_MILLIS
-                            // Opening an envelope moves the session on: it is kept whole, even when listening restarts.
-                            // One envelope that cannot be handled must never stop the listening.
-                            withContext(NonCancellable) { runCatching { handle(link, event) } }
+                try {
+                    while (isActive) {
+                        if (link.network.available()) {
+                            LinkListening.connecting(url)
+                            link.inbox(url, since(), onOpen = { LinkListening.connected(url) }).catch { }.collect { event ->
+                                wait = RETRY_MIN_MILLIS
+                                LinkListening.envelope(url)
+                                // Opening an envelope moves the session on: it is kept whole, even when listening restarts.
+                                // One envelope that cannot be handled must never stop the listening.
+                                withContext(NonCancellable) { runCatching { handle(link, event) } }
+                            }
                         }
+                        LinkListening.disconnected(url)
+                        delay(wait)
+                        wait = (wait * 2).coerceAtMost(RETRY_MAX_MILLIS)
                     }
-                    delay(wait)
-                    wait = (wait * 2).coerceAtMost(RETRY_MAX_MILLIS)
+                } finally {
+                    LinkListening.disconnected(url)
                 }
             }
         }

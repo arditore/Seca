@@ -241,15 +241,29 @@ class SecaLink(context: Context) {
         Incoming(peer.number, payload)
     }
 
+    /** This phone's handshake, as the code a contact scans in person; null while Seca Link is off. */
+    suspend fun myHandshake(): Handshake? = if (settings.enabled) handshakeOf(Handshake.Type.Invite) else null
+
+    /** Tries at once, as the owner asked, to open the session with [number], whose handshake came earlier. */
+    suspend fun retry(number: String): Received {
+        if (!settings.enabled) return Received.Ignored
+        val peer = peers[number] ?: return Received.Failed("Contact inconnu")
+        if (peer.nostrPublicKey == null) return Received.Failed("Aucune clé reçue de ce contact")
+        if (!network.available()) return Received.Failed("Pas d'accès au réseau")
+        peers.update(number) { it.copy(attemptedAt = System.currentTimeMillis()) }
+        return connect(number, answer = true)
+    }
+
     /**
      * Follows [url] for the envelopes addressed to this phone, from [since]
      * (seconds) on. Relays that ask who is listening get a signed answer.
+     * [onOpen] runs once the connection is up.
      */
-    fun inbox(url: String, since: Long): Flow<NostrEvent> = flow {
+    fun inbox(url: String, since: Long, onOpen: () -> Unit = {}): Flow<NostrEvent> = flow {
         val own = identity()
         val filter = "{\"kinds\":[${Envelope.KIND},${Envelope.EPHEMERAL_KIND}],\"#p\":[\"${own.nostr.publicKey}\"],\"since\":$since}"
         emitAll(
-            relayClient.subscribe(url, filter) { relay, challenge ->
+            relayClient.subscribe(url, filter, onOpen) { relay, challenge ->
                 own.nostr.sign(AUTH_KIND, listOf(listOf("relay", relay), listOf("challenge", challenge)), "")
             },
         )

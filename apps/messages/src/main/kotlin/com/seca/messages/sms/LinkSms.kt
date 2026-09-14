@@ -52,14 +52,26 @@ internal object LinkSms {
         return true
     }
 
-    /** A handshake from [address], by data SMS or [byText]: the session opens, and the answer goes back the same way. */
-    suspend fun receive(context: Context, address: String, handshake: Handshake, byText: Boolean) {
-        val number = keyOf(context, address) ?: return
+    /**
+     * A handshake from [address], by data SMS or [byText] (a text message, or a
+     * code scanned in person): the session opens, and the answer goes back the
+     * same way. Null when [address] is no phone number or nothing could be read.
+     */
+    suspend fun receive(context: Context, address: String, handshake: Handshake, byText: Boolean): SecaLink.Received? {
+        val number = keyOf(context, address) ?: return null
         val received = runCatching { SecaLink(context).receive(number, handshake, byText) }.getOrNull()
         if (received is SecaLink.Received.Connected) {
             received.reply?.let { send(context, address, it, alsoText = byText) }
             if (received.keyChanged) MessageNotifications.notifyKeyChanged(context, address)
         }
+        return received
+    }
+
+    /** The owner asks to try the connection with [number] again now; the answer leaves once it opens. */
+    suspend fun retry(context: Context, number: String): SecaLink.Received? {
+        val received = runCatching { SecaLink(context).retry(number) }.getOrNull()
+        if (received is SecaLink.Received.Connected) received.reply?.let { send(context, number, it, alsoText = true) }
+        return received
     }
 
     /** Contacts whose session could not open when their handshake came are tried again, and answered once connected. */

@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,38 +53,37 @@ import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.link.SafetyNumber
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.encoding.Base64
 import androidx.lifecycle.viewmodel.compose.viewModel as screenViewModel
 
-/** Scanning the safety number shown on the contact's phone. */
-data class SafetyScanRoute(val address: String) : MessagesScreen
+/**
+ * Scanning a code on the contact's phone: their safety number, to verify an
+ * open session, or with [connect], their Seca Link code, to open one.
+ */
+data class SafetyScanRoute(val address: String, val connect: Boolean = false) : MessagesScreen
 
 /**
- * Reads the QR code on the contact's phone and compares it with this one's
- * safety number. A match marks the contact as verified. The camera runs only
- * on this screen, and no image is kept.
+ * Reads the QR code on the contact's phone. A safety number that matches this
+ * phone's marks the contact as verified; a Seca Link code opens the session.
+ * The camera runs only on this screen, and no image is kept.
  */
 @Composable
 internal fun SafetyScanScreen(route: SafetyScanRoute, ui: MessagesUi, viewModel: MessagesViewModel) {
     val context = LocalContext.current
-    val links: LinkPeersViewModel = screenViewModel()
     val name = ui.nameOf(route.address)
     var granted by remember {
         mutableStateOf(context.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
     }
     val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it }
     LaunchedEffect(Unit) { if (!granted) askCamera.launch(Manifest.permission.CAMERA) }
-    val safety by produceState<SafetyNumber?>(null) { value = links.safetyNumber(route.address) }
-    var matched by remember { mutableStateOf<Boolean?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = { SecaTopBar(title = "Scanner son code", onBack = { viewModel.back() }) },
     ) { padding ->
-        val number = safety
-        val result = matched
         when {
             !granted -> SecaEmptyState(
                 icon = SecaIcons.Shield,
@@ -90,51 +92,127 @@ internal fun SafetyScanScreen(route: SafetyScanRoute, ui: MessagesUi, viewModel:
                 modifier = Modifier.padding(padding),
                 action = { Button(onClick = { askCamera.launch(Manifest.permission.CAMERA) }) { Text("Autoriser") } },
             )
-            result != null -> SecaEmptyState(
-                icon = if (result) SecaIcons.Check else SecaIcons.Shield,
-                title = if (result) "Codes identiques" else "Les codes ne correspondent pas",
-                description = if (result) {
-                    "$name est vérifié : personne ne s'interpose entre vos deux téléphones."
-                } else {
-                    "Vérifiez que c'est bien le code de $name. S'il ne correspond toujours pas, quelqu'un pourrait " +
-                        "s'interposer : n'échangez rien de sensible."
-                },
-                modifier = Modifier.padding(padding),
-                action = {
-                    if (result) {
-                        Button(onClick = { viewModel.back() }) { Text("Terminé") }
-                    } else {
-                        Button(onClick = { matched = null }) { Text("Scanner à nouveau") }
-                    }
-                },
-            )
-            number != null -> Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(24.dp),
-            ) {
-                QrScanner(
-                    onCode = { text ->
-                        val same = runCatching { number.matches(Base64.decode(text)) }.getOrDefault(false)
-                        if (same) links.setVerified(route.address, true)
-                        matched = same
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(32.dp)),
-                )
-                Text(
-                    text = "Visez le code de sécurité affiché sur le téléphone de $name.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 24.dp),
-                )
-            }
+            route.connect -> ConnectScan(route.address, name, viewModel, Modifier.padding(padding))
+            else -> VerifyScan(route.address, name, viewModel, Modifier.padding(padding))
         }
+    }
+}
+
+/** The contact's safety number, compared with this phone's. */
+@Composable
+private fun VerifyScan(address: String, name: String, viewModel: MessagesViewModel, modifier: Modifier) {
+    val links: LinkPeersViewModel = screenViewModel()
+    val safety by produceState<SafetyNumber?>(null) { value = links.safetyNumber(address) }
+    var matched by remember { mutableStateOf<Boolean?>(null) }
+    val number = safety
+    val result = matched
+    when {
+        result != null -> SecaEmptyState(
+            icon = if (result) SecaIcons.Check else SecaIcons.Shield,
+            title = if (result) "Codes identiques" else "Les codes ne correspondent pas",
+            description = if (result) {
+                "$name est vérifié : personne ne s'interpose entre vos deux téléphones."
+            } else {
+                "Vérifiez que c'est bien le code de $name. S'il ne correspond toujours pas, quelqu'un pourrait " +
+                    "s'interposer : n'échangez rien de sensible."
+            },
+            modifier = modifier,
+            action = {
+                if (result) {
+                    Button(onClick = { viewModel.back() }) { Text("Terminé") }
+                } else {
+                    Button(onClick = { matched = null }) { Text("Scanner à nouveau") }
+                }
+            },
+        )
+        number != null -> ScanFrame(
+            hint = "Visez le code de sécurité affiché sur le téléphone de $name.",
+            modifier = modifier,
+            onCode = { text ->
+                val same = runCatching { number.matches(Base64.decode(text)) }.getOrDefault(false)
+                if (same) links.setVerified(address, true)
+                matched = same
+            },
+        )
+    }
+}
+
+/** The contact's Seca Link code, which opens the session. */
+@Composable
+private fun ConnectScan(address: String, name: String, viewModel: MessagesViewModel, modifier: Modifier) {
+    val links: LinkPeersViewModel = screenViewModel()
+    val scope = rememberCoroutineScope()
+    var outcome by remember { mutableStateOf<LinkPeersViewModel.Scanned?>(null) }
+    var connecting by remember { mutableStateOf(false) }
+    val result = outcome
+    when {
+        connecting -> Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = modifier
+                .fillMaxSize()
+                .padding(24.dp),
+        ) {
+            CircularProgressIndicator(Modifier.padding(top = 96.dp).size(56.dp))
+            Text(
+                text = "Connexion à $name…",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = 24.dp),
+            )
+        }
+        result == LinkPeersViewModel.Scanned.Connected -> SecaEmptyState(
+            icon = SecaIcons.Lock,
+            title = "Connecté à $name",
+            description = "Vos messages sont maintenant chiffrés par Seca Link. La réponse de ce téléphone part aussi par SMS.",
+            modifier = modifier,
+            action = { Button(onClick = { viewModel.back() }) { Text("Terminé") } },
+        )
+        result != null -> SecaEmptyState(
+            icon = SecaIcons.Shield,
+            title = if (result == LinkPeersViewModel.Scanned.NotSeca) "Ce n'est pas un code Seca Link" else "Connexion impossible",
+            description = when (result) {
+                is LinkPeersViewModel.Scanned.Failed -> result.reason
+                else -> "Sur le téléphone de $name, ouvrez la conversation, puis ⋮ et « Connecter en face à face »."
+            },
+            modifier = modifier,
+            action = { Button(onClick = { outcome = null }) { Text("Scanner à nouveau") } },
+        )
+        else -> ScanFrame(
+            hint = "Visez le code Seca Link affiché sur le téléphone de $name.",
+            modifier = modifier,
+            onCode = { text ->
+                connecting = true
+                scope.launch {
+                    outcome = links.connectScanned(address, text)
+                    connecting = false
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ScanFrame(hint: String, onCode: (String) -> Unit, modifier: Modifier) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+    ) {
+        QrScanner(
+            onCode = onCode,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(32.dp)),
+        )
+        Text(
+            text = hint,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 24.dp),
+        )
     }
 }
 

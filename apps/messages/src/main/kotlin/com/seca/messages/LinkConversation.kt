@@ -26,12 +26,14 @@ import com.seca.core.link.LinkPeer
 import com.seca.core.link.LinkPeers
 import com.seca.core.link.SafetyNumber
 import com.seca.core.link.SecaLink
+import com.seca.core.link.handshake.Handshake
 import com.seca.messages.sms.LinkSms
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** The safety number screen for the conversation with [address]. */
 data class SafetyNumberRoute(val address: String) : MessagesScreen
@@ -69,6 +71,45 @@ class LinkPeersViewModel(application: Application) : AndroidViewModel(applicatio
     fun acknowledgeKeyChange(address: String) {
         val key = keyOf(address) ?: return
         viewModelScope.launch(Dispatchers.IO) { link.acknowledgeKeyChange(key) }
+    }
+
+    /** This phone's code, for a contact to scan in person; null while Seca Link is off. */
+    suspend fun myCode(): String? = withContext(Dispatchers.IO) {
+        val text = runCatching { link.myHandshake()?.text() }.getOrNull() ?: return@withContext null
+        // Only the code itself: a smaller QR code, quicker to read.
+        CodeInText.find(text)?.value
+    }
+
+    /** What came of a code scanned on the contact's phone. */
+    sealed interface Scanned {
+        data object NotSeca : Scanned
+        data object Connected : Scanned
+        data class Failed(val reason: String) : Scanned
+    }
+
+    /** A code scanned on [address]'s phone: the session opens, and this phone's answer goes back by SMS. */
+    suspend fun connectScanned(address: String, text: String): Scanned {
+        val handshake = Handshake.fromText(text) ?: return Scanned.NotSeca
+        return when (val received = withContext(Dispatchers.IO) { LinkSms.receive(getApplication(), address, handshake, byText = true) }) {
+            is SecaLink.Received.Connected -> Scanned.Connected
+            is SecaLink.Received.Failed -> Scanned.Failed(received.reason)
+            SecaLink.Received.Ignored -> Scanned.Failed("Activez Seca Link pour vous connecter")
+            null -> Scanned.Failed("Ce numéro ne peut pas utiliser Seca Link")
+        }
+    }
+
+    /** Tries the connection with [number] again now; the answer leaves once it opens. */
+    fun retry(number: String) {
+        viewModelScope.launch(Dispatchers.IO) { LinkSms.retry(getApplication(), number) }
+    }
+
+    /** Sends the invitation to [number] again, also as a text. */
+    fun invite(number: String) {
+        viewModelScope.launch(Dispatchers.IO) { LinkSms.inviteNow(getApplication(), number) }
+    }
+
+    private companion object {
+        val CodeInText = Regex("seca-link:\\S+")
     }
 }
 
