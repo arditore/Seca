@@ -7,6 +7,8 @@ SourceCode: https://github.com/arditore/Seca
 IssueTracker: https://github.com/arditore/Seca/issues
 Changelog: https://github.com/arditore/Seca/releases
 
+AutoName: Seca Messages
+
 RepoType: git
 Repo: https://github.com/arditore/Seca.git
 
@@ -29,7 +31,10 @@ Builds:
     prebuild:
       - . "$HOME/.cargo/env"
       - rustup target add aarch64-linux-android armv7-linux-androideabi
-      - cd $$libsignal$$/java && ANDROID_NDK_HOME=$$NDK$$ ./gradlew --no-daemon -PandroidArchs=aarch64,arm :android:publishToMavenLocal
+      - cd $$libsignal$$/java && ANDROID_NDK_HOME=$$NDK$$ ./gradlew --no-daemon -PandroidArchs=aarch64,arm
+        :android:publishToMavenLocal :client:publishToMavenLocal
+    scanignore:
+      - settings.gradle.kts
     ndk: 28.0.13004108
     gradleprops:
       - seca.libsignal.repo=mavenLocal

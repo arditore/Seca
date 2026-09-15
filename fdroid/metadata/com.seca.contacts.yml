@@ -7,6 +7,8 @@ SourceCode: https://github.com/arditore/Seca
 IssueTracker: https://github.com/arditore/Seca/issues
 Changelog: https://github.com/arditore/Seca/releases
 
+AutoName: Seca Contacts
+
 RepoType: git
 Repo: https://github.com/arditore/Seca.git
 
@@ -17,6 +19,8 @@ Builds:
     subdir: apps/contacts
     gradle:
       - yes
+    scanignore:
+      - settings.gradle.kts
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
