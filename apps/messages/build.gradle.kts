@@ -16,7 +16,8 @@ android {
     compileOptions { isCoreLibraryDesugaringEnabled = true }
     // The NDK strips the debug symbols out of libsignal's native code as the APK is packaged,
     // which takes it from over a hundred megabytes to about ten.
-    ndkVersion = "30.0.16248370"
+    // A build that has another NDK at hand, F-Droid's for one, says so rather than installing this one.
+    ndkVersion = providers.gradleProperty("seca.ndkVersion").getOrElse("30.0.16248370")
     packaging {
         jniLibs {
             // libsignal ships a second build of its native code, for its own tests.

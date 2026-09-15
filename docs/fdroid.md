@@ -7,7 +7,16 @@ person with an account somewhere.
 |---|---|---|
 | Seca Contacts | ready to submit | ready |
 | Seca Phone | ready to submit | ready |
-| Seca Messages | blocked by libsignal, see below | ready |
+| Seca Messages | recipe written, to be tried with the maintainers | ready |
+
+## Decisions taken
+
+- **Beta tags ship.** `UpdateCheckMode: Tags` follows every tag, so `v0.1.0-beta3` and the ones
+  after it are published as updates. To publish only stable versions later, narrow it to
+  `Tags ^v[0-9.]+$`.
+- **F-Droid signs first.** Their key is the default, so an APK from F-Droid will not install over
+  one from GitHub. Once the build is reproducible, F-Droid can publish the APKs signed here
+  instead — the fields for that are at the end of this file.
 
 ## What F-Droid asks for, and where it stands here
 
@@ -20,26 +29,32 @@ person with an account somewhere.
   screenshots and one changelog per versionCode (under 500 characters). French is there too.
 - **No proprietary dependency.** The `verifyReleaseNoProprietaryDependencies` task fails the build
   if a Google artifact reaches an app's runtime classpath; it runs as part of `check`.
-- **Dependencies from the repositories F-Droid allows** (Maven Central, Google Maven, Sonatype,
-  JFrog, JitPack, Clojars). Seca Contacts and Seca Phone take everything from Maven Central and
-  Google Maven. Seca Messages does not: see below.
+- **Dependencies built from source or taken from the repositories F-Droid allows** (Maven Central,
+  Google Maven, Sonatype, JFrog, JitPack, Clojars). Seca Contacts and Seca Phone take everything
+  from Maven Central and Google Maven. Seca Messages needs libsignal, which is neither: see below.
 
-## What blocks Seca Messages
+## Seca Messages: libsignal built from source
 
-`org.signal:libsignal-android` comes from `https://build-artifacts.signal.org/libraries/maven/`,
-which is not among the repositories F-Droid allows, and it ships prebuilt native libraries, which
-F-Droid expects to be built from source. The build also pins `ndkVersion 30.0.16248370`.
+`org.signal:libsignal-android` is published on Signal's own Maven repository, which F-Droid does
+not take, and it ships prebuilt native libraries, which F-Droid does not accept either. So the
+recipe in `fdroid/metadata/com.seca.messages.yml` compiles it:
 
-Three ways out, from lightest to heaviest:
+1. `sudo` installs the Rust toolchain libsignal pins (`rust-toolchain`: 1.98.1).
+2. `srclibs` checks out `libsignal@v0.102.2`, defined by `fdroid/srclibs/libsignal.yml`.
+3. `prebuild` adds the two Android targets, runs libsignal's own `java/build_jni.sh` for
+   `android-aarch64` and `android-arm` — the two ABIs Seca Messages ships — then publishes its
+   Android artifact into the local Maven folder.
+4. `gradleprops` tells this build to take libsignal from there: `-Pseca.libsignal.repo=mavenLocal`,
+   which `settings.gradle.kts` understands, plus the NDK version to use.
 
-1. **IzzyOnDroid first.** That repository takes the APK this project signs, from GitHub Releases,
-   as long as it stays under 30 MB — Seca Messages is 22 MB. Nothing to change.
-2. **Build libsignal from its Rust sources** inside the F-Droid recipe. It is what the F-Droid
-   policy wants and what Molly does; it is also a serious piece of work (Rust toolchain, NDK,
-   build time) and it has to keep working at every libsignal update.
-3. **Fall back to the libsignal published on Maven Central** (0.86.5 at the time of writing).
-   It is older than the one used here and would have to be checked against the code, and the
-   prebuilt native code question stays.
+This repository is ready for it: `settings.gradle.kts` takes libsignal from wherever
+`seca.libsignal.repo` points (a folder, or `mavenLocal`), and falls back to Signal's repository
+when nothing is said. `apps/messages/build.gradle.kts` takes its NDK version from
+`seca.ndkVersion` the same way.
+
+**What is not proven yet:** this recipe has never run on an F-Droid build server. libsignal's
+Android build wants a JDK 21 and its own NDK, and the build is long. Expect a few rounds with the
+maintainers on the merge request; that is what the review is for.
 
 ## Steps that need an account
 
@@ -47,14 +62,16 @@ Three ways out, from lightest to heaviest:
 
 1. Create an account on gitlab.com and fork <https://gitlab.com/fdroid/fdroiddata>.
 2. In the fork, create a branch named `com.seca.contacts`.
-3. Copy `fdroid/metadata/com.seca.contacts.yml` from this repository to `metadata/com.seca.contacts.yml`
-   in the fork, and commit it.
+3. Copy `fdroid/metadata/com.seca.contacts.yml` from this repository to
+   `metadata/com.seca.contacts.yml` in the fork, and commit it.
 4. Open a merge request against `fdroiddata`, titled `New app: Seca Contacts`.
 5. Do the same for `com.seca.phone`, on its own branch and its own merge request.
 6. Answer the reviewers. Once merged, the app appears within a day or two.
 
-Nothing else is needed from this repository: F-Droid builds from the tag, and reads the listing
-texts from the fastlane folders.
+### F-Droid, for Seca Messages
+
+Same steps, plus `fdroid/srclibs/libsignal.yml` copied to `srclibs/libsignal.yml` in the same
+merge request, since the recipe refers to it.
 
 ### IzzyOnDroid, for the three apps
 
@@ -67,19 +84,12 @@ answer is in each app's full description: SMS and call log are what a messaging 
 do, Seca Contacts and Seca Phone have no `INTERNET` permission at all, and Seca Messages uses it
 only for Seca Link, which is off by default.
 
-## Two decisions to make before submitting
+## Later: publishing the APKs signed here
 
-- **Betas.** F-Droid follows tags: with `UpdateCheckMode: Tags`, every `v0.1.0-betaN` tag ships as
-  an update. To publish only stable versions, set `UpdateCheckMode: Tags ^v[0-9.]+$` in the
-  metadata, or wait for 1.0 before submitting.
-- **Who signs.** By default F-Droid signs with its own key, so the APK from F-Droid cannot be
-  installed over one from GitHub. To keep this project's signature, F-Droid can publish the APKs
-  built here once it reproduces them byte for byte, with these fields:
+Once a build here and a build there produce the same bytes, F-Droid can publish this project's own
+signed APKs, which then install over the ones from GitHub:
 
-  ```yaml
-  AllowedAPKSigningKeys: 2fdea7b46beffe16459bb4dcdd34db5e0cb912274a5eb628e4b0d8a596211790
-  Binaries: https://github.com/arditore/Seca/releases/download/v%v/seca-contacts-%v.apk
-  ```
-
-  It only works if the build is reproducible: same sources, same tools, same output. Worth trying
-  after the first inclusion, not before.
+```yaml
+AllowedAPKSigningKeys: 2fdea7b46beffe16459bb4dcdd34db5e0cb912274a5eb628e4b0d8a596211790
+Binaries: https://github.com/arditore/Seca/releases/download/v%v/seca-contacts-%v.apk
+```

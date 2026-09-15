@@ -1,7 +1,7 @@
-# NOT READY TO SUBMIT. Seca Messages depends on libsignal, which comes from Signal's own
-# Maven repository and ships prebuilt native code. F-Droid takes dependencies only from the
-# repositories it allows (Maven Central, Google Maven, Sonatype, JFrog, JitPack, Clojars) and
-# expects native code built from source. See docs/fdroid.md for the ways out.
+# libsignal is compiled from its own sources here, for the two ABIs Seca Messages ships.
+# It needs the Rust toolchain libsignal pins (rust-toolchain: 1.98.1) and an NDK.
+# This recipe is written from libsignal 0.102.2's own build scripts; expect to tune it with
+# the F-Droid maintainers on the merge request, which is what that review is for.
 Categories:
   - Phone & SMS
 License: AGPL-3.0-or-later
@@ -19,9 +19,26 @@ Builds:
     versionCode: 3
     commit: v0.1.0-beta3
     subdir: apps/messages
+    sudo:
+      - apt-get update
+      - apt-get install -y --no-install-recommends build-essential curl unzip
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.98.1
+      - chown -R vagrant:vagrant /opt/rustup || true
+    srclibs:
+      - libsignal@v0.102.2
+    ndk:
+      - 28.0.13004108
+    prebuild:
+      - . "$HOME/.cargo/env"
+      - rustup target add aarch64-linux-android armv7-linux-androideabi
+      - ANDROID_NDK_HOME=$$NDK$$ $$libsignal$$/java/build_jni.sh android-aarch64
+      - ANDROID_NDK_HOME=$$NDK$$ $$libsignal$$/java/build_jni.sh android-arm
+      - cd $$libsignal$$/java && ./gradlew --no-daemon :android:publishToMavenLocal
     gradle:
       - yes
-    ndk: 30.0.16248370
+    gradleprops:
+      - seca.libsignal.repo=mavenLocal
+      - seca.ndkVersion=28.0.13004108
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags

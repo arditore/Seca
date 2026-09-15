@@ -1,0 +1,4 @@
+# Seca Messages builds libsignal from these sources rather than taking Signal's prebuilt
+# artifact: F-Droid only accepts dependencies it compiles itself.
+RepoType: git
+Repo: https://github.com/signalapp/libsignal.git
