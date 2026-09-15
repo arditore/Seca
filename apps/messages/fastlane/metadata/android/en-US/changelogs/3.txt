@@ -1,6 +1,6 @@
 Third beta.
 • Seca Link connects on its own between two phones that both have it: no invitation to send, and the conversation says when it turned encrypted.
-• A contact who leaves Seca Link ends it: you are told, the conversation says so, and messages go back to SMS.
+• A contact who leaves Seca Link ends it: you are told and messages go back to SMS.
 • A lock on the photo of every conversation Seca Link carries.
-• Keys published again every five hours, and only the relays that really keep them are named to contacts.
-• Message notifications are conversations again: the contact's photo, and their place at the top of the shade.
+• Keys published again every five hours, only to relays that keep them.
+• Message notifications are conversations again.

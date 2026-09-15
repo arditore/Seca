@@ -1,0 +1,29 @@
+# NOT READY TO SUBMIT. Seca Messages depends on libsignal, which comes from Signal's own
+# Maven repository and ships prebuilt native code. F-Droid takes dependencies only from the
+# repositories it allows (Maven Central, Google Maven, Sonatype, JFrog, JitPack, Clojars) and
+# expects native code built from source. See docs/fdroid.md for the ways out.
+Categories:
+  - Phone & SMS
+License: AGPL-3.0-or-later
+AuthorName: arditore
+AuthorEmail: arditore@tuta.io
+SourceCode: https://github.com/arditore/Seca
+IssueTracker: https://github.com/arditore/Seca/issues
+Changelog: https://github.com/arditore/Seca/releases
+
+RepoType: git
+Repo: https://github.com/arditore/Seca.git
+
+Builds:
+  - versionName: 0.1.0-beta3
+    versionCode: 3
+    commit: v0.1.0-beta3
+    subdir: apps/messages
+    gradle:
+      - yes
+    ndk: 30.0.16248370
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 0.1.0-beta3
+CurrentVersionCode: 3

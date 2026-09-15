@@ -94,7 +94,8 @@ On other phones:
 
 ## Install
 
-Seca is **in beta**. Until it reaches F-Droid, releases are published on
+Seca is **in beta**. Until it reaches F-Droid (the state of that is in
+[docs/fdroid.md](docs/fdroid.md)), releases are published on
 [GitHub Releases](https://github.com/arditore/Seca/releases): install the three
 APKs, then choose Seca Phone as the Phone app and Seca Messages as the SMS app.
 

@@ -1,0 +1,24 @@
+Categories:
+  - Phone & SMS
+License: GPL-3.0-or-later
+AuthorName: arditore
+AuthorEmail: arditore@tuta.io
+SourceCode: https://github.com/arditore/Seca
+IssueTracker: https://github.com/arditore/Seca/issues
+Changelog: https://github.com/arditore/Seca/releases
+
+RepoType: git
+Repo: https://github.com/arditore/Seca.git
+
+Builds:
+  - versionName: 0.1.0-beta3
+    versionCode: 3
+    commit: v0.1.0-beta3
+    subdir: apps/phone
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 0.1.0-beta3
+CurrentVersionCode: 3
