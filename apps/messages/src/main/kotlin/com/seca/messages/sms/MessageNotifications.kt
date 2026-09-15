@@ -17,6 +17,7 @@ import android.provider.ContactsContract
 import android.provider.ContactsContract.PhoneLookup
 import android.provider.Telephony
 import android.provider.Telephony.Sms
+import android.util.Log
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.design.notification.NotificationAvatars
 import com.seca.messages.LinkConversations
@@ -50,6 +51,7 @@ internal object MessageNotifications {
     private const val TAG_SCHEDULED = "scheduled"
     private const val TAG_KEY_CHANGED = "link-key"
     private const val TAG_LINK_STOPPED = "link-stopped"
+    private const val LOG_TAG = "SecaNotifications"
 
     fun notifyIncoming(context: Context, address: String, body: String) {
         val threadId = threadOf(context, address)
@@ -224,14 +226,23 @@ internal object MessageNotifications {
         manager.notify(tag, code, notification)
     }
 
+    private fun shortcutIdOf(threadId: Long, address: String): String =
+        if (threadId >= 0) "conversation-$threadId" else "conversation-${address.hashCode()}"
+
     /**
-     * The conversation as a long-lived shortcut, which Android needs to list the
-     * notification under "Conversations". Kept off the launcher, so the names
-     * of recent conversations never show on the app's icon.
+     * The conversation as a long-lived shortcut, which Android needs to draw the
+     * notification as a conversation: the contact's name and photo in place of
+     * the app's own, and its place at the top of the shade.
+     *
+     * It cannot be kept off the launcher. A shortcut excluded from that surface
+     * is dropped without a word — measured on the device: pushing one leaves no
+     * shortcut at all, and Android then logs "added an invalid shortcut" and
+     * falls back to a plain notification. So long-pressing the app's icon lists
+     * recent conversations, as it does for every messaging app, and a
+     * conversation deleted here takes its shortcut away with it.
      */
     private fun publishShortcut(context: Context, threadId: Long, address: String, name: String, person: Person, icon: Icon): String {
-        val id = if (threadId >= 0) "conversation-$threadId" else "conversation-${address.hashCode()}"
-        if (!conversationShortcutsAllowed) return id
+        val id = shortcutIdOf(threadId, address)
         val shortcuts = context.getSystemService(ShortcutManager::class.java) ?: return id
         val intent = Intent(context, MainActivity::class.java)
             .setAction(MainActivity.ACTION_OPEN_CONVERSATION)
@@ -246,11 +257,18 @@ internal object MessageNotifications {
                     .setIcon(icon)
                     .setIntent(intent)
                     .setCategories(setOf(ShortcutInfo.SHORTCUT_CATEGORY_CONVERSATION))
-                    .keptOffLauncher()
                     .build(),
             )
-        }
+            // Android draws a notification as a conversation only while its shortcut exists.
+        }.onFailure { refused -> Log.w(LOG_TAG, "conversation shortcut refused", refused) }
         return id
+    }
+
+    /** Lets go of a conversation's shortcut and notification, once the conversation itself is gone. */
+    fun forget(context: Context, threadId: Long, address: String) {
+        cancel(context, threadId)
+        val shortcuts = context.getSystemService(ShortcutManager::class.java) ?: return
+        runCatching { shortcuts.removeLongLivedShortcuts(listOf(shortcutIdOf(threadId, address))) }
     }
 
     private fun openIntent(context: Context, threadId: Long, address: String, code: Int): PendingIntent = PendingIntent.getActivity(

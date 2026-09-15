@@ -517,6 +517,8 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             repository.deleteConversation(threadId)
             address?.let { withContext(Dispatchers.IO) { links.deleteConversation(it) } }
+            // The conversation's shortcut goes with it: no deleted name left under the app's icon.
+            MessageNotifications.forget(getApplication(), threadId, address.orEmpty())
         }
     }
 

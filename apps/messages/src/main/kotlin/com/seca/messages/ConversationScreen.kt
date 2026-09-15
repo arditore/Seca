@@ -141,8 +141,13 @@ internal fun ConversationScreen(
     val messages by produceState(initialValue = emptyList<Message>(), screen.threadId, screen.address) {
         viewModel.messagesOf(screen.threadId, screen.address).collect { value = it }
     }
-    // Opening the conversation, and every message arriving while it is open, counts as read.
-    LaunchedEffect(screen.threadId, messages.size) { viewModel.markRead(screen.threadId, screen.address) }
+    // Opening the conversation, and every message arriving while it is on screen, counts as read.
+    // Only while it really is on screen: a conversation left open behind another app must not take
+    // away the notification of what just arrived.
+    LifecycleResumeEffect(screen.threadId, messages.size) {
+        viewModel.markRead(screen.threadId, screen.address)
+        onPauseOrDispose { }
+    }
     // While it is on screen, what arrives in it is shown here rather than notified.
     val shownKey = remember(screen.address) { LinkSms.keyOf(context, screen.address) ?: screen.address }
     LifecycleResumeEffect(shownKey) {
