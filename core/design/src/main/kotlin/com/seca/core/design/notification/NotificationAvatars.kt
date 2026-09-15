@@ -27,7 +27,11 @@ object NotificationAvatars {
 
     /** The contact's photo, or the initials of [name] on the colour of [tone]. */
     fun iconFor(context: Context, name: String, contactId: Long? = null, tone: Int = 0): Icon =
-        Icon.createWithBitmap(photoOf(context, contactId) ?: initialsOf(context, name, tone))
+        Icon.createWithBitmap(bitmapFor(context, name, contactId, tone))
+
+    /** The same avatar as a bitmap, for the places where Android refuses an icon made of one. */
+    fun bitmapFor(context: Context, name: String, contactId: Long? = null, tone: Int = 0): Bitmap =
+        photoOf(context, contactId) ?: initialsOf(context, name, tone)
 
     /** The accent Android gives notifications of the Seca apps, taken from the wallpaper. */
     fun accentOf(context: Context): Int = context.getColor(android.R.color.system_accent1_600)

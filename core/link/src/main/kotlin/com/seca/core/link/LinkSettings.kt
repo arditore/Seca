@@ -13,10 +13,16 @@ class LinkSettings(context: Context) {
         get() = prefs.getBoolean(KEY_ENABLED, false)
         set(value) = prefs.edit { putBoolean(KEY_ENABLED, value) }
 
-    /** When the pre-keys last reached a relay, in milliseconds; 0 when never. */
+    /** When the pre-keys last reached a relay that kept them, in milliseconds; 0 when never. */
     var publishedAt: Long
         get() = prefs.getLong(KEY_PUBLISHED_AT, 0L)
         set(value) = prefs.edit { putLong(KEY_PUBLISHED_AT, value) }
+
+    /** The relays that took the pre-keys and handed them back when asked, in the owner's order. */
+    fun keptRelays(): List<String> =
+        prefs.getString(KEY_KEPT_RELAYS, null)?.split('\n')?.filter { it.isNotBlank() }.orEmpty()
+
+    fun setKeptRelays(relays: List<String>) = prefs.edit { putString(KEY_KEPT_RELAYS, relays.distinct().joinToString("\n")) }
 
     /** Tells contacts when their messages were read. On by default, as the owner chose. */
     var readReceipts: Boolean
@@ -33,12 +39,20 @@ class LinkSettings(context: Context) {
         get() = prefs.getBoolean("use_tor", false)
         set(value) = prefs.edit { putBoolean("use_tor", value) }
 
-    /** Pre-keys are published again once a week, so relays that dropped them get them back. */
+    /** Pre-keys are published again every five hours, so relays that dropped them get them back. */
     fun publishDue(now: Long = System.currentTimeMillis()): Boolean = now - publishedAt > REPUBLISH_MILLIS
 
     /** The relays that receive for this phone, in the owner's order. */
     fun relays(): List<String> =
         prefs.getString(KEY_RELAYS, null)?.split('\n')?.filter { it.isNotBlank() } ?: DefaultRelays
+
+    /**
+     * The relays an invitation names, those known to keep this phone's keys
+     * first. An invitation carries three at most: a relay that takes the keys
+     * and keeps nothing would otherwise send the contact looking where there is
+     * nothing to find.
+     */
+    fun handshakeRelays(): List<String> = orderForHandshake(relays(), keptRelays())
 
     fun setRelays(relays: List<String>) = prefs.edit { putString(KEY_RELAYS, relays.distinct().joinToString("\n")) }
 
@@ -56,11 +70,16 @@ class LinkSettings(context: Context) {
             "wss://nostr.mom",
         )
 
+        /** [relays] with those that keep the keys first, each group in the owner's order. */
+        fun orderForHandshake(relays: List<String>, kept: Collection<String>): List<String> =
+            relays.filter { it in kept } + relays.filterNot { it in kept }
+
         private const val PREFS = "seca_link"
         private const val KEY_ENABLED = "enabled"
         private const val KEY_RELAYS = "relays"
+        private const val KEY_KEPT_RELAYS = "kept_relays"
         private const val KEY_PUBLISHED_AT = "published_at"
-        private const val REPUBLISH_MILLIS = 7L * 24 * 60 * 60 * 1000
+        private const val REPUBLISH_MILLIS = 5L * 60 * 60 * 1000
         private const val SECURE_SCHEME = "wss://"
 
         /**

@@ -3,6 +3,7 @@ package com.seca.messages
 import android.content.Context
 import android.net.Uri
 import com.seca.core.contacts.PhoneNumbers
+import com.seca.core.link.LinkPeers
 import com.seca.core.link.SecaLink
 import com.seca.core.link.message.LinkPayload
 import com.seca.messages.link.LinkMedia
@@ -12,6 +13,7 @@ import com.seca.messages.link.LinkService
 import com.seca.messages.link.LinkStatus
 import com.seca.messages.link.LinkTimers
 import com.seca.messages.sms.Conversation
+import com.seca.messages.sms.ConversationNotice
 import com.seca.messages.sms.Message
 import com.seca.messages.sms.MessageStatus
 import com.seca.messages.sms.MessagesRepository
@@ -46,8 +48,9 @@ class LinkConversations(context: Context) {
         if (on) LinkService.start(appContext) else LinkService.stop(appContext)
     }
 
-    /** Emits when SMS or Seca Link messages change. */
-    fun changes(repository: MessagesRepository): Flow<Unit> = merge(repository.changes(), LinkMessages.changes)
+    /** Emits when SMS, Seca Link messages, or what Seca Link knows of a contact change. */
+    fun changes(repository: MessagesRepository): Flow<Unit> =
+        merge(repository.changes(), LinkMessages.changes, LinkPeers.changes)
 
     /** A conversation's messages, SMS and Seca Link together in time order, reloaded whenever either changes. */
     fun conversation(threadId: Long, address: String, repository: MessagesRepository): Flow<List<Message>> = flow {
@@ -59,8 +62,16 @@ class LinkConversations(context: Context) {
         // Messages whose time is up never show again.
         sweepExpired()
         val sms = if (threadId < 0) emptyList() else repository.messages(threadId)
-        val encrypted = keyOf(address)?.let(store::forNumber).orEmpty().map { it.toMessage(threadId, address) }
-        return (sms + encrypted).sortedBy { it.date }
+        val number = keyOf(address)
+        val encrypted = number?.let(store::forNumber).orEmpty().map { it.toMessage(threadId, address) }
+        val peer = number?.let { link.peers[it] }
+        return withLinkNotices(
+            messages = (sms + encrypted).sortedBy { it.date },
+            connectedAt = peer?.connectedAt ?: 0L,
+            leftAt = peer?.leftAt ?: 0L,
+            threadId = threadId,
+            address = address,
+        )
     }
 
     /** The conversation list, with each conversation's latest Seca Link message and unread ones counted in. */
@@ -243,7 +254,41 @@ class LinkConversations(context: Context) {
     companion object {
         private const val TYPING_EVERY_MILLIS = 4_000L
         private const val MILLIS_PER_SECOND = 1000L
+
+        /** Below every message id, which are the SMS' own and the negatives Seca Link messages take. */
+        private const val STARTED_NOTICE_ID = Long.MIN_VALUE
+        private const val STOPPED_NOTICE_ID = Long.MIN_VALUE + 1
+
         private val lastTyping = ConcurrentHashMap<String, Long>()
+
+        /**
+         * [messages] with, each at the moment it happened, the notice that the
+         * conversation became a Seca Link one and the notice that the contact
+         * stopped having Seca Link. Nothing is added where nothing happened.
+         */
+        fun withLinkNotices(messages: List<Message>, connectedAt: Long, leftAt: Long, threadId: Long, address: String): List<Message> {
+            val notices = listOfNotNull(
+                noticeAt(STARTED_NOTICE_ID, ConversationNotice.LinkStarted, connectedAt, threadId, address),
+                noticeAt(STOPPED_NOTICE_ID, ConversationNotice.LinkStopped, leftAt, threadId, address),
+            )
+            return if (notices.isEmpty()) messages else (messages + notices).sortedBy { it.date }
+        }
+
+        private fun noticeAt(id: Long, notice: ConversationNotice, at: Long, threadId: Long, address: String): Message? =
+            if (at <= 0) {
+                null
+            } else {
+                Message(
+                    id = id,
+                    threadId = threadId,
+                    address = address,
+                    body = "",
+                    date = at,
+                    status = MessageStatus.Received,
+                    encrypted = true,
+                    notice = notice,
+                )
+            }
 
         /** A message as a notification or the conversation list shows it. */
         fun previewOf(context: Context, message: LinkMessage): String = when {

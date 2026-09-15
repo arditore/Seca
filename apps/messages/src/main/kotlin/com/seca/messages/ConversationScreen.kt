@@ -93,6 +93,7 @@ import com.seca.core.model.Profile
 import com.seca.messages.link.LinkTimers
 import com.seca.messages.link.LinkTyping
 import com.seca.messages.sms.LinkSms
+import com.seca.messages.sms.ConversationNotice
 import com.seca.messages.sms.Message
 import com.seca.messages.sms.MessageStatus
 import com.seca.messages.sms.OneTimeCode
@@ -175,9 +176,20 @@ internal fun ConversationContent(
 
     val peer = rememberLinkPeer(screen.address)
     // Once the contact is connected, messages go encrypted through Seca Link, which needs no SMS role.
-    val linked = ui.link.enabled && peer?.ready == true
-    val canInvite = ui.link.enabled && peer?.ready != true && remember(screen.address) { LinkSms.keyOf(context, screen.address) != null }
-    val invitationPending = canInvite && (peer?.invitedAt ?: 0L) > 0L
+    val linked = ui.link.enabled && peer?.active == true
+    val canInvite = ui.link.enabled && peer?.active != true && remember(screen.address) { LinkSms.keyOf(context, screen.address) != null }
+    // A contact Seca Link has not reached yet is offered it on opening, discreetly: a data SMS a phone
+    // without Seca never shows, at most once a day. Two phones that both have Seca Link need nothing else.
+    val known = remember(ui.contacts, messages, screen.address) {
+        ui.contactOf(screen.address) != null || messages.any { it.outgoing }
+    }
+    LaunchedEffect(screen.address, canInvite, known) {
+        if (canInvite && known) viewModel.offerLink(screen.address)
+    }
+    // Opening the conversation is also the moment to see whether the contact still has Seca Link.
+    LaunchedEffect(screen.address, linked) {
+        if (linked) viewModel.checkLink(screen.address)
+    }
     val timers by LinkTimers.of(context).timers.collectAsState()
     val timer = peer?.number?.let { timers[it] } ?: 0
     val typingNotices by LinkTyping.typing.collectAsState()
@@ -278,10 +290,9 @@ internal fun ConversationContent(
                     ConversationTopBar(
                         address = screen.address,
                         ui = ui,
-                        linked = peer?.ready == true,
+                        linked = peer?.active == true,
                         verified = peer?.verified == true,
                         typing = typing,
-                        invitationPending = invitationPending,
                         timerSeconds = if (linked) timer else 0,
                         onBack = { viewModel.back() },
                         onDelete = { confirmDelete = true },
@@ -461,7 +472,6 @@ private fun ConversationTopBar(
     linked: Boolean,
     verified: Boolean,
     typing: Boolean,
-    invitationPending: Boolean,
     timerSeconds: Int,
     onBack: () -> Unit,
     onDelete: () -> Unit,
@@ -509,22 +519,21 @@ private fun ConversationTopBar(
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
                 )
-                linked || invitationPending -> Row(verticalAlignment = Alignment.CenterVertically) {
+                linked -> Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        if (linked && timerSeconds > 0) SecaIcons.Timer else SecaIcons.Lock,
+                        if (timerSeconds > 0) SecaIcons.Timer else SecaIcons.Lock,
                         contentDescription = null,
-                        tint = if (linked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(14.dp),
                     )
                     Text(
                         text = when {
-                            !linked -> stringResource(R.string.invitation_sent)
                             timerSeconds > 0 -> stringResource(R.string.encrypted_disappearing, LinkTimers.label(context, timerSeconds))
                             verified -> stringResource(R.string.encrypted_verified)
                             else -> stringResource(R.string.encrypted_by_link)
                         },
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (linked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(start = 4.dp),
@@ -546,7 +555,7 @@ private fun ConversationTopBar(
             IconButton(onClick = { menuOpen = true }) { Icon(SecaIcons.MoreVert, contentDescription = stringResource(R.string.more_options)) }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 if (onInvite != null) {
-                    MenuEntry(stringResource(if (invitationPending) R.string.resend_invitation else R.string.encrypt_with_link), SecaIcons.Lock) {
+                    MenuEntry(stringResource(R.string.encrypt_with_link), SecaIcons.Lock) {
                         menuOpen = false
                         onInvite()
                     }
@@ -630,6 +639,18 @@ private fun Bubble(
     onReply: () -> Unit,
     onReact: (String) -> Unit,
 ) {
+    // Not a message: what happened to the conversation itself.
+    message.notice?.let { notice ->
+        Notice(
+            stringResource(
+                when (notice) {
+                    ConversationNotice.LinkStarted -> R.string.link_conversation_started
+                    ConversationNotice.LinkStopped -> R.string.link_conversation_stopped
+                },
+            ),
+        )
+        return
+    }
     val handshake = remember(message.body) { if (message.encrypted) null else Handshake.fromText(message.body) }
     if (handshake != null) {
         HandshakeNotice(handshake, mine = message.outgoing)
@@ -967,13 +988,20 @@ private fun durationText(millis: Long): String {
 /** Seca Link's handshake as the conversation shows it: a short centred notice. */
 @Composable
 private fun HandshakeNotice(handshake: Handshake, mine: Boolean) {
-    val label = stringResource(
-        when {
-            handshake.type == Handshake.Type.Accept -> R.string.conversation_encrypted
-            mine -> R.string.invitation_sent
-            else -> R.string.invitation_received
-        },
+    Notice(
+        stringResource(
+            when {
+                handshake.type == Handshake.Type.Accept -> R.string.conversation_encrypted
+                mine -> R.string.invitation_sent
+                else -> R.string.invitation_received
+            },
+        ),
     )
+}
+
+/** A short centred notice in the thread: what happened to the conversation, never a message. */
+@Composable
+private fun Notice(label: String) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier

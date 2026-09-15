@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -32,6 +33,7 @@ import org.signal.libsignal.protocol.fingerprint.NumericFingerprintGenerator
 import org.signal.libsignal.protocol.message.CiphertextMessage
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
 import org.signal.libsignal.protocol.message.SignalMessage
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.encoding.Base64
 import androidx.annotation.StringRes
 
@@ -67,28 +69,45 @@ class SecaLink(context: Context) {
 
     private suspend fun store(): LinkProtocolStore = store ?: LinkProtocolStore(appContext, identity(), peers).also { store = it }
 
-    /** Publishes the pre-key bundle to every relay at once, reporting each answer as it arrives. */
+    /**
+     * Publishes the pre-key bundle to every relay at once, reporting each answer
+     * as it arrives, and asks each relay for it back: one that says yes and keeps
+     * nothing must not be named in an invitation, or contacts would look for the
+     * keys where there is nothing to find.
+     */
     fun publishPrekeys(): Flow<Pair<String, PublishResult>> = channelFlow {
-        val event = PrekeyBundle.eventOf(identity())
-        settings.relays().forEach { url ->
+        val own = identity()
+        val event = PrekeyBundle.eventOf(own)
+        val filter = PrekeyBundle.filterFor(own.nostr.publicKey)
+        val kept = ConcurrentHashMap.newKeySet<String>()
+        settings.relays().map { url ->
             launch(Dispatchers.IO) {
-                val result = relayClient.publish(url, event)
-                if (result == PublishResult.Accepted) settings.publishedAt = System.currentTimeMillis()
+                var result = relayClient.publish(url, event)
+                if (result == PublishResult.Accepted) {
+                    val stored = relayClient.fetch(url, filter).orEmpty()
+                        .any { it.pubkey == own.nostr.publicKey && it.content == event.content }
+                    if (stored) kept += url else result = PublishResult.Refused(text(R.string.link_not_kept))
+                }
                 send(url to result)
             }
+        }.joinAll()
+        if (kept.isNotEmpty()) {
+            settings.setKeptRelays(settings.relays().filter { it in kept })
+            settings.publishedAt = System.currentTimeMillis()
         }
     }
 
     /**
      * The invitation to send [number], or null: only while Seca Link is on and
-     * before a session exists. Sent on its own at most once a week; [force], when
-     * the owner asks, sends it again at once.
+     * before a session exists. Sent on its own at most once a day, so a data SMS
+     * a network dropped is offered again; [force], when the owner asks, sends it
+     * again at once.
      */
     suspend fun invitationFor(number: String, force: Boolean = false): Handshake? {
         if (!settings.enabled) return null
         val peer = peers[number]
         val now = System.currentTimeMillis()
-        if (peer?.ready == true) return null
+        if (peer?.active == true) return null
         if (!force && peer != null && now - peer.invitedAt < INVITE_INTERVAL_MILLIS) return null
         val invitation = handshakeOf(Handshake.Type.Invite)
         peers.update(number) { it.copy(invitedAt = now) }
@@ -123,6 +142,9 @@ class SecaLink(context: Context) {
                 relays = handshake.relays,
                 identityHash = handshake.identityHash,
                 textHandshake = it.textHandshake || byText,
+                // A fresh handshake is a fresh chance: the wait between attempts starts over.
+                failedAttempts = 0,
+                attemptedAt = 0,
             )
         }
         if (!settings.enabled) return Received.Ignored
@@ -140,14 +162,15 @@ class SecaLink(context: Context) {
 
     /**
      * Contacts whose handshake came but whose session could not open, while
-     * Seca Link was off or the network away: tried again, at most once an hour
-     * each. Returns those now connected, with the answer to send them.
+     * Seca Link was off, the network away or their keys not yet on a relay:
+     * tried again ten minutes later, then less and less often. Returns those now
+     * connected, with the answer to send them.
      */
     suspend fun connectWaiting(): List<Pair<LinkPeer, Handshake>> {
         if (!settings.enabled || !network.available()) return emptyList()
         val now = System.currentTimeMillis()
         return peers.all().values
-            .filter { !it.ready && it.nostrPublicKey != null && now - it.attemptedAt > RETRY_INTERVAL_MILLIS }
+            .filter { !it.ready && it.nostrPublicKey != null && it.retryDue(now) }
             .mapNotNull { peer ->
                 peers.update(peer.number) { it.copy(attemptedAt = now) }
                 val reply = (connect(peer.number, answer = true) as? Received.Connected)?.reply ?: return@mapNotNull null
@@ -161,11 +184,14 @@ class SecaLink(context: Context) {
         val publicKey = peer.nostrPublicKey ?: return@withContext Received.Failed(text(R.string.link_incomplete_invitation))
         val hash = peer.identityHash ?: return@withContext Received.Failed(text(R.string.link_incomplete_invitation))
         val filter = PrekeyBundle.filterFor(publicKey)
+        // The relays the contact named, then this phone's own and the default ones: a relay that
+        // dropped the keys, or an invitation naming only relays that never kept them, is no dead end.
+        val sources = (peer.relays + settings.relays() + LinkSettings.DefaultRelays).distinct()
         val found = coroutineScope {
-            peer.relays.map { url -> async { relayClient.fetch(url, filter).orEmpty() } }.awaitAll().flatten()
+            sources.map { url -> async { relayClient.fetch(url, filter).orEmpty() } }.awaitAll().flatten()
         }
         val bundle = found.firstNotNullOfOrNull { PrekeyBundle.parse(it, publicKey, hash) }
-            ?: return@withContext Received.Failed(text(R.string.link_keys_not_found))
+            ?: return@withContext failed(number, text(R.string.link_keys_not_found))
         val keyChanged = peer.identityKey != null && peer.identityKey != Base64.encode(bundle.identityKey.serialize())
         // A new key is announced, and whatever was verified about the old one no longer holds.
         if (keyChanged) peers.update(number) { it.copy(verified = false) }
@@ -173,16 +199,92 @@ class SecaLink(context: Context) {
         try {
             sessions.withLock { SessionBuilder(store, store, store, store, addressOf(number), localAddress()).process(bundle) }
         } catch (invalid: InvalidKeyException) {
-            return@withContext Received.Failed(text(R.string.link_invalid_keys, invalid.message.orEmpty()))
+            return@withContext failed(number, text(R.string.link_invalid_keys, invalid.message.orEmpty()))
         } catch (untrusted: UntrustedIdentityException) {
-            return@withContext Received.Failed(text(R.string.link_untrusted_key, untrusted.message.orEmpty()))
+            return@withContext failed(number, text(R.string.link_untrusted_key, untrusted.message.orEmpty()))
         }
-        peers.update(number) { it.copy(ready = true) }
+        peers.update(number) { it.opened() }
         Received.Connected(reply = if (answer) handshakeOf(Handshake.Type.Accept) else null, keyChanged = keyChanged)
     }
 
-    /** Whether a message to [number] goes through Seca Link: it is on, and a session is open. */
-    fun canSend(number: String): Boolean = settings.enabled && peers[number]?.ready == true
+    /**
+     * Whether the contacts this phone writes to encrypted are still there. Seca
+     * Link publishes its keys again every five hours: keys left untouched for two
+     * days, or gone from every relay, mean the contact turned Seca Link off or
+     * took Seca off their phone. Returns the numbers that just stopped, so their
+     * conversation can say so and go back to SMS.
+     */
+    suspend fun checkPeersStillThere(now: Long = System.currentTimeMillis()): List<String> {
+        if (!settings.enabled || !network.available()) return emptyList()
+        return peers.all().values
+            .filter { it.ready && now - it.checkedAt > CHECK_INTERVAL_MILLIS }
+            .filter { settle(it, now) }
+            .map { it.number }
+    }
+
+    /**
+     * Looks now at whether [number] still has Seca Link, as a conversation opens
+     * and at most once an hour, so the owner never writes into a conversation
+     * that only looks encrypted. True when this is the moment they stopped.
+     */
+    suspend fun checkPeerStillThere(number: String, now: Long = System.currentTimeMillis()): Boolean {
+        if (!settings.enabled || !network.available()) return false
+        val peer = peers[number]?.takeIf { it.ready && now - it.checkedAt > LOOK_AGAIN_MILLIS } ?: return false
+        return settle(peer, now)
+    }
+
+    /** Reads what the relays say of [peer] and writes it down. True when this is the moment they stopped. */
+    private suspend fun settle(peer: LinkPeer, now: Long): Boolean = when (publishesKeys(peer, now)) {
+        // A contact who had left publishes their keys again: the conversation is encrypted once more.
+        true -> {
+            if (peer.leftAt > 0) peers.update(peer.number) { it.opened() }
+            false
+        }
+
+        false -> if (peer.leftAt == 0L) {
+            peers.update(peer.number) { it.copy(leftAt = now) }
+            true
+        } else {
+            false
+        }
+
+        // Not one relay answered: nothing is known of this contact, and nothing is concluded.
+        null -> false
+    }
+
+    /** Whether [peer] still publishes their keys; null when no relay answered, so a quiet relay never ends a conversation. */
+    private suspend fun publishesKeys(peer: LinkPeer, now: Long): Boolean? = withContext(Dispatchers.IO) {
+        val publicKey = peer.nostrPublicKey ?: return@withContext null
+        val filter = PrekeyBundle.filterFor(publicKey)
+        val sources = (peer.relays + settings.relays() + LinkSettings.DefaultRelays).distinct()
+        val answers = coroutineScope { sources.map { url -> async { relayClient.fetch(url, filter) } }.awaitAll() }
+        if (answers.all { it == null }) return@withContext null
+        val publishedAt = answers.filterNotNull().flatten()
+            .filter { it.pubkey == publicKey }
+            .maxOfOrNull { it.createdAt * MILLIS_PER_SECOND } ?: 0L
+        peers.update(peer.number) { it.copy(checkedAt = now, bundleAt = maxOf(it.bundleAt, publishedAt)) }
+        !keysLookAbandoned(publishedAt, now)
+    }
+
+    /** A failed attempt counts, so the next one waits longer than the last. */
+    private fun failed(number: String, reason: String): Received.Failed {
+        peers.update(number) { it.copy(failedAttempts = it.failedAttempts + 1) }
+        return Received.Failed(reason)
+    }
+
+    /**
+     * The contact as a session just opened with them: a contact who had left is
+     * back, and the moment is kept, for the conversation says it.
+     */
+    private fun LinkPeer.opened(): LinkPeer = copy(
+        ready = true,
+        failedAttempts = 0,
+        leftAt = 0,
+        connectedAt = if (active) connectedAt else System.currentTimeMillis(),
+    )
+
+    /** Whether a message to [number] goes through Seca Link: it is on, a session is open, and the contact still has it. */
+    fun canSend(number: String): Boolean = settings.enabled && peers[number]?.active == true
 
     /** What became of a message handed to Seca Link. */
     sealed interface Sent {
@@ -213,8 +315,8 @@ class SecaLink(context: Context) {
         if (results.any { it == PublishResult.Accepted }) Sent.Published else Sent.Failed(text(R.string.link_no_relay_accepted))
     }
 
-    /** A message or a notice from a contact, decrypted. */
-    class Incoming(val number: String, val payload: LinkPayload)
+    /** A message or a notice from a contact, decrypted. [keyChanged] when it came from a key this phone had not seen. */
+    class Incoming(val number: String, val payload: LinkPayload, val keyChanged: Boolean = false)
 
     /**
      * Opens an envelope a relay handed over. Null when it is not for this
@@ -225,6 +327,7 @@ class SecaLink(context: Context) {
         val own = identity()
         val opened = Envelope.open(own.nostr, event) ?: return@withContext null
         val peer = peers.all().values.firstOrNull { it.nostrPublicKey == opened.from } ?: return@withContext null
+        val knownKeyChangedAt = peer.keyChangedAt
         val store = store()
         val plain = sessions.withLock {
             runCatching {
@@ -237,9 +340,11 @@ class SecaLink(context: Context) {
             }.getOrNull()
         } ?: return@withContext null
         val payload = LinkPayload.decode(plain) ?: return@withContext null
-        // A first message from a phone this one had not reached yet: the session now works both ways.
-        if (!peer.ready) peers.update(peer.number) { it.copy(ready = true) }
-        Incoming(peer.number, payload)
+        // A first message from a phone this one had not reached yet, or from a contact who came back.
+        if (!peer.active) peers.update(peer.number) { it.opened() }
+        // Their message came from a key this phone had never seen: a new phone, or Seca installed again.
+        val keyChanged = (peers[peer.number]?.keyChangedAt ?: 0L) > knownKeyChangedAt
+        Incoming(peer.number, payload, keyChanged)
     }
 
     /** This phone's handshake, as the code a contact scans in person; null while Seca Link is off. */
@@ -298,7 +403,7 @@ class SecaLink(context: Context) {
 
     private suspend fun handshakeOf(type: Handshake.Type): Handshake {
         val own = identity()
-        return Handshake(type, own.nostr.publicKey, Handshake.identityHashOf(own.signal.publicKey.serialize()), settings.relays())
+        return Handshake(type, own.nostr.publicKey, Handshake.identityHashOf(own.signal.publicKey.serialize()), settings.handshakeRelays())
     }
 
     /** A reason given to the owner, in the phone's language. */
@@ -309,8 +414,10 @@ class SecaLink(context: Context) {
     private suspend fun localAddress() = SignalProtocolAddress(identity().nostr.publicKey, LinkProtocolStore.DEVICE_ID)
 
     private companion object {
-        const val INVITE_INTERVAL_MILLIS = 7L * 24 * 60 * 60 * 1000
-        const val RETRY_INTERVAL_MILLIS = 60L * 60 * 1000
+        const val INVITE_INTERVAL_MILLIS = 24L * 60 * 60 * 1000
+        const val CHECK_INTERVAL_MILLIS = 6L * 60 * 60 * 1000
+        const val LOOK_AGAIN_MILLIS = 60L * 60 * 1000
+        const val MILLIS_PER_SECOND = 1000L
         const val FINGERPRINT_ITERATIONS = 5200
         const val FINGERPRINT_VERSION = 2
         const val AUTH_KIND = 22242

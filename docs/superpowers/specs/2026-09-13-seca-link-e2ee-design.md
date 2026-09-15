@@ -102,13 +102,15 @@ planned to hide it.
 - Seca Link is off by default. Turning it on creates the keys and publishes their public part. Nothing is created or sent before.
 - The pre-key bundle is a NIP-78 event (kind 30078, tag `d` = `seca-link/prekeys`): each relay replaces it instead of piling it up.
   - It holds the identity key, a signed pre-key and a last-resort Kyber pre-key, with no one-time pre-key.
-  - It is published again every week.
+  - It is published again every five hours, and read back from each relay to see which ones keep it.
 - The identity is sealed with AES-256-GCM by an Android Keystore key, StrongBox when the chip exists. It is kept in `noBackupFilesDir`.
 - Relays: encrypted connections (`wss`) only, editable list, each relay's answer shown.
 
 ## Phases 2 and 3 done
 
-- **Invitation**: a data SMS on port 19734, 130 bytes at most. It carries the Nostr key, eight bytes of the identity's fingerprint and up to three relays.
+- **Invitation**: a data SMS on port 19734, 130 bytes at most. It carries the Nostr key, eight bytes of the identity's fingerprint and up to three relays. It leaves on its own when a conversation opens or a message is exchanged, at most once a day per contact: two phones that both have Seca Link connect without anyone asking, and the conversation says so once the session is open.
+- **A contact who leaves**: their keys stop being published. Every six hours the listening service looks for the keys of each connected contact; keys untouched for a day, or gone from every relay that answered, end the encrypted conversation — a notification, a notice in the thread, and messages back to SMS. A relay that answers nothing concludes nothing, and a contact whose keys come back is connected again. Opening a conversation looks again at once, at most once an hour.
+- **Keys on the relays**: published again every five hours by the listening service, and read back from each relay right after. A relay that takes the keys and keeps nothing is not named in invitations, and a contact's keys are looked for on the relays they named, on this phone's own and on the default ones.
 - **Session**:
   - the pre-key bundle is only accepted when signed by the announced Nostr key and carrying the identity whose fingerprint came by SMS;
   - trust on first use, an alert when a contact's key changes;

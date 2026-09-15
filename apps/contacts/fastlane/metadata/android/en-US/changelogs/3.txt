@@ -1,0 +1,1 @@
+Third beta. Nothing new here: the version follows Seca Messages, where Seca Link now connects on its own and notifications are conversations again.

@@ -124,6 +124,18 @@
             android:name=".sms.MessageActionReceiver"
             android:exported="false" />
 
+        <!-- The conversation avatars, which Android reads to draw a conversation notification.
+             Nothing is exported: Android grants the URI to whoever it hands the notification to. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.avatars"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/avatar_paths" />
+        </provider>
+
         <!-- This app's part of the suite's backup, for the Seca apps signed with the same key only. -->
         <provider
             android:name=".MessagesSuiteBackup"

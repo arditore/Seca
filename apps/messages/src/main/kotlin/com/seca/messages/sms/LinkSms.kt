@@ -8,6 +8,7 @@ import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.link.SecaLink
 import com.seca.core.link.handshake.Handshake
 import com.seca.core.link.handshake.textFor
+import kotlinx.coroutines.sync.Mutex
 
 /**
  * Seca Link's handshakes by SMS: discreet data SMS on their own port, and,
@@ -77,10 +78,18 @@ internal object LinkSms {
 
     /** Contacts whose session could not open when their handshake came are tried again, and answered once connected. */
     suspend fun connectWaiting(context: Context) {
-        runCatching { SecaLink(context).connectWaiting() }.getOrDefault(emptyList()).forEach { (peer, reply) ->
-            send(context, peer.number, reply, alsoText = peer.textHandshake)
+        // One sweep at a time: the service's own and a screen's must not try the same contact at once.
+        if (!sweeping.tryLock()) return
+        try {
+            runCatching { SecaLink(context).connectWaiting() }.getOrDefault(emptyList()).forEach { (peer, reply) ->
+                send(context, peer.number, reply, alsoText = peer.textHandshake)
+            }
+        } finally {
+            sweeping.unlock()
         }
     }
+
+    private val sweeping = Mutex()
 
     /** A conversation's latest message as the list shows it: a handshake text reads as a short notice. */
     fun snippetOf(body: String): String = if (Handshake.fromText(body) != null) NOTICE else body

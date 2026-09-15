@@ -9,6 +9,7 @@
     <string name="link_no_key_received">No key received from this contact</string>
     <string name="link_no_network">No network access</string>
     <string name="link_no_relay_accepted">No relay accepted the message</string>
+    <string name="link_not_kept">Accepted the keys but does not keep them</string>
     <string name="link_unknown_contact">Unknown contact</string>
     <string name="link_untrusted_key">Key not approved: %1$s</string>
 </resources>

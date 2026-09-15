@@ -180,9 +180,10 @@ internal fun LinkStatusScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
 
 @Composable
 private fun peerState(peer: LinkPeer, now: Long): String = when {
-    peer.ready && peer.keyChangedAt > 0 -> stringResource(R.string.peer_key_changed)
-    peer.ready && peer.verified -> stringResource(R.string.peer_verified)
-    peer.ready -> stringResource(R.string.peer_encrypted)
+    peer.leftAt > 0 -> stringResource(R.string.peer_left, ago(peer.leftAt, now))
+    peer.active && peer.keyChangedAt > 0 -> stringResource(R.string.peer_key_changed)
+    peer.active && peer.verified -> stringResource(R.string.peer_verified)
+    peer.active -> stringResource(R.string.peer_encrypted)
     peer.nostrPublicKey != null && peer.attemptedAt > 0 -> stringResource(R.string.peer_invited_retried, ago(peer.attemptedAt, now))
     peer.nostrPublicKey != null -> stringResource(R.string.peer_invited)
     peer.invitedAt > 0 -> stringResource(R.string.peer_invitation_sent, ago(peer.invitedAt, now))

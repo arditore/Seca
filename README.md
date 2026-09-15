@@ -42,10 +42,17 @@ server.
 - Encrypted messages travel through public [Nostr](https://nostr.com) relays.
   Each envelope is signed by a throwaway key: a relay sees who receives, when and
   roughly how much, never who writes nor what is written.
-- Two phones connect by exchanging an invitation by SMS, or by scanning each
-  other's code in person.
+- Two phones that both have Seca Link connect on their own: a data SMS a phone
+  without Seca never shows, sent when a conversation opens or a message is
+  exchanged. The conversation then says so, and turns encrypted. Scanning each
+  other's code in person works too.
 - Read receipts, typing indicator, reactions, quoted replies, encrypted photos and
   voice messages, disappearing messages, a safety number to compare.
+- A contact who turns Seca Link off, or takes Seca off their phone, stops
+  publishing their keys: within a day Seca says so in the conversation, tells
+  you, and what you write goes back to ordinary SMS.
+- A contact's new phone brings a new key. Only your side, the one that did not
+  change phone, is told, and the safety number is there to compare.
 - A Tor option with [Orbot](https://orbot.app): relays no longer see the phone's
   address.
 - Off by default. Without Seca Link, Seca Messages does not use the Internet.

@@ -1,0 +1,6 @@
+Troisième bêta.
+• Seca Link se connecte tout seul entre deux téléphones qui l'ont : plus d'invitation à envoyer, et la conversation indique le moment où elle devient chiffrée.
+• Un contact qui quitte Seca Link y met fin : vous êtes prévenu, la conversation l'indique et les messages repartent en SMS.
+• Un cadenas sur la photo de chaque conversation portée par Seca Link.
+• Clés republiées toutes les cinq heures, et seuls les relais qui les gardent vraiment sont indiqués aux contacts.
+• Les notifications de messages redeviennent des conversations : photo du contact et place en haut du volet.

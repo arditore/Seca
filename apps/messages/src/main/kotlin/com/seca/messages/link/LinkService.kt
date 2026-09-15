@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -48,6 +49,7 @@ class LinkService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var following: Job? = null
     private var sweeping: Job? = null
+    private var maintaining: Job? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -71,8 +73,8 @@ class LinkService : Service() {
         // Each start connects afresh, so a connection a relay dropped without a word is never waited on.
         following?.cancel()
         following = scope.launch { follow(link) }
-        // Handshakes that came while the network was away get their session now, and their answer.
-        scope.launch { LinkSms.connectWaiting(this@LinkService) }
+        // Keys published again when they are due, and handshakes whose session never opened tried again.
+        if (maintaining?.isActive != true) maintaining = scope.launch { maintain(link) }
         // Messages whose time is up leave this phone even while the app stays closed.
         if (sweeping?.isActive != true) sweeping = scope.launch { sweepExpired() }
         return START_STICKY
@@ -123,6 +125,26 @@ class LinkService : Service() {
         }
     }
 
+    /**
+     * What Seca Link needs even when nobody opens the app: the pre-keys published
+     * again every few hours, so a relay that dropped them hands them back, and the
+     * contacts whose session never opened tried again, each time a little later.
+     */
+    private suspend fun maintain(link: SecaLink) {
+        while (true) {
+            if (link.settings.enabled && link.network.available()) {
+                if (link.settings.publishDue()) runCatching { link.publishPrekeys().collect {} }
+                runCatching { LinkSms.connectWaiting(this) }
+                // A contact who stopped publishing their keys no longer has Seca Link: the owner is told,
+                // the conversation says so, and what is written next goes as an ordinary SMS.
+                runCatching { link.checkPeersStillThere() }.getOrDefault(emptyList()).forEach { number ->
+                    runCatching { MessageNotifications.notifyLinkStopped(this, number) }
+                }
+            }
+            delay(MAINTAIN_MILLIS)
+        }
+    }
+
     private suspend fun sweepExpired() {
         val conversations = LinkConversations(this)
         while (true) {
@@ -136,6 +158,9 @@ class LinkService : Service() {
         val kept = event.kind == Envelope.KIND
         if (kept && messages.isSeen(event.id)) return
         val incoming = link.open(event) ?: return
+        // Their message came from a key this phone had never seen: a new phone, Seca installed again,
+        // or someone trying to sit in between. Only this side, whose contact changed, is told.
+        if (incoming.keyChanged) runCatching { MessageNotifications.notifyKeyChanged(this, incoming.number) }
         if (kept) {
             messages.markSeen(event.id)
             rememberLastSeen()
@@ -216,6 +241,7 @@ class LinkService : Service() {
         private const val RETRY_MIN_MILLIS = 5_000L
         private const val RETRY_MAX_MILLIS = 60_000L
         private const val SWEEP_MILLIS = 30_000L
+        private const val MAINTAIN_MILLIS = 10L * 60 * 1000
 
         /**
          * Starts listening when Seca Link is on: in the background when the owner allowed it, in the

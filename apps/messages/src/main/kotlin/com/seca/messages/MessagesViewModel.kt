@@ -443,6 +443,30 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /**
+     * Offers Seca Link to [address] on its own: a data SMS a phone without Seca
+     * never shows, at most once a day, and nothing at all once the contact is
+     * connected. Two phones that both have Seca Link find each other without the
+     * owner asking for anything.
+     */
+    fun offerLink(address: String) {
+        if (!link.settings.enabled) return
+        viewModelScope.launch(Dispatchers.IO) { LinkSms.inviteIfDue(getApplication(), address) }
+    }
+
+    /**
+     * Looks, as the conversation opens, at whether [address] still has Seca Link:
+     * a contact who turned it off or took Seca off their phone stops publishing
+     * their keys, and the conversation must stop calling itself encrypted.
+     */
+    fun checkLink(address: String) {
+        if (!link.settings.enabled) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val number = LinkSms.keyOf(getApplication(), address) ?: return@launch
+            runCatching { link.checkPeerStillThere(number) }
+        }
+    }
+
     /** Sends the owner's Seca Link invitation to [address] now, also as a text, which every network carries. */
     fun inviteToLink(address: String) {
         viewModelScope.launch(Dispatchers.IO) {

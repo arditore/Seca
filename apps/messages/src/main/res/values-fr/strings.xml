@@ -153,6 +153,8 @@
     <string name="key_changed_text">La clé de sécurité de %1$s a changé. Si vous ne l\'attendiez pas, comparez vos numéros de sécurité.</string>
     <string name="key_published">Clé publiée</string>
     <string name="later">Plus tard</string>
+    <string name="link_conversation_started">Conversation Seca Link · chiffrée de bout en bout</string>
+    <string name="link_conversation_stopped">Fin de la conversation Seca Link · les messages repartent en SMS</string>
     <string name="link_disabled">Seca Link désactivé</string>
     <string name="link_enabled">Seca Link activé</string>
     <string name="link_encryption">Chiffrement Seca Link</string>
@@ -179,6 +181,8 @@
     <string name="link_status">État de Seca Link</string>
     <string name="link_status_footer">Deux téléphones se connectent en échangeant une invitation, par SMS ou par QR code en face à face. Tant que ce n\'est pas fait, les messages partent en SMS, sans chiffrement.</string>
     <string name="link_status_hint">Relais à l\'écoute, contacts connectés, dépannage</string>
+    <string name="link_stopped">Ce n\'est plus une conversation Seca Link</string>
+    <string name="link_stopped_text">%1$s n\'a plus Seca Link : ce que vous écrivez repart en SMS ordinaires, que l\'opérateur peut lire.</string>
     <string name="listen">Écouter</string>
     <string name="listening_last_envelope">À l\'écoute · dernière enveloppe %1$s</string>
     <string name="listening_since">À l\'écoute %1$s</string>
@@ -249,6 +253,7 @@
     <string name="peer_invited">Invitation reçue, connexion pas encore ouverte</string>
     <string name="peer_invited_retried">Invitation reçue, connexion pas encore ouverte · dernier essai %1$s</string>
     <string name="peer_key_changed">Chiffré · sa clé a changé, à vérifier</string>
+    <string name="peer_left">N\'a plus Seca Link · %1$s</string>
     <string name="peer_nothing">Aucun échange pour l\'instant</string>
     <string name="peer_verified">Chiffré · vérifié</string>
     <string name="permission_description">Seca Messages lit, reçoit et envoie les SMS de ce téléphone. Ils restent sur l\'appareil et ne partent que vers leur destinataire.</string>
@@ -298,7 +303,6 @@
     <string name="reply_to">Réponse à %1$s</string>
     <string name="reply_to_yourself">Réponse à vous-même</string>
     <string name="resend">Renvoyer</string>
-    <string name="resend_invitation">Renvoyer l\'invitation Seca Link</string>
     <string name="restore">Restaurer</string>
     <string name="restore_backup">Restaurer une sauvegarde</string>
     <string name="restore_backup_hint">Remet les messages absents de ce téléphone</string>

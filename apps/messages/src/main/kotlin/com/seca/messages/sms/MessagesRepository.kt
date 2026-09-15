@@ -30,6 +30,9 @@ data class Conversation(
 
 enum class MessageStatus { Received, Sending, Sent, Delivered, Read, Failed }
 
+/** What a conversation says of itself, in place of a message: it became a Seca Link one, or stopped being one. */
+enum class ConversationNotice { LinkStarted, LinkStopped }
+
 data class Message(
     val id: Long,
     val threadId: Long,
@@ -51,6 +54,8 @@ data class Message(
     val theirReaction: String? = null,
     /** When the message goes from both phones, in milliseconds; 0 keeps it. */
     val expiresAt: Long = 0L,
+    /** Not a message but a notice: what happened to the conversation itself, at the moment it happened. */
+    val notice: ConversationNotice? = null,
 ) {
     val outgoing: Boolean get() = status != MessageStatus.Received
 }

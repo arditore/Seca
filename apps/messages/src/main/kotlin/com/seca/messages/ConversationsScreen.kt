@@ -411,7 +411,9 @@ private fun ConversationRow(
                 .combinedClickable(onClick = onOpen, onLongClickLabel = stringResource(R.string.more_actions), onLongClick = { menuOpen = true })
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            PersonAvatar(contact, ui, size = 48.dp)
+            // A lock on the photo: this conversation travels through Seca Link, not as plain SMS.
+            val peer = rememberLinkPeer(conversation.address)
+            PersonAvatarWithLink(contact, ui, size = 48.dp, linked = ui.link.enabled && peer?.active == true)
             Column(
                 Modifier
                     .weight(1f)

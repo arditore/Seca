@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- The avatars only, out of this app's cache, and only for whoever Android hands the URI to. -->
+    <cache-path
+        name="avatars"
+        path="avatars/" />
+</paths>

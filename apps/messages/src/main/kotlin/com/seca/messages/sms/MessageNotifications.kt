@@ -49,6 +49,7 @@ internal object MessageNotifications {
     private const val MAX_LINES = 8
     private const val TAG_SCHEDULED = "scheduled"
     private const val TAG_KEY_CHANGED = "link-key"
+    private const val TAG_LINK_STOPPED = "link-stopped"
 
     fun notifyIncoming(context: Context, address: String, body: String) {
         val threadId = threadOf(context, address)
@@ -78,7 +79,11 @@ internal object MessageNotifications {
 
         val contact = contactOf(context, address)
         val name = contact?.name ?: PhoneNumbers(PhoneNumbers.detectRegion(context)).display(address)
-        val icon = NotificationAvatars.iconFor(context, name, contact?.id)
+        val avatar = NotificationAvatars.bitmapFor(context, name, contact?.id)
+        // Android takes no bitmap in the long-lived shortcut a conversation notification needs, and
+        // without that shortcut it draws the app's icon in place of the contact: the avatar goes by
+        // content URI instead, and the bitmap only serves if the file cannot be written.
+        val icon = AvatarFiles.uriOf(context, address, avatar)?.let(Icon::createWithContentUri) ?: Icon.createWithBitmap(avatar)
         val sender = Person.Builder()
             .setName(name)
             .setKey(address)
@@ -155,6 +160,15 @@ internal object MessageNotifications {
         tag = TAG_SCHEDULED,
         title = context.getString(R.string.scheduled_not_sent),
         text = { name -> context.getString(R.string.scheduled_not_sent_text, name) },
+    )
+
+    /** A contact stopped having Seca Link: their keys are no longer published, so messages go back to SMS. */
+    fun notifyLinkStopped(context: Context, address: String) = alert(
+        context = context,
+        address = address,
+        tag = TAG_LINK_STOPPED,
+        title = context.getString(R.string.link_stopped),
+        text = { name -> context.getString(R.string.link_stopped_text, name) },
     )
 
     /** A contact's Seca Link key changed: a new phone or a reinstall, or someone trying to sit in between. */

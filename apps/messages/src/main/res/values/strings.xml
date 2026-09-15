@@ -148,6 +148,8 @@
     <string name="key_changed_text">The security key of %1$s changed. If you did not expect it, compare your safety numbers.</string>
     <string name="key_published">Key published</string>
     <string name="later">Later</string>
+    <string name="link_conversation_started">Seca Link conversation · end-to-end encrypted</string>
+    <string name="link_conversation_stopped">No longer a Seca Link conversation · messages go by SMS</string>
     <string name="link_disabled">Seca Link off</string>
     <string name="link_enabled">Seca Link on</string>
     <string name="link_encryption">Seca Link encryption</string>
@@ -172,6 +174,8 @@
     <string name="link_status">Seca Link status</string>
     <string name="link_status_footer">Two phones connect by exchanging an invitation, by SMS or by QR code in person. Until then, messages leave as SMS, unencrypted.</string>
     <string name="link_status_hint">Listening relays, connected contacts, troubleshooting</string>
+    <string name="link_stopped">No longer a Seca Link conversation</string>
+    <string name="link_stopped_text">%1$s no longer has Seca Link: what you write goes back to ordinary SMS, which the carrier can read.</string>
     <string name="listen">Play</string>
     <string name="listening_last_envelope">Listening · last envelope %1$s</string>
     <string name="listening_since">Listening %1$s</string>
@@ -239,6 +243,7 @@
     <string name="peer_invited">Invitation received, connection not open yet</string>
     <string name="peer_invited_retried">Invitation received, connection not open yet · last try %1$s</string>
     <string name="peer_key_changed">Encrypted · their key changed, to verify</string>
+    <string name="peer_left">No longer has Seca Link · %1$s</string>
     <string name="peer_nothing">No exchange yet</string>
     <string name="peer_verified">Encrypted · verified</string>
     <string name="permission_description">Seca Messages reads, receives and sends this phone\'s texts. They stay on the device and only go to whom they are written to.</string>
@@ -287,7 +292,6 @@
     <string name="reply_to">Replying to %1$s</string>
     <string name="reply_to_yourself">Replying to yourself</string>
     <string name="resend">Resend</string>
-    <string name="resend_invitation">Resend the Seca Link invitation</string>
     <string name="restore">Restore</string>
     <string name="restore_backup">Restore a backup</string>
     <string name="restore_backup_hint">Brings back the messages missing from this phone</string>
