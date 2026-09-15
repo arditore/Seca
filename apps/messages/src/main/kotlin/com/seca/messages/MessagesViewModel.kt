@@ -183,11 +183,11 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     fun openOrbot() = TorAccess(getApplication()).open()
 
     fun setLinkEnabled(on: Boolean) {
-        link.settings.enabled = on
         _ui.update { it.copy(link = it.link.copy(enabled = on, statuses = emptyMap())) }
-        // Listening to the relays starts and stops with Seca Link.
-        links.listen(on)
         if (on) {
+            link.settings.enabled = true
+            // Listening to the relays starts with Seca Link.
+            links.listen(true)
             watchNetwork()
             publishPrekeys()
             // Contacts who invited this phone while Seca Link was off get their answer, once the keys are out.
@@ -195,8 +195,15 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                 publishing?.join()
                 LinkSms.connectWaiting(getApplication())
             }
-        } else {
-            watchingNetwork?.cancel()
+            return
+        }
+        watchingNetwork?.cancel()
+        viewModelScope.launch(Dispatchers.IO) {
+            // Said while Seca Link can still send: contacts learn at once that this conversation
+            // is no longer encrypted, rather than waiting for these keys to grow old on the relays.
+            runCatching { link.sayGoodbye() }
+            link.settings.enabled = false
+            withContext(Dispatchers.Main) { links.listen(false) }
         }
     }
 

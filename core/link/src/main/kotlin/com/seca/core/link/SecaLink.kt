@@ -216,54 +216,83 @@ class SecaLink(context: Context) {
      */
     suspend fun checkPeersStillThere(now: Long = System.currentTimeMillis()): List<String> {
         if (!settings.enabled || !network.available()) return emptyList()
-        return peers.all().values
-            .filter { it.ready && now - it.checkedAt > CHECK_INTERVAL_MILLIS }
-            .filter { settle(it, now) }
-            .map { it.number }
+        val due = peers.all().values.filter { it.ready && now - it.checkedAt > CHECK_INTERVAL_MILLIS }
+        val published = publishedTimes(due.mapNotNull { it.nostrPublicKey }) ?: return emptyList()
+        return due.mapNotNull { peer -> settle(peer, published[peer.nostrPublicKey] ?: 0L, now) }
     }
 
     /**
-     * Looks now at whether [number] still has Seca Link, as a conversation opens
-     * and at most once an hour, so the owner never writes into a conversation
-     * that only looks encrypted. True when this is the moment they stopped.
+     * Looks now at whether [number] still has Seca Link, as a conversation opens,
+     * so the owner never writes into a conversation that only looks encrypted.
+     * True when this is the moment they stopped.
      */
     suspend fun checkPeerStillThere(number: String, now: Long = System.currentTimeMillis()): Boolean {
         if (!settings.enabled || !network.available()) return false
         val peer = peers[number]?.takeIf { it.ready && now - it.checkedAt > LOOK_AGAIN_MILLIS } ?: return false
-        return settle(peer, now)
+        val publicKey = peer.nostrPublicKey ?: return false
+        val published = publishedTimes(listOf(publicKey)) ?: return false
+        return settle(peer, published[publicKey] ?: 0L, now) != null
     }
 
-    /** Reads what the relays say of [peer] and writes it down. True when this is the moment they stopped. */
-    private suspend fun settle(peer: LinkPeer, now: Long): Boolean = when (publishesKeys(peer, now)) {
-        // A contact who had left publishes their keys again: the conversation is encrypted once more.
-        true -> {
+    /** A contact said they no longer have Seca Link: the conversation goes back to SMS at once. */
+    fun peerLeft(number: String) {
+        peers.update(number) { if (it.leftAt > 0) it else it.copy(leftAt = System.currentTimeMillis()) }
+    }
+
+    /**
+     * Tells every connected contact that this phone no longer has Seca Link and
+     * takes its keys off the relays, so nobody keeps writing into a conversation
+     * that can no longer be read. Said while Seca Link is still on.
+     */
+    suspend fun sayGoodbye() {
+        if (!settings.enabled) return
+        val connected = peers.all().values.filter { it.active }
+        coroutineScope {
+            connected.forEach { peer -> launch { runCatching { send(peer.number, LinkPayload.Farewell) } } }
+        }
+        unpublishPrekeys()
+    }
+
+    /** Asks the relays to drop this phone's published keys. */
+    suspend fun unpublishPrekeys() {
+        val event = PrekeyBundle.deletionOf(identity())
+        withContext(Dispatchers.IO) {
+            coroutineScope { settings.relays().forEach { url -> launch { runCatching { relayClient.publish(url, event) } } } }
+        }
+        settings.setKeptRelays(emptyList())
+        settings.publishedAt = 0
+    }
+
+    /** What the relays say of [peer], written down. Returns their number when this is the moment they stopped. */
+    private fun settle(peer: LinkPeer, publishedAt: Long, now: Long): String? {
+        peers.update(peer.number) { it.copy(checkedAt = now, bundleAt = maxOf(it.bundleAt, publishedAt)) }
+        if (!keysLookAbandoned(publishedAt, now)) {
+            // A contact who had left publishes their keys again: the conversation is encrypted once more.
             if (peer.leftAt > 0) peers.update(peer.number) { it.opened() }
-            false
+            return null
         }
-
-        false -> if (peer.leftAt == 0L) {
-            peers.update(peer.number) { it.copy(leftAt = now) }
-            true
-        } else {
-            false
-        }
-
-        // Not one relay answered: nothing is known of this contact, and nothing is concluded.
-        null -> false
+        if (peer.leftAt > 0) return null
+        peers.update(peer.number) { it.copy(leftAt = now) }
+        return peer.number
     }
 
-    /** Whether [peer] still publishes their keys; null when no relay answered, so a quiet relay never ends a conversation. */
-    private suspend fun publishesKeys(peer: LinkPeer, now: Long): Boolean? = withContext(Dispatchers.IO) {
-        val publicKey = peer.nostrPublicKey ?: return@withContext null
-        val filter = PrekeyBundle.filterFor(publicKey)
-        val sources = (peer.relays + settings.relays() + LinkSettings.DefaultRelays).distinct()
+    /**
+     * When each of [publicKeys] last published their keys, asked of every relay
+     * in one question, so following a dozen contacts costs one look. Null when
+     * not a single relay answered: a quiet relay never ends a conversation.
+     */
+    private suspend fun publishedTimes(publicKeys: List<String>): Map<String, Long>? = withContext(Dispatchers.IO) {
+        if (publicKeys.isEmpty()) return@withContext emptyMap()
+        val filter = PrekeyBundle.filterForAll(publicKeys)
+        val sources = (settings.relays() + LinkSettings.DefaultRelays + peers.all().values.flatMap { it.relays }).distinct()
         val answers = coroutineScope { sources.map { url -> async { relayClient.fetch(url, filter) } }.awaitAll() }
         if (answers.all { it == null }) return@withContext null
-        val publishedAt = answers.filterNotNull().flatten()
-            .filter { it.pubkey == publicKey }
-            .maxOfOrNull { it.createdAt * MILLIS_PER_SECOND } ?: 0L
-        peers.update(peer.number) { it.copy(checkedAt = now, bundleAt = maxOf(it.bundleAt, publishedAt)) }
-        !keysLookAbandoned(publishedAt, now)
+        buildMap {
+            answers.filterNotNull().flatten().forEach { event ->
+                val at = event.createdAt * MILLIS_PER_SECOND
+                if (at > (this[event.pubkey] ?: 0L)) put(event.pubkey, at)
+            }
+        }
     }
 
     /** A failed attempt counts, so the next one waits longer than the last. */
@@ -415,8 +444,8 @@ class SecaLink(context: Context) {
 
     private companion object {
         const val INVITE_INTERVAL_MILLIS = 24L * 60 * 60 * 1000
-        const val CHECK_INTERVAL_MILLIS = 6L * 60 * 60 * 1000
-        const val LOOK_AGAIN_MILLIS = 60L * 60 * 1000
+        const val CHECK_INTERVAL_MILLIS = 60L * 60 * 1000
+        const val LOOK_AGAIN_MILLIS = 60L * 1000
         const val MILLIS_PER_SECOND = 1000L
         const val FINGERPRINT_ITERATIONS = 5200
         const val FINGERPRINT_VERSION = 2

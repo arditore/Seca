@@ -39,7 +39,11 @@ class LinkSettings(context: Context) {
         get() = prefs.getBoolean("use_tor", false)
         set(value) = prefs.edit { putBoolean("use_tor", value) }
 
-    /** Pre-keys are published again every five hours, so relays that dropped them get them back. */
+    /**
+     * Pre-keys are published again every four hours: relays that dropped them get them back, and
+     * the copy they keep stays young. A phone that stops publishing is a phone that stopped having
+     * Seca Link, which is what tells its contacts to go back to SMS.
+     */
     fun publishDue(now: Long = System.currentTimeMillis()): Boolean = now - publishedAt > REPUBLISH_MILLIS
 
     /** The relays that receive for this phone, in the owner's order. */
@@ -79,7 +83,7 @@ class LinkSettings(context: Context) {
         private const val KEY_RELAYS = "relays"
         private const val KEY_KEPT_RELAYS = "kept_relays"
         private const val KEY_PUBLISHED_AT = "published_at"
-        private const val REPUBLISH_MILLIS = 5L * 60 * 60 * 1000
+        private const val REPUBLISH_MILLIS = 4L * 60 * 60 * 1000
         private const val SECURE_SCHEME = "wss://"
 
         /**

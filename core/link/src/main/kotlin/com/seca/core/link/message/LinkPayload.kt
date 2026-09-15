@@ -53,6 +53,13 @@ sealed interface LinkPayload {
     /** How long the conversation's new messages are kept, from now on, on both phones; 0 keeps them. */
     data class ExpiryTimer(val seconds: Int) : LinkPayload
 
+    /**
+     * The other phone no longer has Seca Link: it was turned off there. The
+     * conversation goes back to ordinary SMS at once, rather than waiting for
+     * their keys to grow old on the relays.
+     */
+    data object Farewell : LinkPayload
+
     companion object {
         private const val VERSION = 1
         private const val TEXT = 1
@@ -62,6 +69,7 @@ sealed interface LinkPayload {
         private const val MEDIA_PART = 5
         private const val REACTION = 6
         private const val EXPIRY_TIMER = 7
+        private const val FAREWELL = 8
         private const val PAD_BLOCK = 128
         private const val PAD_MARK = 0x80
         private const val MAX_FIELD = 64 * 1024
@@ -129,6 +137,7 @@ sealed interface LinkPayload {
                         out.writeByte(EXPIRY_TIMER)
                         out.writeInt(payload.seconds.coerceIn(0, MAX_EXPIRY_SECONDS))
                     }
+                    Farewell -> out.writeByte(FAREWELL)
                 }
             }
             return pad(bytes.toByteArray())
@@ -173,6 +182,7 @@ sealed interface LinkPayload {
                         Reaction(target, emoji)
                     }
                     EXPIRY_TIMER -> ExpiryTimer(input.readInt().coerceIn(0, MAX_EXPIRY_SECONDS))
+                    FAREWELL -> Farewell
                     else -> null
                 }
             }

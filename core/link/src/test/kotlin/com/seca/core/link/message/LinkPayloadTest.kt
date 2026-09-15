@@ -21,6 +21,7 @@ class LinkPayloadTest {
             LinkPayload.Reaction("id-1", "❤️"),
             LinkPayload.Reaction("id-1", ""),
             LinkPayload.ExpiryTimer(86_400),
+            LinkPayload.Farewell,
         ).forEach { assertEquals(it, LinkPayload.decode(LinkPayload.encode(it))) }
     }
 

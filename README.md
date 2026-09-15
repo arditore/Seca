@@ -48,9 +48,11 @@ server.
   other's code in person works too.
 - Read receipts, typing indicator, reactions, quoted replies, encrypted photos and
   voice messages, disappearing messages, a safety number to compare.
-- A contact who turns Seca Link off, or takes Seca off their phone, stops
-  publishing their keys: within a day Seca says so in the conversation, tells
-  you, and what you write goes back to ordinary SMS.
+- A contact who turns Seca Link off tells your phone at once: the conversation
+  says so, the lock goes, and what you write leaves as an ordinary SMS. One who
+  takes Seca off their phone says nothing — nothing runs there any more — so
+  their keys stop being refreshed and expire within a day, which ends the
+  conversation the same way.
 - A contact's new phone brings a new key. Only your side, the one that did not
   change phone, is told, and the safety number is there to compare.
 - A Tor option with [Orbot](https://orbot.app): relays no longer see the phone's

@@ -205,6 +205,11 @@ class LinkService : Service() {
             is LinkPayload.Reaction -> messages.setTheirReaction(payload.targetId, number, payload.emoji.ifEmpty { null })
             // Either side sets how long messages are kept; both phones then follow it.
             is LinkPayload.ExpiryTimer -> LinkTimers.of(this).set(number, payload.seconds)
+            // They turned Seca Link off: the conversation says so at once and goes back to SMS.
+            LinkPayload.Farewell -> {
+                link.peerLeft(number)
+                runCatching { MessageNotifications.notifyLinkStopped(this, number) }
+            }
         }
     }
 
