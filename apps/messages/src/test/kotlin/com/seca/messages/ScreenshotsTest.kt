@@ -142,8 +142,8 @@ class ScreenshotsTest {
         val invite = Handshake(Handshake.Type.Invite, "ab".repeat(32), "0123456789abcdef", LinkSettings.DefaultRelays.take(3))
         return listOf(
             Message(1, 1, CAMILLE, "Tu as vu le programme de samedi ?", now - 26 * 60 * minute, MessageStatus.Received),
-            Message(2, 1, CAMILLE, invite.text(), now - 26 * 60 * minute + 2 * minute, MessageStatus.Sent),
-            Message(3, 1, CAMILLE, invite.copy(type = Handshake.Type.Accept).text(), now - 26 * 60 * minute + 3 * minute, MessageStatus.Received),
+            Message(2, 1, CAMILLE, invite.text("Seca Link"), now - 26 * 60 * minute + 2 * minute, MessageStatus.Sent),
+            Message(3, 1, CAMILLE, invite.copy(type = Handshake.Type.Accept).text("Seca Link"), now - 26 * 60 * minute + 3 * minute, MessageStatus.Received),
             Message(4, 1, CAMILLE, "Coucou ! Tu es dispo ce soir ?", now - 50 * minute, MessageStatus.Received),
             Message(-5, 1, CAMILLE, "Oui, après 19 h", now - 40 * minute, MessageStatus.Read, encrypted = true, linkId = "a", theirReaction = "❤️"),
             Message(

@@ -5,6 +5,7 @@ import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.seca.messages.R
 
 /**
  * How long the new messages of each Seca Link conversation are kept, by
@@ -43,12 +44,16 @@ class LinkTimers private constructor(context: Context) {
         /** What the owner may choose, in seconds. */
         val Choices = listOf(0, 5 * MINUTE, HOUR, DAY, WEEK)
 
-        fun label(seconds: Int): String = when {
-            seconds <= 0 -> "Désactivés"
-            seconds < HOUR -> "${seconds / MINUTE} min"
-            seconds < DAY -> "${seconds / HOUR} h"
-            seconds < WEEK -> "${seconds / DAY} j"
-            else -> "${seconds / WEEK} sem."
+        /** "Off", "5 min", "1 h", "1 day", "1 week", in the phone's language. */
+        fun label(context: Context, seconds: Int): String {
+            val resources = context.resources
+            return when {
+                seconds <= 0 -> resources.getString(R.string.timer_off)
+                seconds < HOUR -> resources.getQuantityString(R.plurals.timer_minutes, seconds / MINUTE, seconds / MINUTE)
+                seconds < DAY -> resources.getQuantityString(R.plurals.timer_hours, seconds / HOUR, seconds / HOUR)
+                seconds < WEEK -> resources.getQuantityString(R.plurals.timer_days, seconds / DAY, seconds / DAY)
+                else -> resources.getQuantityString(R.plurals.timer_weeks, seconds / WEEK, seconds / WEEK)
+            }
         }
 
         /** When a message kept [seconds] from [from] goes; 0 when it is kept. */

@@ -7,6 +7,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.seca.core.model.uiLocale
 
 // Formats are built on each call rather than kept aside, so they follow the
 // phone's language and 12/24-hour setting even when those change.
@@ -16,7 +17,7 @@ private fun zonedOf(millis: Long) = Instant.ofEpochMilli(millis).atZone(ZoneId.s
 /** The time of day, in the phone's 12- or 24-hour setting. */
 internal fun timeOf(context: Context, millis: Long): String {
     val pattern = if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm a"
-    return zonedOf(millis).format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
+    return zonedOf(millis).format(DateTimeFormatter.ofPattern(pattern, uiLocale()))
 }
 
 /** In the list: the time today, the weekday this week, else the date. */
@@ -24,51 +25,57 @@ internal fun shortDateOf(context: Context, millis: Long): String {
     val date = zonedOf(millis)
     val today = LocalDate.now()
     val day = date.toLocalDate()
-    val locale = Locale.getDefault()
+    val locale = uiLocale()
     return when {
         day == today -> timeOf(context, millis)
         day.isAfter(today.minusDays(7)) -> date.format(DateTimeFormatter.ofPattern("EEE", locale))
-        day.year == today.year -> date.format(DateTimeFormatter.ofPattern("d MMM", locale))
-        else -> date.format(DateTimeFormatter.ofPattern("d MMM yyyy", locale))
+        day.year == today.year -> date.format(patternOf(locale, "dMMM"))
+        else -> date.format(patternOf(locale, "dMMMyyyy"))
     }
 }
 
 /** The sections of the conversation list. */
-internal fun periodOf(millis: Long): String {
+internal fun periodOf(context: Context, millis: Long): String {
     val day = zonedOf(millis).toLocalDate()
     val today = LocalDate.now()
-    return when {
-        day == today -> "Aujourd'hui"
-        day == today.minusDays(1) -> "Hier"
-        day.isAfter(today.minusDays(7)) -> "Cette semaine"
-        day.isAfter(today.minusDays(31)) -> "Ce mois-ci"
-        else -> "Plus ancien"
-    }
+    return context.getString(
+        when {
+            day == today -> R.string.today
+            day == today.minusDays(1) -> R.string.yesterday
+            day.isAfter(today.minusDays(7)) -> R.string.this_week
+            day.isAfter(today.minusDays(31)) -> R.string.this_month
+            else -> R.string.older
+        },
+    )
 }
 
 /** The separator between the days of a conversation. */
-internal fun dayTitleOf(millis: Long): String {
+internal fun dayTitleOf(context: Context, millis: Long): String {
     val day = zonedOf(millis).toLocalDate()
     val today = LocalDate.now()
-    val locale = Locale.getDefault()
+    val locale = uiLocale()
     return when (day) {
-        today -> "Aujourd'hui"
-        today.minusDays(1) -> "Hier"
-        else -> day.format(DateTimeFormatter.ofPattern(if (day.year == today.year) "EEEE d MMMM" else "EEEE d MMMM yyyy", locale))
+        today -> context.getString(R.string.today)
+        today.minusDays(1) -> context.getString(R.string.yesterday)
+        else -> day.format(patternOf(locale, if (day.year == today.year) "EEEEdMMMM" else "EEEEdMMMMyyyy"))
             .replaceFirstChar { it.titlecase(locale) }
     }
 }
 
 internal fun sameDay(a: Long, b: Long): Boolean = zonedOf(a).toLocalDate() == zonedOf(b).toLocalDate()
 
-/** When a scheduled message leaves: "aujourd'hui à 19:00", "demain à 08:00", "lun. 15 sept. à 08:00". */
+/** When a scheduled message leaves: "today at 19:00", "tomorrow at 08:00", "Mon, Sep 15 at 08:00". */
 internal fun scheduleTimeOf(context: Context, millis: Long): String {
     val day = zonedOf(millis).toLocalDate()
     val today = LocalDate.now()
-    val dayText = when (day) {
-        today -> "aujourd'hui"
-        today.plusDays(1) -> "demain"
-        else -> day.format(DateTimeFormatter.ofPattern(if (day.year == today.year) "EEE d MMM" else "EEE d MMM yyyy", Locale.getDefault()))
+    val time = timeOf(context, millis)
+    return when (day) {
+        today -> context.getString(R.string.today_at, time)
+        today.plusDays(1) -> context.getString(R.string.tomorrow_at, time)
+        else -> context.getString(R.string.day_at, day.format(patternOf(uiLocale(), if (day.year == today.year) "EEEdMMM" else "EEEdMMMyyyy")), time)
     }
-    return "$dayText à ${timeOf(context, millis)}"
 }
+
+/** A date in the order the language writes it: "12 mai" in French, "May 12" in English. */
+private fun patternOf(locale: Locale, skeleton: String): DateTimeFormatter =
+    DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)

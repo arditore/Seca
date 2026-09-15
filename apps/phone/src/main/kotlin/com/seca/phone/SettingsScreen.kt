@@ -40,6 +40,11 @@ import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 import com.seca.core.suite.SuiteBackupSection
 import com.seca.phone.screening.BlockMode
 import com.seca.phone.screening.ScreeningSettings
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.seca.core.design.label
+import androidx.compose.ui.res.stringResource
 
 /** A way into one of the system's own call screens; [intents] are tried in order. */
 private data class SystemEntry(val icon: ImageVector, val title: String, val subtitle: String, val intents: List<Intent>)
@@ -55,19 +60,30 @@ internal fun SettingsScreen(
     val context = LocalContext.current
     var confirmClear by remember { mutableStateOf(false) }
     val dynamic = ui.palette == null
+    // The suite's backup brings calls back only with the right to read and write the history: asked before the file is chosen.
+    var afterCallLogAsked by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val callLogAccess = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        afterCallLogAsked?.invoke()
+        afterCallLogAsked = null
+    }
+    val askCallLogThen: (() -> Unit) -> Unit = { action ->
+        afterCallLogAsked = action
+        callLogAccess.launch(arrayOf(Manifest.permission.READ_CALL_LOG, Manifest.permission.WRITE_CALL_LOG))
+    }
+    val unavailableText = stringResource(R.string.unavailable)
     val calls = listOf(
-        SystemEntry(SecaIcons.Wifi, "Appels Wi-Fi", "Appeler par le Wi-Fi quand le réseau mobile est faible", wifiCallingSettings()),
+        SystemEntry(SecaIcons.Wifi, stringResource(R.string.wifi_calling), stringResource(R.string.wifi_calling_hint), wifiCallingSettings()),
         SystemEntry(
             SecaIcons.Phone,
-            "Réglages de l'opérateur",
-            "Transfert, double appel, présentation du numéro",
+            stringResource(R.string.carrier_settings),
+            stringResource(R.string.carrier_settings_hint),
             listOf(callSettings()),
         ),
-        SystemEntry(SecaIcons.Voicemail, "Messagerie vocale", "Numéro et réglages de la messagerie", listOf(voicemailSettings())),
+        SystemEntry(SecaIcons.Voicemail, stringResource(R.string.voicemail), stringResource(R.string.voicemail_settings_hint), listOf(voicemailSettings())),
         SystemEntry(
             SecaIcons.Block,
-            "Numéros bloqués",
-            "La liste d'Android, commune à toutes les applications",
+            stringResource(R.string.blocked_numbers),
+            stringResource(R.string.blocked_numbers_hint),
             listOfNotNull(blockedNumbers(context)),
         ),
     )
@@ -84,13 +100,13 @@ internal fun SettingsScreen(
                 .padding(bottom = 32.dp),
         ) {
             Text(
-                text = "Paramètres",
+                text = stringResource(R.string.settings),
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
             )
 
-            SecaSectionLabel("Application Téléphone")
+            SecaSectionLabel(stringResource(R.string.phone_app))
             SecaGroupItem(
                 index = 0,
                 count = 1,
@@ -104,12 +120,8 @@ internal fun SettingsScreen(
             ) {
                 SecaSettingRow(
                     icon = SecaIcons.Phone,
-                    title = if (isDefaultDialer) "Seca Téléphone gère vos appels" else "Utiliser Seca Téléphone par défaut",
-                    subtitle = if (isDefaultDialer) {
-                        "Écran d'appel, profil de l'appelant, blocage des numéros"
-                    } else {
-                        "Pour voir qui appelle et répondre depuis Seca, même écran verrouillé"
-                    },
+                    title = stringResource(if (isDefaultDialer) R.string.default_on else R.string.default_off),
+                    subtitle = stringResource(if (isDefaultDialer) R.string.default_on_hint else R.string.default_off_hint),
                     trailing = if (isDefaultDialer) {
                         { Icon(SecaIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
                     } else {
@@ -117,17 +129,17 @@ internal fun SettingsScreen(
                     },
                 )
             }
-            SecaHint("Android continue de sonner et de vibrer ; Seca affiche l'appel. Vous pouvez revenir en arrière à tout moment.")
+            SecaHint(stringResource(R.string.default_hint))
 
-            SecaSectionLabel("Filtrage des appels")
+            SecaSectionLabel(stringResource(R.string.call_filtering))
             val screening = remember { ScreeningSettings(context) }
             var blockTelemarketing by remember { mutableStateOf(screening.blockTelemarketing) }
             var silenceUnknown by remember { mutableStateOf(screening.silenceUnknown) }
             SecaGroupItem(index = 0, count = 3) {
                 SecaSettingRow(
                     icon = SecaIcons.Shield,
-                    title = "Bloquer le démarchage",
-                    subtitle = "Numéros réservés au démarchage en France (01 62, 01 63, 02 70…), sauf vos contacts",
+                    title = stringResource(R.string.block_telemarketing),
+                    subtitle = stringResource(R.string.block_telemarketing_hint),
                     modifier = Modifier.toggleable(value = blockTelemarketing, role = Role.Switch) {
                         blockTelemarketing = it
                         screening.blockTelemarketing = it
@@ -138,8 +150,8 @@ internal fun SettingsScreen(
             SecaGroupItem(index = 1, count = 3) {
                 SecaSettingRow(
                     icon = SecaIcons.VolumeOff,
-                    title = "Inconnus en silencieux",
-                    subtitle = "Les numéros absents de vos contacts s'affichent sans sonner",
+                    title = stringResource(R.string.silence_unknown),
+                    subtitle = stringResource(R.string.silence_unknown_hint),
                     modifier = Modifier.toggleable(value = silenceUnknown, role = Role.Switch) {
                         silenceUnknown = it
                         screening.silenceUnknown = it
@@ -152,31 +164,26 @@ internal fun SettingsScreen(
             SecaGroupItem(index = 2, count = 3, onClick = if (ui.profiles.connected) ({ managingBlocked = true }) else null) {
                 SecaSettingRow(
                     icon = SecaIcons.Block,
-                    title = "Profils bloqués",
+                    title = stringResource(R.string.blocked_profiles),
                     subtitle = when {
-                        !ui.profiles.connected -> "Installez Seca Contacts pour bloquer un profil entier"
-                        blockedProfiles.isEmpty() -> "Aucun : tous vos contacts peuvent appeler"
-                        ui.blockMode == BlockMode.Decline -> blockedProfiles.joinToString(", ") { it.name } + " · appels refusés"
-                        else -> blockedProfiles.joinToString(", ") { it.name } + " · appels en silence"
+                        !ui.profiles.connected -> stringResource(R.string.blocked_profiles_needs_contacts)
+                        blockedProfiles.isEmpty() -> stringResource(R.string.blocked_profiles_none)
+                        ui.blockMode == BlockMode.Decline ->
+                            stringResource(R.string.blocked_profiles_declined, blockedProfiles.joinToString(", ") { it.label(context) })
+                        else -> stringResource(R.string.blocked_profiles_silenced, blockedProfiles.joinToString(", ") { it.label(context) })
                     },
                 )
             }
             if (managingBlocked) BlockedProfilesDialog(ui, viewModel, onDismiss = { managingBlocked = false })
-            SecaHint(
-                if (isDefaultDialer) {
-                    "Le tri se fait sur ce téléphone : rien n'est envoyé nulle part."
-                } else {
-                    "Fonctionne quand Seca Téléphone est l'application Téléphone par défaut."
-                },
-            )
+            SecaHint(stringResource(if (isDefaultDialer) R.string.filtering_local else R.string.filtering_needs_default))
 
-            SecaSectionLabel("Couleurs")
+            SecaSectionLabel(stringResource(R.string.colors))
             if (ui.profiles.connected) {
                 SecaGroupItem(index = 0, count = 2) {
                     SecaSettingRow(
                         icon = SecaIcons.AutoAwesome,
-                        title = "Couleurs dynamiques",
-                        subtitle = "Assorties au fond d'écran du téléphone",
+                        title = stringResource(R.string.dynamic_colors),
+                        subtitle = stringResource(R.string.dynamic_colors_hint),
                         modifier = Modifier.toggleable(
                             value = dynamic,
                             role = Role.Switch,
@@ -201,19 +208,19 @@ internal fun SettingsScreen(
                         }
                     }
                 }
-                SecaHint("Les couleurs sont communes à toutes les applications Seca. Le mode sombre suit le téléphone.")
+                SecaHint(stringResource(R.string.colors_shared_hint))
             } else {
-                SecaHint("Installez Seca Contacts pour choisir les couleurs de la suite.")
+                SecaHint(stringResource(R.string.colors_need_contacts))
             }
 
-            SecaSectionLabel("Appels")
+            SecaSectionLabel(stringResource(R.string.calls))
             calls.forEachIndexed { index, entry ->
                 SecaGroupItem(
                     index = index,
                     count = calls.size,
                     onClick = {
                         if (!openSystemScreen(context, entry.intents)) {
-                            Toast.makeText(context, "Indisponible sur ce téléphone", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, unavailableText, Toast.LENGTH_SHORT).show()
                         }
                     },
                 ) {
@@ -221,27 +228,26 @@ internal fun SettingsScreen(
                 }
             }
 
-            SecaSectionLabel("Historique")
+            SecaSectionLabel(stringResource(R.string.history))
             SecaGroupItem(index = 0, count = 1, onClick = { confirmClear = true }) {
                 SecaSettingRow(
                     icon = SecaIcons.Delete,
-                    title = "Effacer l'historique des appels",
-                    subtitle = "Sur ce téléphone, pour toutes les applications",
+                    title = stringResource(R.string.clear_history),
+                    subtitle = stringResource(R.string.clear_history_hint),
                 )
             }
 
-            SuiteBackupSection()
+            SuiteBackupSection(beforeRestore = askCallLogThen)
 
-            SecaSectionLabel("Protection")
-            SecaPrivacySettingsGroup("Seca Téléphone")
+            SecaSectionLabel(stringResource(R.string.protection))
+            SecaPrivacySettingsGroup(stringResource(R.string.app_name))
 
-            SecaSectionLabel("Confidentialité")
+            SecaSectionLabel(stringResource(R.string.privacy))
             SecaGroupItem(index = 0, count = 1) {
                 SecaSettingRow(
                     icon = SecaIcons.Lock,
-                    title = "Tout reste sur ce téléphone",
-                    subtitle = "Seca Téléphone n'a pas accès à Internet. L'historique reste celui d'Android : " +
-                        "rien n'est copié ailleurs.",
+                    title = stringResource(R.string.privacy_title),
+                    subtitle = stringResource(R.string.privacy_text),
                 )
             }
         }
@@ -251,17 +257,17 @@ internal fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { confirmClear = false },
             icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-            title = { Text("Effacer tout l'historique ?") },
-            text = { Text("Tous les appels passés et reçus seront retirés de ce téléphone. C'est définitif.") },
+            title = { Text(stringResource(R.string.clear_history_title)) },
+            text = { Text(stringResource(R.string.clear_history_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         confirmClear = false
                         withCallLogWrite { viewModel.clearHistory() }
                     },
-                ) { Text("Effacer") }
+                ) { Text(stringResource(R.string.erase)) }
             },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

@@ -29,6 +29,8 @@ import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.component.rememberContactThumbnail
 import com.seca.core.model.SecaContact
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 /** The contacts that look like the same person. */
 data object DuplicatesRoute : Screen
@@ -42,16 +44,17 @@ data object DuplicatesRoute : Screen
 internal fun DuplicatesScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWrite: (() -> Unit) -> Unit) {
     val groups = remember(ui.contacts) { findDuplicates(ui.contacts, ui.numbers) }
     var merging by remember { mutableStateOf<List<SecaContact>?>(null) }
+    val noName = stringResource(R.string.no_name)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "Doublons", onBack = { viewModel.back() }) },
+        topBar = { SecaTopBar(title = stringResource(R.string.duplicates), onBack = { viewModel.back() }) },
     ) { padding ->
         if (groups.isEmpty()) {
             SecaEmptyState(
                 icon = SecaIcons.Contacts,
-                title = "Aucun doublon",
-                description = "Aucun contact ne porte le même nom ou le même numéro qu'un autre.",
+                title = stringResource(R.string.no_duplicates),
+                description = stringResource(R.string.no_duplicates_hint),
                 modifier = Modifier.padding(padding),
             )
             return@Scaffold
@@ -63,11 +66,11 @@ internal fun DuplicatesScreen(ui: ContactsUi, viewModel: ContactsViewModel, with
             contentPadding = PaddingValues(bottom = 32.dp),
         ) {
             item(key = "hint") {
-                SecaHint("Fusionner réunit les fiches d'une même personne sous un seul contact. Android garde chaque fiche d'origine : rien n'est supprimé.")
+                SecaHint(stringResource(R.string.duplicates_hint))
             }
             groups.forEach { group ->
                 val first = group.first()
-                item(key = "label-${first.id}") { SecaSectionLabel(first.displayName.ifBlank { "Sans nom" }) }
+                item(key = "label-${first.id}") { SecaSectionLabel(first.displayName.ifBlank { noName }) }
                 itemsIndexed(group, key = { _, contact -> "contact-${contact.id}" }) { index, contact ->
                     SecaGroupItem(index = index, count = group.size + 1) {
                         SecaContactRow(
@@ -80,7 +83,7 @@ internal fun DuplicatesScreen(ui: ContactsUi, viewModel: ContactsViewModel, with
                 }
                 item(key = "merge-${first.id}") {
                     SecaGroupItem(index = group.size, count = group.size + 1, onClick = { merging = group }) {
-                        SecaSettingRow(icon = SecaIcons.Link, title = "Fusionner ces ${group.size} fiches")
+                        SecaSettingRow(icon = SecaIcons.Link, title = pluralStringResource(R.plurals.merge_cards, group.size, group.size))
                     }
                 }
             }
@@ -91,12 +94,9 @@ internal fun DuplicatesScreen(ui: ContactsUi, viewModel: ContactsViewModel, with
         AlertDialog(
             onDismissRequest = { merging = null },
             icon = { Icon(SecaIcons.Link, contentDescription = null) },
-            title = { Text("Fusionner ${group.size} fiches ?") },
+            title = { Text(pluralStringResource(R.plurals.merge_cards_title, group.size, group.size)) },
             text = {
-                Text(
-                    "${group.joinToString(", ") { it.displayName.ifBlank { "Sans nom" } }} ne formeront plus qu'un contact, " +
-                        "rangé dans le profil de la première fiche.",
-                )
+                Text(stringResource(R.string.merge_cards_text, group.joinToString(", ") { it.displayName.ifBlank { noName } }))
             },
             confirmButton = {
                 TextButton(
@@ -104,9 +104,9 @@ internal fun DuplicatesScreen(ui: ContactsUi, viewModel: ContactsViewModel, with
                         merging = null
                         withWrite { viewModel.merge(group) }
                     },
-                ) { Text("Fusionner") }
+                ) { Text(stringResource(R.string.merge)) }
             },
-            dismissButton = { TextButton(onClick = { merging = null }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { merging = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

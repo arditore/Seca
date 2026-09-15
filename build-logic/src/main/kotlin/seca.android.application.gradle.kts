@@ -11,12 +11,11 @@ extensions.configure<ApplicationExtension> {
     buildToolsVersion = "36.0.0"
     defaultConfig {
         // Android 12: the first with Material You colours and call-style notifications, and
-        // still what many phones run. GrapheneOS phones are far newer; newer APIs are checked
-        // for and fall back gracefully.
+        // still what many phones run. Newer APIs are checked for and fall back gracefully.
         minSdk = 31
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0-beta1"
+        versionCode = 2
+        versionName = "0.1.0-beta2"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -29,6 +28,13 @@ extensions.configure<ApplicationExtension> {
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
+    }
+    androidResources {
+        // English by default, French on a phone set to French. Only these two ship, the
+        // libraries' own translations included, so no screen ever mixes in a third language.
+        localeFilters += listOf("en", "fr")
+        // Lists them for Android 13's per-app language setting.
+        generateLocaleConfig = true
     }
     // The key the published APKs are signed with. It never enters the repository: its file
     // and passwords come from the maintainer's own ~/.gradle/gradle.properties.

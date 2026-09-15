@@ -1,144 +1,143 @@
-# Seca Link — messages chiffrés de bout en bout entre utilisateurs Seca
+# Seca Link — end-to-end encrypted messages between Seca users
 
-> Conception du 2026-09-13, révisée le même jour après les choix du propriétaire du projet : aucun serveur
-> à payer ni à héberger. Détaille la « surcouche E2EE Seca-à-Seca » prévue par la spec de la suite
-> (`2026-09-09-seca-suite-design.md`). Les SMS classiques restent inchangés : Seca Link ne prend le
-> relais qu'entre deux téléphones qui ont tous deux Seca.
+> Design of 2026-09-13, revised the same day after the project owner's choices: no server to pay for or
+> host. It details the "Seca-to-Seca E2EE layer" planned by the suite's spec
+> (`2026-09-09-seca-suite-design.md`). Ordinary SMS stay unchanged: Seca Link only takes over between two
+> phones that both have Seca.
 
-## Décisions
+## Decisions
 
-| Sujet | Décision |
+| Topic | Decision |
 |---|---|
-| Transport | Réseau Nostr : plusieurs relais publics et gratuits, tenus par des bénévoles. Rien à payer ni à héberger. Livraison même quand le destinataire est hors ligne. |
-| Secours | SMS de données chiffrés quand il n'y a pas d'Internet : jamais de retour silencieux au SMS en clair. |
-| Découverte | Poignée de main discrète : un SMS de données propose une clé au premier échange ; aucun serveur ne connaît le carnet d'adresses. |
-| Protocole | Signal Protocol via libsignal (PQXDH résistant au quantique, puis Double Ratchet) à l'intérieur d'enveloppes Nostr « gift wrap » (NIP-59). Aucune cryptographie maison. |
-| Accusés et écriture | Accusés de lecture et indicateur « en train d'écrire » actifs par défaut, désactivables. |
-| Portée réseau | Seca Messages seul reçoit la permission `INTERNET`. Seca Contacts et Seca Téléphone restent sans accès réseau. |
-| Licence | libsignal impose l'AGPL-3.0 au binaire de Seca Messages : accepté, le projet reste libre, publiable et forkable. |
+| Transport | The Nostr network: several public, free relays run by volunteers. Nothing to pay for or host. Delivery even when the recipient is offline. |
+| Fallback | Encrypted data SMS when there is no Internet: never a silent fallback to plain SMS. |
+| Discovery | A discreet handshake: a data SMS offers a key at the first exchange; no server knows the address book. |
+| Protocol | The Signal Protocol through libsignal (quantum-resistant PQXDH, then Double Ratchet) inside Nostr "gift wrap" envelopes (NIP-59). No home-made cryptography. |
+| Receipts and typing | Read receipts and the "typing" indicator on by default, can be turned off. |
+| Network reach | Only Seca Messages gets the `INTERNET` permission. Seca Contacts and Seca Phone stay without network access. |
+| License | libsignal imposes the AGPL-3.0 on the Seca Messages binary: accepted, the project stays free, publishable and forkable. |
 
-## Pourquoi pas du pair-à-pair direct
+## Why not direct peer-to-peer
 
-Deux téléphones ne peuvent pas se joindre directement sur Internet : les opérateurs les placent derrière un
-partage d'adresse (CGNAT), et Android suspend les apps en arrière-plan. Il faut un intermédiaire pour se
-trouver et pour garder un message quand l'autre est hors ligne. Les relais Nostr jouent ce rôle sans que
-Seca ait à en exploiter un : ils ne reçoivent que du chiffré, et Seca en utilise plusieurs pour ne dépendre
-d'aucun.
+Two phones cannot reach each other directly over the Internet: carriers put them behind shared
+addresses (CGNAT), and Android suspends apps in the background. An intermediary is needed to find each
+other and to keep a message while the other side is offline. Nostr relays play that role without Seca
+having to run one: they only receive ciphertext, and Seca uses several so as to depend on none.
 
-## Qui voit quoi
+## Who sees what
 
-| Acteur | Voit | Ne voit pas |
+| Party | Sees | Does not see |
 |---|---|---|
-| Opérateur mobile | Qu'un SMS de données a été échangé entre deux numéros, à la poignée de main ou en secours | Le contenu |
-| Relais Nostr | Des événements chiffrés, la clé publique Nostr du destinataire, la taille et l'heure, l'adresse IP de connexion | L'expéditeur (masqué par le gift wrap), les numéros, les noms, le contenu |
-| Google | Rien : GrapheneOS, sans Firebase ni Play Services | — |
-| Voleur du téléphone verrouillé | Rien : chiffrement de fichiers de GrapheneOS, clés liées au Titan M2 | — |
+| Mobile carrier | That a data SMS was exchanged between two numbers, at the handshake or as fallback | The content |
+| Nostr relay | Encrypted events, the recipient's Nostr public key, size and time, the connecting IP address | The sender (hidden by the gift wrap), numbers, names, content |
+| Google | Nothing: GrapheneOS, without Firebase or Play Services | — |
+| Thief of the locked phone | Nothing: GrapheneOS file encryption, keys bound to the Titan M2 | — |
 
-L'adresse IP visible des relais est la principale fuite de métadonnées. Une option « Passer par Tor » (via
-Orbot) est prévue pour la masquer.
+The IP address the relays see is the main metadata leak. A "Go through Tor" option (with Orbot) is
+planned to hide it.
 
 ## Architecture
 
-- **`:core:link`** (bibliothèque Android) : identités et clés, sessions libsignal, client Nostr (WebSocket, NIP-01), enveloppes gift wrap, poignée de main, file d'envoi, secours par SMS.
-- **Seca Messages** :
-  - stockage local des messages Link ;
-  - service de connexion aux relais ;
-  - interface : badge « Chiffré de bout en bout », vérification, accusés, écriture.
+- **`:core:link`** (Android library): identities and keys, libsignal sessions, Nostr client (WebSocket, NIP-01), gift wrap envelopes, handshake, send queue, SMS fallback.
+- **Seca Messages**:
+  - local storage of Link messages;
+  - the service connected to the relays;
+  - interface: "End-to-end encrypted" badge, verification, receipts, typing.
 
-## Identités
+## Identities
 
-- **Clé Nostr** (secp256k1, signatures Schnorr BIP-340) : adresse de réception sur les relais.
-- **Identité libsignal** : chiffrement et authentification des échanges.
-- Les deux sont créées à l'installation et gardées dans le stockage privé de l'app, chiffrées par une clé Android Keystore adossée au Titan M2. Il n'y a ni compte, ni numéro, ni e-mail.
-- Le paquet de pré-clés libsignal (pré-clé signée, pré-clés à usage unique, pré-clé Kyber) est publié comme événement remplaçable sur les relais de réception de l'utilisateur.
+- **Nostr key** (secp256k1, BIP-340 Schnorr signatures): the receiving address on the relays.
+- **libsignal identity**: encryption and authentication of the exchanges.
+- Both are created at install and kept in the app's private storage, encrypted by an Android Keystore key backed by the Titan M2. There is no account, no number, no email.
+- The libsignal pre-key bundle (signed pre-key, one-time pre-keys, Kyber pre-key) is published as a replaceable event on the user's receiving relays.
 
-## Poignée de main discrète
+## Discreet handshake
 
-1. **Canal** : un SMS de données binaire sur un port dédié (`SmsManager.sendDataMessage`). Un téléphone sans Seca l'ignore silencieusement : aucun texte parasite n'apparaît chez un contact sans Seca.
-2. **Contenu** : version, clé publique Nostr, empreinte de l'identité libsignal, relais de réception (référencés par index dans la liste par défaut, ou par nom de domaine court). Il est fragmenté si besoin, 140 octets par segment.
-3. **Déclenchement** : la première fois qu'une conversation SMS existe avec un numéro, en envoi ou en réception. Une seule invitation, relancée au plus tous les 30 jours sans réponse. Désactivable.
-4. **Réponse** : le Seca du destinataire récupère le paquet de pré-clés sur les relais indiqués, ouvre la session et renvoie sa propre invitation. La conversation passe en « Chiffré de bout en bout ».
-5. **Limite assumée** : la clé est liée au numéro par le canal SMS. Un attaquant capable d'intercepter les SMS (échange de SIM, SS7) pourrait s'interposer. Deux parades :
-   - vérification en personne par QR code (numéro de sécurité), qui affiche « Vérifié » ;
-   - alerte visible dès que la clé d'un contact change.
+1. **Channel**: a binary data SMS on a dedicated port (`SmsManager.sendDataMessage`). A phone without Seca silently ignores it: no stray text appears for a contact without Seca.
+2. **Content**: version, Nostr public key, fingerprint of the libsignal identity, receiving relays (referenced by index in the default list, or by short domain name). Fragmented if needed, 140 bytes per segment.
+3. **Trigger**: the first time an SMS conversation exists with a number, sending or receiving. A single invitation, sent again at most every 30 days without an answer. Can be turned off.
+4. **Answer**: the recipient's Seca fetches the pre-key bundle from the named relays, opens the session and sends back its own invitation. The conversation becomes "End-to-end encrypted".
+5. **Accepted limit**: the key is tied to the number by the SMS channel. An attacker able to intercept SMS (SIM swap, SS7) could sit in between. Two countermeasures:
+   - in-person verification by QR code (safety number), which shows "Verified";
+   - a visible alert as soon as a contact's key changes.
 
 ## Messages
 
-- **Envoi** : le contenu est chiffré par libsignal, scellé dans un rumor puis un seal (NIP-59), et enveloppé dans un gift wrap signé par une clé jetable. Il est publié sur trois relais de réception du destinataire.
-- **Réception** : un service au premier plan garde une connexion WebSocket légère aux relais de réception, avec une notification discrète et silencieuse. Au retour de connexion, l'app relève tout ce qui est arrivé depuis la dernière fois.
-- **Hors ligne** : les relais gardent les événements. La confidentialité persistante du Double Ratchet protège les anciens messages même si une clé fuit plus tard.
-- **Accusés et écriture** : des événements chiffrés, eux aussi gift wrap. L'indicateur d'écriture est un événement éphémère (types 20000-29999), jamais stocké par les relais.
-- **Secours** : sans Internet, le message chiffré part en SMS de données fragmentés. Si rien n'est possible, l'app propose explicitement « Envoyer en SMS non chiffré ».
-- **Stockage local** : une base Room propre à Seca Messages, séparée des SMS d'Android, protégée par le chiffrement de fichiers du système et par le verrou de l'app.
+- **Sending**: the content is encrypted by libsignal, sealed in a rumor then a seal (NIP-59), and wrapped in a gift wrap signed by a throwaway key. It is published on three of the recipient's receiving relays.
+- **Receiving**: a foreground service keeps a light WebSocket connection to the receiving relays, with a discreet, silent notification. When the connection comes back, the app picks up everything that arrived since last time.
+- **Offline**: relays keep the events. The Double Ratchet's forward secrecy protects old messages even if a key leaks later.
+- **Receipts and typing**: encrypted events too, gift wrapped. The typing indicator is an ephemeral event (kinds 20000-29999), never stored by relays.
+- **Fallback**: without Internet, the encrypted message leaves as fragmented data SMS. If nothing is possible, the app explicitly offers "Send as unencrypted SMS".
+- **Local storage**: a Room database of Seca Messages' own, separate from Android's SMS, protected by the system's file encryption and by the app lock.
 
-## Relais
+## Relays
 
-- Une liste par défaut de relais publics gratuits qui acceptent les messages chiffrés, modifiable dans les paramètres.
-- Publication vers plusieurs relais, pour qu'un relais qui disparaît ou refuse un événement ne fasse rien perdre.
-- Aucun relais exploité par le projet : rien à payer, rien à héberger.
+- A default list of public, free relays that accept encrypted messages, editable in settings.
+- Publishing to several relays, so that a relay that disappears or refuses an event loses nothing.
+- No relay run by the project: nothing to pay, nothing to host.
 
-## Le « RCS de Seca », par étapes
+## "Seca's RCS", step by step
 
-| Phase | Contenu |
+| Phase | Content |
 |---|---|
-| 1 | `:core:link` : identités, client Nostr, publication du paquet de pré-clés, liste de relais dans les paramètres |
-| 2 | Poignée de main par SMS de données, ouverture de session, badge « Chiffré », vérification par QR code, alerte de changement de clé |
-| 3 | Messages texte chiffrés, accusés de remise et de lecture, indicateur d'écriture, service de connexion, secours par SMS chiffré |
-| 4 | Photos et vidéos chiffrées (clé AES aléatoire par pièce, stockage Blossom gratuit), réactions, réponses citées, messages éphémères, option Tor |
-| 5 | Conversations de groupe |
+| 1 | `:core:link`: identities, Nostr client, publishing the pre-key bundle, relay list in settings |
+| 2 | Handshake by data SMS, session opening, "Encrypted" badge, QR code verification, key change alert |
+| 3 | Encrypted text messages, delivery and read receipts, typing indicator, connection service, encrypted SMS fallback |
+| 4 | Encrypted photos and videos (random AES key per item, free Blossom storage), reactions, quoted replies, disappearing messages, Tor option |
+| 5 | Group conversations |
 
-## Dépendances et F-Droid
+## Dependencies and F-Droid
 
-- **libsignal** (AGPL-3.0), compilée depuis les sources Rust pour F-Droid ; environ 10 Mo de code natif.
-  - Prise sur le dépôt Maven de Signal (Maven Central s'arrête à la 0.86.5), limité au seul groupe `org.signal`.
-  - Seul l'ABI `arm64-v8a` est embarqué, sans la bibliothèque `libsignal_jni_testing`. Le NDK retire les symboles de débogage à l'empaquetage.
-  - Elle exige le desugaring de la bibliothèque Java (`desugar_jdk_libs`, Apache-2.0).
-- **secp256k1-kmp** d'ACINQ (Apache-2.0) pour les signatures Schnorr de Nostr.
-- **OkHttp** (Apache-2.0) pour les WebSocket vers les relais.
-- **Room** (Apache-2.0), à partir de la phase 3.
-- Aucune dépendance Google Play : le garde-fou Gradle existant s'applique toujours.
+- **libsignal** (AGPL-3.0), built from the Rust sources for F-Droid; about 10 MB of native code.
+  - Taken from Signal's Maven repository (Maven Central stops at 0.86.5), limited to the `org.signal` group only.
+  - Only the `arm64-v8a` ABI is shipped, without the `libsignal_jni_testing` library. The NDK strips debug symbols at packaging.
+  - It requires Java library desugaring (`desugar_jdk_libs`, Apache-2.0).
+- **secp256k1-kmp** by ACINQ (Apache-2.0) for Nostr's Schnorr signatures.
+- **OkHttp** (Apache-2.0) for the WebSockets to the relays.
+- **Room** (Apache-2.0), from phase 3.
+- No Google Play dependency: the existing Gradle guard still applies.
 
-## Phase 1 réalisée
+## Phase 1 done
 
-- Seca Link est désactivé par défaut. L'activer crée les clés et publie la partie publique. Rien n'est créé ni envoyé avant.
-- Le paquet de pré-clés est un événement NIP-78 (type 30078, étiquette `d` = `seca-link/prekeys`) : chaque relais le remplace au lieu de l'empiler.
-  - Il contient la clé d'identité, une pré-clé signée et une pré-clé Kyber de dernier recours, sans pré-clé à usage unique.
-  - Il est republié chaque semaine.
-- L'identité est scellée en AES-256-GCM par une clé Android Keystore, StrongBox quand la puce existe. Elle est gardée dans `noBackupFilesDir`.
-- Relais : connexions chiffrées (`wss`) uniquement, liste modifiable, réponse de chaque relais affichée.
+- Seca Link is off by default. Turning it on creates the keys and publishes their public part. Nothing is created or sent before.
+- The pre-key bundle is a NIP-78 event (kind 30078, tag `d` = `seca-link/prekeys`): each relay replaces it instead of piling it up.
+  - It holds the identity key, a signed pre-key and a last-resort Kyber pre-key, with no one-time pre-key.
+  - It is published again every week.
+- The identity is sealed with AES-256-GCM by an Android Keystore key, StrongBox when the chip exists. It is kept in `noBackupFilesDir`.
+- Relays: encrypted connections (`wss`) only, editable list, each relay's answer shown.
 
-## Phases 2 et 3 réalisées
+## Phases 2 and 3 done
 
-- **Invitation** : SMS de données sur le port 19734, 130 octets au plus. Elle porte la clé Nostr, huit octets de l'empreinte de l'identité et jusqu'à trois relais.
-- **Session** :
-  - le paquet de pré-clés n'est accepté que signé par la clé Nostr annoncée et portant l'identité dont l'empreinte est arrivée par SMS ;
-  - confiance au premier usage, alerte quand la clé d'un contact change ;
-  - rien n'est envoyé à un contact vérifié dont la clé a changé, tant que le propriétaire n'a pas revérifié.
-- **Numéro de sécurité** : 60 chiffres et un QR code, que l'autre téléphone scanne à l'appareil photo.
-- **Enveloppe** :
-  - événement Nostr de type 1059, signé par une clé jetable ; type 21059 pour « en train d'écrire », que les relais ne gardent pas ;
-  - horodatage avancé jusqu'à 15 minutes ;
-  - l'intérieur est scellé en AES-256-GCM, avec une clé HKDF-SHA256 dérivée d'un ECDH secp256k1 entre la clé jetable et le destinataire. On n'utilise pas NIP-44 : seul Seca ouvre ces enveloppes, et le message est déjà chiffré par libsignal ;
-  - l'expéditeur signe, à l'intérieur, le destinataire et le message.
-- **Contenu** : texte, accusé de réception, accusé de lecture, écriture. Chaque contenu est arrondi au multiple de 128 octets.
-- **Stockage** : une base SQLite privée de Seca Messages, séparée des SMS d'Android. Room n'est pas utilisé, pour ne pas ajouter de générateur de code.
-- **Réception** : service au premier plan de type `remoteMessaging`, une connexion par relais, reconnexion avec attente croissante, authentification NIP-42 quand un relais la demande.
-- **Secours** : un message qui ne part pas propose « Envoyer en SMS non chiffré ». Le secours par SMS de données chiffrés reste à faire : un premier message PQXDH, avec sa clé Kyber, prendrait une quinzaine de SMS.
-- **Tests** : format, enveloppe, et une session libsignal complète dans les deux sens, sur le paquet tel que Seca le publie. Ils tournent sur JDK 25, libsignal étant compilé pour Java 21.
+- **Invitation**: a data SMS on port 19734, 130 bytes at most. It carries the Nostr key, eight bytes of the identity's fingerprint and up to three relays.
+- **Session**:
+  - the pre-key bundle is only accepted when signed by the announced Nostr key and carrying the identity whose fingerprint came by SMS;
+  - trust on first use, an alert when a contact's key changes;
+  - nothing is sent to a verified contact whose key changed until the owner has verified again.
+- **Safety number**: 60 digits and a QR code, which the other phone scans with its camera.
+- **Envelope**:
+  - a Nostr event of kind 1059, signed by a throwaway key; kind 21059 for "typing", which relays do not keep;
+  - a timestamp moved back by up to 15 minutes;
+  - the inside is sealed with AES-256-GCM, with an HKDF-SHA256 key derived from a secp256k1 ECDH between the throwaway key and the recipient. NIP-44 is not used: only Seca opens these envelopes, and the message is already encrypted by libsignal;
+  - the sender signs, inside, the recipient and the message.
+- **Content**: text, delivery receipt, read receipt, typing. Each content is padded to a multiple of 128 bytes.
+- **Storage**: a private SQLite database of Seca Messages, separate from Android's SMS. Room is not used, to avoid adding a code generator.
+- **Receiving**: a `remoteMessaging` foreground service, one connection per relay, reconnection with growing back-off, NIP-42 authentication when a relay asks for it.
+- **Fallback**: a message that does not leave offers "Send as unencrypted SMS". The encrypted data SMS fallback remains to be done: a first PQXDH message, with its Kyber key, would take about fifteen SMS.
+- **Tests**: format, envelope, and a complete libsignal session in both directions, on the bundle as Seca publishes it. They run on JDK 25, libsignal being compiled for Java 21.
 
-## Ajouts de la suite, par priorité décidée
+## Additions to the suite, in the order decided
 
-1. **Anti-démarchage** (Seca Téléphone) : blocage des préfixes réservés au démarchage en France, inconnus en silencieux, sur le téléphone via `CallScreeningService`.
-2. **Verrou et écran privé** (les trois apps) : empreinte ou code du téléphone à l'ouverture, captures bloquées, aperçu masqué dans les apps récentes.
-3. **Codes de vérification** (Seca Messages) : copie en un geste depuis la notification ou la bulle, marqués sensibles dans le presse-papiers.
-4. **Sauvegarde chiffrée** : un fichier protégé par mot de passe avec contacts, profils et SMS.
-5. **Confort SMS** : conversations épinglées et archivées, recherche dans le texte des messages, SMS programmés.
+1. **Anti-telemarketing** (Seca Phone): blocking the number ranges reserved for telemarketing in France, unknown callers silenced, on the phone through `CallScreeningService`.
+2. **Lock and private screen** (all three apps): fingerprint or phone code on opening, screenshots blocked, preview hidden in recent apps.
+3. **Verification codes** (Seca Messages): copied in one gesture from the notification or the bubble, marked sensitive in the clipboard.
+4. **Encrypted backup**: a password-protected file with contacts, profiles and SMS.
+5. **SMS comfort**: pinned and archived conversations, search in message text, scheduled SMS.
 
-### En attente
+### Pending
 
-- Numérotation rapide, fusion des doublons, sélection multiple et ordre du nom.
-- MMS dans Seca Messages.
-- Partage de « Ma fiche » par QR code, sans réseau.
-- Notes après un appel.
-- Traduction anglaise, pour la publication sur GitHub et F-Droid.
-- Teinte d'une conversation selon le profil du contact, animation d'envoi expressive.
+- Speed dial, duplicate merging, multiple selection and name order.
+- MMS in Seca Messages.
+- Sharing "My card" by QR code, without network.
+- Notes after a call.
+- English translation, for publishing on GitHub and F-Droid.
+- A conversation tinted by the contact's profile, an expressive send animation.

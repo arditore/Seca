@@ -13,7 +13,13 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <!-- Granted with the phone-app role: names the SIM a call goes through. -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <!-- Seca Contacts' profiles, readable only by apps signed with the same key. -->
+    <!-- Seca Contacts' profiles, readable only by apps signed with the same key. Declared here
+         too: Android grants it only if it was defined when this app was installed, so it holds
+         whether Seca Contacts is installed before or after. -->
+    <permission
+        android:name="com.seca.permission.READ_PROFILES"
+        android:label="@string/permission_read_profiles"
+        android:protectionLevel="signature" />
     <uses-permission android:name="com.seca.permission.READ_PROFILES" />
 
     <!-- The call screen: its notification, its full screen when the phone is locked,
@@ -30,15 +36,15 @@
          signed with the same key get it, so no other app can call without CALL_PHONE. -->
     <permission
         android:name="com.seca.permission.PLACE_CALLS"
-        android:label="Passer des appels avec Seca Téléphone"
+        android:label="@string/permission_place_calls"
         android:protectionLevel="signature" />
 
-    <!-- "Refuser et répondre": the text goes to Seca Messages, which sends it at once. Both apps
+    <!-- "Decline and reply": the text goes to Seca Messages, which sends it at once. Both apps
          declare the permission, so it holds whichever is installed first; only apps signed with
          the same key get it. -->
     <permission
         android:name="com.seca.permission.SEND_MESSAGES"
-        android:label="Envoyer des messages avec Seca Messages"
+        android:label="@string/permission_send_messages"
         android:protectionLevel="signature" />
     <uses-permission android:name="com.seca.permission.SEND_MESSAGES" />
 
@@ -63,7 +69,7 @@
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="Seca Téléphone"
+        android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.SecaPhone">
         <activity
@@ -110,14 +116,14 @@
         <activity
             android:name=".call.InCallActivity"
             android:exported="false"
-            android:label="Appel en cours"
+            android:label="@string/ongoing_call"
             android:launchMode="singleInstance"
             android:showWhenLocked="true"
             android:taskAffinity="com.seca.phone.incall"
             android:theme="@style/Theme.SecaPhone"
             android:turnScreenOn="true" />
 
-        <!-- Android hands every call to this service once Seca Téléphone is the default
+        <!-- Android hands every call to this service once Seca Phone is the default
              phone app. Only the system may bind to it. -->
         <service
             android:name=".call.SecaInCallService"
@@ -147,7 +153,7 @@
             </intent-filter>
         </service>
 
-        <!-- "Refuser" and "Raccrocher" in the call notifications; this app's only. -->
+        <!-- "Decline" and "Hang up" in the call notifications; this app's only. -->
         <receiver
             android:name=".call.CallActionReceiver"
             android:exported="false" />

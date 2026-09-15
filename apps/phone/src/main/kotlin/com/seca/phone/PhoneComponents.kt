@@ -20,6 +20,9 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.annotation.StringRes
+import com.seca.core.model.uiLocale
+import androidx.compose.ui.res.stringResource
 
 /** The arrow or symbol telling how a call went, missed calls in the error colour. */
 @Composable
@@ -38,19 +41,20 @@ internal fun CallTypeIcon(type: CallType, modifier: Modifier = Modifier) {
         CallType.Rejected, CallType.Blocked, CallType.Other -> colors.onSurfaceVariant
         else -> colors.primary
     }
-    Icon(icon, contentDescription = type.label, tint = tint, modifier = modifier)
+    Icon(icon, contentDescription = stringResource(type.label), tint = tint, modifier = modifier)
 }
 
 /** How a call went, in words. */
-internal val CallType.label: String
+@get:StringRes
+internal val CallType.label: Int
     get() = when (this) {
-        CallType.Incoming -> "Appel reçu"
-        CallType.Outgoing -> "Appel émis"
-        CallType.Missed -> "Appel manqué"
-        CallType.Rejected -> "Appel refusé"
-        CallType.Blocked -> "Appel bloqué"
-        CallType.Voicemail -> "Messagerie vocale"
-        CallType.Other -> "Appel"
+        CallType.Incoming -> R.string.call_incoming
+        CallType.Outgoing -> R.string.call_outgoing
+        CallType.Missed -> R.string.call_missed
+        CallType.Rejected -> R.string.call_rejected
+        CallType.Blocked -> R.string.call_blocked
+        CallType.Voicemail -> R.string.voicemail
+        CallType.Other -> R.string.call_other
     }
 
 /** A caller who is not in the contacts: a neutral disc, so it never borrows a profile's colour. */
@@ -77,10 +81,10 @@ internal val CallRecord.callable: Boolean
     get() = presentation == Presentation.Allowed && number.isNotBlank()
 
 /** How to name a caller who is not a known contact. */
-internal fun callerLabel(call: CallRecord, numbers: PhoneNumbers): String = when {
-    call.presentation == Presentation.Restricted -> "Numéro masqué"
-    call.presentation == Presentation.Payphone -> "Cabine téléphonique"
-    !call.callable -> "Numéro inconnu"
+internal fun callerLabel(context: Context, call: CallRecord, numbers: PhoneNumbers): String = when {
+    call.presentation == Presentation.Restricted -> context.getString(R.string.hidden_number)
+    call.presentation == Presentation.Payphone -> context.getString(R.string.payphone)
+    !call.callable -> context.getString(R.string.unknown_number)
     else -> call.cachedName ?: numbers.display(call.number)
 }
 
@@ -89,7 +93,7 @@ private var timeFormat: Triple<Locale, Boolean, DateTimeFormatter>? = null
 
 /** The time of day, in the phone's 12- or 24-hour setting. */
 internal fun timeOf(context: Context, millis: Long): String {
-    val locale = Locale.getDefault()
+    val locale = uiLocale()
     val hours24 = DateFormat.is24HourFormat(context)
     val kept = timeFormat
     val formatter = if (kept != null && kept.first == locale && kept.second == hours24) {

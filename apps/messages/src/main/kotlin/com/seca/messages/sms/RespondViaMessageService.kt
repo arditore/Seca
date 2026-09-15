@@ -5,7 +5,7 @@ import android.content.Intent
 import android.os.IBinder
 
 /**
- * "Refuser et répondre" from a call screen: the default messaging app sends
+ * "Decline and reply" from a call screen: the default messaging app sends
  * the text without showing anything. Only the system can start this service.
  */
 class RespondViaMessageService : Service() {

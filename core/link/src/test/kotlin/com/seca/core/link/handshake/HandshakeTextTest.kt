@@ -17,14 +17,14 @@ class HandshakeTextTest {
 
     @Test
     fun `a handshake written in a text message reads back the same`() {
-        assertEquals(invite, Handshake.fromText(invite.text()))
+        assertEquals(invite, Handshake.fromText(invite.text("Seca Link : je t'invite à discuter en chiffré avec Seca Messages.")))
         val accept = invite.copy(type = Handshake.Type.Accept)
-        assertEquals(accept, Handshake.fromText(accept.text()))
+        assertEquals(accept, Handshake.fromText(accept.text("Seca Link : je t'invite à discuter en chiffré avec Seca Messages.")))
     }
 
     @Test
     fun `it fits in a single text message with the default relays`() {
-        assertTrue(invite.text().length <= 160)
+        assertTrue(invite.text("Seca Link : je t'invite à discuter en chiffré avec Seca Messages.").length <= 160)
     }
 
     @Test

@@ -6,7 +6,7 @@
          whichever is installed first. -->
     <permission
         android:name="com.seca.permission.BACKUP"
-        android:label="Sauvegarder la suite Seca"
+        android:label="@string/suite_permission_label"
         android:protectionLevel="signature" />
     <uses-permission android:name="com.seca.permission.BACKUP" />
 

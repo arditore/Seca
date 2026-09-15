@@ -7,6 +7,7 @@ import android.telephony.SmsManager
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.link.SecaLink
 import com.seca.core.link.handshake.Handshake
+import com.seca.core.link.handshake.textFor
 
 /**
  * Seca Link's handshakes by SMS: discreet data SMS on their own port, and,
@@ -30,7 +31,7 @@ internal object LinkSms {
         if (context.checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) return
         val manager = context.getSystemService(SmsManager::class.java) ?: return
         runCatching { manager.sendDataMessage(address, null, Handshake.PORT, handshake.encode(), null, null) }
-        if (alsoText) SmsSender(context).send(address, handshake.text())
+        if (alsoText) SmsSender(context).send(address, handshake.textFor(context))
     }
 
     /** Invites [address] discreetly when it makes sense: Link on, no session yet, not invited this week. */

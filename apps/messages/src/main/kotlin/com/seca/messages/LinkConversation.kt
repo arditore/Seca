@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.seca.core.link.handshake.textFor
+import androidx.compose.ui.res.stringResource
 
 /** The safety number screen for the conversation with [address]. */
 data class SafetyNumberRoute(val address: String) : MessagesScreen
@@ -75,7 +77,7 @@ class LinkPeersViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** This phone's code, for a contact to scan in person; null while Seca Link is off. */
     suspend fun myCode(): String? = withContext(Dispatchers.IO) {
-        val text = runCatching { link.myHandshake()?.text() }.getOrNull() ?: return@withContext null
+        val text = runCatching { link.myHandshake()?.textFor(getApplication()) }.getOrNull() ?: return@withContext null
         // Only the code itself: a smaller QR code, quicker to read.
         CodeInText.find(text)?.value
     }
@@ -93,8 +95,8 @@ class LinkPeersViewModel(application: Application) : AndroidViewModel(applicatio
         return when (val received = withContext(Dispatchers.IO) { LinkSms.receive(getApplication(), address, handshake, byText = true) }) {
             is SecaLink.Received.Connected -> Scanned.Connected
             is SecaLink.Received.Failed -> Scanned.Failed(received.reason)
-            SecaLink.Received.Ignored -> Scanned.Failed("Activez Seca Link pour vous connecter")
-            null -> Scanned.Failed("Ce numéro ne peut pas utiliser Seca Link")
+            SecaLink.Received.Ignored -> Scanned.Failed(getApplication<Application>().getString(R.string.scan_link_off))
+            null -> Scanned.Failed(getApplication<Application>().getString(R.string.scan_not_a_number))
         }
     }
 
@@ -139,20 +141,19 @@ internal fun KeyChangedBanner(address: String, name: String, onVerify: () -> Uni
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(SecaIcons.Shield, contentDescription = null)
                 Text(
-                    text = "La clé de sécurité de $name a changé",
+                    text = stringResource(R.string.key_changed_banner, name),
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }
             Text(
-                text = "Un nouveau téléphone ou une réinstallation l'expliquent souvent. Si vous ne l'attendiez pas, " +
-                    "comparez vos numéros de sécurité.",
+                text = stringResource(R.string.key_changed_banner_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 4.dp, end = 8.dp),
             )
             Row {
-                TextButton(onClick = onVerify) { Text("Vérifier") }
-                TextButton(onClick = { links.acknowledgeKeyChange(address) }) { Text("J'ai compris") }
+                TextButton(onClick = onVerify) { Text(stringResource(R.string.verify)) }
+                TextButton(onClick = { links.acknowledgeKeyChange(address) }) { Text(stringResource(R.string.got_it)) }
             }
         }
     }

@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.annotation.PluralsRes
+import androidx.annotation.StringRes
 
 /** The app's screens; the last entry of the back stack is the one shown. */
 sealed interface Screen {
@@ -170,16 +172,20 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
         refreshPreferences()
     }
 
-    /** Writes every contact to the chosen .vcf file. */
+    /** Writes every contact to the chosen .vcf file, each with the profile it is filed in. */
     fun exportContacts(uri: Uri) {
         viewModelScope.launch {
-            val cards = repository.exportAll()
+            val state = _ui.value
+            val cards = repository.exportEntries().map { (key, card) ->
+                val profile = state.profileForKey(key)
+                if (profile.id == ProfileStore.Principal.id) card else card.copy(profile = profile.name)
+            }
             val written = withContext(Dispatchers.IO) {
                 runCatching {
                     resolver.openOutputStream(uri, "wt")?.use { it.write(VCard.write(cards).toByteArray(Charsets.UTF_8)) } != null
                 }.getOrDefault(false)
             }
-            toast(if (written) plural(cards.size, "contact exporté", "contacts exportés") else "L'export a échoué")
+            toast(if (written) quantity(R.plurals.contacts_exported, cards.size) else text(R.string.export_failed))
         }
     }
 
@@ -190,27 +196,36 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                 runCatching { resolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) } }.getOrNull()
             }?.let(VCard::parse)
             if (cards == null) {
-                toast("Ce fichier ne peut pas être lu")
+                toast(text(R.string.unreadable_file))
                 return@launch
             }
             val existing = _ui.value.contacts
             var added = 0
-            cards.filterNot { card -> existing.any { it.isSameAs(card) } }.forEach { card ->
-                if (repository.createContact(card.toInput()) != null) added++
+            val filed = store.assignments().toMutableMap()
+            cards.forEach { card ->
+                val key = existing.firstOrNull { it.isSameAs(card) }?.lookupKey
+                    ?: repository.createContact(card.toInput())?.also { added++ }?.let { repository.lookupKeyOf(it) }
+                // A card exported by Seca names its profile: the contact goes back there, unless already filed here.
+                if (card.profile.isBlank() || key.isNullOrEmpty() || key in filed) return@forEach
+                val profile = store.profiles().firstOrNull { it.name.equals(card.profile, ignoreCase = true) }
+                    ?: store.addProfile(card.profile)
+                if (profile.id != ProfileStore.Principal.id) filed[key] = profile.id
             }
+            store.assignAll(filed)
+            refreshPreferences()
             load()
             toast(
                 when {
-                    cards.isEmpty() -> "Aucun contact dans ce fichier"
-                    added == 0 -> "Ces contacts sont déjà sur ce téléphone"
-                    else -> plural(added, "contact importé", "contacts importés")
+                    cards.isEmpty() -> text(R.string.no_contacts_in_file)
+                    added == 0 -> text(R.string.contacts_already_here)
+                    else -> quantity(R.plurals.contacts_imported, added)
                 },
             )
         }
     }
 
     /**
-     * Writes every contact, its profile, the profiles themselves and "Ma fiche" to [uri],
+     * Writes every contact, its profile, the profiles themselves and "My card" to [uri],
      * encrypted with [passphrase]. The passphrase is wiped from memory once used.
      */
     fun exportBackup(uri: Uri, passphrase: CharArray) {
@@ -222,7 +237,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
             val written = withContext(Dispatchers.IO) {
                 runCatching { resolver.openOutputStream(uri, "wt")?.use { it.write(sealed) } != null }.getOrDefault(false)
             }
-            toast(if (written) "Sauvegarde chiffrée : ${part.optString(SuiteBackup.KEY_SUMMARY)}" else "La sauvegarde a échoué")
+            toast(if (written) text(R.string.backup_done, part.optString(SuiteBackup.KEY_SUMMARY)) else text(R.string.backup_failed))
         }
     }
 
@@ -238,9 +253,9 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
             if (json == null || json.optString("app") != "seca-contacts") {
                 toast(
                     when {
-                        bytes == null -> "Ce fichier ne peut pas être lu"
-                        plain == null -> "Mot de passe incorrect, ou fichier abîmé"
-                        else -> "Ce fichier n'est pas une sauvegarde de Seca Contacts"
+                        bytes == null -> text(R.string.unreadable_file)
+                        plain == null -> text(R.string.wrong_password)
+                        else -> text(R.string.not_contacts_backup)
                     },
                 )
                 return@launch
@@ -249,7 +264,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
             refreshPreferences()
             loadMyCard()
             load()
-            toast("Sauvegarde restaurée : $restored")
+            toast(text(R.string.backup_restored, restored))
         }
     }
 
@@ -260,7 +275,10 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
 
     private fun SecaContact.isSameAs(card: VCardContact): Boolean = isSameAs(card, numbers)
 
-    private fun plural(count: Int, one: String, many: String) = if (count == 1) "1 $one" else "$count $many"
+    private fun text(@StringRes id: Int, vararg args: Any): String = getApplication<Application>().getString(id, *args)
+
+    private fun quantity(@PluralsRes id: Int, count: Int): String =
+        getApplication<Application>().resources.getQuantityString(id, count, count)
 
     private fun toast(text: String) {
         Toast.makeText(getApplication(), text, Toast.LENGTH_LONG).show()
@@ -347,13 +365,13 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
             val profileId = _ui.value.profileOf(group.first()).id
             val merged = runCatching { repository.mergeContacts(group.map { it.id }) }.getOrNull()
             if (merged == null) {
-                toast("La fusion n'a pas pu se faire")
+                toast(text(R.string.merge_failed))
                 return@launch
             }
             // Joining changes the contact's lookup key, which carries its profile.
             repository.lookupKeyOf(merged)?.let { assignProfile(it, profileId) }
             load()
-            toast("${group.size} fiches réunies")
+            toast(quantity(R.plurals.cards_merged, group.size))
         }
     }
 

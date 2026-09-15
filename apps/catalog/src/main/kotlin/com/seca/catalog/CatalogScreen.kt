@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaMotion
@@ -46,7 +47,8 @@ private val sampleContact = SecaContact(
  *
  * There is no light/dark switch: the theme follows the system, exactly as the
  * real apps will. The only choice offered is the palette, which is also the
- * only choice a Seca user gets.
+ * only choice a Seca user gets. This is a development tool that is never
+ * published, so its own headings are not translated.
  */
 @Composable
 fun CatalogScreen() {
@@ -85,7 +87,7 @@ fun CatalogScreen() {
                             FilterChip(
                                 selected = palette == entry,
                                 onClick = { palette = entry },
-                                label = { Text(entry.label) },
+                                label = { Text(stringResource(entry.label)) },
                                 modifier = Modifier.padding(end = 8.dp),
                             )
                         }
@@ -109,7 +111,7 @@ fun CatalogScreen() {
                     }
 
                     Text(
-                        text = "Ligne de contact",
+                        text = "Contact row",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(start = 20.dp, top = 32.dp, bottom = 12.dp),
@@ -117,7 +119,7 @@ fun CatalogScreen() {
                     SecaContactRow(contact = sampleContact, onClick = {})
 
                     Text(
-                        text = "État vide",
+                        text = "Empty state",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(start = 20.dp, top = 32.dp, bottom = 12.dp),
@@ -139,8 +141,8 @@ fun CatalogScreen() {
                             .height(200.dp),
                     ) {
                         SecaEmptyState(
-                            title = "Aucun contact",
-                            description = "Les contacts que vous ajoutez apparaîtront ici.",
+                            title = "No contacts",
+                            description = "The contacts you add will appear here.",
                         )
                     }
                 }

@@ -1,0 +1,5 @@
+Second beta.
+• English interface, chosen from the phone's language; French stays.
+• Every conversation gets its light at the top, in the colour of the contact's profile or of the app.
+• Profile colours show whatever order the Seca apps were installed in.
+• Works on any phone with Android 12 or newer; GrapheneOS is recommended.

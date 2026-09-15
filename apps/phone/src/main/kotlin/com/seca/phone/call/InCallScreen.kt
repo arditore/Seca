@@ -61,17 +61,21 @@ import com.seca.core.model.Profile
 import com.seca.core.model.initialsOf
 import com.seca.phone.RememberChoice
 import kotlinx.coroutines.delay
+import com.seca.core.design.label
+import androidx.compose.ui.res.stringResource
+import com.seca.phone.R
 
 /** How long the screen stays to say how the call ended. */
 private const val ENDED_MILLIS = 1500L
 
 private val InCallKeys = listOf('1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#')
 
+/** The ready-made texts for declining a call with a message. */
 private val QuickReplies = listOf(
-    "Je vous rappelle.",
-    "Je ne peux pas répondre pour le moment.",
-    "Je suis en réunion.",
-    "Écrivez-moi plutôt.",
+    R.string.quick_reply_call_back,
+    R.string.quick_reply_cant_talk,
+    R.string.quick_reply_meeting,
+    R.string.quick_reply_text_me,
 )
 
 /**
@@ -107,7 +111,8 @@ internal fun InCallRoot(onScreenOffNearEar: (Boolean) -> Unit, onDone: () -> Uni
 @Composable
 private fun CallScreen(view: CallView, calls: List<CallView>, audio: AudioView) {
     val numbers = CallSession.numbers
-    val title = view.title(numbers)
+    val context = LocalContext.current
+    val title = view.title(context, numbers)
     val (tint, _) = secaToneColors(view.caller?.tone ?: 0)
     var keypad by remember { mutableStateOf(false) }
     var replies by remember { mutableStateOf(false) }
@@ -175,8 +180,9 @@ private fun CallScreen(view: CallView, calls: List<CallView>, audio: AudioView) 
 
 @Composable
 private fun Badges(view: CallView) {
+    val wifiLabel = stringResource(R.string.wifi_call)
     val badges = buildList<Pair<ImageVector?, String>> {
-        if (view.wifi) add(SecaIcons.Wifi to "Appel Wi-Fi")
+        if (view.wifi) add(SecaIcons.Wifi to wifiLabel)
         if (view.hd) add(null to "HD")
         view.accountLabel?.let { add(null to it) }
     }
@@ -222,7 +228,7 @@ private fun ProfileLine(view: CallView, subtitle: String) {
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
         ) {
-            SecaProfileBadge(caller.profile.name, tone = caller.tone, size = 28.dp)
+            SecaProfileBadge(caller.profile.label(), tone = caller.tone, size = 28.dp)
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.labelLarge,
@@ -242,6 +248,7 @@ private fun ProfileLine(view: CallView, subtitle: String) {
 
 @Composable
 private fun StatusLine(view: CallView) {
+    val context = LocalContext.current
     val text = if (view.state == Call.STATE_ACTIVE && view.connectTime > 0) {
         val seconds by produceState(0L, view.connectTime) {
             while (true) {
@@ -251,7 +258,7 @@ private fun StatusLine(view: CallView) {
         }
         elapsed(seconds.coerceAtLeast(0))
     } else {
-        view.status()
+        view.status(context)
     }
     Text(
         text = text,
@@ -264,8 +271,9 @@ private fun StatusLine(view: CallView) {
 @Composable
 private fun OtherCall(view: CallView, calls: List<CallView>) {
     val other = calls.firstOrNull { it.call !== view.call && !it.isConferencePart } ?: return
+    val context = LocalContext.current
     Text(
-        text = "Autre appel : ${other.title(CallSession.numbers)} · ${other.status()}",
+        text = stringResource(R.string.other_call, other.title(context, CallSession.numbers), other.status(context)),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         maxLines = 1,
@@ -280,7 +288,7 @@ private fun IncomingControls(view: CallView, onReplies: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         TextButton(onClick = onReplies) {
             Icon(SecaIcons.Messages, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text("Répondre par message", modifier = Modifier.padding(start = 8.dp))
+            Text(stringResource(R.string.reply_with_message), modifier = Modifier.padding(start = 8.dp))
         }
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -290,11 +298,11 @@ private fun IncomingControls(view: CallView, onReplies: () -> Unit) {
         ) {
             RoundAction(
                 icon = SecaIcons.CallEnd,
-                label = "Refuser",
+                label = stringResource(R.string.decline),
                 container = MaterialTheme.colorScheme.error,
                 content = MaterialTheme.colorScheme.onError,
             ) { CallSession.decline(view.call) }
-            RoundAction(icon = SecaIcons.Phone, label = "Répondre", container = green, content = onGreen) {
+            RoundAction(icon = SecaIcons.Phone, label = stringResource(R.string.answer), container = green, content = onGreen) {
                 CallSession.answer(view.call)
             }
         }
@@ -307,8 +315,8 @@ private fun ActiveControls(view: CallView, calls: List<CallView>, audio: AudioVi
     val canMerge = view.canMerge || view.call.conferenceableCalls.isNotEmpty()
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
-            CallControl(SecaIcons.MicOff, "Muet", checked = audio.muted) { CallSession.setMuted(!audio.muted) }
-            CallControl(SecaIcons.Dialpad, "Clavier", checked = false, onClick = onKeypad)
+            CallControl(SecaIcons.MicOff, stringResource(R.string.mute), checked = audio.muted) { CallSession.setMuted(!audio.muted) }
+            CallControl(SecaIcons.Dialpad, stringResource(R.string.keypad), checked = false, onClick = onKeypad)
             AudioControl(audio)
         }
         Row(
@@ -319,12 +327,12 @@ private fun ActiveControls(view: CallView, calls: List<CallView>, audio: AudioVi
         ) {
             CallControl(
                 icon = SecaIcons.Pause,
-                label = "Attente",
+                label = stringResource(R.string.hold),
                 checked = view.state == Call.STATE_HOLDING,
                 enabled = view.canHold,
             ) { CallSession.toggleHold(view) }
-            if (another) CallControl(SecaIcons.SwapCalls, "Basculer", checked = false) { CallSession.swap() }
-            if (canMerge) CallControl(SecaIcons.CallMerge, "Fusionner", checked = false) { CallSession.merge(view) }
+            if (another) CallControl(SecaIcons.SwapCalls, stringResource(R.string.swap), checked = false) { CallSession.swap() }
+            if (canMerge) CallControl(SecaIcons.CallMerge, stringResource(R.string.merge), checked = false) { CallSession.merge(view) }
         }
         Box(
             contentAlignment = Alignment.Center,
@@ -346,9 +354,9 @@ private fun HangUpButton(view: CallView) {
             .height(68.dp)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.error)
-            .clickable(onClickLabel = "Raccrocher", role = Role.Button) { CallSession.hangUp(view.call) },
+            .clickable(onClickLabel = stringResource(R.string.hang_up), role = Role.Button) { CallSession.hangUp(view.call) },
     ) {
-        Icon(SecaIcons.CallEnd, contentDescription = "Raccrocher", tint = MaterialTheme.colorScheme.onError)
+        Icon(SecaIcons.CallEnd, contentDescription = stringResource(R.string.hang_up), tint = MaterialTheme.colorScheme.onError)
     }
 }
 
@@ -362,7 +370,7 @@ private fun AudioControl(audio: AudioView) {
     Box {
         CallControl(
             icon = iconFor(kind),
-            label = if (choices) audio.route?.name ?: "Sortie audio" else "Haut-parleur",
+            label = if (choices) audio.route?.name ?: stringResource(R.string.audio_output) else stringResource(R.string.audio_speaker),
             checked = kind == AudioKind.Speaker || (choices && kind != AudioKind.Earpiece),
         ) {
             if (choices) open = true else toggleSpeaker(audio)
@@ -373,7 +381,7 @@ private fun AudioControl(audio: AudioView) {
                     text = { Text(route.name) },
                     leadingIcon = { Icon(iconFor(route.kind), contentDescription = null) },
                     trailingIcon = if (route == audio.route) {
-                        { Icon(SecaIcons.Check, contentDescription = "Sortie actuelle") }
+                        { Icon(SecaIcons.Check, contentDescription = stringResource(R.string.current_output)) }
                     } else {
                         null
                     },
@@ -472,7 +480,7 @@ private fun AccountChooser(view: CallView) {
     ) {
         RememberChoice(
             checked = keep,
-            label = "Toujours utiliser cette SIM pour ${view.caller?.name ?: "ce numéro"}",
+            label = stringResource(R.string.always_use_sim, view.caller?.name ?: stringResource(R.string.this_number)),
             onCheckedChange = { keep = it },
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
@@ -485,14 +493,14 @@ private fun AccountChooser(view: CallView) {
                 SecaSettingRow(
                     icon = SecaIcons.Phone,
                     title = CallSession.accountName(account),
-                    subtitle = "Passer cet appel avec cette carte",
+                    subtitle = stringResource(R.string.place_call_with_sim),
                 )
             }
         }
         TextButton(
             onClick = { CallSession.hangUp(view.call) },
             modifier = Modifier.align(Alignment.CenterHorizontally),
-        ) { Text("Annuler") }
+        ) { Text(stringResource(R.string.cancel)) }
     }
 }
 
@@ -551,9 +559,9 @@ private fun KeypadPanel(view: CallView, onClose: () -> Unit) {
                 .fillMaxWidth()
                 .padding(top = 8.dp),
         ) {
-            TextButton(onClick = onClose, modifier = Modifier.width(96.dp)) { Text("Masquer") }
+            TextButton(onClick = onClose, modifier = Modifier.width(96.dp)) { Text(stringResource(R.string.hide)) }
             HangUpButton(view)
-            // Balances the "Masquer" button, so the red button stays centred.
+            // Balances the "Hide" button, so the red button stays centred.
             Box(Modifier.width(96.dp))
         }
     }
@@ -564,10 +572,11 @@ private fun QuickReplyDialog(onDismiss: () -> Unit, onSend: (String) -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(SecaIcons.Messages, contentDescription = null) },
-        title = { Text("Refuser et répondre") },
+        title = { Text(stringResource(R.string.decline_and_reply)) },
         text = {
             Column {
-                QuickReplies.forEach { reply ->
+                QuickReplies.forEach { id ->
+                    val reply = stringResource(id)
                     Text(
                         text = reply,
                         style = MaterialTheme.typography.bodyLarge,
@@ -581,7 +590,7 @@ private fun QuickReplyDialog(onDismiss: () -> Unit, onSend: (String) -> Unit) {
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

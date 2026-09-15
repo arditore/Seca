@@ -82,7 +82,7 @@ internal class LinkProtocolStore(
 
     override fun loadExistingSessions(addresses: List<SignalProtocolAddress>): List<SessionRecord> =
         addresses.map { address ->
-            Sealer.read(fileOf(address))?.let(::SessionRecord) ?: throw NoSessionException("Pas de session avec ${address.name}")
+            Sealer.read(fileOf(address))?.let(::SessionRecord) ?: throw NoSessionException("No session with ${address.name}")
         }
 
     // One phone per number.
@@ -103,7 +103,7 @@ internal class LinkProtocolStore(
     }
 
     // No one-time pre-keys: a relay could not hand each out only once. PQXDH works without them.
-    override fun loadPreKey(preKeyId: Int): PreKeyRecord = throw InvalidKeyIdException("Pas de pré-clé à usage unique")
+    override fun loadPreKey(preKeyId: Int): PreKeyRecord = throw InvalidKeyIdException("No one-time pre-key")
 
     override fun storePreKey(preKeyId: Int, record: PreKeyRecord) = Unit
 
@@ -113,7 +113,7 @@ internal class LinkProtocolStore(
 
     override fun loadSignedPreKey(signedPreKeyId: Int): SignedPreKeyRecord =
         identity.signedPreKey.takeIf { it.id == signedPreKeyId }
-            ?: throw InvalidKeyIdException("Pré-clé signée inconnue : $signedPreKeyId")
+            ?: throw InvalidKeyIdException("Unknown signed pre-key: $signedPreKeyId")
 
     override fun loadSignedPreKeys(): List<SignedPreKeyRecord> = listOf(identity.signedPreKey)
 
@@ -126,7 +126,7 @@ internal class LinkProtocolStore(
 
     override fun loadKyberPreKey(kyberPreKeyId: Int): KyberPreKeyRecord =
         identity.kyberPreKey.takeIf { it.id == kyberPreKeyId }
-            ?: throw InvalidKeyIdException("Pré-clé Kyber inconnue : $kyberPreKeyId")
+            ?: throw InvalidKeyIdException("Unknown Kyber pre-key: $kyberPreKeyId")
 
     override fun loadKyberPreKeys(): List<KyberPreKeyRecord> = listOf(identity.kyberPreKey)
 
@@ -139,7 +139,7 @@ internal class LinkProtocolStore(
         val entry = digest("$kyberPreKeyId.$signedPreKeyId.".toByteArray() + baseKey.serialize())
         synchronized(baseKeysLock) {
             val seen = Sealer.read(baseKeys)?.toString(Charsets.UTF_8)?.lines()?.filter { it.isNotBlank() }.orEmpty()
-            if (entry in seen) throw ReusedBaseKeyException("Clé de base déjà utilisée")
+            if (entry in seen) throw ReusedBaseKeyException("Base key already used")
             Sealer.write(baseKeys, (seen + entry).takeLast(MAX_BASE_KEYS).joinToString("\n").toByteArray(Charsets.UTF_8))
         }
     }

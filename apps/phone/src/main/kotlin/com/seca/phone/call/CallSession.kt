@@ -35,6 +35,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.annotation.StringRes
+import com.seca.phone.R
 
 /** Who is calling, when they are in the contacts: name, photo, number type and Seca profile. */
 data class Caller(
@@ -197,13 +199,13 @@ object CallSession {
         val mask = state.supportedRouteMask
         val routes = buildList {
             if (mask and CallAudioState.ROUTE_EARPIECE != 0) {
-                add(AudioRoute(AudioKind.Earpiece, EARPIECE, "earpiece", legacyRoute = CallAudioState.ROUTE_EARPIECE))
+                add(AudioRoute(AudioKind.Earpiece, nameOf(R.string.audio_earpiece), "earpiece", legacyRoute = CallAudioState.ROUTE_EARPIECE))
             }
             if (mask and CallAudioState.ROUTE_WIRED_HEADSET != 0) {
-                add(AudioRoute(AudioKind.Headset, HEADSET, "headset", legacyRoute = CallAudioState.ROUTE_WIRED_HEADSET))
+                add(AudioRoute(AudioKind.Headset, nameOf(R.string.audio_headset), "headset", legacyRoute = CallAudioState.ROUTE_WIRED_HEADSET))
             }
             if (mask and CallAudioState.ROUTE_SPEAKER != 0) {
-                add(AudioRoute(AudioKind.Speaker, SPEAKER, "speaker", legacyRoute = CallAudioState.ROUTE_SPEAKER))
+                add(AudioRoute(AudioKind.Speaker, nameOf(R.string.audio_speaker), "speaker", legacyRoute = CallAudioState.ROUTE_SPEAKER))
             }
             if (mask and CallAudioState.ROUTE_BLUETOOTH != 0) {
                 val devices = state.supportedBluetoothDevices.toList()
@@ -311,10 +313,10 @@ object CallSession {
         return endpoints.map { endpoint ->
             val given = endpoint.endpointName.toString().trim()
             val (kind, name) = when (endpoint.endpointType) {
-                CallEndpoint.TYPE_SPEAKER, CallEndpoint.TYPE_STREAMING -> AudioKind.Speaker to given.ifEmpty { SPEAKER }
+                CallEndpoint.TYPE_SPEAKER, CallEndpoint.TYPE_STREAMING -> AudioKind.Speaker to given.ifEmpty { nameOf(R.string.audio_speaker) }
                 CallEndpoint.TYPE_BLUETOOTH -> AudioKind.Bluetooth to bluetoothNames[bluetooth.indexOfFirst { it === endpoint }]
-                CallEndpoint.TYPE_WIRED_HEADSET -> AudioKind.Headset to given.ifEmpty { HEADSET }
-                else -> AudioKind.Earpiece to given.ifEmpty { EARPIECE }
+                CallEndpoint.TYPE_WIRED_HEADSET -> AudioKind.Headset to given.ifEmpty { nameOf(R.string.audio_headset) }
+                else -> AudioKind.Earpiece to given.ifEmpty { nameOf(R.string.audio_earpiece) }
             }
             AudioRoute(kind, name, endpoint.identifier.toString(), endpoint = endpoint)
         }
@@ -347,10 +349,10 @@ object CallSession {
         AudioDeviceInfo.TYPE_HEARING_AID,
     )
 
-    private const val EARPIECE = "Téléphone"
-    private const val SPEAKER = "Haut-parleur"
-    private const val HEADSET = "Écouteurs"
     private const val BLUETOOTH = "Bluetooth"
+
+    /** A route's name in the phone's language; the service is attached before any route is reported. */
+    private fun nameOf(@StringRes id: Int): String = appContext?.getString(id).orEmpty()
 
     private fun viewOf(call: Call): CallView {
         val details = call.details

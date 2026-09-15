@@ -43,6 +43,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import androidx.annotation.PluralsRes
+import androidx.annotation.StringRes
 
 /** Searching the text of every message waits for this pause in typing. */
 private const val SEARCH_PAUSE_MILLIS = 250L
@@ -227,7 +229,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                 it.copy(link = it.link.copy(relays = relays, statuses = relays.associateWith { RelayStatus(RelayState.Publishing) }))
             }
             link.publishPrekeys()
-                .catch { error -> _ui.update { it.copy(link = it.link.copy(error = "Publication impossible : ${error.message}")) } }
+                .catch { error -> _ui.update { it.copy(link = it.link.copy(error = text(R.string.link_publish_failed, error.message.orEmpty()))) } }
                 .collect { (url, result) ->
                     val status = when (result) {
                         PublishResult.Accepted -> RelayStatus(RelayState.Published)
@@ -243,7 +245,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     private suspend fun showFingerprint(): Boolean {
         // The Keystore reports its failures in several ways, runtime exceptions included.
         val identity = runCatching { link.identity() }.getOrElse { error ->
-            _ui.update { it.copy(link = it.link.copy(error = "Clés indisponibles : ${error.message}")) }
+            _ui.update { it.copy(link = it.link.copy(error = text(R.string.link_keys_unavailable, error.message.orEmpty()))) }
             return false
         }
         _ui.update { it.copy(link = it.link.copy(fingerprint = identity.fingerprint, error = null)) }
@@ -311,7 +313,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         backStack.add(screen)
     }
 
-    /** Opens the conversation with [address]; from "Nouveau message", it takes that screen's place. */
+    /** Opens the conversation with [address]; from "New message", it takes that screen's place. */
     fun openConversation(address: String, draft: String = "") {
         viewModelScope.launch {
             val threadId = repository.threadIdFor(address) ?: -1L
@@ -414,7 +416,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) {
             val sent = links.sendVoice(address, path)
             java.io.File(path).delete()
-            if (!sent) withContext(Dispatchers.Main) { toast("Le message vocal n'a pas pu être envoyé") }
+            if (!sent) withContext(Dispatchers.Main) { toast(text(R.string.voice_not_sent)) }
         }
     }
 
@@ -437,7 +439,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     /** Sends a photo through Seca Link, which only an encrypted conversation carries. */
     fun sendPhoto(address: String, uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (!links.sendPhoto(address, uri)) withContext(Dispatchers.Main) { toast("La photo n'a pas pu être envoyée") }
+            if (!links.sendPhoto(address, uri)) withContext(Dispatchers.Main) { toast(text(R.string.photo_not_sent)) }
         }
     }
 
@@ -446,7 +448,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) {
             val sent = LinkSms.inviteNow(getApplication(), address)
             withContext(Dispatchers.Main) {
-                toast(if (sent) "Invitation Seca Link envoyée" else "Invitation impossible : activez Seca Link dans les réglages")
+                toast(text(if (sent) R.string.invitation_sent else R.string.invitation_failed))
             }
         }
     }
@@ -532,7 +534,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                     getApplication<Application>().contentResolver.openOutputStream(uri, "wt")?.use { it.write(sealed) } != null
                 }.getOrDefault(false)
             }
-            toast(if (written) "Sauvegarde chiffrée : ${plural(messages.size, "message", "messages")}" else "La sauvegarde a échoué")
+            toast(if (written) text(R.string.backup_done, quantity(R.plurals.messages_count, messages.size)) else text(R.string.backup_failed))
         }
     }
 
@@ -548,9 +550,9 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
             if (json == null || json.optString("app") != "seca-messages") {
                 toast(
                     when {
-                        bytes == null -> "Ce fichier ne peut pas être lu"
-                        plain == null -> "Mot de passe incorrect, ou fichier abîmé"
-                        else -> "Ce fichier n'est pas une sauvegarde de Seca Messages"
+                        bytes == null -> text(R.string.unreadable_file)
+                        plain == null -> text(R.string.wrong_password)
+                        else -> text(R.string.not_messages_backup)
                     },
                 )
                 return@launch
@@ -568,11 +570,14 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                 )
             }
             val added = repository.restore(messages)
-            toast("Sauvegarde restaurée : ${plural(added, "message ajouté", "messages ajoutés")}")
+            toast(text(R.string.backup_restored, quantity(R.plurals.messages_added, added)))
         }
     }
 
-    private fun plural(count: Int, one: String, many: String) = if (count == 1) "1 $one" else "$count $many"
+    private fun text(@StringRes id: Int, vararg args: Any): String = getApplication<Application>().getString(id, *args)
+
+    private fun quantity(@PluralsRes id: Int, count: Int): String =
+        getApplication<Application>().resources.getQuantityString(id, count, count)
 
     private fun toast(text: String) {
         Toast.makeText(getApplication(), text, Toast.LENGTH_LONG).show()

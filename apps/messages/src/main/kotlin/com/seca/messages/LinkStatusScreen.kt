@@ -31,6 +31,8 @@ import com.seca.messages.link.LinkListening
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import androidx.lifecycle.viewmodel.compose.viewModel as screenViewModel
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 /** How Seca Link stands on this phone, relay by relay and contact by contact. */
 data object LinkStatusRoute : MessagesScreen
@@ -62,7 +64,7 @@ internal fun LinkStatusScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "État de Seca Link", onBack = { viewModel.back() }) },
+        topBar = { SecaTopBar(title = stringResource(R.string.link_status), onBack = { viewModel.back() }) },
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -70,13 +72,17 @@ internal fun LinkStatusScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                 .padding(padding),
             contentPadding = PaddingValues(bottom = 32.dp),
         ) {
-            item(key = "phone-label") { SecaSectionLabel("Ce téléphone") }
+            item(key = "phone-label") { SecaSectionLabel(stringResource(R.string.this_phone)) }
             item(key = "enabled") {
                 SecaGroupItem(index = 0, count = 4) {
                     SecaSettingRow(
                         icon = SecaIcons.Link,
-                        title = if (link.enabled) "Seca Link activé" else "Seca Link désactivé",
-                        subtitle = if (link.enabled) link.fingerprint?.let { "Empreinte $it" } else "Activez-le dans les réglages",
+                        title = stringResource(if (link.enabled) R.string.link_enabled else R.string.link_disabled),
+                        subtitle = if (link.enabled) {
+                            link.fingerprint?.let { stringResource(R.string.fingerprint_named, it) }
+                        } else {
+                            stringResource(R.string.enable_in_settings)
+                        },
                     )
                 }
             }
@@ -84,12 +90,12 @@ internal fun LinkStatusScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                 SecaGroupItem(index = 1, count = 4) {
                     SecaSettingRow(
                         icon = SecaIcons.Wifi,
-                        title = "Réseau",
+                        title = stringResource(R.string.network),
                         subtitle = when {
-                            link.offline -> "Pas d'accès : vérifiez la connexion et l'autorisation « Réseau »"
-                            link.useTor && link.orbotRunning == false -> "Tor choisi, mais Orbot ne répond pas"
-                            link.useTor -> "Par Tor, avec Orbot"
-                            else -> "Connexion directe aux relais"
+                            link.offline -> stringResource(R.string.network_blocked)
+                            link.useTor && link.orbotRunning == false -> stringResource(R.string.tor_not_responding)
+                            link.useTor -> stringResource(R.string.through_tor)
+                            else -> stringResource(R.string.direct_connection)
                         },
                     )
                 }
@@ -98,8 +104,10 @@ internal fun LinkStatusScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                 SecaGroupItem(index = 2, count = 4) {
                     SecaSettingRow(
                         icon = SecaIcons.Battery,
-                        title = "Réception en arrière-plan",
-                        subtitle = if (BackgroundAccess.granted(context)) "Autorisée, sans notification" else "Avec une notification discrète",
+                        title = stringResource(R.string.background_reception),
+                        subtitle = stringResource(
+                            if (BackgroundAccess.granted(context)) R.string.background_allowed_quiet else R.string.background_with_notification,
+                        ),
                     )
                 }
             }
@@ -108,17 +116,17 @@ internal fun LinkStatusScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                 SecaGroupItem(index = 3, count = 4) {
                     SecaSettingRow(
                         icon = SecaIcons.Schedule,
-                        title = "Horloge",
+                        title = stringResource(R.string.clock),
                         subtitle = when {
-                            abs(offset) < TRUSTED_DRIFT_SECONDS -> "À l'heure des relais"
-                            offset > 0 -> "Le téléphone retarde de $offset s : corrigé avec l'heure des relais"
-                            else -> "Le téléphone avance de ${-offset} s : corrigé avec l'heure des relais"
+                            abs(offset) < TRUSTED_DRIFT_SECONDS -> stringResource(R.string.clock_on_time)
+                            offset > 0 -> pluralStringResource(R.plurals.clock_behind, offset.toInt(), offset)
+                            else -> pluralStringResource(R.plurals.clock_ahead, (-offset).toInt(), -offset)
                         },
                     )
                 }
             }
 
-            item(key = "relays-label") { SecaSectionLabel("Écoute des relais") }
+            item(key = "relays-label") { SecaSectionLabel(stringResource(R.string.relays_listening)) }
             itemsIndexed(link.relays, key = { _, url -> "relay-$url" }) { index, url ->
                 val state = listening[url]
                 SecaGroupItem(index = index, count = link.relays.size) {
@@ -126,26 +134,23 @@ internal fun LinkStatusScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                         icon = if (state?.state == LinkListening.State.Connected) SecaIcons.Check else SecaIcons.Wifi,
                         title = url.removePrefix("wss://"),
                         subtitle = when (state?.state) {
-                            null -> if (link.enabled) "Pas encore écouté" else "Seca Link est désactivé"
-                            LinkListening.State.Connecting -> "Connexion…"
-                            LinkListening.State.Disconnected -> "Déconnecté ${ago(state.since, now)}, nouvel essai bientôt"
+                            null -> stringResource(if (link.enabled) R.string.not_listened_yet else R.string.link_is_off)
+                            LinkListening.State.Connecting -> stringResource(R.string.connecting)
+                            LinkListening.State.Disconnected -> stringResource(R.string.disconnected_ago, ago(state.since, now))
                             LinkListening.State.Connected -> if (state.lastEnvelopeAt > 0) {
-                                "À l'écoute · dernière enveloppe ${ago(state.lastEnvelopeAt, now)}"
+                                stringResource(R.string.listening_last_envelope, ago(state.lastEnvelopeAt, now))
                             } else {
-                                "À l'écoute ${ago(state.since, now)}"
+                                stringResource(R.string.listening_since, ago(state.since, now))
                             }
                         },
                     )
                 }
             }
 
-            item(key = "contacts-label") { SecaSectionLabel("Contacts") }
+            item(key = "contacts-label") { SecaSectionLabel(stringResource(R.string.contacts)) }
             if (contacts.isEmpty()) {
                 item(key = "no-contacts") {
-                    SecaHint(
-                        "Aucun contact Seca Link pour l'instant. Dans une conversation, touchez ⋮ puis « Chiffrer avec " +
-                            "Seca Link », ou « Connecter en face à face ».",
-                    )
+                    SecaHint(stringResource(R.string.no_link_contacts))
                 }
             }
             itemsIndexed(contacts, key = { _, peer -> "peer-${peer.number}" }) { index, peer ->
@@ -157,43 +162,41 @@ internal fun LinkStatusScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                         trailing = when {
                             peer.ready || !link.enabled -> null
                             peer.nostrPublicKey != null -> {
-                                { TextButton(onClick = { links.retry(peer.number) }) { Text("Réessayer") } }
+                                { TextButton(onClick = { links.retry(peer.number) }) { Text(stringResource(R.string.retry)) } }
                             }
                             else -> {
-                                { TextButton(onClick = { links.invite(peer.number) }) { Text("Renvoyer") } }
+                                { TextButton(onClick = { links.invite(peer.number) }) { Text(stringResource(R.string.resend)) } }
                             }
                         },
                     )
                 }
             }
             item(key = "hint") {
-                SecaHint(
-                    "Deux téléphones se connectent en échangeant une invitation, par SMS ou par QR code en face à face. " +
-                        "Tant que ce n'est pas fait, les messages partent en SMS, sans chiffrement.",
-                )
+                SecaHint(stringResource(R.string.link_status_footer))
             }
         }
     }
 }
 
+@Composable
 private fun peerState(peer: LinkPeer, now: Long): String = when {
-    peer.ready && peer.keyChangedAt > 0 -> "Chiffré · sa clé a changé, à vérifier"
-    peer.ready && peer.verified -> "Chiffré · vérifié"
-    peer.ready -> "Chiffré"
-    peer.nostrPublicKey != null && peer.attemptedAt > 0 ->
-        "Invitation reçue, connexion pas encore ouverte · dernier essai ${ago(peer.attemptedAt, now)}"
-    peer.nostrPublicKey != null -> "Invitation reçue, connexion pas encore ouverte"
-    peer.invitedAt > 0 -> "Invitation envoyée ${ago(peer.invitedAt, now)}, pas encore de réponse"
-    else -> "Aucun échange pour l'instant"
+    peer.ready && peer.keyChangedAt > 0 -> stringResource(R.string.peer_key_changed)
+    peer.ready && peer.verified -> stringResource(R.string.peer_verified)
+    peer.ready -> stringResource(R.string.peer_encrypted)
+    peer.nostrPublicKey != null && peer.attemptedAt > 0 -> stringResource(R.string.peer_invited_retried, ago(peer.attemptedAt, now))
+    peer.nostrPublicKey != null -> stringResource(R.string.peer_invited)
+    peer.invitedAt > 0 -> stringResource(R.string.peer_invitation_sent, ago(peer.invitedAt, now))
+    else -> stringResource(R.string.peer_nothing)
 }
 
-/** "à l'instant", "il y a 5 min", "il y a 3 h", "il y a 2 j". */
+/** "just now", "5 min ago", "3 h ago", "2 days ago". */
+@Composable
 private fun ago(millis: Long, now: Long): String {
-    val minutes = (now - millis).coerceAtLeast(0) / MINUTE
+    val minutes = ((now - millis).coerceAtLeast(0) / MINUTE).toInt()
     return when {
-        minutes < 1 -> "à l'instant"
-        minutes < 60 -> "il y a $minutes min"
-        minutes < 24 * 60 -> "il y a ${minutes / 60} h"
-        else -> "il y a ${minutes / (24 * 60)} j"
+        minutes < 1 -> stringResource(R.string.just_now)
+        minutes < 60 -> pluralStringResource(R.plurals.minutes_ago, minutes, minutes)
+        minutes < 24 * 60 -> pluralStringResource(R.plurals.hours_ago, minutes / 60, minutes / 60)
+        else -> pluralStringResource(R.plurals.days_ago, minutes / (24 * 60), minutes / (24 * 60))
     }
 }

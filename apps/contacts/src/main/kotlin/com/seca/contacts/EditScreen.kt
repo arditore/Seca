@@ -59,6 +59,9 @@ import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.model.initialsOf
 import java.time.LocalDate
+import com.seca.core.design.label
+import androidx.compose.ui.res.stringResource
+import com.seca.core.contacts.describe
 
 /** The kinds offered in the editor; any other kind a contact already has is kept and shown. */
 private val PhoneTypes = listOf(Phone.TYPE_MOBILE, Phone.TYPE_HOME, Phone.TYPE_WORK, Phone.TYPE_MAIN, Phone.TYPE_OTHER)
@@ -86,7 +89,7 @@ internal fun EditScreen(
     var birthday by remember(id) { mutableStateOf("") }
     var note by remember(id) { mutableStateOf("") }
     val resources = LocalResources.current
-    // "Tous" is a way of looking at the list, not a profile: a new contact starts in Principal.
+    // "All" is a way of looking at the list, not a profile: a new contact starts in Principal.
     var profileId by remember(id) {
         mutableStateOf(ui.currentProfileId.takeIf { !ui.showingAll } ?: ProfileStore.Principal.id)
     }
@@ -123,7 +126,7 @@ internal fun EditScreen(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             SecaTopBar(
-                title = if (id == null) "Nouveau contact" else "Modifier le contact",
+                title = stringResource(if (id == null) R.string.new_contact else R.string.edit_contact),
                 onBack = { viewModel.back() },
                 navigationIcon = SecaIcons.Close,
             ) {
@@ -145,7 +148,7 @@ internal fun EditScreen(
                         withWrite { viewModel.save(existing, input, profileId) }
                     },
                     modifier = Modifier.padding(end = 8.dp),
-                ) { Text("Enregistrer") }
+                ) { Text(stringResource(R.string.save)) }
             }
         },
     ) { padding ->
@@ -171,63 +174,63 @@ internal fun EditScreen(
                         size = 112.dp,
                         // Takes the colour of the profile picked below, as a preview.
                         tone = ui.profiles.indexOfFirst { it.id == profileId }.coerceAtLeast(0),
-                        seed = existing?.displayName ?: "Nouveau contact",
+                        seed = existing?.displayName ?: "new-contact",
                         expressive = true,
                     )
                 }
 
                 FormSection(SecaIcons.PersonOutline) {
-                    NameField(givenName, "Prénom") { givenName = it }
-                    NameField(familyName, "Nom") { familyName = it }
+                    NameField(givenName, stringResource(R.string.given_name)) { givenName = it }
+                    NameField(familyName, stringResource(R.string.family_name)) { familyName = it }
                 }
 
                 FormSection(SecaIcons.Phone) {
                     FieldList(
                         phones,
-                        label = "Numéro",
+                        label = stringResource(R.string.number),
                         keyboard = KeyboardType.Phone,
-                        removeLabel = "Retirer ce numéro",
+                        removeLabel = stringResource(R.string.remove_number),
                         types = PhoneTypes,
                         typeLabel = { Phone.getTypeLabel(resources, it, "").toString() },
                         // Says which country the number was read as: "06…" is French with a French SIM.
-                        describe = ui.numbers::describe,
+                        describe = { ui.numbers.describe(it, resources) },
                     )
-                    AddFieldButton("Ajouter un numéro") { phones.add(ContactField(null, "", Phone.TYPE_MOBILE)) }
+                    AddFieldButton(stringResource(R.string.add_number)) { phones.add(ContactField(null, "", Phone.TYPE_MOBILE)) }
                 }
 
                 FormSection(SecaIcons.Email) {
                     FieldList(
                         emails,
-                        label = "Adresse e-mail",
+                        label = stringResource(R.string.email_address),
                         keyboard = KeyboardType.Email,
-                        removeLabel = "Retirer cette adresse",
+                        removeLabel = stringResource(R.string.remove_address),
                         types = EmailTypes,
                         typeLabel = { Email.getTypeLabel(resources, it, "").toString() },
                     )
-                    AddFieldButton("Ajouter une adresse e-mail") { emails.add(ContactField(null, "", Email.TYPE_HOME)) }
+                    AddFieldButton(stringResource(R.string.add_email)) { emails.add(ContactField(null, "", Email.TYPE_HOME)) }
                 }
 
                 FormSection(SecaIcons.Place) {
                     FieldList(
                         addresses,
-                        label = "Adresse",
+                        label = stringResource(R.string.address),
                         keyboard = KeyboardType.Text,
-                        removeLabel = "Retirer cette adresse",
+                        removeLabel = stringResource(R.string.remove_address),
                         types = AddressTypes,
                         typeLabel = { StructuredPostal.getTypeLabel(resources, it, "").toString() },
                     )
-                    AddFieldButton("Ajouter une adresse") {
+                    AddFieldButton(stringResource(R.string.add_address)) {
                         addresses.add(ContactField(null, "", StructuredPostal.TYPE_HOME))
                     }
                 }
 
                 FormSection(SecaIcons.Work) {
-                    PlainField(organization, "Société") { organization = it }
-                    PlainField(jobTitle, "Poste") { jobTitle = it }
+                    PlainField(organization, stringResource(R.string.company)) { organization = it }
+                    PlainField(jobTitle, stringResource(R.string.job_title)) { jobTitle = it }
                 }
 
                 FormSection(SecaIcons.Link) {
-                    PlainField(website, "Site web", keyboard = KeyboardType.Uri) { website = it }
+                    PlainField(website, stringResource(R.string.website), keyboard = KeyboardType.Uri) { website = it }
                 }
 
                 FormSection(SecaIcons.Cake) {
@@ -235,13 +238,13 @@ internal fun EditScreen(
                 }
 
                 FormSection(SecaIcons.Subject) {
-                    PlainField(note, "Notes", singleLine = false) { note = it }
+                    PlainField(note, stringResource(R.string.notes), singleLine = false) { note = it }
                 }
 
-                // Lined up with the chips rather than with the "Profil" label above them.
+                // Lined up with the chips rather than with the "Profile" label above them.
                 FormSection(SecaIcons.Label, iconTop = 50.dp) {
                     Text(
-                        text = "Profil",
+                        text = stringResource(R.string.profile),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 14.dp),
@@ -254,8 +257,8 @@ internal fun EditScreen(
                             FilterChip(
                                 selected = profile.id == profileId,
                                 onClick = { profileId = profile.id },
-                                label = { Text(profile.name) },
-                                leadingIcon = { SecaProfileBadge(profile.name, tone = index, size = 20.dp) },
+                                label = { Text(profile.label()) },
+                                leadingIcon = { SecaProfileBadge(profile.label(), tone = index, size = 20.dp) },
                             )
                         }
                     }
@@ -412,12 +415,12 @@ private fun BirthdayField(value: String, onChange: (String) -> Unit) {
             value = if (value.isBlank()) "" else formatBirthday(value),
             onValueChange = {},
             readOnly = true,
-            label = { Text("Anniversaire") },
+            label = { Text(stringResource(R.string.birthday)) },
             shape = MaterialTheme.shapes.medium,
             trailingIcon = {
                 if (value.isNotBlank()) {
                     IconButton(onClick = { onChange("") }) {
-                        Icon(SecaIcons.Close, contentDescription = "Retirer la date")
+                        Icon(SecaIcons.Close, contentDescription = stringResource(R.string.remove_date))
                     }
                 }
             },
@@ -427,7 +430,7 @@ private fun BirthdayField(value: String, onChange: (String) -> Unit) {
         Box(
             Modifier
                 .matchParentSize()
-                .clickable(onClickLabel = "Choisir une date") { pickBirthday(context, value, onChange) },
+                .clickable(onClickLabel = stringResource(R.string.pick_date)) { pickBirthday(context, value, onChange) },
         )
     }
 }
@@ -446,21 +449,21 @@ private fun pickBirthday(context: Context, current: String, onChange: (String) -
 /** Where the date picker opens when a contact has no birthday yet. */
 private const val YEARS_BACK = 30L
 
-/** Mobile, Domicile, Travail…: the kind of number or address, in the phone's language. */
+/** Mobile, Home, Work…: the kind of number or address, in the phone's language. */
 @Composable
 private fun TypeSelector(type: Int, types: List<Int>, typeLabel: (Int) -> String, onChange: (Int) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         TextButton(onClick = { open = true }) {
             Text(typeLabel(type))
-            Icon(SecaIcons.ArrowDropDown, contentDescription = "Changer le type")
+            Icon(SecaIcons.ArrowDropDown, contentDescription = stringResource(R.string.change_type))
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             types.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(typeLabel(option)) },
                     trailingIcon = if (option == type) {
-                        { Icon(SecaIcons.Check, contentDescription = "Type actuel") }
+                        { Icon(SecaIcons.Check, contentDescription = stringResource(R.string.current_type)) }
                     } else {
                         null
                     },

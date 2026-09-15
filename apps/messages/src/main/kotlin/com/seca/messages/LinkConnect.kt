@@ -22,6 +22,7 @@ import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaQrCode
 import androidx.lifecycle.viewmodel.compose.viewModel as screenViewModel
+import androidx.compose.ui.res.stringResource
 
 /**
  * Before a session with [address]: this phone's code to show, and the camera
@@ -35,10 +36,10 @@ internal fun ConnectInPerson(address: String, ui: MessagesUi, viewModel: Message
     if (!ui.link.enabled) {
         SecaEmptyState(
             icon = SecaIcons.Link,
-            title = "Seca Link est désactivé",
-            description = "Activez-le dans les réglages pour chiffrer vos conversations avec $name.",
+            title = stringResource(R.string.link_is_off),
+            description = stringResource(R.string.link_off_connect_hint, name),
             modifier = modifier,
-            action = { Button(onClick = { viewModel.open(MessagesScreen.Settings) }) { Text("Ouvrir les réglages") } },
+            action = { Button(onClick = { viewModel.open(MessagesScreen.Settings) }) { Text(stringResource(R.string.open_settings)) } },
         )
         return
     }
@@ -52,13 +53,13 @@ internal fun ConnectInPerson(address: String, ui: MessagesUi, viewModel: Message
     ) {
         PersonAvatar(ui.contactOf(address), ui, size = 72.dp, expressive = true)
         Text(
-            text = "Connecter en face à face",
+            text = stringResource(R.string.connect_in_person),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 12.dp),
         )
         Text(
-            text = "Montrez ce code à $name, ou scannez le sien : vos messages seront chiffrés sans attendre de SMS.",
+            text = stringResource(R.string.show_code_hint, name),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -68,18 +69,18 @@ internal fun ConnectInPerson(address: String, ui: MessagesUi, viewModel: Message
         if (shown == null) {
             CircularProgressIndicator(Modifier.padding(top = 48.dp).size(48.dp))
         } else {
-            SecaQrCode(content = shown, contentDescription = "Votre code Seca Link", modifier = Modifier.padding(top = 24.dp), size = 220.dp)
+            SecaQrCode(content = shown, contentDescription = stringResource(R.string.your_link_code), modifier = Modifier.padding(top = 24.dp), size = 220.dp)
         }
         Button(
             onClick = { viewModel.open(SafetyScanRoute(address, connect = true)) },
             modifier = Modifier.padding(top = 24.dp),
-        ) { Text("Scanner son code") }
+        ) { Text(stringResource(R.string.scan_their_code)) }
         OutlinedButton(
             onClick = { viewModel.inviteToLink(address) },
             modifier = Modifier.padding(top = 8.dp),
-        ) { Text("Inviter par SMS plutôt") }
+        ) { Text(stringResource(R.string.invite_by_sms)) }
         Text(
-            text = "Un seul scan suffit : la réponse part ensuite par SMS. Seca Messages doit être installé et Seca Link activé sur les deux téléphones.",
+            text = stringResource(R.string.one_scan_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

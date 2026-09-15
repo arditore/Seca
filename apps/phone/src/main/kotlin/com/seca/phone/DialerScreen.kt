@@ -48,6 +48,9 @@ import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.component.rememberContactThumbnail
 import com.seca.core.design.secaCallColors
 import com.seca.core.model.Profile
+import androidx.compose.ui.platform.LocalResources
+import com.seca.core.contacts.describe
+import androidx.compose.ui.res.stringResource
 
 private val Keys = listOf(
     '1' to "", '2' to "ABC", '3' to "DEF",
@@ -124,7 +127,7 @@ internal fun DialerScreen(
                             modifier = Modifier.padding(start = 16.dp, top = 4.dp),
                         ) {
                             Icon(SecaIcons.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text("Créer un contact", modifier = Modifier.padding(start = 8.dp))
+                            Text(stringResource(R.string.create_contact), modifier = Modifier.padding(start = 8.dp))
                         }
                     }
                 }
@@ -171,7 +174,7 @@ private fun NumberDisplay(typed: String, ui: PhoneUi, exact: NumberMatch?, onPas
         ).joinToString(" · ")
         // While a long number is still being typed, saying it is incomplete would only be noise.
         ui.numbers.countryOf(typed) == null && typed.trimStart().let { it.startsWith("0") || it.startsWith("+") } -> null
-        else -> ui.numbers.describe(typed)
+        else -> ui.numbers.describe(typed, LocalResources.current)
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -181,14 +184,14 @@ private fun NumberDisplay(typed: String, ui: PhoneUi, exact: NumberMatch?, onPas
             .clip(MaterialTheme.shapes.large)
             .combinedClickable(
                 onClick = {},
-                onLongClickLabel = "Coller un numéro",
+                onLongClickLabel = stringResource(R.string.paste_number),
                 onLongClick = { pastedNumber(context)?.let(onPaste) },
             )
             .padding(vertical = 8.dp),
     ) {
         if (formatted.isEmpty()) {
             Text(
-                text = "Saisir un numéro",
+                text = stringResource(R.string.enter_number),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 6.dp),
@@ -256,7 +259,7 @@ private fun Key(
             // Long press on 1 calls the voicemail; the symbol says so.
             key == '1' -> Icon(
                 SecaIcons.Voicemail,
-                contentDescription = "Messagerie vocale",
+                contentDescription = stringResource(R.string.voicemail),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp),
             )
@@ -275,7 +278,7 @@ private fun CallButton(onClick: () -> Unit) {
             .background(container)
             .clickable(role = Role.Button, onClick = onClick),
     ) {
-        Icon(SecaIcons.Phone, contentDescription = "Appeler", tint = content)
+        Icon(SecaIcons.Phone, contentDescription = stringResource(R.string.call), tint = content)
     }
 }
 
@@ -288,12 +291,12 @@ private fun BackspaceButton(onErase: () -> Unit, onClear: () -> Unit) {
             .clip(CircleShape)
             .combinedClickable(
                 role = Role.Button,
-                onLongClickLabel = "Tout effacer",
+                onLongClickLabel = stringResource(R.string.clear_all),
                 onLongClick = onClear,
                 onClick = onErase,
             ),
     ) {
-        Icon(SecaIcons.Backspace, contentDescription = "Effacer", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(SecaIcons.Backspace, contentDescription = stringResource(R.string.erase), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

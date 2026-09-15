@@ -40,6 +40,7 @@ import com.seca.core.design.SecaMotion
 import com.seca.core.design.SecaTheme
 import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaSuiteBar
+import androidx.compose.ui.res.stringResource
 
 private val MessagePermissions = arrayOf(
     Manifest.permission.READ_SMS,
@@ -96,21 +97,20 @@ fun MessagesApp(
             ) { padding ->
                 SecaEmptyState(
                     icon = SecaIcons.Messages,
-                    title = "Vos messages",
-                    description = "Seca Messages lit, reçoit et envoie les SMS de ce téléphone. " +
-                        "Ils restent sur l'appareil et ne partent que vers leur destinataire.",
+                    title = stringResource(R.string.permission_title),
+                    description = stringResource(R.string.permission_description),
                     modifier = Modifier.padding(padding),
                     action = {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Button(onClick = onBecomeDefault) { Text("Utiliser Seca Messages") }
+                            Button(onClick = onBecomeDefault) { Text(stringResource(R.string.use_seca_messages)) }
                             if (permanentlyDenied) {
-                                TextButton(onClick = { openAppSettings(context) }) { Text("Ouvrir les réglages") }
+                                TextButton(onClick = { openAppSettings(context) }) { Text(stringResource(R.string.open_settings)) }
                             } else {
                                 TextButton(onClick = { accessLauncher.launch(MessagePermissions) }) {
-                                    Text("Seulement lire les messages")
+                                    Text(stringResource(R.string.read_only))
                                 }
                             }
                         }

@@ -60,6 +60,8 @@ import com.seca.core.design.component.rememberContactPhoto
 import com.seca.core.model.Profile
 import com.seca.core.model.initialsOf
 import kotlinx.coroutines.launch
+import com.seca.core.design.label
+import androidx.compose.ui.res.stringResource
 
 @Composable
 internal fun DetailScreen(
@@ -90,6 +92,7 @@ internal fun DetailScreen(
     }
     var confirmDelete by remember { mutableStateOf(false) }
     val current = detail
+    val ringtoneTitle = stringResource(R.string.contact_ringtone)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
@@ -99,7 +102,7 @@ internal fun DetailScreen(
                     IconButton(onClick = { withWrite { viewModel.setStarred(id, !current.starred) } }) {
                         Icon(
                             if (current.starred) SecaIcons.Star else SecaIcons.StarOutline,
-                            contentDescription = if (current.starred) "Retirer des favoris" else "Ajouter aux favoris",
+                            contentDescription = stringResource(if (current.starred) R.string.remove_favorite else R.string.add_favorite),
                             tint = if (current.starred) {
                                 MaterialTheme.colorScheme.primary
                             } else {
@@ -108,15 +111,15 @@ internal fun DetailScreen(
                         )
                     }
                     IconButton(onClick = { viewModel.open(Screen.Edit(id)) }) {
-                        Icon(SecaIcons.Edit, contentDescription = "Modifier")
+                        Icon(SecaIcons.Edit, contentDescription = stringResource(R.string.edit))
                     }
                     Box {
                         IconButton(onClick = { menuOpen = true }) {
-                            Icon(SecaIcons.MoreVert, contentDescription = "Plus d'options")
+                            Icon(SecaIcons.MoreVert, contentDescription = stringResource(R.string.more_options))
                         }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                             DropdownMenuItem(
-                                text = { Text("Partager") },
+                                text = { Text(stringResource(R.string.share)) },
                                 leadingIcon = { Icon(SecaIcons.Share, contentDescription = null) },
                                 onClick = {
                                     menuOpen = false
@@ -124,13 +127,13 @@ internal fun DetailScreen(
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Sonnerie du contact") },
+                                text = { Text(ringtoneTitle) },
                                 leadingIcon = { Icon(SecaIcons.Bell, contentDescription = null) },
                                 onClick = {
                                     menuOpen = false
                                     val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
                                         .putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE)
-                                        .putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Sonnerie du contact")
+                                        .putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, ringtoneTitle)
                                         .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
                                         .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
                                         .putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, current.ringtone?.toUri())
@@ -138,10 +141,10 @@ internal fun DetailScreen(
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Appels vers la messagerie") },
+                                text = { Text(stringResource(R.string.calls_to_voicemail)) },
                                 leadingIcon = { Icon(SecaIcons.Voicemail, contentDescription = null) },
                                 trailingIcon = if (current.sendToVoicemail) {
-                                    { Icon(SecaIcons.Check, contentDescription = "Activé") }
+                                    { Icon(SecaIcons.Check, contentDescription = stringResource(R.string.on)) }
                                 } else {
                                     null
                                 },
@@ -151,7 +154,7 @@ internal fun DetailScreen(
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Supprimer") },
+                                text = { Text(stringResource(R.string.delete)) },
                                 leadingIcon = { Icon(SecaIcons.Delete, contentDescription = null) },
                                 onClick = {
                                     menuOpen = false
@@ -173,8 +176,8 @@ internal fun DetailScreen(
                 current != null -> DetailContent(current, ui, viewModel)
                 missing -> SecaEmptyState(
                     icon = SecaIcons.Contacts,
-                    title = "Contact introuvable",
-                    description = "Il a peut-être été supprimé.",
+                    title = stringResource(R.string.contact_not_found),
+                    description = stringResource(R.string.contact_not_found_hint),
                 )
             }
         }
@@ -184,17 +187,17 @@ internal fun DetailScreen(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-            title = { Text("Supprimer ce contact ?") },
-            text = { Text("« ${current.displayName} » sera supprimé de ce téléphone. C'est définitif.") },
+            title = { Text(stringResource(R.string.delete_contact_title)) },
+            text = { Text(stringResource(R.string.delete_contact_text, current.displayName)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         confirmDelete = false
                         withWrite { viewModel.delete(id) }
                     },
-                ) { Text("Supprimer") }
+                ) { Text(stringResource(R.string.delete)) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -245,23 +248,23 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, top = 28.dp),
         ) {
-            ActionButton(SecaIcons.Phone, "Appeler", enabled = firstPhone != null, Modifier.weight(1f), emphasized = true) {
+            ActionButton(SecaIcons.Phone, stringResource(R.string.call), enabled = firstPhone != null, Modifier.weight(1f), emphasized = true) {
                 firstPhone?.let { dial(context, it) }
             }
-            ActionButton(SecaIcons.Messages, "Message", enabled = firstPhone != null, Modifier.weight(1f)) {
+            ActionButton(SecaIcons.Messages, stringResource(R.string.message), enabled = firstPhone != null, Modifier.weight(1f)) {
                 firstPhone?.let { sms(context, it) }
             }
-            ActionButton(SecaIcons.Email, "E-mail", enabled = firstEmail != null, Modifier.weight(1f)) {
+            ActionButton(SecaIcons.Email, stringResource(R.string.email), enabled = firstEmail != null, Modifier.weight(1f)) {
                 firstEmail?.let { email(context, it) }
             }
         }
 
-        SecaSectionLabel("Coordonnées")
+        SecaSectionLabel(stringResource(R.string.contact_info))
         val count = detail.phones.size + detail.emails.size + detail.addresses.size + if (detail.website != null) 1 else 0
         if (count == 0) {
             SecaGroupItem(index = 0, count = 1) {
                 Text(
-                    text = "Aucun numéro ni adresse e-mail.",
+                    text = stringResource(R.string.no_contact_info),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(20.dp),
@@ -277,7 +280,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                     onClick = { dial(context, field.value) },
                 ) {
                     FilledTonalIconButton(onClick = { sms(context, field.value) }) {
-                        Icon(SecaIcons.Messages, contentDescription = "Envoyer un message")
+                        Icon(SecaIcons.Messages, contentDescription = stringResource(R.string.send_message))
                     }
                 }
             }
@@ -307,7 +310,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 FieldRow(
                     icon = SecaIcons.Link,
                     value = site.value,
-                    label = "Site web",
+                    label = stringResource(R.string.website),
                     onClick = { openLink(context, site.value) },
                 )
             }
@@ -323,13 +326,16 @@ private fun About(detail: ContactDetail) {
     val company = listOf(detail.jobTitle, detail.organization?.value.orEmpty())
         .filter { it.isNotBlank() }
         .joinToString(" · ")
+    val companyLabel = stringResource(R.string.company)
+    val birthdayLabel = stringResource(R.string.birthday)
+    val notesLabel = stringResource(R.string.notes)
     val rows = buildList {
-        if (company.isNotBlank()) add(Triple(SecaIcons.Work, company, "Société"))
-        detail.birthday?.let { add(Triple(SecaIcons.Cake, formatBirthday(it.value), "Anniversaire")) }
-        detail.note?.let { add(Triple(SecaIcons.Subject, it.value, "Notes")) }
+        if (company.isNotBlank()) add(Triple(SecaIcons.Work, company, companyLabel))
+        detail.birthday?.let { add(Triple(SecaIcons.Cake, formatBirthday(it.value), birthdayLabel)) }
+        detail.note?.let { add(Triple(SecaIcons.Subject, it.value, notesLabel)) }
     }
     if (rows.isEmpty()) return
-    SecaSectionLabel("À propos")
+    SecaSectionLabel(stringResource(R.string.about))
     rows.forEachIndexed { index, (icon, value, label) ->
         SecaGroupItem(index = index, count = rows.size) {
             FieldRow(icon = icon, value = value, label = label, onClick = null)
@@ -352,12 +358,12 @@ private fun ProfilePill(
             modifier = Modifier
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .clickable(onClickLabel = "Changer de profil") { open = true }
+                .clickable(onClickLabel = stringResource(R.string.change_profile)) { open = true }
                 .padding(start = 4.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
         ) {
-            SecaProfileBadge(profile.name, tone = ui.toneOf(profile), size = 28.dp)
+            SecaProfileBadge(profile.label(), tone = ui.toneOf(profile), size = 28.dp)
             Text(
-                text = profile.name,
+                text = profile.label(),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 8.dp),

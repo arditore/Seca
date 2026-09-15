@@ -1,0 +1,4 @@
+Second beta.
+• English interface, chosen from the phone's language; French stays.
+• Profile colours show whatever order the Seca apps were installed in.
+• Works on any phone with Android 12 or newer; GrapheneOS is recommended.

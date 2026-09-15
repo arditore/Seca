@@ -22,6 +22,7 @@ import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.link.SecaLink
 import com.seca.messages.link.LinkService
+import androidx.compose.ui.res.stringResource
 
 /**
  * Letting Seca Link listen in the background without a notification: Android
@@ -85,20 +86,15 @@ internal fun BackgroundAccessDialog(onDone: () -> Unit) {
             onDone()
         },
         icon = { Icon(SecaIcons.Battery, contentDescription = null) },
-        title = { Text("Recevoir sans notification") },
-        text = {
-            Text(
-                "Pour que Seca Link reçoive vos messages chiffrés en arrière-plan sans garder de notification, " +
-                    "laissez Seca Messages ignorer l'optimisation de la batterie. La connexion aux relais reste légère.",
-            )
-        },
+        title = { Text(stringResource(R.string.receive_without_notification)) },
+        text = { Text(stringResource(R.string.background_dialog_text)) },
         confirmButton = {
             TextButton(
                 onClick = {
                     onDone()
                     BackgroundAccess.request(context)
                 },
-            ) { Text("Autoriser") }
+            ) { Text(stringResource(R.string.allow)) }
         },
         dismissButton = {
             TextButton(
@@ -106,7 +102,7 @@ internal fun BackgroundAccessDialog(onDone: () -> Unit) {
                     BackgroundAccess.postpone(context)
                     onDone()
                 },
-            ) { Text("Plus tard") }
+            ) { Text(stringResource(R.string.later)) }
         },
     )
 }
@@ -127,12 +123,8 @@ internal fun BackgroundAccessRow(index: Int, count: Int) {
     ) {
         SecaSettingRow(
             icon = SecaIcons.Battery,
-            title = "Réception en arrière-plan",
-            subtitle = if (granted) {
-                "Autorisée : Seca Link écoute sans notification"
-            } else {
-                "Toucher pour recevoir sans garder de notification"
-            },
+            title = stringResource(R.string.background_reception),
+            subtitle = stringResource(if (granted) R.string.background_granted else R.string.background_tap),
         )
     }
 }

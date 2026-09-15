@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="link_accept_intro">Seca Link: invitation accepted, our messages are encrypted.</string>
+    <string name="link_encryption_failed">Encryption failed</string>
+    <string name="link_incomplete_invitation">Incomplete invitation</string>
+    <string name="link_invalid_keys">Invalid keys: %1$s</string>
+    <string name="link_invite_intro">Seca Link: I\'m inviting you to an encrypted chat with Seca Messages.</string>
+    <string name="link_keys_not_found">Keys not found on the relays</string>
+    <string name="link_no_key_received">No key received from this contact</string>
+    <string name="link_no_network">No network access</string>
+    <string name="link_no_relay_accepted">No relay accepted the message</string>
+    <string name="link_unknown_contact">Unknown contact</string>
+    <string name="link_untrusted_key">Key not approved: %1$s</string>
+</resources>

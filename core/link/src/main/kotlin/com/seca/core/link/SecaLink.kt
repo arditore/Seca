@@ -33,6 +33,7 @@ import org.signal.libsignal.protocol.message.CiphertextMessage
 import org.signal.libsignal.protocol.message.PreKeySignalMessage
 import org.signal.libsignal.protocol.message.SignalMessage
 import kotlin.io.encoding.Base64
+import androidx.annotation.StringRes
 
 /**
  * Seca Link on this phone: its identity and relays, the invitations it sends
@@ -132,7 +133,7 @@ class SecaLink(context: Context) {
         }
         if (!network.available()) {
             peers.update(number) { it.copy(attemptedAt = System.currentTimeMillis()) }
-            return Received.Failed("Pas d'accès au réseau")
+            return Received.Failed(text(R.string.link_no_network))
         }
         return connect(number, answer)
     }
@@ -156,15 +157,15 @@ class SecaLink(context: Context) {
 
     /** Fetches the keys [number] announced from the relays it named, checks them, and opens the session. */
     private suspend fun connect(number: String, answer: Boolean): Received = withContext(Dispatchers.IO) {
-        val peer = peers[number] ?: return@withContext Received.Failed("Contact inconnu")
-        val publicKey = peer.nostrPublicKey ?: return@withContext Received.Failed("Invitation incomplète")
-        val hash = peer.identityHash ?: return@withContext Received.Failed("Invitation incomplète")
+        val peer = peers[number] ?: return@withContext Received.Failed(text(R.string.link_unknown_contact))
+        val publicKey = peer.nostrPublicKey ?: return@withContext Received.Failed(text(R.string.link_incomplete_invitation))
+        val hash = peer.identityHash ?: return@withContext Received.Failed(text(R.string.link_incomplete_invitation))
         val filter = PrekeyBundle.filterFor(publicKey)
         val found = coroutineScope {
             peer.relays.map { url -> async { relayClient.fetch(url, filter).orEmpty() } }.awaitAll().flatten()
         }
         val bundle = found.firstNotNullOfOrNull { PrekeyBundle.parse(it, publicKey, hash) }
-            ?: return@withContext Received.Failed("Clés introuvables sur les relais")
+            ?: return@withContext Received.Failed(text(R.string.link_keys_not_found))
         val keyChanged = peer.identityKey != null && peer.identityKey != Base64.encode(bundle.identityKey.serialize())
         // A new key is announced, and whatever was verified about the old one no longer holds.
         if (keyChanged) peers.update(number) { it.copy(verified = false) }
@@ -172,9 +173,9 @@ class SecaLink(context: Context) {
         try {
             sessions.withLock { SessionBuilder(store, store, store, store, addressOf(number), localAddress()).process(bundle) }
         } catch (invalid: InvalidKeyException) {
-            return@withContext Received.Failed("Clés invalides : ${invalid.message}")
+            return@withContext Received.Failed(text(R.string.link_invalid_keys, invalid.message.orEmpty()))
         } catch (untrusted: UntrustedIdentityException) {
-            return@withContext Received.Failed("Clé non approuvée : ${untrusted.message}")
+            return@withContext Received.Failed(text(R.string.link_untrusted_key, untrusted.message.orEmpty()))
         }
         peers.update(number) { it.copy(ready = true) }
         Received.Connected(reply = if (answer) handshakeOf(Handshake.Type.Accept) else null, keyChanged = keyChanged)
@@ -198,18 +199,18 @@ class SecaLink(context: Context) {
     suspend fun send(number: String, payload: LinkPayload): Sent = withContext(Dispatchers.IO) {
         val peer = peers[number]?.takeIf { settings.enabled && it.ready } ?: return@withContext Sent.NotConnected
         val recipient = peer.nostrPublicKey ?: return@withContext Sent.NotConnected
-        if (!network.available()) return@withContext Sent.Failed("Pas d'accès au réseau")
+        if (!network.available()) return@withContext Sent.Failed(text(R.string.link_no_network))
         val own = identity()
         val store = store()
         val ciphertext = sessions.withLock {
             runCatching {
                 SessionCipher(store, store, store, store, store, localAddress(), addressOf(number)).encrypt(LinkPayload.encode(payload))
             }.getOrNull()
-        } ?: return@withContext Sent.Failed("Chiffrement impossible")
+        } ?: return@withContext Sent.Failed(text(R.string.link_encryption_failed))
         val event = Envelope.wrap(own.nostr, recipient, ciphertext.type, ciphertext.serialize(), ephemeral = payload == LinkPayload.Typing)
         val relays = peer.relays.ifEmpty { LinkSettings.DefaultRelays }
         val results = coroutineScope { relays.map { url -> async { relayClient.publish(url, event) } }.awaitAll() }
-        if (results.any { it == PublishResult.Accepted }) Sent.Published else Sent.Failed("Aucun relais n'a accepté le message")
+        if (results.any { it == PublishResult.Accepted }) Sent.Published else Sent.Failed(text(R.string.link_no_relay_accepted))
     }
 
     /** A message or a notice from a contact, decrypted. */
@@ -247,9 +248,9 @@ class SecaLink(context: Context) {
     /** Tries at once, as the owner asked, to open the session with [number], whose handshake came earlier. */
     suspend fun retry(number: String): Received {
         if (!settings.enabled) return Received.Ignored
-        val peer = peers[number] ?: return Received.Failed("Contact inconnu")
-        if (peer.nostrPublicKey == null) return Received.Failed("Aucune clé reçue de ce contact")
-        if (!network.available()) return Received.Failed("Pas d'accès au réseau")
+        val peer = peers[number] ?: return Received.Failed(text(R.string.link_unknown_contact))
+        if (peer.nostrPublicKey == null) return Received.Failed(text(R.string.link_no_key_received))
+        if (!network.available()) return Received.Failed(text(R.string.link_no_network))
         peers.update(number) { it.copy(attemptedAt = System.currentTimeMillis()) }
         return connect(number, answer = true)
     }
@@ -299,6 +300,9 @@ class SecaLink(context: Context) {
         val own = identity()
         return Handshake(type, own.nostr.publicKey, Handshake.identityHashOf(own.signal.publicKey.serialize()), settings.relays())
     }
+
+    /** A reason given to the owner, in the phone's language. */
+    private fun text(@StringRes id: Int, vararg args: Any): String = appContext.getString(id, *args)
 
     private fun addressOf(number: String) = SignalProtocolAddress(number, LinkProtocolStore.DEVICE_ID)
 

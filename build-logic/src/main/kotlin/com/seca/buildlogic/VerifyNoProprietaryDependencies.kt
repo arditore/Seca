@@ -33,7 +33,7 @@ abstract class VerifyNoProprietaryDependencies : DefaultTask() {
             .sorted()
         if (offenders.isNotEmpty()) {
             throw GradleException(
-                "Dépendances propriétaires sur le classpath d'exécution :\n" +
+                "Proprietary dependencies on the runtime classpath:\n" +
                     offenders.joinToString("\n") { "  - $it" },
             )
         }

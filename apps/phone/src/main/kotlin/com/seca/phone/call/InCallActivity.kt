@@ -37,7 +37,7 @@ class InCallActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    /** "Répondre" pressed in the notification opens this screen, which answers as it appears. */
+    /** "Answer" pressed in the notification opens this screen, which answers as it appears. */
     private fun handle(intent: Intent?) {
         if (intent?.getBooleanExtra(EXTRA_ANSWER, false) == true) {
             CallSession.ringing()?.let(CallSession::answer)

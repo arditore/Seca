@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="design_app_contacts">Contacts</string>
+    <string name="design_app_locked">%1$s is locked</string>
+    <string name="design_app_locked_hint">Its content stays hidden until it is unlocked.</string>
+    <string name="design_app_messages">Messages</string>
+    <string name="design_app_phone">Phone</string>
+    <string name="design_back">Back</string>
+    <string name="design_cancel">Cancel</string>
+    <string name="design_clear_search">Clear search</string>
+    <string name="design_close">Close</string>
+    <string name="design_lock_app">Lock %1$s</string>
+    <string name="design_lock_app_on">Fingerprint or phone code when opening</string>
+    <string name="design_lock_app_unavailable">Set a screen lock in Android first</string>
+    <string name="design_palette_dusk">Dusk</string>
+    <string name="design_palette_forest">Forest</string>
+    <string name="design_palette_ocean">Ocean</string>
+    <string name="design_palette_slate">Slate</string>
+    <string name="design_palette_wallpaper">Wallpaper</string>
+    <string name="design_passphrase">Password</string>
+    <string name="design_passphrase_confirm">Confirm the password</string>
+    <string name="design_passphrase_creating_hint">Without this password the backup can never be opened again: nobody can recover it.</string>
+    <string name="design_passphrase_opening_hint">The password chosen when the backup was made.</string>
+    <plurals name="design_passphrase_too_short">
+        <item quantity="one">At least %d character</item>
+        <item quantity="other">At least %d characters</item>
+    </plurals>
+    <string name="design_private_screen">Private screen</string>
+    <string name="design_private_screen_hint">Blocks screenshots and hides the preview in recent apps</string>
+    <string name="design_profile_principal">Main</string>
+    <string name="design_unlock">Unlock</string>
+    <string name="design_unlock_app">Unlock %1$s</string>
+</resources>

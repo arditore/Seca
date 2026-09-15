@@ -58,6 +58,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.encoding.Base64
 import androidx.lifecycle.viewmodel.compose.viewModel as screenViewModel
+import androidx.compose.ui.res.stringResource
 
 /**
  * Scanning a code on the contact's phone: their safety number, to verify an
@@ -82,15 +83,15 @@ internal fun SafetyScanScreen(route: SafetyScanRoute, ui: MessagesUi, viewModel:
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "Scanner son code", onBack = { viewModel.back() }) },
+        topBar = { SecaTopBar(title = stringResource(R.string.scan_their_code), onBack = { viewModel.back() }) },
     ) { padding ->
         when {
             !granted -> SecaEmptyState(
                 icon = SecaIcons.Shield,
-                title = "Accès à l'appareil photo",
-                description = "Pour lire le code affiché sur le téléphone de $name. Aucune image n'est gardée.",
+                title = stringResource(R.string.camera_access),
+                description = stringResource(R.string.camera_access_hint, name),
                 modifier = Modifier.padding(padding),
-                action = { Button(onClick = { askCamera.launch(Manifest.permission.CAMERA) }) { Text("Autoriser") } },
+                action = { Button(onClick = { askCamera.launch(Manifest.permission.CAMERA) }) { Text(stringResource(R.string.allow)) } },
             )
             route.connect -> ConnectScan(route.address, name, viewModel, Modifier.padding(padding))
             else -> VerifyScan(route.address, name, viewModel, Modifier.padding(padding))
@@ -109,24 +110,19 @@ private fun VerifyScan(address: String, name: String, viewModel: MessagesViewMod
     when {
         result != null -> SecaEmptyState(
             icon = if (result) SecaIcons.Check else SecaIcons.Shield,
-            title = if (result) "Codes identiques" else "Les codes ne correspondent pas",
-            description = if (result) {
-                "$name est vérifié : personne ne s'interpose entre vos deux téléphones."
-            } else {
-                "Vérifiez que c'est bien le code de $name. S'il ne correspond toujours pas, quelqu'un pourrait " +
-                    "s'interposer : n'échangez rien de sensible."
-            },
+            title = stringResource(if (result) R.string.codes_match else R.string.codes_mismatch),
+            description = stringResource(if (result) R.string.verified_named else R.string.mismatch_hint, name),
             modifier = modifier,
             action = {
                 if (result) {
-                    Button(onClick = { viewModel.back() }) { Text("Terminé") }
+                    Button(onClick = { viewModel.back() }) { Text(stringResource(R.string.done)) }
                 } else {
-                    Button(onClick = { matched = null }) { Text("Scanner à nouveau") }
+                    Button(onClick = { matched = null }) { Text(stringResource(R.string.scan_again)) }
                 }
             },
         )
         number != null -> ScanFrame(
-            hint = "Visez le code de sécurité affiché sur le téléphone de $name.",
+            hint = stringResource(R.string.aim_safety_code, name),
             modifier = modifier,
             onCode = { text ->
                 val same = runCatching { number.matches(Base64.decode(text)) }.getOrDefault(false)
@@ -154,7 +150,7 @@ private fun ConnectScan(address: String, name: String, viewModel: MessagesViewMo
         ) {
             CircularProgressIndicator(Modifier.padding(top = 96.dp).size(56.dp))
             Text(
-                text = "Connexion à $name…",
+                text = stringResource(R.string.connecting_to, name),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 24.dp),
@@ -162,23 +158,23 @@ private fun ConnectScan(address: String, name: String, viewModel: MessagesViewMo
         }
         result == LinkPeersViewModel.Scanned.Connected -> SecaEmptyState(
             icon = SecaIcons.Lock,
-            title = "Connecté à $name",
-            description = "Vos messages sont maintenant chiffrés par Seca Link. La réponse de ce téléphone part aussi par SMS.",
+            title = stringResource(R.string.connected_to, name),
+            description = stringResource(R.string.connected_hint),
             modifier = modifier,
-            action = { Button(onClick = { viewModel.back() }) { Text("Terminé") } },
+            action = { Button(onClick = { viewModel.back() }) { Text(stringResource(R.string.done)) } },
         )
         result != null -> SecaEmptyState(
             icon = SecaIcons.Shield,
-            title = if (result == LinkPeersViewModel.Scanned.NotSeca) "Ce n'est pas un code Seca Link" else "Connexion impossible",
+            title = stringResource(if (result == LinkPeersViewModel.Scanned.NotSeca) R.string.not_link_code else R.string.connection_failed),
             description = when (result) {
                 is LinkPeersViewModel.Scanned.Failed -> result.reason
-                else -> "Sur le téléphone de $name, ouvrez la conversation, puis ⋮ et « Connecter en face à face »."
+                else -> stringResource(R.string.open_connect_hint, name)
             },
             modifier = modifier,
-            action = { Button(onClick = { outcome = null }) { Text("Scanner à nouveau") } },
+            action = { Button(onClick = { outcome = null }) { Text(stringResource(R.string.scan_again)) } },
         )
         else -> ScanFrame(
-            hint = "Visez le code Seca Link affiché sur le téléphone de $name.",
+            hint = stringResource(R.string.aim_link_code, name),
             modifier = modifier,
             onCode = { text ->
                 connecting = true

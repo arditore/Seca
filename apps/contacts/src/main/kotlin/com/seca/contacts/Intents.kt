@@ -71,7 +71,7 @@ internal fun shareVCard(context: Context, name: String, vcard: String) {
         .setType("text/x-vcard")
         .putExtra(Intent.EXTRA_STREAM, uri)
         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    startSafely(context, Intent.createChooser(send, "Partager le contact"))
+    startSafely(context, Intent.createChooser(send, context.getString(R.string.share_contact)))
 }
 
 /** Shows an address in whichever map app the phone has, if it has one. */

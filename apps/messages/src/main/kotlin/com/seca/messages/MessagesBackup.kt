@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import androidx.annotation.PluralsRes
 
 /**
  * Seca Messages' part of the suite's backup: the SMS, how conversations are
@@ -114,9 +115,13 @@ internal class MessagesBackup(private val context: Context) {
             .put(
                 SuiteBackup.KEY_SUMMARY,
                 if (readable) {
-                    "${SuiteBackup.plural(sms.size, "SMS", "SMS")} et ${SuiteBackup.plural(linkMessages.size, "message Seca Link", "messages Seca Link")}"
+                    context.getString(
+                        R.string.backup_sms_and_link,
+                        quantity(R.plurals.sms_count, sms.size),
+                        quantity(R.plurals.link_messages_count, linkMessages.size),
+                    )
                 } else {
-                    "réglages et Seca Link seulement, l'accès aux SMS est refusé"
+                    context.getString(R.string.backup_settings_only)
                 },
             )
     }
@@ -130,7 +135,7 @@ internal class MessagesBackup(private val context: Context) {
         }
         part.optJSONObject("link")?.let { link ->
             val added = restoreLink(link)
-            if (added > 0) lines += SuiteBackup.plural(added, "message Seca Link", "messages Seca Link")
+            if (added > 0) lines += quantity(R.plurals.link_messages_count, added)
         }
 
         val saved = part.optJSONArray("messages") ?: JSONArray()
@@ -148,9 +153,9 @@ internal class MessagesBackup(private val context: Context) {
                         read = item.optBoolean("read", true),
                     )
                 }
-                lines.add(0, SuiteBackup.plural(repository.restore(messages), "SMS ajouté", "SMS ajoutés"))
+                lines.add(0, quantity(R.plurals.sms_added, repository.restore(messages)))
             } else {
-                lines.add(0, "SMS non remis : choisissez Seca Messages comme appli SMS, puis restaurez à nouveau")
+                lines.add(0, context.getString(R.string.backup_sms_not_restored))
             }
         }
 
@@ -171,9 +176,9 @@ internal class MessagesBackup(private val context: Context) {
             scheduled.add(address, body, at)
             planned++
         }
-        if (planned > 0) lines += SuiteBackup.plural(planned, "message programmé", "messages programmés")
+        if (planned > 0) lines += quantity(R.plurals.scheduled_count, planned)
 
-        lines.joinToString(" ; ").ifEmpty { "réglages remis" }
+        lines.joinToString(", ").ifEmpty { context.getString(R.string.backup_settings_restored) }
     }
 
     private fun restoreLink(link: JSONObject): Int {
@@ -225,6 +230,8 @@ internal class MessagesBackup(private val context: Context) {
     }
 
     private fun granted(permission: String) = context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+
+    private fun quantity(@PluralsRes id: Int, count: Int): String = context.resources.getQuantityString(id, count, count)
 
     private companion object {
         const val APP = "seca-messages"

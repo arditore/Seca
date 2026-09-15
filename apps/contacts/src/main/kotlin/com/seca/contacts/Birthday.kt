@@ -3,7 +3,8 @@ package com.seca.contacts
 import java.time.LocalDate
 import java.time.MonthDay
 import java.time.format.DateTimeFormatter
-import java.util.Locale
+import android.text.format.DateFormat
+import com.seca.core.model.uiLocale
 
 /**
  * A birthday as people read it. The provider keeps "1990-05-12", or
@@ -14,12 +15,13 @@ import java.util.Locale
  */
 internal fun formatBirthday(raw: String): String {
     val text = raw.trim()
-    val locale = Locale.getDefault()
+    val locale = uiLocale()
     return runCatching {
+        // Day and month in the order the language writes them: "12 mai" in French, "May 12" in English.
         if (text.startsWith("--")) {
-            MonthDay.parse(text).format(DateTimeFormatter.ofPattern("d MMMM", locale))
+            MonthDay.parse(text).format(DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "dMMMM"), locale))
         } else {
-            LocalDate.parse(text).format(DateTimeFormatter.ofPattern("d MMMM yyyy", locale))
+            LocalDate.parse(text).format(DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "dMMMMyyyy"), locale))
         }
     }.getOrDefault(text)
 }

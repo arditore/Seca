@@ -24,13 +24,13 @@ class CatalogScreenTest {
     @Test
     fun `renders the empty state sample`() {
         composeRule.setContent { CatalogScreen() }
-        composeRule.onNodeWithText("Aucun contact").assertIsDisplayed()
+        composeRule.onNodeWithText("No contacts").assertIsDisplayed()
     }
 
     @Test
     fun `switching app from the suite bar re-themes the screen`() {
         composeRule.setContent { CatalogScreen() }
-        composeRule.onNodeWithText("Téléphone").performClick()
+        composeRule.onNodeWithText("Phone").performClick()
         composeRule.onNodeWithText("Camille Durand").assertIsDisplayed()
     }
 }

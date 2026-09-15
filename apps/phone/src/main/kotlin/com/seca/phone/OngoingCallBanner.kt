@@ -31,6 +31,7 @@ import com.seca.phone.call.primary
 import com.seca.phone.call.status
 import com.seca.phone.call.title
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
 
 private const val TICK_MILLIS = 1000L
 
@@ -79,14 +80,16 @@ internal fun OngoingCallBanner(modifier: Modifier = Modifier) {
                     .padding(start = 14.dp),
             ) {
                 Text(
-                    text = call.title(CallSession.numbers),
+                    text = call.title(context, CallSession.numbers),
                     style = MaterialTheme.typography.titleSmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = (if (answered) elapsed((now - call.connectTime).coerceAtLeast(0) / TICK_MILLIS) else call.status()) +
-                        " · Toucher pour revenir",
+                    text = stringResource(
+                        R.string.tap_to_return,
+                        if (answered) elapsed((now - call.connectTime).coerceAtLeast(0) / TICK_MILLIS) else call.status(context),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -96,7 +99,7 @@ internal fun OngoingCallBanner(modifier: Modifier = Modifier) {
                 onClick = { CallSession.hangUp(call.call) },
                 colors = IconButtonDefaults.filledIconButtonColors(containerColor = colors.error, contentColor = colors.onError),
             ) {
-                Icon(SecaIcons.CallEnd, contentDescription = "Raccrocher")
+                Icon(SecaIcons.CallEnd, contentDescription = stringResource(R.string.hang_up))
             }
         }
     }

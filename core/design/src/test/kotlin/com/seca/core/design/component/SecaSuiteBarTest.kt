@@ -12,6 +12,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 class SecaSuiteBarTest {
@@ -20,15 +21,26 @@ class SecaSuiteBarTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `shows all three apps in French`() {
+    fun `shows all three apps`() {
         composeRule.setContent {
             SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
                 SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = {})
             }
         }
         composeRule.onNodeWithText("Contacts").assertIsDisplayed()
-        composeRule.onNodeWithText("Téléphone").assertIsDisplayed()
+        composeRule.onNodeWithText("Phone").assertIsDisplayed()
         composeRule.onNodeWithText("Messages").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "fr")
+    fun `shows the apps in French on a French phone`() {
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
+                SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = {})
+            }
+        }
+        composeRule.onNodeWithText("Téléphone").assertIsDisplayed()
     }
 
     @Test
@@ -39,7 +51,7 @@ class SecaSuiteBarTest {
                 SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = { chosen = it })
             }
         }
-        composeRule.onNodeWithText("Téléphone").performClick()
+        composeRule.onNodeWithText("Phone").performClick()
         assertEquals(SecaAppIdentity.Phone, chosen)
     }
 }

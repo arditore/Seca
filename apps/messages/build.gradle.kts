@@ -7,8 +7,9 @@ android {
     namespace = "com.seca.messages"
     defaultConfig {
         applicationId = "com.seca.messages"
-        // GrapheneOS phones are all 64-bit ARM: libsignal's other builds would only add weight.
-        ndk { abiFilters += "arm64-v8a" }
+        // Both ARM builds of libsignal: 64-bit for nearly every phone, 32-bit for the entry-level
+        // phones whose Android runs in 32-bit. The x86 builds only serve emulators and Chromebooks.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
     buildFeatures { compose = true }
     // libsignal uses Java APIs newer than Android offers everywhere; desugaring supplies them.
@@ -28,7 +29,7 @@ android {
         }
     }
     lint {
-        // Seca is made for GrapheneOS phones, not ChromeOS: the x86_64 build is left out on purpose.
+        // Seca is made for phones, not Chromebooks: the x86_64 build is left out on purpose.
         disable += "ChromeOsAbiSupport"
     }
 }

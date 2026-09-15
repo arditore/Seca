@@ -44,7 +44,7 @@ class RelayClient(throughTor: Boolean = false) {
 
     /** Sends [event] to [url] and waits for the relay's verdict. */
     suspend fun publish(url: String, event: NostrEvent): PublishResult {
-        val request = requestFor(url) ?: return PublishResult.Unreachable("Adresse invalide")
+        val request = requestFor(url) ?: return PublishResult.Unreachable("Invalid address")
         return withTimeoutOrNull(timeoutMillis) {
             suspendCancellableCoroutine { continuation ->
                 val listener = object : WebSocketListener() {
@@ -66,7 +66,7 @@ class RelayClient(throughTor: Boolean = false) {
                     }
 
                     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                        if (continuation.isActive) continuation.resume(PublishResult.Unreachable("Connexion fermée"))
+                        if (continuation.isActive) continuation.resume(PublishResult.Unreachable("Connection closed"))
                     }
 
                     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
@@ -78,7 +78,7 @@ class RelayClient(throughTor: Boolean = false) {
                 val socket = http.newWebSocket(request, listener)
                 continuation.invokeOnCancellation { socket.cancel() }
             }
-        } ?: PublishResult.Unreachable("Pas de réponse")
+        } ?: PublishResult.Unreachable("No response")
     }
 
     /**

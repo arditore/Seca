@@ -28,15 +28,9 @@ data class Handshake(
     /**
      * The same handshake written into an ordinary text message, for when a
      * data SMS does not get through, as some networks drop them. A phone with
-     * Seca reads it and sets it aside; anyone else sees a short explanation.
+     * Seca reads it and sets it aside; anyone else reads [intro], a short explanation.
      */
-    fun text(): String {
-        val intro = when (type) {
-            Type.Invite -> "Seca Link : je t'invite à discuter en chiffré avec Seca Messages."
-            Type.Accept -> "Seca Link : invitation acceptée, nos messages sont chiffrés."
-        }
-        return "$intro $TEXT_MARKER${Base64.getUrlEncoder().withoutPadding().encodeToString(encode())}"
-    }
+    fun text(intro: String): String = "$intro $TEXT_MARKER${Base64.getUrlEncoder().withoutPadding().encodeToString(encode())}"
 
     fun encode(): ByteArray {
         val out = ByteArrayOutputStream()

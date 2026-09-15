@@ -61,6 +61,11 @@ class ProfileStore(context: Context) {
         saveAssignments(updated)
     }
 
+    /** Replaces every assignment at once, announcing a single change: for a backup being restored. */
+    fun assignAll(assignments: Map<String, String>) {
+        saveAssignments(assignments.filter { (key, profileId) -> key.isNotEmpty() && profileId != Principal.id })
+    }
+
     /** [ALL] until the owner picks a profile: the list opens on every contact. */
     fun currentProfileId(): String = prefs.getString(KEY_CURRENT, null) ?: ALL
 

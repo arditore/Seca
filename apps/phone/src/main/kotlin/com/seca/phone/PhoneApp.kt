@@ -48,6 +48,7 @@ import com.seca.core.design.component.SecaSuiteBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.res.stringResource
 
 /** Stands for the voicemail in the pending-call slot, which otherwise holds a number. */
 private const val VOICEMAIL = "voicemail"
@@ -89,11 +90,12 @@ fun PhoneApp(
 
     // The right to call is asked the first time the user places a call, and the call then goes through.
     var pendingCall by remember { mutableStateOf<String?>(null) }
+    val allowCallsText = stringResource(R.string.allow_calls)
     val callLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         val target = pendingCall
         pendingCall = null
         when {
-            !granted -> Toast.makeText(context, "Autorisez les appels pour appeler depuis Seca Téléphone", Toast.LENGTH_LONG).show()
+            !granted -> Toast.makeText(context, allowCallsText, Toast.LENGTH_LONG).show()
             target == VOICEMAIL -> callVoicemail(context)
             target != null -> startCall(target)
         }
@@ -172,8 +174,8 @@ fun PhoneApp(
         simChoice?.let { ask ->
             SimChooserDialog(
                 sims = ask.sims,
-                title = "Appeler avec quelle SIM ?",
-                rememberLabel = "Toujours utiliser cette SIM pour ${ask.contactName ?: ui.numbers.display(ask.number)}",
+                title = stringResource(R.string.which_sim),
+                rememberLabel = stringResource(R.string.always_use_sim, ask.contactName ?: ui.numbers.display(ask.number)),
                 onDismiss = { simChoice = null },
                 onPick = { sim, keep ->
                     if (keep) SimPreferences(context)[ask.key] = sim.handle
@@ -190,14 +192,13 @@ fun PhoneApp(
             ) { padding ->
                 SecaEmptyState(
                     icon = SecaIcons.Phone,
-                    title = "Votre historique d'appels",
-                    description = "Seca Téléphone affiche les appels de ce téléphone et reconnaît vos contacts. " +
-                        "Rien ne quitte l'appareil : l'application n'a pas accès à Internet.",
+                    title = stringResource(R.string.permission_title),
+                    description = stringResource(R.string.permission_description),
                     modifier = Modifier.padding(padding),
                     action = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (permanentlyDenied) {
-                                Button(onClick = { openAppSettings(context) }) { Text("Ouvrir les réglages") }
+                                Button(onClick = { openAppSettings(context) }) { Text(stringResource(R.string.open_settings)) }
                             } else {
                                 Button(
                                     onClick = {
@@ -205,9 +206,9 @@ fun PhoneApp(
                                             arrayOf(Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_CONTACTS),
                                         )
                                     },
-                                ) { Text("Autoriser l'accès") }
+                                ) { Text(stringResource(R.string.allow_access)) }
                             }
-                            TextButton(onClick = { viewModel.openDialer("") }) { Text("Ouvrir le clavier") }
+                            TextButton(onClick = { viewModel.openDialer("") }) { Text(stringResource(R.string.open_keypad)) }
                         }
                     },
                 )

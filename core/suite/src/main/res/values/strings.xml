@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="suite_app_contacts">Seca Contacts</string>
+    <string name="suite_app_messages">Seca Messages</string>
+    <string name="suite_app_phone">Seca Phone</string>
+    <string name="suite_backing_up">Backing up all three apps…</string>
+    <string name="suite_backup_all">Back up all three apps</string>
+    <string name="suite_backup_all_hint">Contacts and profiles, calls and filtering, texts and conversations, in one encrypted file</string>
+    <string name="suite_done">Done</string>
+    <string name="suite_empty">The backup holds nothing to restore</string>
+    <string name="suite_encrypt">Encrypt</string>
+    <string name="suite_encrypt_title">Encrypt the backup</string>
+    <string name="suite_failed">Not possible</string>
+    <string name="suite_hint">Handy when changing phones. Install the three apps first and give them their permissions. Seca Link keys stay on this phone: you will need to reconnect your contacts.</string>
+    <string name="suite_line">%1$s: %2$s</string>
+    <string name="suite_no_app">No Seca app answered</string>
+    <string name="suite_not_installed">not installed, its part waits in the file</string>
+    <string name="suite_not_saved">not saved, open it once and try again</string>
+    <string name="suite_not_suite">This file is not a Seca suite backup</string>
+    <string name="suite_open_title">Open the backup</string>
+    <string name="suite_permission_label">back up the Seca suite</string>
+    <string name="suite_restore">Restore</string>
+    <string name="suite_restore_all">Restore all three apps</string>
+    <string name="suite_restore_all_hint">Each installed app takes back its part; nothing is replaced</string>
+    <string name="suite_restore_failed">restoration failed</string>
+    <string name="suite_restoring">Restoring all three apps…</string>
+    <string name="suite_saved">saved</string>
+    <string name="suite_section">The whole Seca suite</string>
+    <string name="suite_still_restoring">still restoring</string>
+    <string name="suite_unreachable">unreachable</string>
+    <string name="suite_unreadable">This file cannot be read</string>
+    <string name="suite_working_hint">Each app prepares its part. This can take a while with many messages.</string>
+    <string name="suite_write_failed">The file could not be written</string>
+    <string name="suite_wrong_password">Wrong password, or damaged file</string>
+</resources>

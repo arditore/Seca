@@ -56,12 +56,15 @@ import com.seca.core.design.component.SecaQrCode
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.model.initialsOf
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalResources
+import com.seca.core.contacts.describe
 
-/** The seed of "Ma fiche"'s avatar shape, the same in the list and on the card. */
+/** The seed of "My card"'s avatar shape, the same in the list and on the card. */
 internal const val MY_CARD_SEED = "ma-fiche"
 
 /**
- * "Ma fiche": the owner's name, photo and numbers. The SIM lines are read only
+ * "My card": the owner's name, photo and numbers. The SIM lines are read only
  * when the owner asks; many operators leave the number off the card, so
  * numbers can also be typed in. Everything is saved when leaving the screen.
  * A QR code hands the card to someone standing by, without any network.
@@ -85,10 +88,11 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
         viewModel.refreshSimLines()
     }
     val simAllowed = SimPermissions.all { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
+    val myCardLabel = stringResource(R.string.my_card)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "Ma fiche", onBack = leave) },
+        topBar = { SecaTopBar(title = myCardLabel, onBack = leave) },
     ) { padding ->
         Column(
             Modifier
@@ -113,7 +117,7 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                         seed = MY_CARD_SEED,
                         expressive = true,
                         photo = ui.myPhoto,
-                        modifier = Modifier.clickable(onClickLabel = "Changer la photo") {
+                        modifier = Modifier.clickable(onClickLabel = stringResource(R.string.change_photo)) {
                             pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         },
                     )
@@ -135,7 +139,7 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                 }
                 if (ui.myPhoto != null) {
                     TextButton(onClick = viewModel::removeMyPhoto, modifier = Modifier.padding(top = 8.dp)) {
-                        Text("Retirer la photo")
+                        Text(stringResource(R.string.remove_photo))
                     }
                 }
                 FilledTonalButton(
@@ -144,16 +148,16 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                     modifier = Modifier.padding(top = 12.dp),
                 ) {
                     Icon(SecaIcons.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("Partager par QR code", modifier = Modifier.padding(start = 8.dp))
+                    Text(stringResource(R.string.share_qr), modifier = Modifier.padding(start = 8.dp))
                 }
             }
 
-            SecaSectionLabel("Nom")
+            SecaSectionLabel(stringResource(R.string.name))
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Votre nom") },
-                placeholder = { Text("Ma fiche") },
+                label = { Text(stringResource(R.string.your_name)) },
+                placeholder = { Text(myCardLabel) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
@@ -162,26 +166,26 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                     .padding(horizontal = 16.dp),
             )
 
-            SecaSectionLabel("Cartes SIM")
+            SecaSectionLabel(stringResource(R.string.sim_cards))
             when {
                 !simAllowed -> SecaGroupItem(index = 0, count = 1, onClick = { simAccess.launch(SimPermissions) }) {
-                    SimRow(title = "Lire les numéros des cartes SIM", subtitle = "Lus sur ce téléphone, jamais envoyés")
+                    SimRow(title = stringResource(R.string.read_sim_numbers), subtitle = stringResource(R.string.read_sim_numbers_hint))
                 }
-                ui.simLines.isEmpty() -> SecaHint("Aucune carte SIM active.")
+                ui.simLines.isEmpty() -> SecaHint(stringResource(R.string.no_sim))
                 else -> ui.simLines.forEachIndexed { index, line ->
                     SecaGroupItem(index = index, count = ui.simLines.size) {
                         SimRow(
-                            title = line.number?.let(ui.numbers::display) ?: "Numéro absent de la carte",
-                            subtitle = "${line.label} · ${if (line.isEsim) "eSIM" else "SIM ${line.slot + 1}"}",
+                            title = line.number?.let(ui.numbers::display) ?: stringResource(R.string.sim_no_number),
+                            subtitle = "${line.label} · ${if (line.isEsim) "eSIM" else stringResource(R.string.sim_slot, line.slot + 1)}",
                         )
                     }
                 }
             }
             if (simAllowed && ui.simLines.any { it.number == null }) {
-                SecaHint("Beaucoup d'opérateurs n'inscrivent pas le numéro sur la carte : ajoutez-le ci-dessous.")
+                SecaHint(stringResource(R.string.sim_number_missing_hint))
             }
 
-            SecaSectionLabel("Mes numéros")
+            SecaSectionLabel(stringResource(R.string.my_numbers))
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -191,27 +195,24 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                         OutlinedTextField(
                             value = value,
                             onValueChange = { typed[index] = it },
-                            label = { Text("Numéro") },
-                            supportingText = ui.numbers.describe(value)?.let { { Text(it) } },
+                            label = { Text(stringResource(R.string.number)) },
+                            supportingText = ui.numbers.describe(value, LocalResources.current)?.let { { Text(it) } },
                             singleLine = true,
                             shape = MaterialTheme.shapes.medium,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                             modifier = Modifier.weight(1f),
                         )
                         IconButton(onClick = { if (typed.size > 1) typed.removeAt(index) else typed[index] = "" }) {
-                            Icon(SecaIcons.Close, contentDescription = "Retirer ce numéro")
+                            Icon(SecaIcons.Close, contentDescription = stringResource(R.string.remove_number))
                         }
                     }
                 }
                 TextButton(onClick = { typed.add("") }) {
                     Icon(SecaIcons.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("Ajouter un numéro", modifier = Modifier.padding(start = 8.dp))
+                    Text(stringResource(R.string.add_number), modifier = Modifier.padding(start = 8.dp))
                 }
             }
-            SecaHint(
-                "Ma fiche reste dans Seca Contacts : elle n'est ni partagée avec les autres applications, ni synchronisée. " +
-                    "Seul le QR code, quand vous le montrez, la donne à quelqu'un.",
-            )
+            SecaHint(stringResource(R.string.my_card_privacy))
         }
     }
 
@@ -219,13 +220,12 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
         val card = remember(name, shareable) { myCardVCard(name, shareable) }
         AlertDialog(
             onDismissRequest = { sharing = false },
-            title = { Text(name.ifBlank { "Ma fiche" }) },
+            title = { Text(name.ifBlank { myCardLabel }) },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    SecaQrCode(card, contentDescription = "QR code de votre fiche")
+                    SecaQrCode(card, contentDescription = stringResource(R.string.my_card_qr))
                     Text(
-                        text = "Scannez-le avec l'appareil photo de l'autre téléphone pour ajouter votre fiche. " +
-                            "Rien ne passe par Internet, et la photo n'est pas incluse.",
+                        text = stringResource(R.string.my_card_qr_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -233,7 +233,7 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                     )
                 }
             },
-            confirmButton = { TextButton(onClick = { sharing = false }) { Text("Fermer") } },
+            confirmButton = { TextButton(onClick = { sharing = false }) { Text(stringResource(R.string.close)) } },
         )
     }
 }

@@ -106,6 +106,10 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import androidx.compose.ui.platform.LocalResources
+import com.seca.core.contacts.describe
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 /** Two messages closer than this, from the same side, read as one block. */
 private const val JOIN_MILLIS = 2 * 60 * 1000L
@@ -113,7 +117,7 @@ private const val JOIN_MILLIS = 2 * 60 * 1000L
 /** How many messages up the list still counts as reading the latest, which a new message then joins. */
 private const val NEAR_BOTTOM_ITEMS = 2
 
-/** How long "écrit…" stays after the contact's last typing notice. */
+/** How long "typing…" stays after the contact's last typing notice. */
 private const val TYPING_SHOWN_MILLIS = 6_000L
 
 /** A photo in a bubble is decoded no larger than this; the viewer takes a larger one. */
@@ -203,6 +207,9 @@ internal fun ConversationContent(
 
     // Voice messages: the microphone is asked for the first time one is recorded.
     val recorder = remember { VoiceRecorder(context) }
+    val micUnavailable = stringResource(R.string.mic_unavailable)
+    val photoSavedText = stringResource(R.string.photo_saved)
+    val saveFailedText = stringResource(R.string.save_failed)
     var recording by remember { mutableStateOf(false) }
     var recordingMillis by remember { mutableLongStateOf(0L) }
     val finishRecording: () -> Unit = {
@@ -222,7 +229,7 @@ internal fun ConversationContent(
             recordingMillis = 0L
             recording = true
         } else {
-            Toast.makeText(context, "Le micro est indisponible", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, micUnavailable, Toast.LENGTH_SHORT).show()
         }
     }
     val askMicrophone = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -250,19 +257,19 @@ internal fun ConversationContent(
         )
     }
 
-    // A contact filed under a profile gives the conversation that profile's colour, faintly, from the top.
+    // Every conversation gets a faint light from the top: the colour of the contact's profile, or the
+    // app's own accent for a contact without a profile and for an unknown number, as on the call screen.
     val contact = ui.contactOf(screen.address)
-    val profiled = contact != null && ui.profileOf(contact).id != Profile.Principal.id
     val (wash, _) = secaToneColors(contact?.let { ui.toneOf(it) } ?: 0)
     val surface = MaterialTheme.colorScheme.surface
     Box(
         Modifier
             .fillMaxSize()
             .background(surface)
-            .then(if (profiled) Modifier.background(Brush.verticalGradient(0f to wash.copy(alpha = 0.55f), 0.32f to surface)) else Modifier),
+            .background(Brush.verticalGradient(0f to wash.copy(alpha = 0.55f), 0.32f to surface)),
     ) {
         Scaffold(
-            // Transparent over the profile's colour; the icons keep the theme's colour rather than black.
+            // Transparent over the light; the icons keep the theme's colour rather than black.
             containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
             topBar = {
@@ -399,7 +406,7 @@ internal fun ConversationContent(
                                     val saved = saveToGallery(context, path)
                                     Toast.makeText(
                                         context,
-                                        if (saved) "Photo enregistrée dans la galerie" else "Enregistrement impossible",
+                                        if (saved) photoSavedText else saveFailedText,
                                         Toast.LENGTH_SHORT,
                                     ).show()
                                 }
@@ -419,8 +426,8 @@ internal fun ConversationContent(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-            title = { Text("Supprimer la conversation ?") },
-            text = { Text("Tous les messages avec $name seront supprimés de ce téléphone.") },
+            title = { Text(stringResource(R.string.delete_conversation_title)) },
+            text = { Text(stringResource(R.string.delete_conversation_text, name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -428,9 +435,9 @@ internal fun ConversationContent(
                         viewModel.deleteConversation(screen.threadId, screen.address)
                         viewModel.back()
                     },
-                ) { Text("Supprimer") }
+                ) { Text(stringResource(R.string.delete)) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -439,10 +446,11 @@ private fun joined(first: Message, second: Message): Boolean =
     first.outgoing == second.outgoing && abs(second.date - first.date) < JOIN_MILLIS && sameDay(first.date, second.date)
 
 /** A message as a quote or a notice reads it: a photo and a voice message by what they are. */
+@Composable
 private fun previewOf(message: Message): String = when {
-    message.audio != null -> LinkConversations.VOICE
-    message.image != null -> LinkConversations.PHOTO
-    else -> message.body.ifEmpty { LinkConversations.PHOTO }
+    message.audio != null -> stringResource(R.string.preview_voice)
+    message.image != null -> stringResource(R.string.preview_photo)
+    else -> message.body.ifEmpty { stringResource(R.string.preview_photo) }
 }
 
 /** Back, who the conversation is with and their profile, a call button and the rest in a menu. */
@@ -470,7 +478,7 @@ private fun ConversationTopBar(
             ui.numbers.display(address),
         ).joinToString(" · ")
     } else {
-        ui.numbers.describe(address)
+        ui.numbers.describe(address, LocalResources.current)
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -480,7 +488,7 @@ private fun ConversationTopBar(
             .height(64.dp)
             .padding(horizontal = 4.dp),
     ) {
-        IconButton(onClick = onBack) { Icon(SecaIcons.Back, contentDescription = "Retour") }
+        IconButton(onClick = onBack) { Icon(SecaIcons.Back, contentDescription = stringResource(R.string.back)) }
         PersonAvatar(contact, ui, size = 40.dp)
         Column(
             Modifier
@@ -496,7 +504,7 @@ private fun ConversationTopBar(
             )
             when {
                 typing -> Text(
-                    text = "écrit…",
+                    text = stringResource(R.string.typing),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
@@ -510,10 +518,10 @@ private fun ConversationTopBar(
                     )
                     Text(
                         text = when {
-                            !linked -> "Invitation Seca Link envoyée"
-                            timerSeconds > 0 -> "Chiffré · éphémères ${LinkTimers.label(timerSeconds)}"
-                            verified -> "Chiffré · Vérifié"
-                            else -> "Chiffré par Seca Link"
+                            !linked -> stringResource(R.string.invitation_sent)
+                            timerSeconds > 0 -> stringResource(R.string.encrypted_disappearing, LinkTimers.label(context, timerSeconds))
+                            verified -> stringResource(R.string.encrypted_verified)
+                            else -> stringResource(R.string.encrypted_by_link)
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (linked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -533,49 +541,49 @@ private fun ConversationTopBar(
                 }
             }
         }
-        IconButton(onClick = { call(context, address) }) { Icon(SecaIcons.Phone, contentDescription = "Appeler") }
+        IconButton(onClick = { call(context, address) }) { Icon(SecaIcons.Phone, contentDescription = stringResource(R.string.call)) }
         Box {
-            IconButton(onClick = { menuOpen = true }) { Icon(SecaIcons.MoreVert, contentDescription = "Plus d'options") }
+            IconButton(onClick = { menuOpen = true }) { Icon(SecaIcons.MoreVert, contentDescription = stringResource(R.string.more_options)) }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 if (onInvite != null) {
-                    MenuEntry(if (invitationPending) "Renvoyer l'invitation Seca Link" else "Chiffrer avec Seca Link", SecaIcons.Lock) {
+                    MenuEntry(stringResource(if (invitationPending) R.string.resend_invitation else R.string.encrypt_with_link), SecaIcons.Lock) {
                         menuOpen = false
                         onInvite()
                     }
                     // The safety number screen offers the QR codes while no session is open.
-                    MenuEntry("Connecter en face à face", SecaIcons.Link) {
+                    MenuEntry(stringResource(R.string.connect_in_person), SecaIcons.Link) {
                         menuOpen = false
                         onSafetyNumber()
                     }
                 }
                 if (onTimer != null) {
-                    MenuEntry("Messages éphémères", SecaIcons.Timer) {
+                    MenuEntry(stringResource(R.string.disappearing_messages), SecaIcons.Timer) {
                         menuOpen = false
                         onTimer()
                     }
                 }
                 if (linked) {
-                    MenuEntry("Numéro de sécurité", SecaIcons.Shield) {
+                    MenuEntry(stringResource(R.string.safety_number), SecaIcons.Shield) {
                         menuOpen = false
                         onSafetyNumber()
                     }
                 }
                 if (contact != null) {
-                    MenuEntry("Voir la fiche", SecaIcons.Contacts) {
+                    MenuEntry(stringResource(R.string.view_contact), SecaIcons.Contacts) {
                         menuOpen = false
                         openContact(context, contact.id, contact.lookupKey)
                     }
                 } else {
-                    MenuEntry("Ajouter aux contacts", SecaIcons.PersonAdd) {
+                    MenuEntry(stringResource(R.string.add_to_contacts), SecaIcons.PersonAdd) {
                         menuOpen = false
                         addContact(context, address)
                     }
                 }
-                MenuEntry("Copier le numéro", SecaIcons.ContentCopy) {
+                MenuEntry(stringResource(R.string.copy_number), SecaIcons.ContentCopy) {
                     menuOpen = false
-                    copyText(context, "Numéro", address)
+                    copyText(context, "Number", address)
                 }
-                MenuEntry("Supprimer la conversation", SecaIcons.Delete) {
+                MenuEntry(stringResource(R.string.delete_conversation), SecaIcons.Delete) {
                     menuOpen = false
                     onDelete()
                 }
@@ -587,7 +595,7 @@ private fun ConversationTopBar(
 @Composable
 private fun DaySeparator(date: Long) {
     Text(
-        text = dayTitleOf(date),
+        text = dayTitleOf(LocalContext.current, date),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
@@ -661,12 +669,12 @@ private fun Bubble(
     }
     val time = timeOf(context, message.date)
     val caption = when {
-        failed && message.encrypted -> "Non envoyé · Toucher pour réessayer"
-        failed -> "Échec de l'envoi · Toucher pour réessayer"
-        message.status == MessageStatus.Sending -> "Envoi…"
-        isLatestOutgoing && message.status == MessageStatus.Read -> "Lu · $time"
-        isLatestOutgoing && message.status == MessageStatus.Delivered -> "Reçu · $time"
-        isLatestOutgoing -> "Envoyé · $time"
+        failed && message.encrypted -> stringResource(R.string.not_sent_retry)
+        failed -> stringResource(R.string.send_failed_retry)
+        message.status == MessageStatus.Sending -> stringResource(R.string.sending)
+        isLatestOutgoing && message.status == MessageStatus.Read -> stringResource(R.string.read_at, time)
+        isLatestOutgoing && message.status == MessageStatus.Delivered -> stringResource(R.string.delivered_at, time)
+        isLatestOutgoing -> stringResource(R.string.sent_at, time)
         !joinedBelow -> time
         else -> null
     }
@@ -687,7 +695,7 @@ private fun Bubble(
                         image != null -> onOpenPhoto(image)
                     }
                 },
-                onLongClickLabel = "Plus d'actions",
+                onLongClickLabel = stringResource(R.string.more_actions),
                 onLongClick = { menuOpen = true },
             )
             when {
@@ -703,7 +711,7 @@ private fun Bubble(
                 ) {
                     if (message.replyTo != null) QuoteBox(quoted, contactName, content)
                     Text(
-                        text = message.body.ifEmpty { LinkConversations.PHOTO },
+                        text = message.body.ifEmpty { stringResource(R.string.preview_photo) },
                         style = MaterialTheme.typography.bodyLarge,
                         color = content,
                     )
@@ -719,41 +727,41 @@ private fun Bubble(
                                     .size(44.dp)
                                     .clip(CircleShape)
                                     .background(if (message.myReaction == emoji) colors.primaryContainer else Color.Transparent)
-                                    .clickable(onClickLabel = "Réagir $emoji") {
+                                    .clickable(onClickLabel = stringResource(R.string.react_named, emoji)) {
                                         menuOpen = false
                                         onReact(emoji)
                                     },
                             ) { Text(emoji, style = MaterialTheme.typography.titleLarge) }
                         }
                     }
-                    MenuEntry("Répondre", SecaIcons.Reply) {
+                    MenuEntry(stringResource(R.string.reply), SecaIcons.Reply) {
                         menuOpen = false
                         onReply()
                     }
                 }
                 when {
-                    image != null -> MenuEntry("Enregistrer dans la galerie", SecaIcons.Download) {
+                    image != null -> MenuEntry(stringResource(R.string.save_to_gallery), SecaIcons.Download) {
                         menuOpen = false
                         onSavePhoto(image)
                     }
-                    audio == null -> MenuEntry("Copier", SecaIcons.ContentCopy) {
+                    audio == null -> MenuEntry(stringResource(R.string.copy), SecaIcons.ContentCopy) {
                         menuOpen = false
                         onCopy()
                     }
                 }
                 if (failed) {
-                    MenuEntry("Réessayer", SecaIcons.Send) {
+                    MenuEntry(stringResource(R.string.retry), SecaIcons.Send) {
                         menuOpen = false
                         onRetry()
                     }
                     if (message.encrypted && image == null && audio == null) {
-                        MenuEntry("Envoyer en SMS non chiffré", SecaIcons.Messages) {
+                        MenuEntry(stringResource(R.string.send_as_sms), SecaIcons.Messages) {
                             menuOpen = false
                             onSendAsSms()
                         }
                     }
                 }
-                MenuEntry("Supprimer", SecaIcons.Delete) {
+                MenuEntry(stringResource(R.string.delete), SecaIcons.Delete) {
                     menuOpen = false
                     onDelete()
                 }
@@ -778,7 +786,7 @@ private fun Bubble(
         code?.let {
             TextButton(onClick = { copySensitive(context, it) }) {
                 Icon(SecaIcons.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text("Copier le code $it", modifier = Modifier.padding(start = 6.dp))
+                Text(stringResource(R.string.copy_code_full, it), modifier = Modifier.padding(start = 6.dp))
             }
         }
         caption?.let {
@@ -789,7 +797,7 @@ private fun Bubble(
                 if (message.expiresAt > 0) {
                     Icon(
                         SecaIcons.Timer,
-                        contentDescription = "Éphémère",
+                        contentDescription = stringResource(R.string.disappearing),
                         tint = colors.onSurfaceVariant,
                         modifier = Modifier
                             .padding(end = 4.dp)
@@ -799,7 +807,7 @@ private fun Bubble(
                 if (message.encrypted) {
                     Icon(
                         SecaIcons.Lock,
-                        contentDescription = "Chiffré",
+                        contentDescription = stringResource(R.string.encrypted),
                         tint = if (failed) colors.error else colors.onSurfaceVariant,
                         modifier = Modifier
                             .padding(end = 4.dp)
@@ -828,8 +836,8 @@ private fun QuoteBox(quoted: Message?, contactName: String, content: Color) {
     ) {
         Text(
             text = when {
-                quoted == null -> "Message"
-                quoted.outgoing -> "Vous"
+                quoted == null -> stringResource(R.string.message)
+                quoted.outgoing -> stringResource(R.string.you)
                 else -> contactName
             },
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -838,7 +846,7 @@ private fun QuoteBox(quoted: Message?, contactName: String, content: Color) {
             overflow = TextOverflow.Ellipsis,
         )
         Text(
-            text = quoted?.let(::previewOf) ?: "Message effacé",
+            text = quoted?.let { previewOf(it) } ?: stringResource(R.string.message_deleted),
             style = MaterialTheme.typography.bodyMedium,
             color = content.copy(alpha = 0.8f),
             maxLines = 2,
@@ -861,7 +869,7 @@ private fun PhotoBubble(path: String, shape: RoundedCornerShape, container: Colo
     } else {
         Image(
             bitmap = photo,
-            contentDescription = "Photo",
+            contentDescription = stringResource(R.string.photo),
             contentScale = ContentScale.Crop,
             modifier = frame
                 .heightIn(max = 360.dp)
@@ -931,7 +939,7 @@ private fun VoiceBubble(path: String, shape: RoundedCornerShape, container: Colo
                     }
                 }
             },
-        ) { Icon(if (playing) SecaIcons.Pause else SecaIcons.Play, contentDescription = if (playing) "Pause" else "Écouter", tint = content) }
+        ) { Icon(if (playing) SecaIcons.Pause else SecaIcons.Play, contentDescription = stringResource(if (playing) R.string.pause else R.string.listen), tint = content) }
         LinearProgressIndicator(
             progress = { progress },
             color = content,
@@ -959,11 +967,13 @@ private fun durationText(millis: Long): String {
 /** Seca Link's handshake as the conversation shows it: a short centred notice. */
 @Composable
 private fun HandshakeNotice(handshake: Handshake, mine: Boolean) {
-    val label = when {
-        handshake.type == Handshake.Type.Accept -> "Conversation chiffrée par Seca Link"
-        mine -> "Invitation Seca Link envoyée"
-        else -> "Invitation Seca Link reçue"
-    }
+    val label = stringResource(
+        when {
+            handshake.type == Handshake.Type.Accept -> R.string.conversation_encrypted
+            mine -> R.string.invitation_sent
+            else -> R.string.invitation_received
+        },
+    )
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -994,11 +1004,11 @@ private fun TimerDialog(current: Int, onDismiss: () -> Unit, onChoose: (Int) -> 
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(SecaIcons.Timer, contentDescription = null) },
-        title = { Text("Messages éphémères") },
+        title = { Text(stringResource(R.string.disappearing_messages)) },
         text = {
             Column {
                 Text(
-                    text = "Les nouveaux messages s'effacent des deux téléphones après ce délai.",
+                    text = stringResource(R.string.timer_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp),
@@ -1014,7 +1024,7 @@ private fun TimerDialog(current: Int, onDismiss: () -> Unit, onChoose: (Int) -> 
                     ) {
                         RadioButton(selected = seconds == current, onClick = null)
                         Text(
-                            text = LinkTimers.label(seconds),
+                            text = LinkTimers.label(LocalContext.current, seconds),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(start = 12.dp),
                         )
@@ -1022,7 +1032,7 @@ private fun TimerDialog(current: Int, onDismiss: () -> Unit, onChoose: (Int) -> 
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fermer") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
     )
 }
 
@@ -1036,16 +1046,16 @@ private fun PhotoViewer(path: String, onDismiss: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
-                .clickable(onClickLabel = "Fermer", onClick = onDismiss),
+                .clickable(onClickLabel = stringResource(R.string.close), onClick = onDismiss),
         ) {
-            photo?.let { Image(bitmap = it, contentDescription = "Photo", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize()) }
+            photo?.let { Image(bitmap = it, contentDescription = stringResource(R.string.photo), contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize()) }
             IconButton(
                 onClick = onDismiss,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .statusBarsPadding()
                     .padding(8.dp),
-            ) { Icon(SecaIcons.Close, contentDescription = "Fermer", tint = Color.White) }
+            ) { Icon(SecaIcons.Close, contentDescription = stringResource(R.string.close), tint = Color.White) }
         }
     }
 }
@@ -1109,21 +1119,21 @@ private fun ScheduledBubble(message: ScheduledMessage, onSendNow: () -> Unit, on
                     .clip(shape)
                     .combinedClickable(
                         onClick = { menuOpen = true },
-                        onLongClickLabel = "Plus d'actions",
+                        onLongClickLabel = stringResource(R.string.more_actions),
                         onLongClick = { menuOpen = true },
                     )
                     .padding(horizontal = 14.dp, vertical = 10.dp),
             )
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                MenuEntry("Envoyer maintenant", SecaIcons.Send) {
+                MenuEntry(stringResource(R.string.send_now), SecaIcons.Send) {
                     menuOpen = false
                     onSendNow()
                 }
-                MenuEntry("Modifier", SecaIcons.Edit) {
+                MenuEntry(stringResource(R.string.edit), SecaIcons.Edit) {
                     menuOpen = false
                     onEdit()
                 }
-                MenuEntry("Annuler l'envoi", SecaIcons.Delete) {
+                MenuEntry(stringResource(R.string.cancel_send), SecaIcons.Delete) {
                     menuOpen = false
                     onCancel()
                 }
@@ -1135,7 +1145,7 @@ private fun ScheduledBubble(message: ScheduledMessage, onSendNow: () -> Unit, on
         ) {
             Icon(SecaIcons.Schedule, contentDescription = null, tint = colors.primary, modifier = Modifier.size(14.dp))
             Text(
-                text = if (waiting) "En attente d'envoi" else "Programmé · ${scheduleTimeOf(context, message.at)}",
+                text = if (waiting) stringResource(R.string.waiting_to_send) else stringResource(R.string.scheduled_at, scheduleTimeOf(context, message.at)),
                 style = MaterialTheme.typography.labelMedium,
                 color = colors.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp),
@@ -1181,7 +1191,7 @@ private fun Composer(
     ) {
         if (!enabled) {
             Text(
-                text = "Activez Seca Messages comme application SMS pour envoyer.",
+                text = stringResource(R.string.enable_to_send),
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.onSurfaceVariant,
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp),
@@ -1204,7 +1214,7 @@ private fun Composer(
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = if (target.outgoing) "Réponse à vous-même" else "Réponse à $replyName",
+                        text = if (target.outgoing) stringResource(R.string.reply_to_yourself) else stringResource(R.string.reply_to, replyName),
                         style = MaterialTheme.typography.labelMedium,
                         color = colors.primary,
                         maxLines = 1,
@@ -1218,7 +1228,7 @@ private fun Composer(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                IconButton(onClick = onCancelReply) { Icon(SecaIcons.Close, contentDescription = "Annuler la réponse") }
+                IconButton(onClick = onCancelReply) { Icon(SecaIcons.Close, contentDescription = stringResource(R.string.cancel_reply)) }
             }
         }
         if (recording) {
@@ -1229,7 +1239,7 @@ private fun Composer(
                     .height(56.dp),
             ) {
                 IconButton(onClick = onCancelVoice) {
-                    Icon(SecaIcons.Delete, contentDescription = "Annuler l'enregistrement", tint = colors.error)
+                    Icon(SecaIcons.Delete, contentDescription = stringResource(R.string.cancel_recording), tint = colors.error)
                 }
                 Box(
                     Modifier
@@ -1239,7 +1249,7 @@ private fun Composer(
                         .background(colors.error),
                 )
                 Text(
-                    text = "Enregistrement · ${durationText(recordingMillis)}",
+                    text = stringResource(R.string.recording, durationText(recordingMillis)),
                     style = MaterialTheme.typography.bodyLarge,
                     color = colors.onSurface,
                     modifier = Modifier
@@ -1247,7 +1257,7 @@ private fun Composer(
                         .padding(start = 12.dp),
                 )
                 FilledIconButton(onClick = onSendVoice, modifier = Modifier.size(56.dp)) {
-                    Icon(SecaIcons.Send, contentDescription = "Envoyer le message vocal")
+                    Icon(SecaIcons.Send, contentDescription = stringResource(R.string.send_voice))
                 }
             }
             return@Column
@@ -1259,14 +1269,14 @@ private fun Composer(
                     modifier = Modifier
                         .padding(end = 4.dp, bottom = 4.dp)
                         .size(48.dp),
-                ) { Icon(SecaIcons.Photo, contentDescription = "Envoyer une photo chiffrée") }
+                ) { Icon(SecaIcons.Photo, contentDescription = stringResource(R.string.send_encrypted_photo)) }
             }
             TextField(
                 value = text,
                 onValueChange = onText,
-                placeholder = { Text(if (encrypted) "Message chiffré" else "Message") },
+                placeholder = { Text(stringResource(if (encrypted) R.string.encrypted_message else R.string.message)) },
                 leadingIcon = if (encrypted) {
-                    { Icon(SecaIcons.Lock, contentDescription = "Chiffré par Seca Link", modifier = Modifier.size(18.dp)) }
+                    { Icon(SecaIcons.Lock, contentDescription = stringResource(R.string.encrypted_by_link), modifier = Modifier.size(18.dp)) }
                 } else {
                     null
                 },
@@ -1274,14 +1284,14 @@ private fun Composer(
                 trailingIcon = if (enabled && !encrypted && text.isNotBlank()) {
                     {
                         IconButton(onClick = onSchedule) {
-                            Icon(SecaIcons.Schedule, contentDescription = "Programmer l'envoi")
+                            Icon(SecaIcons.Schedule, contentDescription = stringResource(R.string.schedule_send))
                         }
                     }
                 } else {
                     null
                 },
                 supportingText = if (parts > 1) {
-                    { Text("$parts SMS") }
+                    { Text(pluralStringResource(R.plurals.sms_count, parts, parts)) }
                 } else {
                     null
                 },
@@ -1307,11 +1317,13 @@ private fun Composer(
             ) {
                 Icon(
                     if (startVoice != null) SecaIcons.Mic else SecaIcons.Send,
-                    contentDescription = when {
-                        startVoice != null -> "Enregistrer un message vocal"
-                        encrypted -> "Envoyer chiffré"
-                        else -> "Envoyer"
-                    },
+                    contentDescription = stringResource(
+                        when {
+                            startVoice != null -> R.string.record_voice
+                            encrypted -> R.string.send_encrypted
+                            else -> R.string.send
+                        },
+                    ),
                 )
             }
         }

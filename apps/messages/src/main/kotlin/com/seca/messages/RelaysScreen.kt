@@ -38,6 +38,7 @@ import com.seca.core.design.component.SecaHint
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaTopBar
+import androidx.compose.ui.res.stringResource
 
 /** A relay's answer to the latest publication of this phone's keys. */
 enum class RelayState { Publishing, Published, Refused, Unreachable }
@@ -74,7 +75,7 @@ internal fun RelaysScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "Relais", onBack = { viewModel.back() }) },
+        topBar = { SecaTopBar(title = stringResource(R.string.relays), onBack = { viewModel.back() }) },
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -85,9 +86,9 @@ internal fun RelaysScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
             if (link.enabled && link.offline) {
                 item(key = "offline") { NetworkBlockedCard(Modifier.padding(top = 8.dp)) }
             }
-            item(key = "label") { SecaSectionLabel("Relais de réception") }
+            item(key = "label") { SecaSectionLabel(stringResource(R.string.reception_relays)) }
             if (link.relays.isEmpty()) {
-                item(key = "none") { SecaHint("Aucun relais : ajoutez-en un, ou revenez à la liste par défaut.") }
+                item(key = "none") { SecaHint(stringResource(R.string.no_relays)) }
             }
             itemsIndexed(link.relays, key = { _, url -> url }) { index, url ->
                 SecaGroupItem(index = index, count = link.relays.size) {
@@ -99,7 +100,7 @@ internal fun RelaysScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 StatusMark(link.statuses[url])
                                 IconButton(onClick = { viewModel.removeRelay(url) }) {
-                                    Icon(SecaIcons.Delete, contentDescription = "Retirer $url")
+                                    Icon(SecaIcons.Delete, contentDescription = stringResource(R.string.remove_named, url))
                                 }
                             }
                         },
@@ -107,7 +108,7 @@ internal fun RelaysScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                 }
             }
 
-            item(key = "add-label") { SecaSectionLabel("Ajouter un relais") }
+            item(key = "add-label") { SecaSectionLabel(stringResource(R.string.add_relay)) }
             item(key = "add") {
                 SecaGroupItem(index = 0, count = 1) {
                     Row(
@@ -122,11 +123,11 @@ internal fun RelaysScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                                 input = it
                                 invalid = false
                             },
-                            placeholder = { Text("relais.exemple.org") },
+                            placeholder = { Text(stringResource(R.string.relay_placeholder)) },
                             singleLine = true,
                             isError = invalid,
                             supportingText = if (invalid) {
-                                { Text("Adresse de relais invalide") }
+                                { Text(stringResource(R.string.invalid_relay)) }
                             } else {
                                 null
                             },
@@ -138,23 +139,19 @@ internal fun RelaysScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                             onClick = add,
                             enabled = input.isNotBlank(),
                             modifier = Modifier.padding(start = 12.dp),
-                        ) { Text("Ajouter") }
+                        ) { Text(stringResource(R.string.add)) }
                     }
                 }
             }
 
             item(key = "actions") {
                 Row(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                    TextButton(onClick = { viewModel.publishPrekeys() }, enabled = link.enabled) { Text("Publier à nouveau") }
-                    TextButton(onClick = { viewModel.resetRelays() }) { Text("Liste par défaut") }
+                    TextButton(onClick = { viewModel.publishPrekeys() }, enabled = link.enabled) { Text(stringResource(R.string.publish_again)) }
+                    TextButton(onClick = { viewModel.resetRelays() }) { Text(stringResource(R.string.default_list)) }
                 }
             }
             item(key = "hint") {
-                SecaHint(
-                    "Les relais Nostr sont publics, gratuits et tenus par des bénévoles. Ils ne reçoivent que des clés " +
-                        "publiques et des messages chiffrés, et voient l'adresse IP du téléphone. Seules les connexions " +
-                        "chiffrées (wss) sont acceptées.",
-                )
+                SecaHint(stringResource(R.string.relays_hint))
             }
         }
     }
@@ -167,9 +164,8 @@ internal fun NetworkBlockedCard(modifier: Modifier = Modifier) {
     SecaGroupItem(index = 0, count = 1, modifier = modifier, onClick = { openAppSettings(context) }) {
         SecaSettingRow(
             icon = SecaIcons.Wifi,
-            title = "Pas d'accès au réseau",
-            subtitle = "Dans les réglages de Seca Messages, ouvrez Autorisations et activez « Réseau », " +
-                "ou vérifiez la connexion. La publication reprend d'elle-même.",
+            title = stringResource(R.string.no_network_access),
+            subtitle = stringResource(R.string.no_network_hint),
         )
     }
 }
@@ -181,33 +177,30 @@ internal fun NetworkAccessDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(SecaIcons.Wifi, contentDescription = null) },
-        title = { Text("Autoriser l'accès au réseau") },
-        text = {
-            Text(
-                "Seca Link joint les relais par Internet. Ouvrez les réglages de Seca Messages, puis Autorisations, " +
-                    "et activez « Réseau ». La publication de vos clés reprendra dès que la connexion sera possible.",
-            )
-        },
+        title = { Text(stringResource(R.string.allow_network)) },
+        text = { Text(stringResource(R.string.allow_network_text)) },
         confirmButton = {
             TextButton(
                 onClick = {
                     onDismiss()
                     openAppSettings(context)
                 },
-            ) { Text("Ouvrir les réglages") }
+            ) { Text(stringResource(R.string.open_settings)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Plus tard") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.later)) } },
     )
 }
 
+@Composable
 private fun statusText(status: RelayStatus?, link: LinkUi): String = when {
-    !link.enabled -> "Seca Link est désactivé"
-    link.offline -> "En attente du réseau"
-    status == null -> "Pas encore publié"
-    status.state == RelayState.Publishing -> "Publication…"
-    status.state == RelayState.Published -> "Clé publiée"
-    status.state == RelayState.Refused -> if (status.detail.isNullOrBlank()) "Refusé par le relais" else "Refusé : ${status.detail}"
-    else -> "Injoignable"
+    !link.enabled -> stringResource(R.string.link_is_off)
+    link.offline -> stringResource(R.string.link_offline)
+    status == null -> stringResource(R.string.not_published)
+    status.state == RelayState.Publishing -> stringResource(R.string.publishing)
+    status.state == RelayState.Published -> stringResource(R.string.key_published)
+    status.state == RelayState.Refused ->
+        if (status.detail.isNullOrBlank()) stringResource(R.string.refused) else stringResource(R.string.refused_named, status.detail)
+    else -> stringResource(R.string.unreachable)
 }
 
 @Composable

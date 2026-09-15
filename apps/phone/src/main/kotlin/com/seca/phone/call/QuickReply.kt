@@ -7,7 +7,7 @@ import android.provider.Telephony
 import android.telecom.Call
 
 /**
- * "Refuser et répondre" without the wait. Left to Android, the text only
+ * "Decline and reply" without the wait. Left to Android, the text only
  * leaves as the call is torn down on the network, which can take a while.
  * When Seca Messages is the messaging app, the call is refused at once and the
  * text handed to it: through Seca Link when the caller has it, else by SMS.

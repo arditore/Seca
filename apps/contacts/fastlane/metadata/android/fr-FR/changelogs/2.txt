@@ -1,0 +1,4 @@
+Deuxième bêta.
+• Interface en anglais, choisie selon la langue du téléphone ; le français reste.
+• L'export vCard et la sauvegarde de la suite gardent le profil de chaque contact.
+• Fonctionne sur tout téléphone sous Android 12 ou plus récent ; GrapheneOS reste recommandé.

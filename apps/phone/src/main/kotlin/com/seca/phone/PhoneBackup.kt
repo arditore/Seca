@@ -14,9 +14,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import androidx.annotation.PluralsRes
 
 /**
- * Seca Téléphone's part of the suite's backup: the call history and how calls
+ * Seca Phone's part of the suite's backup: the call history and how calls
  * are filtered. The SIM chosen for each contact belongs to this phone's SIMs
  * and stays behind.
  */
@@ -41,7 +42,7 @@ internal class PhoneBackup(private val context: Context) {
                     .put("blockedProfiles", JSONArray(blocked)),
             )
             .put("calls", calls)
-            .put(SuiteBackup.KEY_SUMMARY, "${SuiteBackup.plural(calls.length(), "appel", "appels")} et le filtrage")
+            .put(SuiteBackup.KEY_SUMMARY, quantity(R.plurals.backup_calls_and_filtering, calls.length()))
     }
 
     /** Puts the filtering back, and the calls this phone does not have yet. Returns what came back. */
@@ -54,9 +55,9 @@ internal class PhoneBackup(private val context: Context) {
             if (blocked.isNotEmpty()) screening.blockedProfiles = blocked.toSet()
         }
         val calls = part.optJSONArray("calls") ?: JSONArray()
-        if (calls.length() == 0) return@withContext "filtrage remis"
+        if (calls.length() == 0) return@withContext context.getString(R.string.backup_filtering_restored)
         if (!granted(Manifest.permission.READ_CALL_LOG) || !granted(Manifest.permission.WRITE_CALL_LOG)) {
-            return@withContext "filtrage remis ; ouvrez Seca Téléphone, autorisez l'historique, puis restaurez à nouveau pour les appels"
+            return@withContext context.getString(R.string.backup_filtering_restored_no_access)
         }
         val present = HashSet<String>()
         resolver.query(Calls.CONTENT_URI, arrayOf(Calls.NUMBER, Calls.DATE), null, null, null)?.use { c ->
@@ -81,7 +82,7 @@ internal class PhoneBackup(private val context: Context) {
                 present += key
             }
         }
-        "${SuiteBackup.plural(added, "appel ajouté", "appels ajoutés")}, filtrage remis"
+        quantity(R.plurals.backup_calls_added, added)
     }
 
     private fun readCalls(): JSONArray = JSONArray().apply {
@@ -102,13 +103,15 @@ internal class PhoneBackup(private val context: Context) {
 
     private fun granted(permission: String) = context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 
+    private fun quantity(@PluralsRes id: Int, count: Int): String = context.resources.getQuantityString(id, count, count)
+
     private companion object {
         const val APP = "seca-phone"
         const val VERSION = 1
     }
 }
 
-/** Seca Téléphone's part of the suite's backup, for the Seca apps signed with the same key only. */
+/** Seca Phone's part of the suite's backup, for the Seca apps signed with the same key only. */
 class PhoneSuiteBackup : SuiteBackupProvider() {
 
     override suspend fun exportPart(): JSONObject = PhoneBackup(requireContext()).export()

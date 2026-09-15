@@ -1,0 +1,4 @@
+Deuxième bêta.
+• Interface en anglais, choisie selon la langue du téléphone ; le français reste.
+• Les couleurs des profils s'affichent quel que soit l'ordre d'installation des applications Seca.
+• Fonctionne sur tout téléphone sous Android 12 ou plus récent ; GrapheneOS reste recommandé.

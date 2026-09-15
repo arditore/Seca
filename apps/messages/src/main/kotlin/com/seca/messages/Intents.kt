@@ -38,7 +38,7 @@ internal fun openSibling(context: Context, identity: SecaAppIdentity) {
     startSafely(context, fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
-/** Calls in one tap through Seca Téléphone when it is installed with the same key, else opens the dialer. */
+/** Calls in one tap through Seca Phone when it is installed with the same key, else opens the dialer. */
 internal fun call(context: Context, number: String) {
     val tel = Uri.fromParts("tel", number, null)
     val direct = Intent(SECA_PHONE_CALL, tel).setPackage(SECA_PHONE)

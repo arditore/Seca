@@ -32,52 +32,53 @@ import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import androidx.compose.ui.res.stringResource
 
 /**
  * In each Seca app's settings: one encrypted file for the whole suite, made or
  * restored from any of the three apps, to move to another phone or keep safe.
  */
 @Composable
-fun SuiteBackupSection() {
+fun SuiteBackupSection(
+    /** Runs before the file is chosen, for instance to ask the permissions a restoration needs; calls proceed when done. */
+    beforeRestore: (proceed: () -> Unit) -> Unit = { proceed -> proceed() },
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var target by remember { mutableStateOf<Uri?>(null) }
     var source by remember { mutableStateOf<Uri?>(null) }
-    var working by remember { mutableStateOf<String?>(null) }
+    var working by remember { mutableStateOf<Int?>(null) }
     var outcome by remember { mutableStateOf<SuiteBackup.Outcome?>(null) }
     // The system file picker: the owner chooses where the file goes, and the app sees nothing else.
     val create = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { target = it }
     val open = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { source = it }
 
-    SecaSectionLabel("Toute la suite Seca")
+    SecaSectionLabel(stringResource(R.string.suite_section))
     SecaGroupItem(index = 0, count = 2, onClick = { create.launch("seca-suite-${LocalDate.now()}.seca") }) {
         SecaSettingRow(
             icon = SecaIcons.Lock,
-            title = "Sauvegarder les trois applis",
-            subtitle = "Contacts et profils, appels et filtrage, SMS et conversations, dans un fichier chiffré",
+            title = stringResource(R.string.suite_backup_all),
+            subtitle = stringResource(R.string.suite_backup_all_hint),
         )
     }
-    SecaGroupItem(index = 1, count = 2, onClick = { open.launch(arrayOf("*/*")) }) {
+    SecaGroupItem(index = 1, count = 2, onClick = { beforeRestore { open.launch(arrayOf("*/*")) } }) {
         SecaSettingRow(
             icon = SecaIcons.Download,
-            title = "Restaurer les trois applis",
-            subtitle = "Chaque appli installée reprend sa part ; rien n'est remplacé",
+            title = stringResource(R.string.suite_restore_all),
+            subtitle = stringResource(R.string.suite_restore_all_hint),
         )
     }
-    SecaHint(
-        "Pratique pour changer de téléphone. Installez d'abord les trois applis et donnez-leur leurs autorisations. " +
-            "Les clés Seca Link restent dans ce téléphone : il faudra reconnecter vos contacts.",
-    )
+    SecaHint(stringResource(R.string.suite_hint))
 
     target?.let { uri ->
         SecaPassphraseDialog(
-            title = "Chiffrer la sauvegarde",
-            confirmLabel = "Chiffrer",
+            title = stringResource(R.string.suite_encrypt_title),
+            confirmLabel = stringResource(R.string.suite_encrypt),
             creating = true,
             onDismiss = { target = null },
             onConfirm = { passphrase ->
                 target = null
-                working = "Sauvegarde des trois applis…"
+                working = R.string.suite_backing_up
                 scope.launch {
                     outcome = SuiteBackup(context).export(uri, passphrase)
                     working = null
@@ -87,13 +88,13 @@ fun SuiteBackupSection() {
     }
     source?.let { uri ->
         SecaPassphraseDialog(
-            title = "Ouvrir la sauvegarde",
-            confirmLabel = "Restaurer",
+            title = stringResource(R.string.suite_open_title),
+            confirmLabel = stringResource(R.string.suite_restore),
             creating = false,
             onDismiss = { source = null },
             onConfirm = { passphrase ->
                 source = null
-                working = "Restauration des trois applis…"
+                working = R.string.suite_restoring
                 scope.launch {
                     outcome = SuiteBackup(context).restore(uri, passphrase)
                     working = null
@@ -105,12 +106,12 @@ fun SuiteBackupSection() {
         AlertDialog(
             onDismissRequest = {},
             properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
-            title = { Text(label) },
+            title = { Text(stringResource(label)) },
             text = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(32.dp))
                     Text(
-                        text = "Chaque appli prépare sa part. Cela peut prendre un moment avec beaucoup de messages.",
+                        text = stringResource(R.string.suite_working_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(start = 16.dp),
                     )
@@ -123,7 +124,7 @@ fun SuiteBackupSection() {
         AlertDialog(
             onDismissRequest = { outcome = null },
             icon = { Icon(if (result is SuiteBackup.Outcome.Done) SecaIcons.Check else SecaIcons.Shield, contentDescription = null) },
-            title = { Text(if (result is SuiteBackup.Outcome.Done) "C'est fait" else "Impossible") },
+            title = { Text(stringResource(if (result is SuiteBackup.Outcome.Done) R.string.suite_done else R.string.suite_failed)) },
             text = {
                 Column {
                     when (result) {
@@ -134,7 +135,7 @@ fun SuiteBackupSection() {
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { outcome = null }) { Text("OK") } },
+            confirmButton = { TextButton(onClick = { outcome = null }) { Text(stringResource(android.R.string.ok)) } },
         )
     }
 }

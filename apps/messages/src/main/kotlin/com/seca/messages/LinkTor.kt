@@ -13,6 +13,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaSettingRow
+import androidx.compose.ui.res.stringResource
 
 /** In the Seca Link settings: reaching the relays through Tor, with Orbot, so they never see this phone's address. */
 @Composable
@@ -26,19 +27,19 @@ internal fun TorRow(link: LinkUi, viewModel: MessagesViewModel, index: Int, coun
     SecaGroupItem(index = index, count = count) {
         SecaSettingRow(
             icon = SecaIcons.VisibilityOff,
-            title = "Passer par Tor",
+            title = stringResource(R.string.use_tor),
             subtitle = when {
-                !link.useTor -> "Avec Orbot, les relais ne voient pas l'adresse de ce téléphone"
-                !link.orbotInstalled && link.orbotRunning != null -> "Orbot n'est pas installé"
-                link.orbotRunning == false -> "Orbot ne répond pas : ouvrez-le pour lancer Tor"
-                link.orbotRunning == true -> "Relais joints par Tor, grâce à Orbot"
-                else -> "Vérification d'Orbot…"
+                !link.useTor -> stringResource(R.string.tor_off_hint)
+                !link.orbotInstalled && link.orbotRunning != null -> stringResource(R.string.orbot_missing)
+                link.orbotRunning == false -> stringResource(R.string.orbot_not_responding)
+                link.orbotRunning == true -> stringResource(R.string.tor_on)
+                else -> stringResource(R.string.checking_orbot)
             },
             modifier = Modifier.toggleable(value = link.useTor, role = Role.Switch, onValueChange = viewModel::setUseTor),
             trailing = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (needsOrbot) {
-                        TextButton(onClick = viewModel::openOrbot) { Text(if (link.orbotInstalled) "Ouvrir" else "Obtenir") }
+                        TextButton(onClick = viewModel::openOrbot) { Text(stringResource(if (link.orbotInstalled) R.string.open else R.string.get)) }
                     }
                     Switch(checked = link.useTor, onCheckedChange = null)
                 }

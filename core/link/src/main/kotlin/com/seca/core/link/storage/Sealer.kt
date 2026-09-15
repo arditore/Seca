@@ -37,7 +37,7 @@ internal object Sealer {
         file.parentFile?.mkdirs()
         val temporary = File(file.parentFile, "${file.name}.tmp")
         temporary.writeBytes(seal(plain))
-        check(temporary.renameTo(file)) { "Impossible d'enregistrer ${file.name}" }
+        check(temporary.renameTo(file)) { "Could not save ${file.name}" }
     }
 
     private fun seal(plain: ByteArray): ByteArray {

@@ -9,6 +9,7 @@ import com.google.i18n.phonenumbers.Phonenumber
 import java.util.Locale
 import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
+import com.seca.core.model.uiLocale
 
 /**
  * Understands phone numbers the way the phone's owner writes them.
@@ -69,20 +70,20 @@ class PhoneNumbers(val homeRegion: String) {
         val region = number?.let(util::getRegionCodeForNumber)
         Optional.ofNullable(
             region?.let {
-                val name = Locale.Builder().setRegion(it).build().getDisplayCountry(Locale.getDefault())
+                val name = Locale.Builder().setRegion(it).build().getDisplayCountry(uiLocale())
                 NumberCountry(region = it, displayName = name, isHome = it == homeRegion)
             },
         )
     }.orElse(null)
 
-    /** One line for the editor: the number's country, or why it is not recognised. Null for an empty field. */
-    fun describe(raw: String): String? {
+    /** What the editor can say under a number: its country, or why it is not recognised. Null for an empty field. */
+    fun note(raw: String): NumberNote? {
         val digits = raw.filter(Char::isDigit)
         if (digits.isEmpty()) return null
-        countryOf(raw)?.let { return "${it.flag} ${it.displayName}" }
+        countryOf(raw)?.let { return NumberNote.Country(it) }
         // A number starting with a trunk or country prefix is a long one still being written, never a short one.
         val prefixed = raw.trimStart().let { it.startsWith("0") || it.startsWith("+") }
-        return if (digits.length <= SHORT_NUMBER_DIGITS && !prefixed) "Numéro court" else "Numéro incomplet ou inconnu"
+        return if (digits.length <= SHORT_NUMBER_DIGITS && !prefixed) NumberNote.Short else NumberNote.Unknown
     }
 
     /**

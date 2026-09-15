@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
     private val callRequest = mutableStateOf<CallRequest?>(null)
 
     /** Locks the history and the keypad only; the call screen is never locked, so a call can always be answered. */
-    private val lock by lazy { SecaAppLock(this, "Seca Téléphone") }
+    private val lock by lazy { SecaAppLock(this, getString(R.string.app_name)) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

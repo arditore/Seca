@@ -38,6 +38,8 @@ import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 import com.seca.core.suite.SuiteBackupSection
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 @Composable
 internal fun SettingsScreen(
@@ -48,6 +50,7 @@ internal fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val dynamic = ui.palette == null
+    val needDefaultText = stringResource(R.string.need_default_app)
     // An encrypted backup: the file is chosen first, then its passphrase is asked.
     var backupTarget by remember { mutableStateOf<Uri?>(null) }
     var restoreSource by remember { mutableStateOf<Uri?>(null) }
@@ -68,13 +71,13 @@ internal fun SettingsScreen(
                 .padding(bottom = 32.dp),
         ) {
             Text(
-                text = "Paramètres",
+                text = stringResource(R.string.settings),
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
             )
 
-            SecaSectionLabel("Application SMS")
+            SecaSectionLabel(stringResource(R.string.sms_app))
             SecaGroupItem(
                 index = 0,
                 count = 1,
@@ -82,12 +85,8 @@ internal fun SettingsScreen(
             ) {
                 SecaSettingRow(
                     icon = SecaIcons.Messages,
-                    title = if (isDefaultApp) "Seca Messages gère vos SMS" else "Utiliser Seca Messages par défaut",
-                    subtitle = if (isDefaultApp) {
-                        "Réception, envoi et notifications"
-                    } else {
-                        "Seule l'application SMS par défaut reçoit et envoie les messages"
-                    },
+                    title = stringResource(if (isDefaultApp) R.string.default_on else R.string.default_off),
+                    subtitle = stringResource(if (isDefaultApp) R.string.default_on_hint else R.string.default_off_hint),
                     trailing = if (isDefaultApp) {
                         { Icon(SecaIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
                     } else {
@@ -96,22 +95,22 @@ internal fun SettingsScreen(
                 )
             }
 
-            SecaSectionLabel("Notifications")
+            SecaSectionLabel(stringResource(R.string.notifications))
             SecaGroupItem(index = 0, count = 1, onClick = { openNotificationSettings(context) }) {
                 SecaSettingRow(
                     icon = SecaIcons.Bell,
-                    title = "Notifications",
-                    subtitle = "Son, vibration et affichage sur l'écran verrouillé",
+                    title = stringResource(R.string.notifications),
+                    subtitle = stringResource(R.string.notifications_hint),
                 )
             }
 
-            SecaSectionLabel("Couleurs")
+            SecaSectionLabel(stringResource(R.string.colors))
             if (ui.profiles.connected) {
                 SecaGroupItem(index = 0, count = 2) {
                     SecaSettingRow(
                         icon = SecaIcons.AutoAwesome,
-                        title = "Couleurs dynamiques",
-                        subtitle = "Assorties au fond d'écran du téléphone",
+                        title = stringResource(R.string.dynamic_colors),
+                        subtitle = stringResource(R.string.dynamic_colors_hint),
                         modifier = Modifier.toggleable(
                             value = dynamic,
                             role = Role.Switch,
@@ -136,17 +135,17 @@ internal fun SettingsScreen(
                         }
                     }
                 }
-                SecaHint("Les couleurs sont communes à toutes les applications Seca. Le mode sombre suit le téléphone.")
+                SecaHint(stringResource(R.string.colors_shared_hint))
             } else {
-                SecaHint("Installez Seca Contacts pour choisir les couleurs de la suite.")
+                SecaHint(stringResource(R.string.colors_need_contacts))
             }
 
-            SecaSectionLabel("Sauvegarde")
+            SecaSectionLabel(stringResource(R.string.backup))
             SecaGroupItem(index = 0, count = 2, onClick = { backupLauncher.launch("seca-messages-${LocalDate.now()}.seca") }) {
                 SecaSettingRow(
                     icon = SecaIcons.Lock,
-                    title = "Sauvegarde chiffrée",
-                    subtitle = "Tous les SMS, protégés par un mot de passe",
+                    title = stringResource(R.string.encrypted_backup),
+                    subtitle = stringResource(R.string.encrypted_backup_hint),
                 )
             }
             SecaGroupItem(
@@ -156,17 +155,17 @@ internal fun SettingsScreen(
                     if (isDefaultApp) {
                         restoreLauncher.launch(arrayOf("*/*"))
                     } else {
-                        Toast.makeText(context, "Activez d'abord Seca Messages comme application SMS", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, needDefaultText, Toast.LENGTH_LONG).show()
                     }
                 },
             ) {
                 SecaSettingRow(
                     icon = SecaIcons.Download,
-                    title = "Restaurer une sauvegarde",
-                    subtitle = "Remet les messages absents de ce téléphone",
+                    title = stringResource(R.string.restore_backup),
+                    subtitle = stringResource(R.string.restore_backup_hint),
                 )
             }
-            SecaHint("Rien n'est synchronisé : gardez la sauvegarde ailleurs que sur ce téléphone.")
+            SecaHint(stringResource(R.string.backup_hint))
 
             SuiteBackupSection()
 
@@ -180,22 +179,22 @@ internal fun SettingsScreen(
             SecaGroupItem(index = 0, count = linkRows) {
                 SecaSettingRow(
                     icon = SecaIcons.Link,
-                    title = "Chiffrement Seca Link",
+                    title = stringResource(R.string.link_encryption),
                     subtitle = when {
-                        !link.enabled -> "Messages chiffrés de bout en bout entre téléphones Seca"
+                        !link.enabled -> stringResource(R.string.link_off_hint)
                         link.error != null -> link.error
-                        link.offline -> "En attente du réseau"
-                        link.statuses.values.any { it.state == RelayState.Publishing } -> "Publication de votre clé…"
-                        published > 0 -> "Clé publiée sur $published relais"
-                        link.statuses.isNotEmpty() -> "Aucun relais n'a accepté la clé"
-                        else -> "Activé"
+                        link.offline -> stringResource(R.string.link_offline)
+                        link.statuses.values.any { it.state == RelayState.Publishing } -> stringResource(R.string.link_publishing)
+                        published > 0 -> pluralStringResource(R.plurals.link_published, published, published)
+                        link.statuses.isNotEmpty() -> stringResource(R.string.link_no_relay)
+                        else -> stringResource(R.string.on)
                     },
                     modifier = Modifier.toggleable(
                         value = link.enabled,
                         role = Role.Switch,
                         onValueChange = { on ->
                             viewModel.setLinkEnabled(on)
-                            // Android has no prompt for network access, which GrapheneOS lets the owner take away.
+                            // Android has no prompt for network access, which some systems, GrapheneOS among them, let the owner take away.
                             if (on && !viewModel.networkAvailable()) askNetwork = true
                         },
                     ),
@@ -206,8 +205,8 @@ internal fun SettingsScreen(
                 SecaGroupItem(index = 1, count = linkRows, onClick = { viewModel.open(MessagesScreen.Relays) }) {
                     SecaSettingRow(
                         icon = SecaIcons.Wifi,
-                        title = "Relais",
-                        subtitle = "${link.relays.size} relais Nostr publics et gratuits",
+                        title = stringResource(R.string.relays),
+                        subtitle = pluralStringResource(R.plurals.relays_count, link.relays.size, link.relays.size),
                     )
                 }
                 BackgroundAccessRow(index = 2, count = linkRows)
@@ -215,22 +214,22 @@ internal fun SettingsScreen(
                 SecaGroupItem(index = 4, count = linkRows, onClick = { viewModel.open(LinkStatusRoute) }) {
                     SecaSettingRow(
                         icon = SecaIcons.Check,
-                        title = "État de Seca Link",
-                        subtitle = "Relais à l'écoute, contacts connectés, dépannage",
+                        title = stringResource(R.string.link_status),
+                        subtitle = stringResource(R.string.link_status_hint),
                     )
                 }
                 SecaGroupItem(index = 5, count = linkRows) {
                     SecaSettingRow(
                         icon = SecaIcons.Shield,
-                        title = "Empreinte de ce téléphone",
-                        subtitle = link.fingerprint ?: "Création des clés…",
+                        title = stringResource(R.string.fingerprint),
+                        subtitle = link.fingerprint ?: stringResource(R.string.creating_keys),
                     )
                 }
                 SecaGroupItem(index = 0, count = 2, modifier = Modifier.padding(top = 8.dp)) {
                     SecaSettingRow(
                         icon = SecaIcons.Check,
-                        title = "Accusés de lecture",
-                        subtitle = "Vos contacts voient quand vous avez lu leurs messages",
+                        title = stringResource(R.string.read_receipts),
+                        subtitle = stringResource(R.string.read_receipts_hint),
                         modifier = Modifier.toggleable(
                             value = link.readReceipts,
                             role = Role.Switch,
@@ -242,8 +241,8 @@ internal fun SettingsScreen(
                 SecaGroupItem(index = 1, count = 2) {
                     SecaSettingRow(
                         icon = SecaIcons.Edit,
-                        title = "Indicateur d'écriture",
-                        subtitle = "Vos contacts voient quand vous leur écrivez",
+                        title = stringResource(R.string.typing_indicator),
+                        subtitle = stringResource(R.string.typing_indicator_hint),
                         modifier = Modifier.toggleable(
                             value = link.typingIndicator,
                             role = Role.Switch,
@@ -254,23 +253,18 @@ internal fun SettingsScreen(
                 }
                 if (link.offline) NetworkBlockedCard(Modifier.padding(top = 8.dp))
             }
-            SecaHint(
-                "Avec un contact qui a aussi Seca, les messages partent chiffrés de bout en bout, sans passer par " +
-                    "l'opérateur. Les clés restent dans la puce de sécurité du téléphone ; les relais ne voient ni qui " +
-                    "écrit, ni ce qui est écrit.",
-            )
+            SecaHint(stringResource(R.string.link_hint))
             if (askNetwork) NetworkAccessDialog(onDismiss = { askNetwork = false })
 
-            SecaSectionLabel("Protection")
-            SecaPrivacySettingsGroup("Seca Messages")
+            SecaSectionLabel(stringResource(R.string.protection))
+            SecaPrivacySettingsGroup(stringResource(R.string.app_name))
 
-            SecaSectionLabel("Confidentialité")
+            SecaSectionLabel(stringResource(R.string.privacy))
             SecaGroupItem(index = 0, count = 1) {
                 SecaSettingRow(
                     icon = SecaIcons.Shield,
-                    title = "Vos SMS restent sur ce téléphone",
-                    subtitle = "Les SMS restent là où Android les garde : rien n'est copié ailleurs. Internet ne sert " +
-                        "qu'à Seca Link, quand vous l'activez, et n'y passent que des clés publiques et du chiffré.",
+                    title = stringResource(R.string.privacy_title),
+                    subtitle = stringResource(R.string.privacy_text),
                 )
             }
         }
@@ -278,8 +272,8 @@ internal fun SettingsScreen(
 
     backupTarget?.let { uri ->
         SecaPassphraseDialog(
-            title = "Chiffrer la sauvegarde",
-            confirmLabel = "Chiffrer",
+            title = stringResource(R.string.encrypt_backup),
+            confirmLabel = stringResource(R.string.encrypt),
             creating = true,
             onDismiss = { backupTarget = null },
             onConfirm = {
@@ -290,8 +284,8 @@ internal fun SettingsScreen(
     }
     restoreSource?.let { uri ->
         SecaPassphraseDialog(
-            title = "Ouvrir la sauvegarde",
-            confirmLabel = "Restaurer",
+            title = stringResource(R.string.open_backup),
+            confirmLabel = stringResource(R.string.restore),
             creating = false,
             onDismiss = { restoreSource = null },
             onConfirm = {

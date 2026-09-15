@@ -25,6 +25,7 @@ import com.seca.core.design.SecaIcons
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
+import androidx.compose.ui.res.stringResource
 
 private const val MORNING_HOUR = 8
 private const val EVENING_HOUR = 19
@@ -41,16 +42,16 @@ internal fun ScheduleDialog(onDismiss: () -> Unit, onSchedule: (Long) -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(SecaIcons.Schedule, contentDescription = null) },
-        title = { Text("Programmer l'envoi") },
+        title = { Text(stringResource(R.string.schedule_send)) },
         text = {
             Column {
                 choices.forEach { (label, at) ->
-                    ScheduleChoice(label, scheduleTimeOf(context, at)) { onSchedule(at) }
+                    ScheduleChoice(stringResource(label), scheduleTimeOf(context, at)) { onSchedule(at) }
                 }
-                ScheduleChoice("Choisir la date et l'heure", null) { pickDateTime(context, now, onSchedule) }
+                ScheduleChoice(stringResource(R.string.pick_date_time), null) { pickDateTime(context, now, onSchedule) }
                 if (!exact) {
                     Text(
-                        text = "Sans l'autorisation d'heure exacte, Android peut envoyer le message quelques minutes plus tard.",
+                        text = stringResource(R.string.exact_alarm_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp),
@@ -60,11 +61,11 @@ internal fun ScheduleDialog(onDismiss: () -> Unit, onSchedule: (Long) -> Unit) {
                             onDismiss()
                             openExactAlarmSettings(context)
                         },
-                    ) { Text("Autoriser l'heure exacte") }
+                    ) { Text(stringResource(R.string.allow_exact_time)) }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -85,10 +86,10 @@ private fun ScheduleChoice(title: String, detail: String?, onClick: () -> Unit) 
 }
 
 /** In an hour, this evening while it is still ahead, tomorrow morning. */
-private fun presetsFrom(now: ZonedDateTime): List<Pair<String, Long>> = buildList {
-    add("Dans une heure" to now.plusHours(1).truncatedTo(ChronoUnit.MINUTES))
-    if (now.hour < EVENING_HOUR - 1) add("Ce soir" to now.withHour(EVENING_HOUR).truncatedTo(ChronoUnit.HOURS))
-    add("Demain matin" to now.plusDays(1).withHour(MORNING_HOUR).truncatedTo(ChronoUnit.HOURS))
+private fun presetsFrom(now: ZonedDateTime): List<Pair<Int, Long>> = buildList {
+    add(R.string.in_an_hour to now.plusHours(1).truncatedTo(ChronoUnit.MINUTES))
+    if (now.hour < EVENING_HOUR - 1) add(R.string.this_evening to now.withHour(EVENING_HOUR).truncatedTo(ChronoUnit.HOURS))
+    add(R.string.tomorrow_morning to now.plusDays(1).withHour(MORNING_HOUR).truncatedTo(ChronoUnit.HOURS))
 }.map { (label, time) -> label to time.toInstant().toEpochMilli() }
 
 /** Android's own date then time pickers, in the phone's colours and 12- or 24-hour setting. */
@@ -103,7 +104,7 @@ private fun pickDateTime(context: Context, now: ZonedDateTime, onSchedule: (Long
                         .toInstant()
                         .toEpochMilli()
                     if (at <= System.currentTimeMillis()) {
-                        Toast.makeText(context, "Choisissez un moment à venir", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.pick_future_time), Toast.LENGTH_SHORT).show()
                     } else {
                         onSchedule(at)
                     }

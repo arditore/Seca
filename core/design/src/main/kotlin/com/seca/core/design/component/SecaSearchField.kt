@@ -32,6 +32,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.seca.core.design.SecaIcons
+import androidx.compose.ui.res.stringResource
+import com.seca.core.design.R
 
 private val PlaceholderMinSize = 12.sp
 private val PlaceholderStep = 0.5.sp
@@ -98,7 +100,7 @@ fun SecaSearchField(
         }
         if (query.isNotEmpty()) {
             IconButton(onClick = { onQueryChange("") }) {
-                Icon(SecaIcons.Close, contentDescription = "Effacer la recherche")
+                Icon(SecaIcons.Close, contentDescription = stringResource(R.string.design_clear_search))
             }
         }
         trailing()

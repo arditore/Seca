@@ -18,6 +18,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaIcons
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.seca.core.design.R
 
 private const val MIN_LENGTH = 8
 
@@ -47,26 +50,26 @@ fun SecaPassphraseDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = if (creating) {
-                        "Sans ce mot de passe, la sauvegarde ne s'ouvre plus : personne ne peut le retrouver."
-                    } else {
-                        "Le mot de passe choisi au moment de la sauvegarde."
-                    },
+                    text = stringResource(if (creating) R.string.design_passphrase_creating_hint else R.string.design_passphrase_opening_hint),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                PassphraseField(first, "Mot de passe", isError = tooShort) { first = it }
+                PassphraseField(first, stringResource(R.string.design_passphrase), isError = tooShort) { first = it }
                 if (tooShort) {
-                    Text("Au moins $MIN_LENGTH caractères", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                    Text(
+                        text = pluralStringResource(R.plurals.design_passphrase_too_short, MIN_LENGTH, MIN_LENGTH),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
                 if (creating) {
-                    PassphraseField(second, "Confirmer le mot de passe", isError = mismatch) { second = it }
+                    PassphraseField(second, stringResource(R.string.design_passphrase_confirm), isError = mismatch) { second = it }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(first.toCharArray()) }, enabled = valid) { Text(confirmLabel) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.design_cancel)) } },
     )
 }
 

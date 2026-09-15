@@ -12,7 +12,7 @@
          they are written to. -->
     <uses-permission android:name="android.permission.READ_SMS" />
     <!-- Seca Link only, once the owner turns it on: public keys and encrypted envelopes to
-         the Nostr relays they list. Seca Contacts and Seca Telephone never get this. -->
+         the Nostr relays they list. Seca Contacts and Seca Phone never get this. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.SEND_SMS" />
@@ -26,19 +26,28 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Seca Link, while it is on, keeps listening to its relays in a foreground service
-         with a quiet notification: a phone without Google has no push service. -->
+         with a quiet notification: Seca uses no push service, Google's or any other. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
-    <!-- Seca Contacts profiles, and one-tap calls through Seca Telephone: only apps signed
-         with the same key hold these. -->
+    <!-- Seca Contacts profiles, and one-tap calls through Seca Phone: only apps signed with the
+         same key hold these. Declared here too: Android grants them only if they were defined
+         when this app was installed, so they hold whatever order the Seca apps come in. -->
+    <permission
+        android:name="com.seca.permission.READ_PROFILES"
+        android:label="@string/permission_read_profiles"
+        android:protectionLevel="signature" />
+    <permission
+        android:name="com.seca.permission.PLACE_CALLS"
+        android:label="@string/permission_place_calls"
+        android:protectionLevel="signature" />
     <uses-permission android:name="com.seca.permission.READ_PROFILES" />
     <uses-permission android:name="com.seca.permission.PLACE_CALLS" />
 
-    <!-- Lets Seca Téléphone hand over the text of "Refuser et répondre". Declared by both apps,
+    <!-- Lets Seca Phone hand over the text of "Decline and reply". Declared by both apps,
          so it holds whichever is installed first; only apps signed with the same key get it. -->
     <permission
         android:name="com.seca.permission.SEND_MESSAGES"
-        android:label="Envoyer des messages avec Seca Messages"
+        android:label="@string/permission_send_messages"
         android:protectionLevel="signature" />
     <!-- The camera, asked only when the owner scans a contact's safety number; no image is kept. -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -64,7 +73,7 @@
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="Seca Messages"
+        android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.SecaMessages">
         <activity
@@ -122,7 +131,7 @@
             android:exported="true"
             android:permission="com.seca.permission.BACKUP" />
 
-        <!-- The text of "Refuser et répondre", from Seca Téléphone only: sent at once. -->
+        <!-- The text of "Decline and reply", from Seca Phone only: sent at once. -->
         <receiver
             android:name=".sms.QuickReplyReceiver"
             android:exported="true"

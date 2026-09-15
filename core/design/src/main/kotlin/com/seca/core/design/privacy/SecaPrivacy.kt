@@ -33,6 +33,8 @@ import com.seca.core.design.SecaTheme
 import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaSettingRow
+import androidx.compose.ui.res.stringResource
+import com.seca.core.design.R
 
 /** The protections an app's owner can turn on; each Seca app keeps its own. Both are off by default. */
 class SecaPrivacySettings(context: Context) {
@@ -85,7 +87,7 @@ class SecaAppLock(private val activity: Activity, val appName: String) {
             return
         }
         BiometricPrompt.Builder(activity)
-            .setTitle("Déverrouiller $appName")
+            .setTitle(activity.getString(R.string.design_unlock_app, appName))
             .setAllowedAuthenticators(AUTHENTICATORS)
             .build()
             .authenticate(
@@ -130,10 +132,10 @@ fun SecaLockGate(lock: SecaAppLock, identity: SecaAppIdentity, content: @Composa
             Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
                 SecaEmptyState(
                     icon = SecaIcons.Lock,
-                    title = "${lock.appName} est verrouillé",
-                    description = "Son contenu reste caché jusqu'au déverrouillage.",
+                    title = stringResource(R.string.design_app_locked, lock.appName),
+                    description = stringResource(R.string.design_app_locked_hint),
                     modifier = Modifier.systemBarsPadding(),
-                    action = { Button(onClick = lock::unlock) { Text("Déverrouiller") } },
+                    action = { Button(onClick = lock::unlock) { Text(stringResource(R.string.design_unlock)) } },
                 )
             }
         }
@@ -154,12 +156,8 @@ fun SecaPrivacySettingsGroup(appName: String) {
     SecaGroupItem(index = 0, count = 2) {
         SecaSettingRow(
             icon = SecaIcons.Lock,
-            title = "Verrouiller $appName",
-            subtitle = if (canLock) {
-                "Empreinte ou code du téléphone à l'ouverture"
-            } else {
-                "Définissez d'abord un verrouillage d'écran dans Android"
-            },
+            title = stringResource(R.string.design_lock_app, appName),
+            subtitle = stringResource(if (canLock) R.string.design_lock_app_on else R.string.design_lock_app_unavailable),
             modifier = Modifier.toggleable(value = lock, enabled = canLock, role = Role.Switch) {
                 lock = it
                 settings.lockEnabled = it
@@ -170,8 +168,8 @@ fun SecaPrivacySettingsGroup(appName: String) {
     SecaGroupItem(index = 1, count = 2) {
         SecaSettingRow(
             icon = SecaIcons.VisibilityOff,
-            title = "Écran privé",
-            subtitle = "Bloque les captures et masque l'aperçu dans les apps récentes",
+            title = stringResource(R.string.design_private_screen),
+            subtitle = stringResource(R.string.design_private_screen_hint),
             modifier = Modifier.toggleable(value = privateScreen, role = Role.Switch) {
                 privateScreen = it
                 settings.privateScreen = it

@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaIcons
+import androidx.compose.ui.res.stringResource
+import com.seca.core.design.R
 
 /** The Seca screens' top bar: a back or close button, a title, and optional actions at the end. */
 @Composable
@@ -26,7 +28,7 @@ fun SecaTopBar(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     navigationIcon: ImageVector = SecaIcons.Back,
-    navigationLabel: String = if (navigationIcon == SecaIcons.Close) "Fermer" else "Retour",
+    navigationLabel: String = stringResource(if (navigationIcon == SecaIcons.Close) R.string.design_close else R.string.design_back),
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     Row(

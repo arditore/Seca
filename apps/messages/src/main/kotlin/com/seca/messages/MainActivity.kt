@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
     private val contactsGranted = mutableStateOf(false)
     private val defaultApp = mutableStateOf(false)
     private val viewModel: MessagesViewModel by viewModels()
-    private val lock by lazy { SecaAppLock(this, "Seca Messages") }
+    private val lock by lazy { SecaAppLock(this, getString(R.string.app_name)) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -9,6 +9,9 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import android.content.Context
+import android.text.format.DateFormat
+import com.seca.core.model.uiLocale
 
 /** Consecutive calls with the same number on the same day, shown as one row. */
 data class CallGroup(val calls: List<CallRecord>, val match: NumberMatch?) {
@@ -40,15 +43,15 @@ internal fun groupCalls(
 internal fun dayOf(millis: Long, zone: ZoneId = ZoneId.systemDefault()): Long =
     Instant.ofEpochMilli(millis).atZone(zone).toLocalDate().toEpochDay()
 
-/** "Aujourd'hui", "Hier", else the date — with its year only when it is not this year's. */
-internal fun dayLabel(millis: Long, today: LocalDate = LocalDate.now()): String {
+/** "Today", "Yesterday", else the date — with its year only when it is not this year's. */
+internal fun dayLabel(context: Context, millis: Long, today: LocalDate = LocalDate.now()): String {
     val day = LocalDate.ofEpochDay(dayOf(millis))
-    val pattern = if (day.year == today.year) "EEEE d MMMM" else "EEEE d MMMM yyyy"
+    val locale = uiLocale()
+    val pattern = DateFormat.getBestDateTimePattern(locale, if (day.year == today.year) "EEEEdMMMM" else "EEEEdMMMMyyyy")
     return when (day) {
-        today -> "Aujourd'hui"
-        today.minusDays(1) -> "Hier"
-        else -> day.format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
-            .replaceFirstChar { it.titlecase(Locale.getDefault()) }
+        today -> context.getString(R.string.today)
+        today.minusDays(1) -> context.getString(R.string.yesterday)
+        else -> day.format(DateTimeFormatter.ofPattern(pattern, locale)).replaceFirstChar { it.titlecase(locale) }
     }
 }
 

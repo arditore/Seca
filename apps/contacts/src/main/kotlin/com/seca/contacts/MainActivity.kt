@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
     /** Re-read on every resume: the user may grant or revoke access in Settings. */
     private val permissionGranted = mutableStateOf(false)
     private val viewModel: ContactsViewModel by viewModels()
-    private val lock by lazy { SecaAppLock(this, "Seca Contacts") }
+    private val lock by lazy { SecaAppLock(this, getString(R.string.app_name)) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

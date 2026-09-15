@@ -37,7 +37,11 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
+import androidx.annotation.StringRes
+import com.seca.core.design.label
+import com.seca.core.model.uiLocale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 /** The profiles blocked right now, as Seca Contacts names them; none without Seca Contacts, or once the block has ended. */
 internal val PhoneUi.blockedProfileList: List<Profile>
@@ -54,11 +58,11 @@ internal fun BlockedProfilesDialog(ui: PhoneUi, viewModel: PhoneViewModel, onDis
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(SecaIcons.Block, contentDescription = null) },
-        title = { Text("Profils bloqués") },
+        title = { Text(stringResource(R.string.blocked_profiles)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    text = "Les contacts d'un profil bloqué ne peuvent plus vous appeler, le temps que vous choisissez.",
+                    text = stringResource(R.string.blocked_profiles_dialog_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp),
@@ -73,14 +77,14 @@ internal fun BlockedProfilesDialog(ui: PhoneUi, viewModel: PhoneViewModel, onDis
                             .toggleable(value = blocked, role = Role.Switch) { viewModel.setProfileBlocked(profile.id, it) }
                             .padding(horizontal = 4.dp, vertical = 8.dp),
                     ) {
-                        SecaProfileBadge(profile.name, tone = ui.profiles.toneOf(profile), size = 36.dp)
+                        SecaProfileBadge(profile.label(), tone = ui.profiles.toneOf(profile), size = 36.dp)
                         Column(
                             Modifier
                                 .weight(1f)
                                 .padding(horizontal = 12.dp),
                         ) {
                             Text(
-                                text = profile.name,
+                                text = profile.label(),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = colors.onSurface,
                                 maxLines = 1,
@@ -96,36 +100,32 @@ internal fun BlockedProfilesDialog(ui: PhoneUi, viewModel: PhoneViewModel, onDis
                     }
                 }
 
-                DialogLabel("Pendant")
+                DialogLabel(stringResource(R.string.block_duration))
                 BlockFor.entries.chunked(2).forEach { row ->
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(bottom = 8.dp),
                     ) {
                         row.forEach { choice ->
-                            SecaChoicePill(durationLabel(choice), selected = ui.blockFor == choice, onClick = { viewModel.setBlockFor(choice) })
+                            SecaChoicePill(stringResource(durationLabel(choice)), selected = ui.blockFor == choice, onClick = { viewModel.setBlockFor(choice) })
                         }
                     }
                 }
 
-                DialogLabel("Quand ils appellent")
+                DialogLabel(stringResource(R.string.when_they_call))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SecaChoicePill("Refuser", selected = ui.blockMode == BlockMode.Decline, onClick = { viewModel.setBlockMode(BlockMode.Decline) })
-                    SecaChoicePill("En silence", selected = ui.blockMode == BlockMode.Silence, onClick = { viewModel.setBlockMode(BlockMode.Silence) })
+                    SecaChoicePill(stringResource(R.string.decline), selected = ui.blockMode == BlockMode.Decline, onClick = { viewModel.setBlockMode(BlockMode.Decline) })
+                    SecaChoicePill(stringResource(R.string.silently), selected = ui.blockMode == BlockMode.Silence, onClick = { viewModel.setBlockMode(BlockMode.Silence) })
                 }
                 Text(
-                    text = if (ui.blockMode == BlockMode.Decline) {
-                        "L'appel est refusé sans sonner et reste dans l'historique, parmi les refusés."
-                    } else {
-                        "L'appel s'affiche sans sonner ni vibrer : vous répondez si vous le voulez."
-                    },
+                    text = stringResource(if (ui.blockMode == BlockMode.Decline) R.string.block_decline_hint else R.string.block_silence_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp),
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.ok)) } },
     )
 }
 
@@ -146,7 +146,7 @@ internal fun BlockedProfilesBanner(ui: PhoneUi, onManage: () -> Unit, onUnblock:
     if (blocked.isEmpty()) return
     val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
-    val calls = if (ui.blockMode == BlockMode.Decline) "Leurs appels sont refusés" else "Leurs appels sonnent en silence"
+    val calls = stringResource(if (ui.blockMode == BlockMode.Decline) R.string.blocked_declined else R.string.blocked_silenced)
     Surface(
         onClick = onManage,
         color = colors.tertiaryContainer,
@@ -167,45 +167,44 @@ internal fun BlockedProfilesBanner(ui: PhoneUi, onManage: () -> Unit, onUnblock:
                     .padding(horizontal = 12.dp),
             ) {
                 Text(
-                    text = "Appels bloqués : " + blocked.joinToString(", ") { it.name },
+                    text = stringResource(R.string.blocked_calls, blocked.joinToString(", ") { it.label(context) }),
                     style = MaterialTheme.typography.titleSmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = if (ui.blockedUntil > 0) "$calls jusqu'à ${endLabel(context, ui.blockedUntil)}" else calls,
+                    text = if (ui.blockedUntil > 0) stringResource(R.string.blocked_until, calls, endLabel(context, ui.blockedUntil)) else calls,
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
             TextButton(
                 onClick = onUnblock,
                 colors = ButtonDefaults.textButtonColors(contentColor = colors.onTertiaryContainer),
-            ) { Text("Réactiver") }
+            ) { Text(stringResource(R.string.unblock)) }
         }
     }
 }
 
-private fun durationLabel(choice: BlockFor): String = when (choice) {
-    BlockFor.UntilLifted -> "Jusqu'à réactivation"
-    BlockFor.OneHour -> "1 heure"
-    BlockFor.UntilMorning -> "Demain 8 h"
-    BlockFor.UntilMonday -> "Lundi 8 h"
+@StringRes
+private fun durationLabel(choice: BlockFor): Int = when (choice) {
+    BlockFor.UntilLifted -> R.string.block_until_lifted
+    BlockFor.OneHour -> R.string.block_one_hour
+    BlockFor.UntilMorning -> R.string.block_until_morning
+    BlockFor.UntilMonday -> R.string.block_until_monday
 }
 
-/** "18:30" today, "demain 08:00", else the day's name. */
+/** "18:30" today, "tomorrow 08:00", else the day's name. */
 private fun endLabel(context: Context, millis: Long): String {
     val day = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
     val today = LocalDate.now()
     val time = timeOf(context, millis)
     return when (day) {
         today -> time
-        today.plusDays(1) -> "demain $time"
-        else -> "${day.format(DateTimeFormatter.ofPattern("EEEE", Locale.getDefault()))} $time"
+        today.plusDays(1) -> context.getString(R.string.tomorrow_at, time)
+        else -> "${day.format(DateTimeFormatter.ofPattern("EEEE", uiLocale()))} $time"
     }
 }
 
-private fun contactCount(count: Int): String = when (count) {
-    0 -> "Aucun contact"
-    1 -> "1 contact"
-    else -> "$count contacts"
-}
+@Composable
+private fun contactCount(count: Int): String =
+    if (count == 0) stringResource(R.string.no_contacts) else pluralStringResource(R.plurals.contacts_count, count, count)

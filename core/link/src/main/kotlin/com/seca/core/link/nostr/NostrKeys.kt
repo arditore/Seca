@@ -12,7 +12,7 @@ class NostrKeys(secret: ByteArray) {
     private val secret = secret.copyOf()
 
     init {
-        require(this.secret.size == KEY_SIZE && Secp256k1.secKeyVerify(this.secret)) { "Clé Nostr invalide" }
+        require(this.secret.size == KEY_SIZE && Secp256k1.secKeyVerify(this.secret)) { "Invalid Nostr key" }
     }
 
     /** Hex, as Nostr writes it: the x coordinate of the public point. */

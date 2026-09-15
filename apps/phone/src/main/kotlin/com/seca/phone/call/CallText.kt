@@ -4,27 +4,29 @@ import android.telecom.Call
 import android.telecom.TelecomManager
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.model.Profile
+import android.content.Context
+import com.seca.phone.R
 
 /** How to name the other side of a call, on the screen and in the notification. */
-internal fun CallView.title(numbers: PhoneNumbers): String = when {
+internal fun CallView.title(context: Context, numbers: PhoneNumbers): String = when {
     caller != null -> caller.name
     networkName != null -> networkName
-    presentation == TelecomManager.PRESENTATION_RESTRICTED -> "Numéro masqué"
-    presentation == TelecomManager.PRESENTATION_PAYPHONE -> "Cabine téléphonique"
-    number.isBlank() -> "Numéro inconnu"
+    presentation == TelecomManager.PRESENTATION_RESTRICTED -> context.getString(R.string.hidden_number)
+    presentation == TelecomManager.PRESENTATION_PAYPHONE -> context.getString(R.string.payphone)
+    number.isBlank() -> context.getString(R.string.unknown_number)
     else -> numbers.display(number)
 }
 
 /** Where the call stands, in words. */
-internal fun CallView.status(): String = when (state) {
-    Call.STATE_RINGING, Call.STATE_SIMULATED_RINGING -> "Appel entrant"
-    Call.STATE_DIALING, Call.STATE_CONNECTING -> "Appel…"
-    Call.STATE_ACTIVE -> "En communication"
-    Call.STATE_HOLDING -> "En attente"
-    Call.STATE_SELECT_PHONE_ACCOUNT -> "Choisissez une carte SIM"
-    Call.STATE_DISCONNECTING -> "Fin de l'appel…"
-    Call.STATE_DISCONNECTED -> disconnectLabel ?: "Appel terminé"
-    else -> "Appel"
+internal fun CallView.status(context: Context): String = when (state) {
+    Call.STATE_RINGING, Call.STATE_SIMULATED_RINGING -> context.getString(R.string.call_status_incoming)
+    Call.STATE_DIALING, Call.STATE_CONNECTING -> context.getString(R.string.call_status_dialing)
+    Call.STATE_ACTIVE -> context.getString(R.string.call_status_active)
+    Call.STATE_HOLDING -> context.getString(R.string.call_status_holding)
+    Call.STATE_SELECT_PHONE_ACCOUNT -> context.getString(R.string.call_status_select_sim)
+    Call.STATE_DISCONNECTING -> context.getString(R.string.call_status_disconnecting)
+    Call.STATE_DISCONNECTED -> disconnectLabel ?: context.getString(R.string.call_status_ended)
+    else -> context.getString(R.string.call_other)
 }
 
 /**

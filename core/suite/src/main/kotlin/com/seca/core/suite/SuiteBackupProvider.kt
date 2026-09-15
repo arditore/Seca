@@ -53,11 +53,11 @@ abstract class SuiteBackupProvider : ContentProvider() {
                     val text = runCatching { ParcelFileDescriptor.AutoCloseInputStream(read).use { it.readBytes().toString(Charsets.UTF_8) } }
                         .getOrNull()
                     lastImport = runCatching { runBlocking { importPart(JSONObject(text.orEmpty())) } }
-                        .getOrElse { "restauration impossible" }
+                        .getOrElse { requireContext().getString(R.string.suite_restore_failed) }
                 }
                 write
             }
-            else -> throw FileNotFoundException("Mode non pris en charge : $mode")
+            else -> throw FileNotFoundException("Unsupported mode: $mode")
         }
     }
 

@@ -60,6 +60,12 @@ import com.seca.core.design.component.rememberContactThumbnail
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
 import java.text.Normalizer
+import androidx.annotation.StringRes
+import com.seca.core.design.label
+import androidx.compose.ui.platform.LocalResources
+import com.seca.core.contacts.describe
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 @Composable
 internal fun HomeScreen(
@@ -97,11 +103,11 @@ internal fun HomeScreen(
                 SecaSearchField(
                     query = ui.query,
                     onQueryChange = viewModel::setQuery,
-                    placeholder = "Rechercher un contact ou un numéro",
+                    placeholder = stringResource(R.string.search_hint),
                     modifier = Modifier.padding(horizontal = 16.dp),
                 ) {
                     IconButton(onClick = { viewModel.open(PhoneScreen.Settings) }) {
-                        Icon(SecaIcons.Settings, contentDescription = "Paramètres")
+                        Icon(SecaIcons.Settings, contentDescription = stringResource(R.string.settings))
                     }
                 }
                 if (ui.query.isBlank()) {
@@ -119,8 +125,8 @@ internal fun HomeScreen(
         bottomBar = { SecaSuiteBar(current = SecaAppIdentity.Phone, onSelect = { openSibling(context, it) }) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                text = { Text("Clavier") },
-                icon = { Icon(SecaIcons.Dialpad, contentDescription = if (fabExpanded) null else "Clavier") },
+                text = { Text(stringResource(R.string.keypad)) },
+                icon = { Icon(SecaIcons.Dialpad, contentDescription = if (fabExpanded) null else stringResource(R.string.keypad)) },
                 onClick = { viewModel.openDialer("") },
                 expanded = fabExpanded,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -165,29 +171,30 @@ private fun FilterRow(ui: PhoneUi, onSelect: (CallFilter) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.padding(top = 12.dp),
     ) {
-        items(CallFilter.ByType, key = { filterLabel(it) }) { filter ->
-            SecaChoicePill(filterLabel(filter), selected = ui.filter == filter, onClick = { onSelect(filter) })
+        items(CallFilter.ByType, key = { it.toString() }) { filter ->
+            SecaChoicePill(stringResource(filterLabel(filter)), selected = ui.filter == filter, onClick = { onSelect(filter) })
         }
         items(profiles, key = { "profile-${it.id}" }) { profile ->
             val filter = CallFilter.ByProfile(profile.id)
             SecaChoicePill(
-                label = profile.name,
+                label = profile.label(),
                 selected = ui.filter == filter,
                 onClick = { onSelect(filter) },
-                leading = { SecaProfileBadge(profile.name, tone = ui.profiles.toneOf(profile), size = 28.dp) },
+                leading = { SecaProfileBadge(profile.label(), tone = ui.profiles.toneOf(profile), size = 28.dp) },
             )
         }
     }
 }
 
-private fun filterLabel(filter: CallFilter): String = when (filter) {
-    CallFilter.All -> "Tous"
-    CallFilter.Missed -> "Manqués"
-    CallFilter.Incoming -> "Entrants"
-    CallFilter.Outgoing -> "Sortants"
-    CallFilter.Rejected -> "Refusés"
-    CallFilter.Voicemail -> "Messagerie"
-    is CallFilter.ByProfile -> "Profil"
+@StringRes
+private fun filterLabel(filter: CallFilter): Int = when (filter) {
+    CallFilter.All -> R.string.filter_all
+    CallFilter.Missed -> R.string.filter_missed
+    CallFilter.Incoming -> R.string.filter_incoming
+    CallFilter.Outgoing -> R.string.filter_outgoing
+    CallFilter.Rejected -> R.string.filter_rejected
+    CallFilter.Voicemail -> R.string.filter_voicemail
+    is CallFilter.ByProfile -> R.string.filter_profile
 }
 
 @Composable
@@ -209,6 +216,7 @@ private fun Recents(
         }
         return
     }
+    val context = LocalContext.current
     val byDay = remember(ui.groups) { ui.groups.groupBy { dayOf(it.latest.date) } }
     LazyColumn(
         state = listState,
@@ -220,12 +228,12 @@ private fun Recents(
             item(key = "default-banner", contentType = "banner") { DefaultDialerBanner(onBecomeDefault, onDismissBanner) }
         }
         if (showFavorites) {
-            item(key = "favorites-label", contentType = "label") { SecaSectionLabel("Favoris") }
+            item(key = "favorites-label", contentType = "label") { SecaSectionLabel(stringResource(R.string.favorites)) }
             item(key = "favorites", contentType = "favorites") { FavoritesRow(favorites, ui, actions.onCall) }
         }
         byDay.values.forEach { rows ->
             item(key = "day-${rows.first().latest.id}", contentType = "label") {
-                SecaSectionLabel(dayLabel(rows.first().latest.date))
+                SecaSectionLabel(dayLabel(context, rows.first().latest.date))
             }
             // A shared content type lets the list reuse rows it scrolled past instead of building new ones.
             itemsIndexed(rows, key = { _, group -> group.latest.id }, contentType = { _, _ -> "call" }) { index, group ->
@@ -245,21 +253,21 @@ private fun DefaultDialerBanner(onActivate: () -> Unit, onDismiss: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(SecaIcons.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(
-                    text = "Répondre aux appels avec Seca",
+                    text = stringResource(R.string.default_banner_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(start = 12.dp),
                 )
             }
             Text(
-                text = "Vous verrez qui appelle et son profil, et vous pourrez répondre depuis l'écran verrouillé.",
+                text = stringResource(R.string.default_banner_text),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
             Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = onActivate) { Text("Activer") }
-                TextButton(onClick = onDismiss, modifier = Modifier.padding(start = 8.dp)) { Text("Plus tard") }
+                Button(onClick = onActivate) { Text(stringResource(R.string.turn_on)) }
+                TextButton(onClick = onDismiss, modifier = Modifier.padding(start = 8.dp)) { Text(stringResource(R.string.later)) }
             }
         }
     }
@@ -268,24 +276,24 @@ private fun DefaultDialerBanner(onActivate: () -> Unit, onDismiss: () -> Unit) {
 @Composable
 private fun EmptyHistory(filter: CallFilter) {
     val (title, icon) = when (filter) {
-        CallFilter.All -> "Aucun appel" to SecaIcons.Phone
-        CallFilter.Missed -> "Aucun appel manqué" to SecaIcons.CallMissed
-        CallFilter.Incoming -> "Aucun appel reçu" to SecaIcons.CallReceived
-        CallFilter.Outgoing -> "Aucun appel émis" to SecaIcons.CallMade
-        CallFilter.Rejected -> "Aucun appel refusé ni bloqué" to SecaIcons.Block
-        CallFilter.Voicemail -> "Aucun message vocal" to SecaIcons.Voicemail
-        is CallFilter.ByProfile -> "Aucun appel avec ce profil" to SecaIcons.Label
+        CallFilter.All -> R.string.empty_all to SecaIcons.Phone
+        CallFilter.Missed -> R.string.empty_missed to SecaIcons.CallMissed
+        CallFilter.Incoming -> R.string.empty_incoming to SecaIcons.CallReceived
+        CallFilter.Outgoing -> R.string.empty_outgoing to SecaIcons.CallMade
+        CallFilter.Rejected -> R.string.empty_rejected to SecaIcons.Block
+        CallFilter.Voicemail -> R.string.empty_voicemail to SecaIcons.Voicemail
+        is CallFilter.ByProfile -> R.string.empty_profile to SecaIcons.Label
     }
     SecaEmptyState(
         icon = icon,
-        title = title,
-        description = "Les appels passés et reçus sur ce téléphone apparaîtront ici.",
+        title = stringResource(title),
+        description = stringResource(R.string.empty_history_hint),
     )
 }
 
 /**
  * One row of the history: who, how many times, how and when. A contact's
- * profile other than Principal is named, so "Travail" calls stand out. A long
+ * profile other than Principal is named, so "Work" calls stand out. A long
  * press offers the rest: copy, message, the contact, deletion.
  */
 @Composable
@@ -294,7 +302,9 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
     var menuOpen by remember { mutableStateOf(false) }
     val call = group.latest
     val contact = group.match?.contact
-    val title = contact?.displayName ?: callerLabel(call, ui.numbers)
+    val title = contact?.displayName ?: callerLabel(context, call, ui.numbers)
+    val blockedText = stringResource(R.string.number_blocked)
+    val blockFailedText = stringResource(R.string.block_failed)
     val details = buildList {
         add(timeOf(context, call.date))
         ui.simLabels[call.accountId]?.let { add(it) }
@@ -311,7 +321,7 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
                 .fillMaxWidth()
                 .combinedClickable(
                     onClick = { if (call.callable) actions.onOpen(call.number) },
-                    onLongClickLabel = "Plus d'actions",
+                    onLongClickLabel = stringResource(R.string.more_actions),
                     onLongClick = { menuOpen = true },
                 )
                 .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
@@ -354,27 +364,27 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
             }
             if (call.callable) {
                 FilledTonalIconButton(onClick = { actions.onCall(call.number) }) {
-                    Icon(SecaIcons.Phone, contentDescription = "Appeler $title")
+                    Icon(SecaIcons.Phone, contentDescription = stringResource(R.string.call_named, title))
                 }
             }
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             if (call.callable) {
-                MenuEntry("Copier le numéro", SecaIcons.ContentCopy) {
+                MenuEntry(stringResource(R.string.copy_number), SecaIcons.ContentCopy) {
                     menuOpen = false
                     copyNumber(context, call.number)
                 }
-                MenuEntry("Envoyer un message", SecaIcons.Messages) {
+                MenuEntry(stringResource(R.string.send_message), SecaIcons.Messages) {
                     menuOpen = false
                     sms(context, call.number)
                 }
                 if (contact != null) {
-                    MenuEntry("Voir la fiche", SecaIcons.Contacts) {
+                    MenuEntry(stringResource(R.string.view_contact), SecaIcons.Contacts) {
                         menuOpen = false
                         openContact(context, contact.id, contact.lookupKey)
                     }
                 } else {
-                    MenuEntry("Ajouter aux contacts", SecaIcons.PersonAdd) {
+                    MenuEntry(stringResource(R.string.add_to_contacts), SecaIcons.PersonAdd) {
                         menuOpen = false
                         addContact(context, call.number)
                     }
@@ -382,18 +392,22 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
             }
             // Blocking is Android's own list, which only the default phone app may change.
             if (call.callable && BlockedNumberContract.canCurrentUserBlockNumbers(context)) {
-                MenuEntry("Bloquer ce numéro", SecaIcons.Block) {
+                MenuEntry(stringResource(R.string.block_number), SecaIcons.Block) {
                     menuOpen = false
                     val blocked = blockNumber(context, call.number)
                     Toast.makeText(
                         context,
-                        if (blocked) "Numéro bloqué" else "Blocage impossible",
+                        if (blocked) blockedText else blockFailedText,
                         Toast.LENGTH_SHORT,
                     ).show()
                 }
             }
             MenuEntry(
-                if (group.calls.size > 1) "Supprimer ces ${group.calls.size} appels" else "Supprimer de l'historique",
+                if (group.calls.size > 1) {
+                    pluralStringResource(R.plurals.delete_calls, group.calls.size, group.calls.size)
+                } else {
+                    stringResource(R.string.delete_from_history)
+                },
                 SecaIcons.Delete,
             ) {
                 menuOpen = false
@@ -425,7 +439,7 @@ private fun FavoritesRow(favorites: List<SecaContact>, ui: PhoneUi, onCall: (Str
                 modifier = Modifier
                     .width(88.dp)
                     .clip(MaterialTheme.shapes.large)
-                    .clickable(onClickLabel = "Appeler") { onCall(contact.phoneNumbers.first().raw) }
+                    .clickable(onClickLabel = stringResource(R.string.call)) { onCall(contact.phoneNumbers.first().raw) }
                     .padding(vertical = 8.dp),
             ) {
                 SecaAvatar(
@@ -475,25 +489,25 @@ private fun SearchResults(ui: PhoneUi, actions: RowActions) {
     if (!isNumber && contacts.isEmpty() && calls.isEmpty()) {
         SecaEmptyState(
             icon = SecaIcons.Search,
-            title = "Aucun résultat",
-            description = "Rien ne correspond à « $query ».",
+            title = stringResource(R.string.no_results),
+            description = stringResource(R.string.nothing_matches, query),
         )
         return
     }
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 112.dp)) {
         if (isNumber) {
-            item(key = "number-label", contentType = "label") { SecaSectionLabel("Numéro") }
+            item(key = "number-label", contentType = "label") { SecaSectionLabel(stringResource(R.string.number)) }
             item(key = "number") {
                 SecaGroupItem(index = 0, count = 1, onClick = { actions.onCall(query) }) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
                         Icon(SecaIcons.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Column(Modifier.padding(start = 16.dp)) {
                             Text(
-                                text = "Appeler ${ui.numbers.display(query)}",
+                                text = stringResource(R.string.call_named, ui.numbers.display(query)),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
-                            ui.numbers.describe(query)?.let {
+                            ui.numbers.describe(query, LocalResources.current)?.let {
                                 Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
@@ -502,7 +516,7 @@ private fun SearchResults(ui: PhoneUi, actions: RowActions) {
             }
         }
         if (contacts.isNotEmpty()) {
-            item(key = "contacts-label", contentType = "label") { SecaSectionLabel("Contacts") }
+            item(key = "contacts-label", contentType = "label") { SecaSectionLabel(stringResource(R.string.contacts)) }
             itemsIndexed(contacts, key = { _, contact -> "contact-${contact.id}" }, contentType = { _, _ -> "contact" }) { index, contact ->
                 val number = contact.phoneNumbers.first().raw
                 SecaGroupItem(index = index, count = contacts.size) {
@@ -517,7 +531,7 @@ private fun SearchResults(ui: PhoneUi, actions: RowActions) {
             }
         }
         if (calls.isNotEmpty()) {
-            item(key = "calls-label", contentType = "label") { SecaSectionLabel("Historique") }
+            item(key = "calls-label", contentType = "label") { SecaSectionLabel(stringResource(R.string.history)) }
             itemsIndexed(calls, key = { _, group -> "call-${group.latest.id}" }, contentType = { _, _ -> "call" }) { index, group ->
                 SecaGroupItem(index = index, count = calls.size) { CallRow(group, ui, actions) }
             }

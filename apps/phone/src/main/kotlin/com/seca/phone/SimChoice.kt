@@ -45,6 +45,7 @@ import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.segmentShape
+import androidx.compose.ui.res.stringResource
 
 /** A SIM able to place calls. [slot] counts from 1, when Android tells it. */
 internal data class Sim(val handle: PhoneAccountHandle, val label: String, val slot: Int?) {
@@ -188,7 +189,7 @@ internal fun SimChooserDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -224,12 +225,12 @@ internal fun SimPreferenceRow(number: String, lookupKey: String?, name: String, 
     var preferred by remember(key) { mutableStateOf(preferences[key]?.let { saved -> sims.firstOrNull { it.handle == saved } }) }
     var choosing by remember { mutableStateOf(false) }
     Column {
-        SecaSectionLabel("Carte SIM")
+        SecaSectionLabel(stringResource(R.string.sim_card))
         SecaGroupItem(index = 0, count = 1, onClick = { choosing = true }) {
             SecaSettingRow(
                 icon = SecaIcons.Phone,
-                title = preferred?.name ?: "Demander à chaque appel",
-                subtitle = if (preferred != null) "Pour appeler $name" else "Toucher pour choisir la SIM qui appelle $name",
+                title = preferred?.name ?: stringResource(R.string.ask_every_call),
+                subtitle = stringResource(if (preferred != null) R.string.sim_for_calling else R.string.sim_tap_to_choose, name),
                 trailing = preferred?.let {
                     {
                         TextButton(
@@ -237,7 +238,7 @@ internal fun SimPreferenceRow(number: String, lookupKey: String?, name: String, 
                                 preferences.forget(key)
                                 preferred = null
                             },
-                        ) { Text("Oublier") }
+                        ) { Text(stringResource(R.string.forget)) }
                     }
                 },
             )
@@ -246,7 +247,7 @@ internal fun SimPreferenceRow(number: String, lookupKey: String?, name: String, 
     if (choosing) {
         SimChooserDialog(
             sims = sims,
-            title = "SIM pour $name",
+            title = stringResource(R.string.sim_for, name),
             rememberLabel = null,
             onDismiss = { choosing = false },
             onPick = { sim, _ ->

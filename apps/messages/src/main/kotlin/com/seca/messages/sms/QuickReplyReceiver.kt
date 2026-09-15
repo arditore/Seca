@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * The text Seca Téléphone sends when the owner refuses a call with a message:
+ * The text Seca Phone sends when the owner refuses a call with a message:
  * sent at once, through Seca Link when the caller has it, else by SMS. Only
  * apps signed with the Seca key may ask.
  */

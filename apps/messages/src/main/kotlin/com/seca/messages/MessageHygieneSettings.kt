@@ -28,6 +28,7 @@ import com.seca.messages.sms.CodeCleanup
 import com.seca.messages.sms.CodeLifetime
 import com.seca.messages.sms.SpamFilter
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
 
 /** Verification codes that erase themselves, and advertising filed away. */
 @Composable
@@ -37,7 +38,7 @@ internal fun CodeAndSpamSettings() {
     var lifetime by remember { mutableStateOf(CodeCleanup.lifetime(context)) }
     var filterSpam by remember { mutableStateOf(SpamFilter.enabled(context)) }
 
-    SecaSectionLabel("Codes de vérification")
+    SecaSectionLabel(stringResource(R.string.verification_codes))
     SecaGroupItem(index = 0, count = 1) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -48,7 +49,7 @@ internal fun CodeAndSpamSettings() {
         ) {
             CodeLifetime.entries.forEach { choice ->
                 SecaChoicePill(
-                    label = choice.label,
+                    label = stringResource(choice.label),
                     selected = lifetime == choice,
                     onClick = {
                         lifetime = choice
@@ -60,14 +61,14 @@ internal fun CodeAndSpamSettings() {
             }
         }
     }
-    SecaHint("Les SMS qui contiennent un code de vérification sont effacés du téléphone après ce délai.")
+    SecaHint(stringResource(R.string.codes_hint))
 
-    SecaSectionLabel("SMS publicitaires")
+    SecaSectionLabel(stringResource(R.string.advertising_texts))
     SecaGroupItem(index = 0, count = 1) {
         SecaSettingRow(
             icon = SecaIcons.Block,
-            title = "Ranger les SMS publicitaires",
-            subtitle = "Dans « Indésirables », sans notification",
+            title = stringResource(R.string.file_advertising),
+            subtitle = stringResource(R.string.file_advertising_hint),
             modifier = Modifier.toggleable(
                 value = filterSpam,
                 role = Role.Switch,
@@ -79,5 +80,5 @@ internal fun CodeAndSpamSettings() {
             trailing = { Switch(checked = filterSpam, onCheckedChange = null) },
         )
     }
-    SecaHint("Reconnus à leur mention « STOP au 36… ». Les SMS de vos contacts et les codes ne sont jamais rangés.")
+    SecaHint(stringResource(R.string.advertising_hint))
 }

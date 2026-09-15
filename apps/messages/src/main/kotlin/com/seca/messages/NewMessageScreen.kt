@@ -36,6 +36,9 @@ import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.component.rememberContactThumbnail
 import com.seca.core.model.PhoneNumber
 import com.seca.core.model.SecaContact
+import androidx.compose.ui.platform.LocalResources
+import com.seca.core.contacts.describe
+import androidx.compose.ui.res.stringResource
 
 private const val MAX_RESULTS = 60
 
@@ -65,7 +68,7 @@ internal fun NewMessageScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "Nouveau message", onBack = { viewModel.back() }, navigationIcon = SecaIcons.Close) },
+        topBar = { SecaTopBar(title = stringResource(R.string.new_message), onBack = { viewModel.back() }, navigationIcon = SecaIcons.Close) },
     ) { padding ->
         Column(
             Modifier
@@ -75,8 +78,8 @@ internal fun NewMessageScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                label = { Text("À") },
-                placeholder = { Text("Nom ou numéro") },
+                label = { Text(stringResource(R.string.to)) },
+                placeholder = { Text(stringResource(R.string.name_or_number)) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
@@ -88,18 +91,18 @@ internal fun NewMessageScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
             )
             LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
                 if (isNumber) {
-                    item(key = "number-label") { SecaSectionLabel("Numéro") }
+                    item(key = "number-label") { SecaSectionLabel(stringResource(R.string.number)) }
                     item(key = "number") {
                         SecaGroupItem(index = 0, count = 1, onClick = { viewModel.openConversation(trimmed) }) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
                                 Icon(SecaIcons.Send, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 Column(Modifier.padding(start = 16.dp)) {
                                     Text(
-                                        text = "Écrire au ${ui.numbers.display(trimmed)}",
+                                        text = stringResource(R.string.write_to, ui.numbers.display(trimmed)),
                                         style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
-                                    ui.numbers.describe(trimmed)?.let {
+                                    ui.numbers.describe(trimmed, LocalResources.current)?.let {
                                         Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
@@ -108,7 +111,7 @@ internal fun NewMessageScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
                     }
                 }
                 if (results.isNotEmpty()) {
-                    item(key = "contacts-label") { SecaSectionLabel(if (trimmed.isEmpty()) "Contacts" else "Résultats") }
+                    item(key = "contacts-label") { SecaSectionLabel(stringResource(if (trimmed.isEmpty()) R.string.contacts else R.string.results)) }
                     itemsIndexed(results, key = { _, (contact, number) -> "${contact.id}-${number.raw}" }) { index, (contact, number) ->
                         ContactNumberRow(contact, number, ui, index, results.size) { viewModel.openConversation(number.raw) }
                     }

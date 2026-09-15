@@ -15,18 +15,16 @@ import kotlin.math.min
 
 /** The phone owner's own card. */
 data class MyCard(
-    /** Empty until the owner names it; the card then reads "Ma fiche". */
+    /** Empty until the owner names it; the card then reads "My card". */
     val name: String = "",
     /** Numbers the owner typed in, for lines whose SIM does not carry its number. */
     val numbers: List<String> = emptyList(),
     /** Changes whenever the photo does, so the screen reloads it. */
     val photoVersion: Long = 0,
-) {
-    val displayName: String get() = name.ifBlank { "Ma fiche" }
-}
+)
 
 /**
- * Keeps "Ma fiche" in this app's private storage, never in the shared
+ * Keeps "My card" in this app's private storage, never in the shared
  * contacts: other apps cannot read it, and it is not synced anywhere.
  */
 class MyCardStore(private val context: Context) {

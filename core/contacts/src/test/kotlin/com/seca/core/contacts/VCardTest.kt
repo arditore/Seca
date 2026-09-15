@@ -45,6 +45,18 @@ class VCardTest {
     }
 
     @Test
+    fun `a contact's profile travels in Seca's own property, other apps' categories are ignored`() {
+        val camille = VCardContact("Camille", "Durand", "Camille Durand", emptyList(), emptyList(), profile = "Famille")
+
+        val written = VCard.write(listOf(camille))
+        val google = "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Camille Durand\r\nCATEGORIES:myContacts,starred\r\nEND:VCARD\r\n"
+
+        assertEquals(true, "CATEGORIES:Famille" in written)
+        assertEquals("Famille", VCard.parse(written).single().profile)
+        assertEquals("", VCard.parse(google).single().profile)
+    }
+
+    @Test
     fun `long lines are folded and unfolded`() {
         val long = VCardContact("Anne-Marie-Charlotte-Joséphine", "de La Rochefoucauld-Montmorency", "", emptyList(), emptyList())
 

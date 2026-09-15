@@ -31,6 +31,7 @@ import com.seca.core.design.component.SecaTopBar
 import com.seca.core.link.SafetyNumber
 import kotlin.io.encoding.Base64
 import androidx.lifecycle.viewmodel.compose.viewModel as screenViewModel
+import androidx.compose.ui.res.stringResource
 
 private const val DIGITS_PER_GROUP = 5
 private const val GROUPS_PER_ROW = 4
@@ -48,7 +49,7 @@ internal fun SafetyNumberScreen(route: SafetyNumberRoute, ui: MessagesUi, viewMo
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "Numéro de sécurité", onBack = { viewModel.back() }) },
+        topBar = { SecaTopBar(title = stringResource(R.string.safety_number), onBack = { viewModel.back() }) },
     ) { padding ->
         val number = safety
         if (peer?.ready != true) {
@@ -59,8 +60,8 @@ internal fun SafetyNumberScreen(route: SafetyNumberRoute, ui: MessagesUi, viewMo
         if (number == null) {
             SecaEmptyState(
                 icon = SecaIcons.Link,
-                title = "Numéro de sécurité en préparation",
-                description = "Il s'affiche dès que la clé de $name est lue.",
+                title = stringResource(R.string.safety_number_pending),
+                description = stringResource(R.string.safety_number_pending_hint, name),
                 modifier = Modifier.padding(padding),
             )
             return@Scaffold
@@ -83,21 +84,19 @@ internal fun SafetyNumberScreen(route: SafetyNumberRoute, ui: MessagesUi, viewMo
             VerifiedMark(peer.verified, Modifier.padding(top = 8.dp))
             SecaQrCode(
                 content = Base64.encode(number.code),
-                contentDescription = "Code de sécurité à scanner",
+                contentDescription = stringResource(R.string.safety_code_to_scan),
                 modifier = Modifier.padding(top = 24.dp),
             )
             SafetyDigits(number.digits, Modifier.padding(top = 24.dp))
             Text(
-                text = "Comparez ces chiffres avec ceux du téléphone de $name, ou montrez-lui ce code. " +
-                    "S'ils sont identiques, personne ne s'interpose entre vous.",
+                text = stringResource(R.string.compare_hint, name),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 24.dp),
             )
             Text(
-                text = "Vos messages à $name passent chiffrés par Seca Link. S'ils ne peuvent pas partir, " +
-                    "Seca vous propose de les envoyer en SMS, sans chiffrement.",
+                text = stringResource(R.string.encrypted_to_hint, name),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -106,17 +105,17 @@ internal fun SafetyNumberScreen(route: SafetyNumberRoute, ui: MessagesUi, viewMo
             Button(
                 onClick = { viewModel.open(SafetyScanRoute(route.address)) },
                 modifier = Modifier.padding(top = 24.dp),
-            ) { Text("Scanner son code") }
+            ) { Text(stringResource(R.string.scan_their_code)) }
             if (peer.verified) {
                 OutlinedButton(
                     onClick = { links.setVerified(route.address, false) },
                     modifier = Modifier.padding(top = 8.dp),
-                ) { Text("Retirer la vérification") }
+                ) { Text(stringResource(R.string.remove_verification)) }
             } else {
                 OutlinedButton(
                     onClick = { links.setVerified(route.address, true) },
                     modifier = Modifier.padding(top = 8.dp),
-                ) { Text("Marquer comme vérifié") }
+                ) { Text(stringResource(R.string.mark_verified)) }
             }
         }
     }
@@ -137,7 +136,7 @@ private fun VerifiedMark(verified: Boolean, modifier: Modifier = Modifier) {
         ) {
             Icon(if (verified) SecaIcons.Check else SecaIcons.Shield, contentDescription = null, modifier = Modifier.size(16.dp))
             Text(
-                text = if (verified) "Vérifié" else "Non vérifié",
+                text = stringResource(if (verified) R.string.verified else R.string.not_verified),
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.padding(start = 6.dp),
             )

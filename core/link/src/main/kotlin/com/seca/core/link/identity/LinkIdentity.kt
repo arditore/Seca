@@ -87,7 +87,7 @@ class LinkIdentity internal constructor(
         }
 
         internal fun deserialize(bytes: ByteArray): LinkIdentity = DataInputStream(ByteArrayInputStream(bytes)).use { input ->
-            check(input.readInt() == FORMAT_VERSION) { "Format d'identité inconnu" }
+            check(input.readInt() == FORMAT_VERSION) { "Unknown identity format" }
             val secret = input.readBlock()
             val nostr = NostrKeys(secret)
             secret.fill(0)
@@ -107,7 +107,7 @@ class LinkIdentity internal constructor(
 
         private fun DataInputStream.readBlock(): ByteArray {
             val size = readInt()
-            check(size in 0..MAX_BLOCK) { "Identité abîmée" }
+            check(size in 0..MAX_BLOCK) { "Damaged identity" }
             return ByteArray(size).also(::readFully)
         }
     }

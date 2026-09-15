@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaIcons
+import androidx.compose.ui.res.stringResource
+import com.seca.core.design.R
 
 /**
  * The bar that ties the three Seca apps together.
@@ -37,7 +39,7 @@ fun SecaSuiteBar(
                     // entry twice.
                     Icon(identity.icon, contentDescription = null)
                 },
-                label = { Text(identity.label) },
+                label = { Text(stringResource(identity.label)) },
                 alwaysShowLabel = true,
             )
         }
@@ -51,13 +53,10 @@ private val SecaAppIdentity.icon: ImageVector
         SecaAppIdentity.Messages -> SecaIcons.Messages
     }
 
-/**
- * French display name. `SecaAppIdentity.name` would print "Phone" on an
- * otherwise French screen; identifiers stay English, UI strings do not.
- */
-internal val SecaAppIdentity.label: String
+/** The name shown under each entry, in the phone's language; identifiers stay English. */
+internal val SecaAppIdentity.label: Int
     get() = when (this) {
-        SecaAppIdentity.Contacts -> "Contacts"
-        SecaAppIdentity.Phone -> "Téléphone"
-        SecaAppIdentity.Messages -> "Messages"
+        SecaAppIdentity.Contacts -> R.string.design_app_contacts
+        SecaAppIdentity.Phone -> R.string.design_app_phone
+        SecaAppIdentity.Messages -> R.string.design_app_messages
     }

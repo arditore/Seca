@@ -191,7 +191,7 @@ sealed interface LinkPayload {
 
         private fun DataOutputStream.writeField(value: String) {
             val bytes = value.toByteArray(Charsets.UTF_8)
-            require(bytes.size <= MAX_FIELD) { "Message trop long" }
+            require(bytes.size <= MAX_FIELD) { "Message too long" }
             writeInt(bytes.size)
             write(bytes)
         }

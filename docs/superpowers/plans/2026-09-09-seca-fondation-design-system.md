@@ -1,81 +1,81 @@
-# Seca — Fondation et Design System — Plan d'implémentation
+# Seca — Foundation and Design System — Implementation plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Monter le monorepo Gradle, le module `:core:design` en Material 3 Expressive, et une app catalogue installable qui donne à voir l'intégralité du langage visuel avant d'écrire la première app réelle.
+**Goal:** Set up the Gradle monorepo, the `:core:design` module in Material 3 Expressive, and an installable catalog app that shows the whole visual language before writing the first real app.
 
-**Architecture:** Monorepo Gradle multi-modules. `build-logic` porte des convention plugins pour que les trois futures apps partagent exactement la même configuration. `:core:model` contient les types domaine purs (aucune dépendance Android). `:core:design` contient **tout** le visuel — couleurs, typographie, formes, motion, composants — et est le seul module autorisé à activer les APIs expérimentales M3 Expressive. `apps/catalog` est une app de debug qui affiche le design system ; elle est jetable et ne sera jamais publiée.
+**Architecture:** Multi-module Gradle monorepo. `build-logic` carries convention plugins so the three future apps share exactly the same configuration. `:core:model` holds the pure domain types (no Android dependency). `:core:design` holds **all** the visuals — colors, typography, shapes, motion, components — and is the only module allowed to opt into the experimental M3 Expressive APIs. `apps/catalog` is a debug app that shows the design system; it is disposable and will never be published.
 
 **Tech Stack:** Kotlin 2.4.20, Jetpack Compose 1.12.0, Material 3 `1.5.0-alpha27` (APIs Expressive), AGP 9.4.0, Gradle 9.7.1, JDK 17, Robolectric 4.16.1.
 
-**Spec:** `docs/superpowers/specs/2026-09-09-seca-suite-design.md`
+**Spec:** `docs/superpowers/specs/2026-09-09-seca-suite-design.md` — *translated from French on 2026-09-15; UI strings inside code samples are left as they were at the time.*
 
 ## Global Constraints
 
-Ces contraintes s'appliquent à **toutes** les tâches, implicitement.
+These constraints apply to **every** task, implicitly.
 
-- **JDK 17 exactement.** AGP 9.4 l'indique en min *et* en défaut. Le JDK 25 présent sur la machine ne convient pas.
-- **Gradle 9.7.1** via wrapper uniquement. Jamais d'installation système.
-- `compileSdk = 37`, `buildToolsVersion = "36.0.0"`, `minSdk = 34`, `targetSdk = 36`. **`compileSdk 37` est obligatoire, pas préférentiel** : `material3:1.5.0-alpha27` *et* Compose `ui`/`foundation` 1.12.0 déclarent tous `minCompileSdk=37` dans leurs métadonnées AAR. Rien de ce plan ne compile en 36. `targetSdk` reste à 36 : c'est le niveau contre lequel on teste, et il est indépendant de `compileSdk`.
-- **Aucun Compose BOM.** Le BOM `2026.08.00` épingle `material3` sur `1.4.0`, qui ne contient pas les APIs Expressive. Toutes les versions sont épinglées explicitement dans `gradle/libs.versions.toml`.
-- **Zéro dépendance propriétaire.** Pas de Play Services, pas de Firebase, pas d'analytique, pas de crash reporting. Contrainte F-Droid.
-- **`@OptIn(ExperimentalMaterial3ExpressiveApi::class)` uniquement dans `:core:design`.** Aucun module d'app ne l'active.
-- **Aucun module d'app ne définit de couleur, forme ou typographie.** Tout vient de `:core:design`.
-- Builds reproductibles : versions épinglées, pas de plage de versions, pas de `latest.release`.
-- Le code, les commentaires et les identifiants sont en anglais. L'interface utilisateur et la documentation sont en français.
+- **Exactly JDK 17.** AGP 9.4 lists it as the minimum *and* the default. The JDK 25 present on the machine does not fit.
+- **Gradle 9.7.1** through the wrapper only. Never a system install.
+- `compileSdk = 37`, `buildToolsVersion = "36.0.0"`, `minSdk = 34`, `targetSdk = 36`. **`compileSdk 37` is mandatory, not a preference**: `material3:1.5.0-alpha27` *and* Compose `ui`/`foundation` 1.12.0 all declare `minCompileSdk=37` in their AAR metadata. Nothing in this plan compiles at 36. `targetSdk` stays at 36: it is the level tested against, and it is independent of `compileSdk`.
+- **No Compose BOM.** BOM `2026.08.00` pins `material3` to `1.4.0`, which lacks the Expressive APIs. Every version is pinned explicitly in `gradle/libs.versions.toml`.
+- **Zero proprietary dependency.** No Play Services, no Firebase, no analytics, no crash reporting. An F-Droid constraint.
+- **`@OptIn(ExperimentalMaterial3ExpressiveApi::class)` only in `:core:design`.** No app module opts in.
+- **No app module defines a color, shape or typography.** Everything comes from `:core:design`.
+- Reproducible builds: pinned versions, no version ranges, no `latest.release`.
+- Code, comments and identifiers are in English. The user interface and the documentation were in French at the time; the project has since moved to English, with the interface translated into French.
 
 ---
 
 ### Task 1: Toolchain
 
-Pas de TDD ici — c'est de la mise en place d'environnement. La tâche est terminée quand les commandes de vérification passent.
+No TDD here — this is environment setup. The task is done when the verification commands pass.
 
 **Files:**
-- Aucun fichier du dépôt modifié.
+- No file of the repository is modified.
 
 **Interfaces:**
-- Consumes: rien.
-- Produces: `java` en 17, `sdkmanager`, `adb` disponibles ; variable `ANDROID_HOME` définie.
+- Consumes: nothing.
+- Produces: `java` at 17, `sdkmanager` and `adb` available; `ANDROID_HOME` set.
 
-- [ ] **Step 1: Installer le JDK 17**
+- [ ] **Step 1: Install JDK 17**
 
-Temurin 17 s'installe à côté du JDK 25 sans le remplacer.
+Temurin 17 installs next to JDK 25 without replacing it.
 
 ```powershell
 winget install --id EclipseAdoptium.Temurin.17.JDK -e
 ```
 
-- [ ] **Step 2: Vérifier que le JDK 17 est présent**
+- [ ] **Step 2: Check that JDK 17 is present**
 
 ```powershell
 Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory | Select-Object Name
 ```
 
-Expected: un dossier `jdk-17.*-hotspot` apparaît. Noter son chemin exact — il sert à l'étape suivante.
+Expected: a `jdk-17.*-hotspot` folder appears. Note its exact path — the next step uses it.
 
-- [ ] **Step 3: Installer les outils en ligne de commande du SDK Android**
+- [ ] **Step 3: Install the Android SDK command-line tools**
 
 ```powershell
 winget install --id Google.AndroidStudio -e
 ```
 
-Android Studio embarque le SDK et `sdkmanager`. Si l'IDE n'est pas souhaité, télécharger uniquement `commandlinetools-win` depuis https://developer.android.com/studio#command-line-tools-only et le décompresser dans `%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest`.
+Android Studio bundles the SDK and `sdkmanager`. If the IDE is not wanted, download only `commandlinetools-win` from https://developer.android.com/studio#command-line-tools-only and unzip it into `%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest`.
 
-- [ ] **Step 4: Définir ANDROID_HOME**
+- [ ] **Step 4: Set ANDROID_HOME**
 
 ```powershell
 [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$env:LOCALAPPDATA\Android\Sdk", "User")
 ```
 
-- [ ] **Step 5: Installer les paquets SDK requis**
+- [ ] **Step 5: Install the required SDK packages**
 
 ```powershell
 & "$env:LOCALAPPDATA\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat" --install "platform-tools" "platforms;android-37.0" "build-tools;36.0.0"
 ```
 
-- [ ] **Step 6: Vérifier la toolchain complète**
+- [ ] **Step 6: Check the whole toolchain**
 
-Le numéro de patch du JDK dépend de ce que winget a installé — le résoudre plutôt que de le supposer.
+The JDK patch number depends on what winget installed — resolve it rather than assume it.
 
 ```powershell
 $jdk17 = (Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory -Filter "jdk-17*").FullName
@@ -83,29 +83,29 @@ $jdk17 = (Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory -Filter "
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" version
 ```
 
-Expected: `openjdk version "17.*"` et une version d'adb.
+Expected: `openjdk version "17.*"` and an adb version.
 
-- [ ] **Step 7: Vérifier la connexion au Pixel 9 (optionnel mais recommandé maintenant)**
+- [ ] **Step 7: Check the connection to the Pixel 9 (optional but recommended now)**
 
-Activer le débogage USB sur le Pixel 9 (Paramètres → À propos → appuyer 7 fois sur le numéro de build, puis Options pour développeurs → Débogage USB), brancher le câble, accepter l'invite sur le téléphone.
+Turn on USB debugging on the Pixel 9 (Settings → About → tap the build number 7 times, then Developer options → USB debugging), plug in the cable, accept the prompt on the phone.
 
 ```powershell
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" devices -l
 ```
 
-Expected: l'appareil apparaît avec l'état `device`. **S'il n'apparaît pas**, la vérification visuelle de la tâche 8 sera impossible — le régler maintenant, pas plus tard.
+Expected: the device appears in the `device` state. **If it does not appear**, the visual check of task 8 will be impossible — fix it now, not later.
 
-- [ ] **Step 8: Relever le niveau d'API réel de l'appareil**
+- [ ] **Step 8: Read the device's real API level**
 
 ```powershell
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" shell getprop ro.build.version.sdk
 ```
 
-Noter la valeur. **Relevé le 2026-09-09 sur le Pixel 9 : `37` (Android 17).** La plateforme à installer est `platforms;android-37.0` — `platforms;android-37` n'existe pas sous ce nom, le SDK étant passé aux versions mineures. `android-37.0` est publiée et non préversion (`PreviewSdkInt=0`, `BetaVersion` vide).
+Note the value. **Read on 2026-09-09 on the Pixel 9: `37` (Android 17).** The platform to install is `platforms;android-37.0` — `platforms;android-37` does not exist under that name, the SDK having moved to minor versions. `android-37.0` is released, not a preview (`PreviewSdkInt=0`, empty `BetaVersion`).
 
 ---
 
-### Task 2: Squelette du monorepo Gradle
+### Task 2: Gradle monorepo skeleton
 
 **Files:**
 - Create: `settings.gradle.kts`
@@ -118,23 +118,23 @@ Noter la valeur. **Relevé le 2026-09-09 sur le Pixel 9 : `37` (Android 17).** L
 - Create: `build-logic/src/main/kotlin/seca.android.library.gradle.kts`
 - Create: `build-logic/src/main/kotlin/seca.android.application.gradle.kts`
 - Create: `build-logic/src/main/kotlin/seca.compose.gradle.kts`
-- Delete: les dossiers vides `Seca Contacts/`, `Seca Messages/`, `Seca Phone/`
+- Delete: the empty folders `Seca Contacts/`, `Seca Messages/`, `Seca Phone/`
 
 **Interfaces:**
-- Consumes: la toolchain de la tâche 1.
-- Produces: les plugins `seca.android.library`, `seca.android.application`, `seca.compose` ; le version catalog `libs`.
+- Consumes: the toolchain from task 1.
+- Produces: the `seca.android.library`, `seca.android.application` and `seca.compose` plugins; the `libs` version catalog.
 
-- [ ] **Step 1: Supprimer les dossiers vides à espaces**
+- [ ] **Step 1: Delete the empty folders with spaces in their names**
 
-Les espaces dans les chemins fragilisent Gradle et les recettes F-Droid. Ces dossiers sont vides, rien n'est perdu.
+Spaces in paths make Gradle and F-Droid build recipes fragile. These folders are empty, nothing is lost.
 
 ```powershell
 Remove-Item "Seca Contacts","Seca Messages","Seca Phone" -Recurse -Force
 ```
 
-- [ ] **Step 2: Créer le wrapper Gradle 9.7.1**
+- [ ] **Step 2: Create the Gradle 9.7.1 wrapper**
 
-Sans Gradle installé, générer le wrapper depuis la distribution téléchargée une seule fois :
+With no Gradle installed, generate the wrapper from the distribution, downloaded once:
 
 ```powershell
 Invoke-WebRequest -Uri "https://services.gradle.org/distributions/gradle-9.7.1-bin.zip" -OutFile "$env:TEMP\gradle-9.7.1-bin.zip"
@@ -142,9 +142,9 @@ Expand-Archive "$env:TEMP\gradle-9.7.1-bin.zip" -DestinationPath "$env:TEMP\grad
 & "$env:TEMP\gradle-dist\gradle-9.7.1\bin\gradle.bat" wrapper --gradle-version 9.7.1 --distribution-type bin
 ```
 
-- [ ] **Step 3: Écrire `.gitattributes`**
+- [ ] **Step 3: Write `.gitattributes`**
 
-Git a déjà signalé une conversion LF→CRLF. Normaliser avant que ça pollue les diffs.
+Git already reported an LF→CRLF conversion. Normalise before it pollutes the diffs.
 
 ```
 * text=auto eol=lf
@@ -153,7 +153,7 @@ Git a déjà signalé une conversion LF→CRLF. Normaliser avant que ça pollue 
 gradlew text eol=lf
 ```
 
-- [ ] **Step 4: Écrire `.gitignore`**
+- [ ] **Step 4: Write `.gitignore`**
 
 ```
 .gradle/
@@ -168,9 +168,9 @@ captures/
 .superpowers/
 ```
 
-- [ ] **Step 5: Écrire `gradle/libs.versions.toml`**
+- [ ] **Step 5: Write `gradle/libs.versions.toml`**
 
-Toutes les versions sont réelles, relevées sur Google Maven et Maven Central le 2026-09-09.
+Every version is real, read from Google Maven and Maven Central on 2026-09-09.
 
 ```toml
 [versions]
@@ -213,7 +213,7 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ```
 
-- [ ] **Step 6: Écrire `gradle.properties`**
+- [ ] **Step 6: Write `gradle.properties`**
 
 ```properties
 org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC
@@ -224,7 +224,7 @@ android.useAndroidX=true
 android.nonTransitiveRClass=true
 ```
 
-- [ ] **Step 7: Écrire `build-logic/settings.gradle.kts`**
+- [ ] **Step 7: Write `build-logic/settings.gradle.kts`**
 
 ```kotlin
 dependencyResolutionManagement {
@@ -241,7 +241,7 @@ dependencyResolutionManagement {
 rootProject.name = "build-logic"
 ```
 
-- [ ] **Step 8: Écrire `build-logic/build.gradle.kts`**
+- [ ] **Step 8: Write `build-logic/build.gradle.kts`**
 
 ```kotlin
 plugins {
@@ -259,11 +259,11 @@ dependencies {
 }
 ```
 
-Les coordonnées sont écrites explicitement plutôt que dérivées des alias de plugins : c'est plus lisible et ça évite un helper fragile dans un script de build.
+The coordinates are written explicitly rather than derived from the plugin aliases: it reads better and avoids a fragile helper in a build script.
 
-- [ ] **Step 9: Écrire le convention plugin `seca.android.library`**
+- [ ] **Step 9: Write the `seca.android.library` convention plugin**
 
-`build-logic/src/main/kotlin/seca.android.library.gradle.kts` :
+`build-logic/src/main/kotlin/seca.android.library.gradle.kts`:
 
 ```kotlin
 import com.android.build.api.dsl.LibraryExtension
@@ -295,11 +295,11 @@ kotlin {
 }
 ```
 
-`unitTests.isIncludeAndroidResources = true` est indispensable : c'est ce qui permet aux tests Compose de tourner sous Robolectric, donc **sans appareil**.
+`unitTests.isIncludeAndroidResources = true` is essential: it is what lets Compose tests run under Robolectric, so **without a device**.
 
-- [ ] **Step 10: Écrire le convention plugin `seca.android.application`**
+- [ ] **Step 10: Write the `seca.android.application` convention plugin**
 
-`build-logic/src/main/kotlin/seca.android.application.gradle.kts` :
+`build-logic/src/main/kotlin/seca.android.application.gradle.kts`:
 
 ```kotlin
 import com.android.build.api.dsl.ApplicationExtension
@@ -337,11 +337,11 @@ kotlin {
 }
 ```
 
-`dependenciesInfo.includeInApk = false` retire le blob de métadonnées signé par Google de l'APK — requis pour des builds reproductibles et vérifiables par F-Droid.
+`dependenciesInfo.includeInApk = false` removes the Google-signed metadata blob from the APK — required for reproducible builds that F-Droid can verify.
 
-- [ ] **Step 11: Écrire le convention plugin `seca.compose`**
+- [ ] **Step 11: Write the `seca.compose` convention plugin**
 
-`build-logic/src/main/kotlin/seca.compose.gradle.kts` :
+`build-logic/src/main/kotlin/seca.compose.gradle.kts`:
 
 ```kotlin
 plugins {
@@ -365,11 +365,11 @@ dependencies {
 }
 ```
 
-Ce plugin n'active délibérément **pas** `buildFeatures.compose`. Le faire depuis un script plugin précompilé imposerait de nommer `CommonExtension` avec sa liste de paramètres génériques, qui change d'une version d'AGP à l'autre et casse silencieusement. Chaque module Compose l'active lui-même sur une ligne — c'est explicite et stable. `:core:model` n'en a pas besoin.
+This plugin deliberately does **not** turn on `buildFeatures.compose`. Doing so from a precompiled script plugin would mean naming `CommonExtension` with its list of generic parameters, which changes from one AGP version to the next and breaks silently. Each Compose module turns it on itself in one line — explicit and stable. `:core:model` does not need it.
 
-`libs` est récupéré via `VersionCatalogsExtension` : l'accesseur `libs` généré n'existe pas dans un script plugin précompilé.
+`libs` is obtained through `VersionCatalogsExtension`: the generated `libs` accessor does not exist in a precompiled script plugin.
 
-- [ ] **Step 12: Écrire `settings.gradle.kts`**
+- [ ] **Step 12: Write `settings.gradle.kts`**
 
 ```kotlin
 pluginManagement {
@@ -396,17 +396,17 @@ include(":core:design")
 include(":apps:catalog")
 ```
 
-- [ ] **Step 13: Créer `local.properties` avec le chemin du SDK**
+- [ ] **Step 13: Create `local.properties` with the SDK path**
 
 ```powershell
 "sdk.dir=$($env:LOCALAPPDATA -replace '\\','\\')\\Android\\Sdk" | Out-File -Encoding utf8 local.properties
 ```
 
-Ce fichier est ignoré par git — il est propre à la machine.
+This file is ignored by git — it belongs to the machine.
 
-- [ ] **Step 14: Créer les build files minimaux des trois modules**
+- [ ] **Step 14: Create the minimal build files of the three modules**
 
-`core/model/build.gradle.kts` :
+`core/model/build.gradle.kts`:
 
 ```kotlin
 plugins { id("seca.android.library") }
@@ -416,7 +416,7 @@ dependencies {
 }
 ```
 
-`core/design/build.gradle.kts` :
+`core/design/build.gradle.kts`:
 
 ```kotlin
 plugins {
@@ -432,7 +432,7 @@ dependencies {
 }
 ```
 
-`apps/catalog/build.gradle.kts` :
+`apps/catalog/build.gradle.kts`:
 
 ```kotlin
 plugins {
@@ -450,28 +450,28 @@ dependencies {
 }
 ```
 
-`material3` est déclaré en `api` dans `:core:design` : les modules consommateurs y ont accès sans le redéclarer, ce qui garantit qu'une seule version circule.
+`material3` is declared as `api` in `:core:design`: consuming modules get it without declaring it again, which guarantees that a single version circulates.
 
-- [ ] **Step 15: Vérifier que la configuration Gradle est valide**
+- [ ] **Step 15: Check that the Gradle configuration is valid**
 
 ```powershell
 .\gradlew.bat projects --no-daemon
 ```
 
-Expected: l'arborescence liste `:core:model`, `:core:design`, `:apps:catalog` sans erreur. C'est le premier vrai signal que la toolchain, les convention plugins et le catalog fonctionnent ensemble.
+Expected: the tree lists `:core:model`, `:core:design`, `:apps:catalog` without error. It is the first real signal that the toolchain, the convention plugins and the catalog work together.
 
 - [ ] **Step 16: Commit**
 
 ```bash
 git add -A
-git commit -m "build: monorepo Gradle, version catalog et convention plugins"
+git commit -m "build: Gradle monorepo, version catalog and convention plugins"
 ```
 
 ---
 
-### Task 3: `:core:model` — types domaine
+### Task 3: `:core:model` — domain types
 
-Module Kotlin pur, sans dépendance Android. C'est le vocabulaire partagé par les trois futures apps.
+A pure Kotlin module, with no Android dependency. It is the vocabulary shared by the three future apps.
 
 **Files:**
 - Create: `core/model/src/main/kotlin/com/seca/core/model/PhoneNumber.kt`
@@ -480,14 +480,14 @@ Module Kotlin pur, sans dépendance Android. C'est le vocabulaire partagé par l
 - Test: `core/model/src/test/kotlin/com/seca/core/model/SecaContactTest.kt`
 
 **Interfaces:**
-- Consumes: rien.
+- Consumes: nothing.
 - Produces:
-  - `PhoneNumber(raw: String)` avec `val digits: String` et `fun matches(other: PhoneNumber): Boolean`
-  - `SecaContact(id: Long, displayName: String, phoneNumbers: List<PhoneNumber>, isFavorite: Boolean, photoUri: String?)` avec `val initials: String`
+  - `PhoneNumber(raw: String)` with `val digits: String` and `fun matches(other: PhoneNumber): Boolean`
+  - `SecaContact(id: Long, displayName: String, phoneNumbers: List<PhoneNumber>, isFavorite: Boolean, photoUri: String?)` with `val initials: String`
 
-- [ ] **Step 1: Écrire le test qui échoue pour `PhoneNumber`**
+- [ ] **Step 1: Write the failing test for `PhoneNumber`**
 
-`core/model/src/test/kotlin/com/seca/core/model/PhoneNumberTest.kt` :
+`core/model/src/test/kotlin/com/seca/core/model/PhoneNumberTest.kt`:
 
 ```kotlin
 package com.seca.core.model
@@ -537,17 +537,17 @@ class PhoneNumberTest {
 }
 ```
 
-La comparaison sur les neuf derniers chiffres est la manière habituelle de rapprocher un format international d'un format national sans embarquer de bibliothèque de numérotation. Le seuil protège contre les faux positifs sur les numéros courts.
+Comparing the last nine digits is the usual way to match an international form with a national form without shipping a numbering library. The threshold guards against false positives on short numbers.
 
-- [ ] **Step 2: Lancer le test et vérifier qu'il échoue**
+- [ ] **Step 2: Run the test and check that it fails**
 
 ```powershell
 .\gradlew.bat :core:model:testDebugUnitTest --tests "*PhoneNumberTest*"
 ```
 
-Expected: échec de compilation, `PhoneNumber` n'existe pas.
+Expected: compilation failure, `PhoneNumber` does not exist.
 
-- [ ] **Step 3: Implémenter `PhoneNumber`**
+- [ ] **Step 3: Implement `PhoneNumber`**
 
 ```kotlin
 package com.seca.core.model
@@ -588,7 +588,7 @@ value class PhoneNumber(val raw: String) {
 }
 ```
 
-- [ ] **Step 4: Lancer le test et vérifier qu'il passe**
+- [ ] **Step 4: Run the test and check that it passes**
 
 ```powershell
 .\gradlew.bat :core:model:testDebugUnitTest --tests "*PhoneNumberTest*"
@@ -596,9 +596,9 @@ value class PhoneNumber(val raw: String) {
 
 Expected: PASS, 6 tests.
 
-- [ ] **Step 5: Écrire le test qui échoue pour `SecaContact`**
+- [ ] **Step 5: Write the failing test for `SecaContact`**
 
-`core/model/src/test/kotlin/com/seca/core/model/SecaContactTest.kt` :
+`core/model/src/test/kotlin/com/seca/core/model/SecaContactTest.kt`:
 
 ```kotlin
 package com.seca.core.model
@@ -638,15 +638,15 @@ class SecaContactTest {
 }
 ```
 
-- [ ] **Step 6: Lancer le test et vérifier qu'il échoue**
+- [ ] **Step 6: Run the test and check that it fails**
 
 ```powershell
 .\gradlew.bat :core:model:testDebugUnitTest --tests "*SecaContactTest*"
 ```
 
-Expected: échec de compilation, `SecaContact` n'existe pas.
+Expected: compilation failure, `SecaContact` does not exist.
 
-- [ ] **Step 7: Implémenter `SecaContact`**
+- [ ] **Step 7: Implement `SecaContact`**
 
 ```kotlin
 package com.seca.core.model
@@ -670,7 +670,7 @@ data class SecaContact(
 }
 ```
 
-- [ ] **Step 8: Lancer tous les tests du module**
+- [ ] **Step 8: Run all the module's tests**
 
 ```powershell
 .\gradlew.bat :core:model:test
@@ -682,16 +682,16 @@ Expected: PASS, 10 tests.
 
 ```bash
 git add core/model
-git commit -m "feat(model): types domaine PhoneNumber et SecaContact"
+git commit -m "feat(model): PhoneNumber and SecaContact domain types"
 ```
 
 ---
 
-### Task 4: `:core:design` — le thème Seca
+### Task 4: `:core:design` — the Seca theme
 
-Typographie, formes, motion et couleurs forment un seul thème. Ils sont livrés dans la même tâche parce que `SecaTheme` ne compile qu'une fois les quatre présents, et parce qu'un relecteur ne pourrait pas approuver la typographie en rejetant la palette : c'est une seule décision de design.
+Typography, shapes, motion and colors form a single theme. They ship in the same task because `SecaTheme` only compiles once all four exist, and because a reviewer could not approve the typography while rejecting the palette: it is one design decision.
 
-Les palettes sont écrites à la main plutôt que dérivées d'une graine par une bibliothèque : c'est déterministe, ça évite une dépendance, et ça donne un vrai contrôle sur le rendu.
+The palettes are written by hand rather than derived from a seed by a library: it is deterministic, avoids a dependency, and gives real control over the result.
 
 **Files:**
 - Create: `core/design/src/main/kotlin/com/seca/core/design/SecaTypography.kt`
@@ -703,16 +703,16 @@ Les palettes sont écrites à la main plutôt que dérivées d'une graine par un
 - Test: `core/design/src/test/kotlin/com/seca/core/design/SecaThemeTest.kt`
 
 **Interfaces:**
-- Consumes: rien.
+- Consumes: nothing.
 - Produces:
   - `enum class SecaAppIdentity { Contacts, Phone, Messages }`
-  - `val SecaTypography: Typography` et `val SecaShapes: Shapes`
-  - `object SecaMotion` avec `emphasized()`, `standard()` et `expressiveSpring()`
+  - `val SecaTypography: Typography` and `val SecaShapes: Shapes`
+  - `object SecaMotion` with `emphasized()`, `standard()` and `expressiveSpring()`
   - `@Composable fun SecaTheme(identity: SecaAppIdentity, darkTheme: Boolean = isSystemInDarkTheme(), dynamicColor: Boolean = false, content: @Composable () -> Unit)`
 
-- [ ] **Step 1: Écrire la typographie**
+- [ ] **Step 1: Write the typography**
 
-`core/design/src/main/kotlin/com/seca/core/design/SecaTypography.kt` :
+`core/design/src/main/kotlin/com/seca/core/design/SecaTypography.kt`:
 
 ```kotlin
 package com.seca.core.design
@@ -784,9 +784,9 @@ val SecaTypography = Typography(
 )
 ```
 
-- [ ] **Step 2: Écrire les formes**
+- [ ] **Step 2: Write the shapes**
 
-`core/design/src/main/kotlin/com/seca/core/design/SecaShapes.kt` :
+`core/design/src/main/kotlin/com/seca/core/design/SecaShapes.kt`:
 
 ```kotlin
 package com.seca.core.design
@@ -810,9 +810,9 @@ val SecaShapes = Shapes(
 )
 ```
 
-- [ ] **Step 3: Écrire les spécifications de motion**
+- [ ] **Step 3: Write the motion specs**
 
-`core/design/src/main/kotlin/com/seca/core/design/SecaMotion.kt` :
+`core/design/src/main/kotlin/com/seca/core/design/SecaMotion.kt`:
 
 ```kotlin
 package com.seca.core.design
@@ -846,9 +846,9 @@ object SecaMotion {
 }
 ```
 
-- [ ] **Step 4: Écrire `SecaAppIdentity`**
+- [ ] **Step 4: Write `SecaAppIdentity`**
 
-`core/design/src/main/kotlin/com/seca/core/design/SecaAppIdentity.kt` :
+`core/design/src/main/kotlin/com/seca/core/design/SecaAppIdentity.kt`:
 
 ```kotlin
 package com.seca.core.design
@@ -867,9 +867,9 @@ enum class SecaAppIdentity {
 }
 ```
 
-- [ ] **Step 5: Écrire les palettes**
+- [ ] **Step 5: Write the palettes**
 
-`core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt`. Trois accents distincts sur une base neutre commune — teal pour Contacts, indigo pour Phone, violet pour Messages.
+`core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt`. Three distinct accents on a shared neutral base — teal for Contacts, indigo for Phone, violet for Messages.
 
 ```kotlin
 package com.seca.core.design.color
@@ -979,9 +979,9 @@ internal fun darkSchemeFor(identity: SecaAppIdentity): ColorScheme {
 }
 ```
 
-- [ ] **Step 6: Écrire le test qui échoue pour le thème**
+- [ ] **Step 6: Write the failing test for the theme**
 
-`core/design/src/test/kotlin/com/seca/core/design/SecaThemeTest.kt` :
+`core/design/src/test/kotlin/com/seca/core/design/SecaThemeTest.kt`:
 
 ```kotlin
 package com.seca.core.design
@@ -1076,17 +1076,17 @@ class SecaThemeTest {
 }
 ```
 
-- [ ] **Step 7: Lancer le test et vérifier qu'il échoue**
+- [ ] **Step 7: Run the test and check that it fails**
 
 ```powershell
 .\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaThemeTest*"
 ```
 
-Expected: échec de compilation, `SecaTheme` n'existe pas.
+Expected: compilation failure, `SecaTheme` does not exist.
 
-- [ ] **Step 8: Implémenter `SecaTheme`**
+- [ ] **Step 8: Implement `SecaTheme`**
 
-`core/design/src/main/kotlin/com/seca/core/design/SecaTheme.kt` :
+`core/design/src/main/kotlin/com/seca/core/design/SecaTheme.kt`:
 
 ```kotlin
 package com.seca.core.design
@@ -1136,26 +1136,26 @@ fun SecaTheme(
 }
 ```
 
-- [ ] **Step 9: Lancer le test et vérifier qu'il passe**
+- [ ] **Step 9: Run the test and check that it passes**
 
 ```powershell
 .\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaThemeTest*"
 ```
 
-Expected: PASS, 4 tests. Confirme aussi que les tests Compose tournent sous Robolectric, sans appareil connecté.
+Expected: PASS, 4 tests. Also confirms that Compose tests run under Robolectric, with no device connected.
 
 - [ ] **Step 10: Commit**
 
 ```bash
 git add core/design
-git commit -m "feat(design): thème Seca — typographie, formes, motion et couleurs"
+git commit -m "feat(design): Seca theme — typography, shapes, motion and colors"
 ```
 
 ---
 
-### Task 5: `:core:design` — composants partagés
+### Task 5: `:core:design` — shared components
 
-Les briques réutilisées par les trois apps. Chacune est testée sous Robolectric.
+The building blocks reused by the three apps. Each one is tested under Robolectric.
 
 **Files:**
 - Create: `core/design/src/main/kotlin/com/seca/core/design/component/SecaAvatar.kt`
@@ -1163,26 +1163,26 @@ Les briques réutilisées par les trois apps. Chacune est testée sous Robolectr
 - Create: `core/design/src/main/kotlin/com/seca/core/design/component/SecaEmptyState.kt`
 - Test: `core/design/src/test/kotlin/com/seca/core/design/component/SecaAvatarTest.kt`
 - Test: `core/design/src/test/kotlin/com/seca/core/design/component/SecaContactRowTest.kt`
-- Modify: `core/design/build.gradle.kts` — ajouter la dépendance `:core:model`
+- Modify: `core/design/build.gradle.kts` — add the `:core:model` dependency
 
 **Interfaces:**
-- Consumes: `SecaContact`, `SecaTheme`, `SecaMotion` des tâches 3 et 4.
+- Consumes: `SecaContact`, `SecaTheme`, `SecaMotion` from tasks 3 and 4.
 - Produces:
   - `@Composable fun SecaAvatar(initials: String, photoUri: String?, modifier: Modifier = Modifier, size: Dp = 48.dp)`
   - `@Composable fun SecaContactRow(contact: SecaContact, onClick: () -> Unit, modifier: Modifier = Modifier)`
   - `@Composable fun SecaEmptyState(title: String, description: String, modifier: Modifier = Modifier)`
 
-- [ ] **Step 1: Ajouter la dépendance `:core:model`**
+- [ ] **Step 1: Add the `:core:model` dependency**
 
-Dans `core/design/build.gradle.kts`, section `dependencies` :
+In `core/design/build.gradle.kts`, in the `dependencies` block:
 
 ```kotlin
     api(project(":core:model"))
 ```
 
-- [ ] **Step 2: Écrire le test qui échoue pour `SecaAvatar`**
+- [ ] **Step 2: Write the failing test for `SecaAvatar`**
 
-`core/design/src/test/kotlin/com/seca/core/design/component/SecaAvatarTest.kt` :
+`core/design/src/test/kotlin/com/seca/core/design/component/SecaAvatarTest.kt`:
 
 ```kotlin
 package com.seca.core.design.component
@@ -1215,15 +1215,15 @@ class SecaAvatarTest {
 }
 ```
 
-- [ ] **Step 3: Lancer le test et vérifier qu'il échoue**
+- [ ] **Step 3: Run the test and check that it fails**
 
 ```powershell
 .\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaAvatarTest*"
 ```
 
-Expected: échec de compilation, `SecaAvatar` n'existe pas.
+Expected: compilation failure, `SecaAvatar` does not exist.
 
-- [ ] **Step 4: Implémenter `SecaAvatar`**
+- [ ] **Step 4: Implement `SecaAvatar`**
 
 ```kotlin
 package com.seca.core.design.component
@@ -1273,7 +1273,7 @@ fun SecaAvatar(
 }
 ```
 
-- [ ] **Step 5: Lancer le test et vérifier qu'il passe**
+- [ ] **Step 5: Run the test and check that it passes**
 
 ```powershell
 .\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaAvatarTest*"
@@ -1281,9 +1281,9 @@ fun SecaAvatar(
 
 Expected: PASS.
 
-- [ ] **Step 6: Écrire le test qui échoue pour `SecaContactRow`**
+- [ ] **Step 6: Write the failing test for `SecaContactRow`**
 
-`core/design/src/test/kotlin/com/seca/core/design/component/SecaContactRowTest.kt` :
+`core/design/src/test/kotlin/com/seca/core/design/component/SecaContactRowTest.kt`:
 
 ```kotlin
 package com.seca.core.design.component
@@ -1355,15 +1355,15 @@ class SecaContactRowTest {
 }
 ```
 
-- [ ] **Step 7: Lancer le test et vérifier qu'il échoue**
+- [ ] **Step 7: Run the test and check that it fails**
 
 ```powershell
 .\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaContactRowTest*"
 ```
 
-Expected: échec de compilation, `SecaContactRow` n'existe pas.
+Expected: compilation failure, `SecaContactRow` does not exist.
 
-- [ ] **Step 8: Implémenter `SecaContactRow`**
+- [ ] **Step 8: Implement `SecaContactRow`**
 
 ```kotlin
 package com.seca.core.design.component
@@ -1418,7 +1418,7 @@ fun SecaContactRow(
 }
 ```
 
-- [ ] **Step 9: Implémenter `SecaEmptyState`**
+- [ ] **Step 9: Implement `SecaEmptyState`**
 
 ```kotlin
 package com.seca.core.design.component
@@ -1472,26 +1472,26 @@ fun SecaEmptyState(
 }
 ```
 
-- [ ] **Step 10: Lancer tous les tests du module**
+- [ ] **Step 10: Run all the module's tests**
 
 ```powershell
 .\gradlew.bat :core:design:test
 ```
 
-Expected: PASS, 8 tests au total (SecaThemeTest 4, SecaAvatarTest 1, SecaContactRowTest 3).
+Expected: PASS, 8 tests in all (SecaThemeTest 4, SecaAvatarTest 1, SecaContactRowTest 3).
 
 - [ ] **Step 11: Commit**
 
 ```bash
 git add core/design
-git commit -m "feat(design): composants avatar, ligne de contact et état vide"
+git commit -m "feat(design): avatar, contact row and empty state components"
 ```
 
 ---
 
-### Task 6: `apps/catalog` — galerie du design system
+### Task 6: `apps/catalog` — design system gallery
 
-L'app qui rend le design jugeable. Elle s'installe sur le Pixel 9 et montre tout : les trois identités, clair/sombre, couleur dynamique.
+The app that makes the design possible to judge. It installs on the Pixel 9 and shows everything: the three identities, light/dark, dynamic color.
 
 **Files:**
 - Create: `apps/catalog/src/main/AndroidManifest.xml`
@@ -1500,12 +1500,12 @@ L'app qui rend le design jugeable. Elle s'installe sur le Pixel 9 et montre tout
 - Test: `apps/catalog/src/test/kotlin/com/seca/catalog/CatalogScreenTest.kt`
 
 **Interfaces:**
-- Consumes: tout `:core:design`.
-- Produces: un APK installable `com.seca.catalog`. Aucun autre module ne dépend de celui-ci.
+- Consumes: all of `:core:design`.
+- Produces: an installable `com.seca.catalog` APK. No other module depends on this one.
 
-- [ ] **Step 1: Écrire le manifeste**
+- [ ] **Step 1: Write the manifest**
 
-`apps/catalog/src/main/AndroidManifest.xml`. Aucune permission — la galerie n'en a besoin d'aucune.
+`apps/catalog/src/main/AndroidManifest.xml`. No permission — the gallery needs none.
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -1529,9 +1529,9 @@ L'app qui rend le design jugeable. Elle s'installe sur le Pixel 9 et montre tout
 </manifest>
 ```
 
-- [ ] **Step 2: Écrire le thème de démarrage**
+- [ ] **Step 2: Write the launch theme**
 
-`apps/catalog/src/main/res/values/themes.xml`. Un thème système minimal, le temps que Compose prenne la main.
+`apps/catalog/src/main/res/values/themes.xml`. A minimal system theme, until Compose takes over.
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -1543,11 +1543,11 @@ L'app qui rend le design jugeable. Elle s'installe sur le Pixel 9 et montre tout
 </resources>
 ```
 
-Le parent est un thème **de la plateforme**, pas `com.google.android.material` : aucune dépendance supplémentaire n'entre dans l'APK.
+The parent is a **platform** theme, not `com.google.android.material`: no extra dependency enters the APK.
 
-- [ ] **Step 3: Écrire le test qui échoue pour l'écran catalogue**
+- [ ] **Step 3: Write the failing test for the catalog screen**
 
-`apps/catalog/src/test/kotlin/com/seca/catalog/CatalogScreenTest.kt` :
+`apps/catalog/src/test/kotlin/com/seca/catalog/CatalogScreenTest.kt`:
 
 ```kotlin
 package com.seca.catalog
@@ -1580,15 +1580,15 @@ class CatalogScreenTest {
 }
 ```
 
-- [ ] **Step 4: Lancer le test et vérifier qu'il échoue**
+- [ ] **Step 4: Run the test and check that it fails**
 
 ```powershell
 .\gradlew.bat :apps:catalog:test
 ```
 
-Expected: échec de compilation, `CatalogScreen` n'existe pas.
+Expected: compilation failure, `CatalogScreen` does not exist.
 
-- [ ] **Step 5: Implémenter `CatalogScreen`**
+- [ ] **Step 5: Implement `CatalogScreen`**
 
 ```kotlin
 package com.seca.catalog
@@ -1739,7 +1739,7 @@ fun CatalogScreen() {
 }
 ```
 
-- [ ] **Step 6: Implémenter `MainActivity`**
+- [ ] **Step 6: Implement `MainActivity`**
 
 ```kotlin
 package com.seca.catalog
@@ -1758,7 +1758,7 @@ class MainActivity : ComponentActivity() {
 }
 ```
 
-- [ ] **Step 7: Lancer les tests et vérifier qu'ils passent**
+- [ ] **Step 7: Run the tests and check that they pass**
 
 ```powershell
 .\gradlew.bat :apps:catalog:test
@@ -1766,49 +1766,49 @@ class MainActivity : ComponentActivity() {
 
 Expected: PASS, 2 tests.
 
-- [ ] **Step 8: Construire l'APK**
+- [ ] **Step 8: Build the APK**
 
 ```powershell
 .\gradlew.bat :apps:catalog:assembleDebug
 ```
 
-Expected: BUILD SUCCESSFUL, APK dans `apps/catalog/build/outputs/apk/debug/`.
+Expected: BUILD SUCCESSFUL, APK in `apps/catalog/build/outputs/apk/debug/`.
 
-- [ ] **Step 9: Installer sur le Pixel 9 et regarder**
+- [ ] **Step 9: Install on the Pixel 9 and look**
 
 ```powershell
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r apps\catalog\build\outputs\apk\debug\catalog-debug.apk
 ```
 
-Ouvrir l'app et **juger le résultat** : basculer entre les trois identités, activer sombre, activer la couleur dynamique. C'est le point de contrôle du « très très joli ». Si le rendu ne convient pas, c'est ici qu'on ajuste palettes, formes et typographie — avant d'écrire quoi que ce soit de fonctionnel.
+Open the app and **judge the result**: switch between the three identities, turn on dark, turn on dynamic color. This is the checkpoint for "very, very pretty". If the result does not fit, this is where palettes, shapes and typography get adjusted — before writing anything functional.
 
 - [ ] **Step 10: Commit**
 
 ```bash
 git add apps/catalog
-git commit -m "feat(catalog): galerie du design system"
+git commit -m "feat(catalog): design system gallery"
 ```
 
 ---
 
-### Task 7: Garde-fous et documentation
+### Task 7: Guards and documentation
 
-Verrouille les propriétés que la spec revendique pour qu'elles ne régressent pas en silence : aucune dépendance propriétaire dans ce qui part dans l'APK, et un lint qui échoue au lieu d'avertir.
+Locks in the properties the spec claims so they cannot regress silently: no proprietary dependency in what ships in the APK, and a lint that fails instead of warning.
 
-> **Réécrite le 2026-09-10.** La première version prescrivait un test unitaire qui cherchait `com.google.android.gms` dans `System.getProperty("java.class.path")`. Lancé avec `play-services-base:18.3.0` réellement présent sur le classpath de test, il est **passé**. Les AAR sont transformés avant d'atteindre un classpath (`caches/<gradle>/transforms/<hash>/transformed/play-services-base-18.3.0/jars/classes.jar`) et le groupe Maven n'apparaît nulle part dans ce chemin : ce test ne pouvait pas échouer. Il n'inspectait en outre que le classpath de test de `:core:design`, pas ce qui part dans un APK. Il est remplacé par une vérification des coordonnées Maven résolues du classpath *release* de chaque app.
+> **Rewritten on 2026-09-10.** The first version prescribed a unit test that looked for `com.google.android.gms` in `System.getProperty("java.class.path")`. Run with `play-services-base:18.3.0` really present on the test classpath, it **passed**. AARs are transformed before they reach a classpath (`caches/<gradle>/transforms/<hash>/transformed/play-services-base-18.3.0/jars/classes.jar`) and the Maven group appears nowhere in that path: this test could not fail. It also only inspected the test classpath of `:core:design`, not what ships in an APK. It is replaced by a check of the resolved Maven coordinates of each app's *release* classpath.
 
 **Files:**
 - Create: `build-logic/src/main/kotlin/com/seca/buildlogic/VerifyNoProprietaryDependencies.kt`
-- Modify: `build-logic/src/main/kotlin/seca.android.application.gradle.kts` — enregistrer la vérification, activer lint en échec
+- Modify: `build-logic/src/main/kotlin/seca.android.application.gradle.kts` — register the check, make lint fail
 - Create: `README.md`
 
 **Interfaces:**
-- Consumes: le convention plugin `seca.android.application` de la tâche 2.
-- Produces: dans chaque module d'app, une tâche `verifyReleaseNoProprietaryDependencies` branchée sur `check`. Aucune API Kotlin.
+- Consumes: the `seca.android.application` convention plugin from task 2.
+- Produces: in each app module, a `verifyReleaseNoProprietaryDependencies` task wired into `check`. No Kotlin API.
 
-- [ ] **Step 1: Écrire la tâche de vérification**
+- [ ] **Step 1: Write the verification task**
 
-`build-logic/src/main/kotlin/com/seca/buildlogic/VerifyNoProprietaryDependencies.kt` :
+`build-logic/src/main/kotlin/com/seca/buildlogic/VerifyNoProprietaryDependencies.kt`:
 
 ```kotlin
 package com.seca.buildlogic
@@ -1846,7 +1846,7 @@ abstract class VerifyNoProprietaryDependencies : DefaultTask() {
             .sorted()
         if (offenders.isNotEmpty()) {
             throw GradleException(
-                "Dépendances propriétaires sur le classpath d'exécution :\n" +
+                "Proprietary dependencies on the runtime classpath:\n" +
                     offenders.joinToString("\n") { "  - $it" },
             )
         }
@@ -1877,20 +1877,20 @@ abstract class VerifyNoProprietaryDependencies : DefaultTask() {
 }
 ```
 
-Le filtre compare le groupe entier ou un sous-groupe (`"$it."`), jamais un simple préfixe de chaîne : `com.google.android.material`, qui est libre, ne doit pas être pris pour `com.google.android.play`.
+The filter compares the whole group or a subgroup (`"$it."`), never a plain string prefix: `com.google.android.material`, which is free, must not be mistaken for `com.google.android.play`.
 
-- [ ] **Step 2: Enregistrer la vérification dans le convention plugin d'application**
+- [ ] **Step 2: Register the check in the application convention plugin**
 
-Dans `build-logic/src/main/kotlin/seca.android.application.gradle.kts` — **lire d'abord le fichier tel qu'il est** ; ne rien retirer de l'existant.
+In `build-logic/src/main/kotlin/seca.android.application.gradle.kts` — **read the file as it is first**; remove nothing that is already there.
 
-Ajouter en tête, à côté de l'import existant :
+Add at the top, next to the existing import:
 
 ```kotlin
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.seca.buildlogic.VerifyNoProprietaryDependencies
 ```
 
-Ajouter à la fin du fichier :
+Add at the end of the file:
 
 ```kotlin
 // One check per release variant: it inspects exactly what ships in the APK.
@@ -1909,11 +1909,11 @@ extensions.configure<ApplicationAndroidComponentsExtension> {
 }
 ```
 
-`rootComponent` est un `Provider` paresseux, résolu à l'exécution de la tâche. L'action ne touche jamais `project` ni `configurations` : c'est ce qui la rend compatible avec le cache de configuration, activé dans ce dépôt.
+`rootComponent` is a lazy `Provider`, resolved when the task runs. The action never touches `project` or `configurations`: that is what makes it compatible with the configuration cache, which this repository turns on.
 
-- [ ] **Step 3: Activer lint en échec**
+- [ ] **Step 3: Make lint fail**
 
-Dans le même fichier, à l'intérieur du bloc `extensions.configure<ApplicationExtension>` existant :
+In the same file, inside the existing `extensions.configure<ApplicationExtension>` block:
 
 ```kotlin
     lint {
@@ -1925,7 +1925,7 @@ Dans le même fichier, à l'intérieur du bloc `extensions.configure<Application
     }
 ```
 
-- [ ] **Step 4: Vérifier que la tâche passe sur l'état réel**
+- [ ] **Step 4: Check that the task passes on the real state**
 
 ```powershell
 .\gradlew.bat :apps:catalog:verifyReleaseNoProprietaryDependencies
@@ -1933,9 +1933,9 @@ Dans le même fichier, à l'intérieur du bloc `extensions.configure<Application
 
 Expected: BUILD SUCCESSFUL.
 
-- [ ] **Step 5: Prouver qu'elle échoue quand elle doit — sans toucher un seul fichier suivi**
+- [ ] **Step 5: Prove that it fails when it should — without touching a single tracked file**
 
-Un garde-fou qui ne peut pas échouer ne garantit rien : c'est exactement le défaut de la première version. La preuve se fait par un init script temporaire, **hors du dépôt**, qui injecte l'intrus le temps d'une seule invocation. Aucun fichier suivi par git n'est jamais modifié : si l'exécution est interrompue en route, il n'y a rien à reverter.
+A guard that cannot fail guarantees nothing: that is exactly the flaw of the first version. The proof uses a temporary init script, **outside the repository**, that injects the intruder for a single invocation. No file tracked by git is ever modified: if the run is interrupted halfway, there is nothing to revert.
 
 ```powershell
 $init = Join-Path $env:TEMP "seca-teeth.init.gradle.kts"
@@ -1949,75 +1949,75 @@ allprojects {
 }
 '@ | Set-Content -Encoding utf8 $init
 
-# 1. L'intrus est bien là.
+# 1. The intruder is really there.
 .\gradlew.bat :apps:catalog:dependencies --configuration releaseRuntimeClasspath --init-script $init | Select-String "com.google.android.gms"
 
-# 2. Et la vérification échoue.
+# 2. And the check fails.
 .\gradlew.bat :apps:catalog:verifyReleaseNoProprietaryDependencies --init-script $init
 
 Remove-Item $init
 git status --porcelain
 ```
 
-Expected :
-1. la première commande liste `com.google.android.gms:play-services-base:18.3.0` ;
-2. la seconde se termine en **BUILD FAILED**, avec un message qui cite au moins `com.google.android.gms:play-services-base:18.3.0` ;
-3. `git status --porcelain` ne montre aucune modification liée à la preuve.
+Expected:
+1. the first command lists `com.google.android.gms:play-services-base:18.3.0`;
+2. the second ends in **BUILD FAILED**, with a message naming at least `com.google.android.gms:play-services-base:18.3.0`;
+3. `git status --porcelain` shows no change related to the proof.
 
-**Si la seconde commande passe, s'arrêter** : soit l'injection n'a pas pris, soit la vérification est fausse. Dans les deux cas, le garde-fou n'est pas démontré et ne doit pas être committé comme tel.
+**If the second command passes, stop**: either the injection did not take, or the check is wrong. Either way, the guard is not demonstrated and must not be committed as such.
 
-- [ ] **Step 6: Lancer lint**
+- [ ] **Step 6: Run lint**
 
 ```powershell
 .\gradlew.bat :apps:catalog:lint
 ```
 
-Expected: BUILD SUCCESSFUL. Corriger ce qui est signalé dans `apps/catalog`. Si lint signale quelque chose dans `core/` ou dans `build-logic/`, s'arrêter et le rapporter : ce serait un constat sur la fondation, pas une correction à glisser en fin de tâche.
+Expected: BUILD SUCCESSFUL. Fix what is reported in `apps/catalog`. If lint reports something in `core/` or in `build-logic/`, stop and report it: that would be a finding about the foundation, not a fix to slip in at the end of a task.
 
-- [ ] **Step 7: Écrire le README**
+- [ ] **Step 7: Write the README**
 
-`README.md` :
+`README.md`:
 
 ````markdown
 # Seca
 
-Trois applications de communication pour Android, conçues pour GrapheneOS :
-**Seca Contacts**, **Seca Phone** et **Seca Messages**. Un design Material 3
-Expressive commun, orienté vie privée, sans aucune dépendance Google.
+Three communication apps for Android, designed for GrapheneOS:
+**Seca Contacts**, **Seca Phone** and **Seca Messages**. One shared Material 3
+Expressive design, privacy first, with no Google dependency at all.
 
-## État
+## Status
 
-Fondation et design system en place, avec une application catalogue qui les
-présente. Seca Contacts est la prochaine étape. Voir `docs/superpowers/specs/`
-pour la conception et `docs/superpowers/plans/` pour les plans d'implémentation.
+Foundation and design system in place, with a catalog app that presents
+them. Seca Contacts is the next step. See `docs/superpowers/specs/`
+for the design and `docs/superpowers/plans/` for the implementation plans.
 
-## Trois applications, une seule famille
+## Three apps, one family
 
-Les trois apps restent des APK distincts. Chacune affiche en bas une barre qui
-mène aux deux autres ; elles se lancent entre elles par intent. Garder trois APK
-séparés préserve la séparation des permissions : Seca Contacts n'a jamais besoin
-d'`INTERNET`, Seca Phone détient `ROLE_DIALER`, Seca Messages `ROLE_SMS`.
+The three apps stay separate APKs. Each shows a bar at the bottom that
+leads to the other two; they launch each other by intent. Keeping three separate
+APKs keeps their permissions apart: Seca Contacts never needs
+`INTERNET`, Seca Phone holds `ROLE_DIALER`, Seca Messages `ROLE_SMS`.
 
-Le thème clair ou sombre suit celui du système, sans réglage dans l'app. La
-seule préférence visuelle est la palette — Océan, Forêt, Crépuscule ou Ardoise.
-Chaque application décale la teinte de la palette choisie, si bien que les trois
-restent reconnaissables quelle que soit la palette.
+The light or dark theme follows the system's, with no setting in the app. The
+only visual preference is the palette — Ocean, Forest, Dusk or Slate.
+Each app shifts the hue of the chosen palette, so that the three
+stay recognisable whatever the palette.
 
-Material You n'est pas proposé : la couleur dynamique tire toutes les teintes du
-fond d'écran et rendait les trois applications identiques.
+Material You is not offered: dynamic color takes every hue from the
+wallpaper and made the three apps identical.
 
-## Ce que Seca ne fait pas
+## What Seca does not do
 
-- **Pas de RCS.** Google réserve son API RCS à une allowlist fermée ;
-  aucune application tierce ne peut l'implémenter. Seca Messages proposera
-  du SMS/MMS et une couche chiffrée de bout en bout entre utilisateurs Seca.
-- **Pas d'implémentation des appels Wi-Fi.** Le VoWiFi relève de la pile IMS
-  du système et fonctionne déjà indépendamment du composeur installé.
-  Seca Phone en affichera l'état.
+- **No RCS.** Google keeps its RCS API to a closed allowlist;
+  no third-party app can implement it. Seca Messages will offer
+  SMS/MMS and an end-to-end encrypted layer between Seca users.
+- **No Wi-Fi calling implementation.** VoWiFi belongs to the system's IMS stack
+  and already works whatever dialer is installed.
+  Seca Phone will show its state.
 
-## Construire
+## Build
 
-Prérequis : JDK 17 et le SDK Android (plateforme `android-37.0`, build-tools 36.0.0).
+Requirements: JDK 17 and the Android SDK (platform `android-37.0`, build-tools 36.0.0).
 
 ```bash
 ./gradlew :apps:catalog:assembleDebug
@@ -2025,60 +2025,60 @@ Prérequis : JDK 17 et le SDK Android (plateforme `android-37.0`, build-tools 36
 ./gradlew :apps:catalog:check
 ```
 
-## Vie privée
+## Privacy
 
-Aucune analytique, aucun rapport de plantage, aucune dépendance Google. Chaque
-application vérifie à la construction qu'aucun artefact `com.google.android.gms`,
-`com.google.firebase` ou `com.google.android.play` n'atteint son classpath
-d'exécution : la tâche `verifyReleaseNoProprietaryDependencies`, branchée sur
-`check`, fait échouer le build dans le cas contraire.
+No analytics, no crash reporting, no Google dependency. Each
+app checks at build time that no `com.google.android.gms`,
+`com.google.firebase` or `com.google.android.play` artifact reaches its runtime
+classpath: the `verifyReleaseNoProprietaryDependencies` task, wired into
+`check`, fails the build otherwise.
 
-Seca Contacts ne demandera **pas** la permission `INTERNET` : l'application
-sera structurellement incapable d'exfiltrer un répertoire.
+Seca Contacts will **not** ask for the `INTERNET` permission: the app
+will be structurally unable to exfiltrate an address book.
 
-Les trois icônes de la barre sont dessinées dans le dépôt, en `ImageVector`.
-Les bibliothèques `material-icons-core` et `material-icons-extended` de Google
-sont figées en 1.7.8 alors que le projet utilise Compose 1.12.0 : trois icônes
-ne justifiaient pas d'embarquer une dépendance abandonnée.
+The bar's three icons are drawn in the repository, as `ImageVector`s.
+Google's `material-icons-core` and `material-icons-extended` libraries
+are frozen at 1.7.8 while the project uses Compose 1.12.0: three icons
+did not justify shipping an abandoned dependency.
 
-## Licence
+## License
 
 GPL-3.0-or-later.
 ````
 
-- [ ] **Step 8: Suite complète**
+- [ ] **Step 8: Full suite**
 
 ```powershell
 .\gradlew.bat test
 .\gradlew.bat :apps:catalog:check
 ```
 
-Expected : `test` au vert avec **24 tests** — 10 `:core:model`, 11 `:core:design`, 3 `:apps:catalog` (le test unitaire de la première version n'existe plus) ; `check` au vert, ce qui couvre lint et la vérification des dépendances.
+Expected: `test` green with **24 tests** — 10 `:core:model`, 11 `:core:design`, 3 `:apps:catalog` (the first version's unit test no longer exists); `check` green, which covers lint and the dependency check.
 
 - [ ] **Step 9: Commit**
 
-Ajouter chaque fichier par son chemin. **Jamais `git add -A` ni `git add .`** : un fichier orphelin laissé par une exécution interrompue — y compris une dépendance propriétaire temporaire — entrerait dans l'historique.
+Add each file by its path. **Never `git add -A` or `git add .`**: an orphaned file left by an interrupted run — including a temporary proprietary dependency — would enter the history.
 
 ```bash
 git add build-logic/src/main/kotlin/com/seca/buildlogic/VerifyNoProprietaryDependencies.kt \
         build-logic/src/main/kotlin/seca.android.application.gradle.kts \
         README.md
-git commit -m "chore: garde-fou de dépendances au niveau Gradle, lint strict et README"
+git commit -m "chore: Gradle-level dependency guard, strict lint and README"
 ```
 
-Si les corrections de lint ont touché des fichiers de `apps/catalog`, les ajouter eux aussi, nommément.
+If the lint fixes touched files in `apps/catalog`, add them too, by name.
 
 ---
 
-### Task 8: `:core:design` — palettes au choix, thème système
+### Task 8: `:core:design` — palettes to choose from, system theme
 
-Remplace Material You par une petite palette que l'utilisateur choisit, dont chaque app dérive une variante distincte. Le thème clair/sombre suit le système et n'est plus réglable dans l'app.
+Replaces Material You with a small palette the user picks, from which each app derives a distinct variant. The light/dark theme follows the system and can no longer be set in the app.
 
-Les accents ne sont plus écrits à la main un par un : chaque palette porte une teinte de base, chaque identité applique un décalage de teinte fixe, et les rôles se dérivent par des recettes HSL constantes. Compose fournit déjà `Color.hsl()` — aucune conversion colorimétrique à écrire. Ça donne des familles cohérentes, 4 palettes × 3 identités × 2 thèmes sans authoring manuel de 24 quadruplets, et c'est testable.
+The accents are no longer written by hand one by one: each palette carries a base hue, each identity applies a fixed hue shift, and the roles derive through constant HSL recipes. Compose already provides `Color.hsl()` — no color conversion to write. It gives consistent families, 4 palettes × 3 identities × 2 themes without hand-authoring 24 quadruplets, and it is testable.
 
 **Files:**
 - Create: `core/design/src/main/kotlin/com/seca/core/design/SecaPalette.kt`
-- Modify: `core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt` (réécriture des dérivations)
+- Modify: `core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt` (derivations rewritten)
 - Modify: `core/design/src/main/kotlin/com/seca/core/design/SecaTheme.kt` (signature)
 - Modify: `core/design/src/test/kotlin/com/seca/core/design/SecaThemeTest.kt`
 
@@ -2087,11 +2087,11 @@ Les accents ne sont plus écrits à la main un par un : chaque palette porte une
 - Produces:
   - `enum class SecaPalette(val label: String)` — `Ocean`, `Foret`, `Crepuscule`, `Ardoise`
   - `@Composable fun SecaTheme(identity: SecaAppIdentity, palette: SecaPalette = SecaPalette.Ocean, darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit)`
-  - **`dynamicColor` disparaît.** Tout appelant qui le passait doit être mis à jour.
+  - **`dynamicColor` goes away.** Every caller that passed it must be updated.
 
-- [ ] **Step 1: Écrire `SecaPalette`**
+- [ ] **Step 1: Write `SecaPalette`**
 
-`core/design/src/main/kotlin/com/seca/core/design/SecaPalette.kt` :
+`core/design/src/main/kotlin/com/seca/core/design/SecaPalette.kt`:
 
 ```kotlin
 package com.seca.core.design
@@ -2118,9 +2118,9 @@ enum class SecaPalette(
 }
 ```
 
-- [ ] **Step 2: Réécrire les dérivations de couleur**
+- [ ] **Step 2: Rewrite the color derivations**
 
-`core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt` — remplace intégralement le contenu :
+`core/design/src/main/kotlin/com/seca/core/design/color/SecaPalettes.kt` — replaces the whole content:
 
 ```kotlin
 package com.seca.core.design.color
@@ -2244,9 +2244,9 @@ internal fun darkSchemeFor(palette: SecaPalette, identity: SecaAppIdentity): Col
 }
 ```
 
-- [ ] **Step 3: Écrire les tests qui échouent**
+- [ ] **Step 3: Write the failing tests**
 
-Remplace `core/design/src/test/kotlin/com/seca/core/design/SecaThemeTest.kt` :
+Replace `core/design/src/test/kotlin/com/seca/core/design/SecaThemeTest.kt`:
 
 ```kotlin
 package com.seca.core.design
@@ -2351,15 +2351,15 @@ class SecaThemeTest {
 }
 ```
 
-- [ ] **Step 4: Lancer et vérifier l'échec**
+- [ ] **Step 4: Run and check that it fails**
 
 ```powershell
 .\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaThemeTest*"
 ```
 
-Expected: échec de compilation — `SecaPalette` n'existe pas et `SecaTheme` ne prend pas encore ce paramètre.
+Expected: compilation failure — `SecaPalette` does not exist and `SecaTheme` does not take this parameter yet.
 
-- [ ] **Step 5: Réécrire `SecaTheme`**
+- [ ] **Step 5: Rewrite `SecaTheme`**
 
 ```kotlin
 package com.seca.core.design
@@ -2400,11 +2400,11 @@ fun SecaTheme(
 }
 ```
 
-- [ ] **Step 6: Mettre à jour les appelants existants**
+- [ ] **Step 6: Update the existing callers**
 
-`SecaAvatarTest` et `SecaContactRowTest` passent `dynamicColor = false`, qui n'existe plus. Retirer cet argument des trois appels — ne rien changer d'autre à ces tests.
+`SecaAvatarTest` and `SecaContactRowTest` pass `dynamicColor = false`, which no longer exists. Remove that argument from the three calls — change nothing else in these tests.
 
-- [ ] **Step 7: Lancer la suite du module**
+- [ ] **Step 7: Run the module's suite**
 
 ```powershell
 .\gradlew.bat :core:design:test
@@ -2416,14 +2416,14 @@ Expected: PASS, 9 tests (SecaThemeTest 5, SecaAvatarTest 1, SecaContactRowTest 3
 
 ```bash
 git add core/design
-git commit -m "feat(design): palettes au choix, thème suivant le système"
+git commit -m "feat(design): palettes to choose from, theme following the system"
 ```
 
 ---
 
-### Task 9: `:core:design` — icônes et barre inter-apps
+### Task 9: `:core:design` — icons and cross-app bar
 
-Trois icônes dessinées à la main et une barre de navigation basse partagée par les trois apps. `material-icons-core` et `-extended` sont figés en 1.7.8 face à Compose 1.12.0 : bibliothèques mortes, écartées. Trois icônes ne justifient pas une dépendance abandonnée.
+Three hand-drawn icons and a bottom navigation bar shared by the three apps. `material-icons-core` and `-extended` are frozen at 1.7.8 against Compose 1.12.0: dead libraries, set aside. Three icons do not justify an abandoned dependency.
 
 **Files:**
 - Create: `core/design/src/main/kotlin/com/seca/core/design/SecaIcons.kt`
@@ -2433,14 +2433,14 @@ Trois icônes dessinées à la main et une barre de navigation basse partagée p
 **Interfaces:**
 - Consumes: `SecaAppIdentity`, `SecaPalette`, `SecaTheme`.
 - Produces:
-  - `object SecaIcons` avec `Contacts`, `Phone`, `Messages` (`ImageVector`)
+  - `object SecaIcons` with `Contacts`, `Phone`, `Messages` (`ImageVector`)
   - `@Composable fun SecaSuiteBar(current: SecaAppIdentity, onSelect: (SecaAppIdentity) -> Unit, modifier: Modifier = Modifier)`
 
-`SecaSuiteBar` ne connaît aucun `Intent`. Chaque app décide dans `onSelect` ce qu'elle fait — lancer l'app voisine, ou changer d'aperçu dans le catalogue. `:core:design` reste sans logique de navigation Android.
+`SecaSuiteBar` knows no `Intent`. Each app decides in `onSelect` what it does — launch the sibling app, or switch the preview in the catalog. `:core:design` stays free of Android navigation logic.
 
-- [ ] **Step 1: Écrire les icônes**
+- [ ] **Step 1: Write the icons**
 
-`core/design/src/main/kotlin/com/seca/core/design/SecaIcons.kt` :
+`core/design/src/main/kotlin/com/seca/core/design/SecaIcons.kt`:
 
 ```kotlin
 package com.seca.core.design
@@ -2525,9 +2525,9 @@ object SecaIcons {
 }
 ```
 
-- [ ] **Step 2: Écrire le test qui échoue**
+- [ ] **Step 2: Write the failing test**
 
-`core/design/src/test/kotlin/com/seca/core/design/component/SecaSuiteBarTest.kt` :
+`core/design/src/test/kotlin/com/seca/core/design/component/SecaSuiteBarTest.kt`:
 
 ```kotlin
 package com.seca.core.design.component
@@ -2577,15 +2577,15 @@ class SecaSuiteBarTest {
 }
 ```
 
-- [ ] **Step 3: Lancer et vérifier l'échec**
+- [ ] **Step 3: Run and check that it fails**
 
 ```powershell
 .\gradlew.bat :core:design:testDebugUnitTest --tests "*SecaSuiteBarTest*"
 ```
 
-Expected: échec de compilation, `SecaSuiteBar` n'existe pas.
+Expected: compilation failure, `SecaSuiteBar` does not exist.
 
-- [ ] **Step 4: Implémenter `SecaSuiteBar`**
+- [ ] **Step 4: Implement `SecaSuiteBar`**
 
 ```kotlin
 package com.seca.core.design.component
@@ -2647,9 +2647,9 @@ internal val SecaAppIdentity.label: String
     }
 ```
 
-`contentDescription = null` sur l'icône est délibéré : le libellé texte juste en dessous porte déjà le nom, et `NavigationBarItem` compose les deux en un seul nœud sémantique. Le décrire deux fois nuirait aux lecteurs d'écran.
+`contentDescription = null` on the icon is deliberate: the text label just below already carries the name, and `NavigationBarItem` merges both into a single semantic node. Describing it twice would hurt screen readers.
 
-- [ ] **Step 5: Lancer et vérifier le succès**
+- [ ] **Step 5: Run and check that it passes**
 
 ```powershell
 .\gradlew.bat :core:design:test
@@ -2661,14 +2661,14 @@ Expected: PASS, 11 tests (SecaThemeTest 5, SecaAvatarTest 1, SecaContactRowTest 
 
 ```bash
 git add core/design
-git commit -m "feat(design): icônes dessinées à la main et barre inter-apps"
+git commit -m "feat(design): hand-drawn icons and cross-app bar"
 ```
 
 ---
 
-### Task 10: `apps/catalog` — barre en bas, sélecteur de palette, thème système
+### Task 10: `apps/catalog` — bottom bar, palette picker, system theme
 
-Le catalogue adopte la forme définitive : plus aucune bascule de thème, un choix de palette, et les trois identités déplacées dans la barre du bas avec leurs icônes.
+The catalog takes its final shape: no more theme switch, a palette choice, and the three identities moved into the bottom bar with their icons.
 
 **Files:**
 - Modify: `apps/catalog/src/main/kotlin/com/seca/catalog/CatalogScreen.kt`
@@ -2676,9 +2676,9 @@ Le catalogue adopte la forme définitive : plus aucune bascule de thème, un cho
 
 **Interfaces:**
 - Consumes: `SecaTheme`, `SecaPalette`, `SecaSuiteBar`, `SecaAvatar`, `SecaContactRow`, `SecaEmptyState`, `SecaMotion`.
-- Produces: rien. Aucun module ne dépend du catalogue.
+- Produces: nothing. No module depends on the catalog.
 
-- [ ] **Step 1: Réécrire `CatalogScreen`**
+- [ ] **Step 1: Rewrite `CatalogScreen`**
 
 ```kotlin
 package com.seca.catalog
@@ -2832,13 +2832,13 @@ fun CatalogScreen() {
 }
 ```
 
-`Scaffold` fournit `innerPadding`, qui porte déjà les insets système et la hauteur de la barre du bas. C'est ce qui remplace le `safeDrawingPadding()` précédent et ce qui empêche le contenu de passer sous la barre de navigation.
+`Scaffold` provides `innerPadding`, which already carries the system insets and the height of the bottom bar. It replaces the earlier `safeDrawingPadding()` and keeps the content from running under the navigation bar.
 
-Le `frenchLabel` privé qui vivait dans ce fichier devient du code mort : les chips d'identité ont disparu, et `SecaSuiteBar` rend ses propres libellés. **Le supprimer.** Il ne peut pas être remplacé par le `SecaAppIdentity.label` de `:core:design`, qui est `internal` et donc invisible depuis un module d'app — mais le catalogue n'en a plus besoin, donc il n'y a rien à partager.
+The private `frenchLabel` that lived in this file becomes dead code: the identity chips are gone, and `SecaSuiteBar` renders its own labels. **Delete it.** It cannot be replaced by `SecaAppIdentity.label` from `:core:design`, which is `internal` and so invisible from an app module — but the catalog no longer needs it, so there is nothing to share.
 
-- [ ] **Step 2: Mettre à jour le test**
+- [ ] **Step 2: Update the test**
 
-Dans `apps/catalog/src/test/kotlin/com/seca/catalog/CatalogScreenTest.kt`, ajouter l'import `androidx.compose.ui.test.performClick` et ce troisième cas :
+In `apps/catalog/src/test/kotlin/com/seca/catalog/CatalogScreenTest.kt`, add the `androidx.compose.ui.test.performClick` import and this third case:
 
 ```kotlin
     @Test
@@ -2849,9 +2849,9 @@ Dans `apps/catalog/src/test/kotlin/com/seca/catalog/CatalogScreenTest.kt`, ajout
     }
 ```
 
-Il vérifie que la barre du bas est réellement câblée et que changer d'app ne casse pas l'écran — ce qu'aucun test ne couvrait.
+It checks that the bottom bar is really wired and that switching app does not break the screen — which no test covered.
 
-- [ ] **Step 3: Lancer la suite complète**
+- [ ] **Step 3: Run the full suite**
 
 ```powershell
 .\gradlew.bat test
@@ -2859,7 +2859,7 @@ Il vérifie que la barre du bas est réellement câblée et que changer d'app ne
 
 Expected: PASS, 24 tests — 10 `:core:model`, 11 `:core:design`, 3 `:apps:catalog`.
 
-- [ ] **Step 4: Installer et vérifier de visu**
+- [ ] **Step 4: Install and check by eye**
 
 ```powershell
 .\gradlew.bat :apps:catalog:assembleDebug
@@ -2867,42 +2867,42 @@ Expected: PASS, 24 tests — 10 `:core:model`, 11 `:core:design`, 3 `:apps:catal
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" shell am start -n com.seca.catalog/.MainActivity
 ```
 
-Réveiller l'appareil avant toute capture (`input keyevent KEYCODE_WAKEUP`), sinon l'image est noire. Contrôler : barre du bas avec les trois icônes, thème suivant le système, quatre palettes qui changent réellement l'accent.
+Wake the device before any screenshot (`input keyevent KEYCODE_WAKEUP`), or the image is black. Check: bottom bar with the three icons, theme following the system, four palettes that really change the accent.
 
-**Capturer au moins une image avec `Téléphone` OU `Messages` sélectionné dans la barre du bas**, en plus des captures par palette. Sans elle, la distinction visuelle entre les trois apps n'est jamais prouvée à l'écran — toutes les captures montreraient `Contacts`, et c'est précisément la promesse centrale du design system.
+**Capture at least one image with `Téléphone` OR `Messages` selected in the bottom bar**, on top of the per-palette screenshots. Without it, the visual distinction between the three apps is never proven on screen — every screenshot would show `Contacts`, and that is precisely the central promise of the design system.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add apps/catalog
-git commit -m "feat(catalog): barre inter-apps, sélecteur de palette, thème système"
+git commit -m "feat(catalog): cross-app bar, palette picker, system theme"
 ```
 
-## Vérification finale du plan
+## Final verification of the plan
 
-1. `.\gradlew.bat test` — les 24 tests au vert (10 `:core:model`, 11 `:core:design`, 3 `:apps:catalog`), sans appareil connecté
-2. `.\gradlew.bat :apps:catalog:check` — lint strict propre et vérification des dépendances propriétaires au vert
-3. `.\gradlew.bat :apps:catalog:assembleDebug` — APK produit
-4. APK installé sur le Pixel 9 : barre du bas avec les trois icônes, thème suivant le système sans bascule, les quatre palettes changeant réellement l'accent, et les trois apps visuellement distinctes à palette identique — prouvé par au moins une capture avec `Téléphone` ou `Messages` sélectionné
-5. La vérification des dépendances échoue réellement quand un artefact `com.google.android.gms` est injecté par init script (tâche 7, step 5). Un garde-fou qui ne peut pas échouer ne garantit rien
+1. `.\gradlew.bat test` — the 24 tests green (10 `:core:model`, 11 `:core:design`, 3 `:apps:catalog`), with no device connected
+2. `.\gradlew.bat :apps:catalog:check` — strict lint clean and the proprietary dependency check green
+3. `.\gradlew.bat :apps:catalog:assembleDebug` — APK produced
+4. APK installed on the Pixel 9: bottom bar with the three icons, theme following the system with no switch, the four palettes really changing the accent, and the three apps visually distinct with the same palette — proven by at least one screenshot with `Téléphone` or `Messages` selected
+5. The dependency check really fails when a `com.google.android.gms` artifact is injected by init script (task 7, step 5). A guard that cannot fail guarantees nothing
 
-## Écart assumé par rapport à la spec
+## Deliberate departure from the spec
 
-La spec liste cinq composants partagés dans `:core:design` ; ce plan en livre trois. **La barre de recherche et les feuilles d'action sont reportées au plan Seca Contacts**, où elles auront un usage réel. Construire une barre de recherche sans rien à chercher produirait une API devinée plutôt que dérivée d'un besoin. Elles resteront dans `:core:design` — seul leur moment de création change.
+The spec lists five shared components in `:core:design`; this plan delivers three. **The search bar and the action sheets are deferred to the Seca Contacts plan**, where they will have a real use. Building a search bar with nothing to search would produce a guessed API rather than one derived from a need. They will stay in `:core:design` — only the moment they are created changes.
 
-## Suite
+## Next
 
-Une fois ce plan exécuté et le rendu visuel validé, le plan suivant couvre **Seca Contacts** : `:core:contacts` au-dessus de `ContactsContract`, liste avec défilement rapide et recherche, fiche, création/édition, favoris, groupes, import/export vCard, actions rapides, gestion des Contact Scopes de GrapheneOS, et le test de garde interdisant la permission `INTERNET`.
+Once this plan is executed and the visual result approved, the next plan covers **Seca Contacts**: `:core:contacts` on top of `ContactsContract`, a list with fast scrolling and search, contact card, creation/editing, favorites, groups, vCard import/export, quick actions, handling of GrapheneOS Contact Scopes, and the guard test forbidding the `INTERNET` permission.
 
-### À traiter en ouverture du plan Seca Contacts
+### To handle when the Seca Contacts plan opens
 
-Issus de la relecture finale de cette branche, et reportés ici délibérément : l'atelier d'exécution qui les consignait est supprimé en fin de plan, seul ce fichier les conserve.
+From the final review of this branch, and carried here on purpose: the execution workshop that recorded them is deleted at the end of the plan, and only this file keeps them.
 
-1. **Robolectric sur l'API 36.** Les tests unitaires sont épinglés sur `sdk=34` dans les `robolectric.properties`, parce que le bac à sable Android 36 de Robolectric exige JDK 21 alors qu'AGP 9.4 épingle le projet sur JDK 17. Sans effet sur des tests de thème ; faux sentiment de sécurité pour des tests de `ContactsContract` et de permissions runtime, où les comportements diffèrent entre API 34 et 36. Correctif identifié : faire tourner le démon Gradle sur JDK 21 en gardant `jvmToolchain(17)` — l'exigence JDK d'AGP est un minimum, pas une version exacte. **À faire avant d'écrire ces tests.**
-2. **APIs Material 3 Expressive.** Aucune n'est encore utilisée : tout ce que la fondation consomme existe dans un `material3` stable. L'épinglage sur `1.5.0-alpha27` reste justifié par les composants Expressive attendus dans Seca Contacts — la barre de recherche et les feuilles d'action, reportées ici. Si ce plan n'en utilise finalement aucun, revenir à une version stable.
-3. **Pureté de `:core:model`.** Module Kotlin pur par convention seulement : il est construit par AGP, `android.jar` est donc sur son classpath et rien n'empêche d'y importer une API Android. Passer à `org.jetbrains.kotlin.jvm` avant que `:core:contacts` n'apparaisse à côté.
-4. **Variété tonale.** `secondary` et `tertiary` valent `primary` dans chaque identité. À revoir dès qu'un composant demande de la variété — un bouton d'action flottant, un badge.
-5. **Icônes de lanceur des trois apps.** Elles suivront le raisonnement retenu pour le catalogue — ressource système, hors thème Compose — mais leur couleur devra dériver de l'accent de chaque identité.
-6. **Trous de test hérités** : `.uppercase()` des initiales jamais exercé ; l'avatar non asserté dans `SecaContactRow` ; aucun clic de puce de palette testé dans le catalogue ; le test « re-themes the screen » ne vérifie pas un changement de couleur ; les tests de distinction de palette ne comparent que des tailles d'ensemble et passeraient pour des teintes à 1° d'écart.
-7. **Accessibilité.** `Modifier.clickable` fusionne la sémantique de `SecaContactRow` : TalkBack annoncera initiales, nom et numéro en un seul nœud. À traiter au niveau des écrans de Seca Contacts.
-8. **Licence.** Le README déclare GPL-3.0-or-later sans que le propriétaire du projet l'ait choisie, et aucun fichier `LICENSE` n'existe. F-Droid en exige un.
+1. **Robolectric on API 36.** Unit tests are pinned to `sdk=34` in the `robolectric.properties` files, because Robolectric's Android 36 sandbox requires JDK 21 while AGP 9.4 pins the project to JDK 17. No effect on theme tests; a false sense of safety for `ContactsContract` and runtime permission tests, where behavior differs between API 34 and 36. Identified fix: run the Gradle daemon on JDK 21 while keeping `jvmToolchain(17)` — AGP's JDK requirement is a minimum, not an exact version. **To do before writing those tests.**
+2. **Material 3 Expressive APIs.** None is used yet: everything the foundation consumes exists in a stable `material3`. Pinning `1.5.0-alpha27` stays justified by the Expressive components expected in Seca Contacts — the search bar and the action sheets, deferred here. If that plan ends up using none, go back to a stable version.
+3. **Purity of `:core:model`.** A pure Kotlin module by convention only: it is built by AGP, so `android.jar` is on its classpath and nothing prevents importing an Android API into it. Move to `org.jetbrains.kotlin.jvm` before `:core:contacts` appears next to it.
+4. **Tonal variety.** `secondary` and `tertiary` equal `primary` in every identity. To revisit as soon as a component asks for variety — a floating action button, a badge.
+5. **Launcher icons of the three apps.** They will follow the reasoning kept for the catalog — a system resource, outside the Compose theme — but their color will have to derive from each identity's accent.
+6. **Inherited test gaps**: `.uppercase()` on the initials never exercised; the avatar not asserted in `SecaContactRow`; no palette chip click tested in the catalog; the "re-themes the screen" test does not check a color change; the palette distinction tests only compare set sizes and would pass for hues 1° apart.
+7. **Accessibility.** `Modifier.clickable` merges the semantics of `SecaContactRow`: TalkBack will announce initials, name and number as a single node. To handle at the level of the Seca Contacts screens.
+8. **License.** The README declares GPL-3.0-or-later without the project owner having chosen it, and no `LICENSE` file exists. F-Droid requires one.

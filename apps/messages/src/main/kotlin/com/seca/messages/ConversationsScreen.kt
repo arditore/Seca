@@ -52,6 +52,8 @@ import com.seca.core.design.component.SecaSuiteBar
 import com.seca.core.design.component.SecaTopBar
 import com.seca.messages.sms.Conversation
 import com.seca.messages.sms.Message
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 /** How many characters of a message to keep before the searched words in a result. */
 private const val EXCERPT_LEAD = 24
@@ -86,11 +88,11 @@ internal fun ConversationsScreen(
                 SecaSearchField(
                     query = ui.query,
                     onQueryChange = viewModel::setQuery,
-                    placeholder = "Rechercher dans les messages",
+                    placeholder = stringResource(R.string.search_messages),
                     modifier = Modifier.padding(horizontal = 16.dp),
                 ) {
                     IconButton(onClick = { viewModel.open(MessagesScreen.Settings) }) {
-                        Icon(SecaIcons.Settings, contentDescription = "Paramètres")
+                        Icon(SecaIcons.Settings, contentDescription = stringResource(R.string.settings))
                     }
                 }
             }
@@ -98,8 +100,8 @@ internal fun ConversationsScreen(
         bottomBar = { SecaSuiteBar(current = SecaAppIdentity.Messages, onSelect = { openSibling(context, it) }) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                text = { Text("Nouveau message") },
-                icon = { Icon(SecaIcons.Edit, contentDescription = if (fabExpanded) null else "Nouveau message") },
+                text = { Text(stringResource(R.string.new_message)) },
+                icon = { Icon(SecaIcons.Edit, contentDescription = if (fabExpanded) null else stringResource(R.string.new_message)) },
                 onClick = { viewModel.open(MessagesScreen.NewMessage) },
                 expanded = fabExpanded,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -153,6 +155,8 @@ private fun ConversationList(
     onDismissBanner: () -> Unit,
     onDelete: (Conversation) -> Unit,
 ) {
+    val context = LocalContext.current
+    val conversationsLabel = stringResource(R.string.conversations)
     val query = ui.query.trim()
     val searching = query.isNotEmpty()
     val matching = remember(ui.conversations, query, ui.index) {
@@ -172,11 +176,11 @@ private fun ConversationList(
     }
     val sections = remember(matching, ui.pinned, ui.archived, ui.spam, searching) {
         if (searching) {
-            if (matching.isEmpty()) emptyMap() else mapOf("Conversations" to matching)
+            if (matching.isEmpty()) emptyMap() else mapOf(conversationsLabel to matching)
         } else {
             matching
                 .filter { it.threadId !in ui.pinned && it.threadId !in ui.archived && it.threadId !in ui.spam }
-                .groupBy { periodOf(it.date) }
+                .groupBy { periodOf(context, it.date) }
         }
     }
     val hits = if (searching) ui.searchHits else emptyList()
@@ -213,18 +217,18 @@ private fun ConversationList(
             item(key = "empty", contentType = "empty") {
                 SecaEmptyState(
                     icon = if (searching) SecaIcons.Search else SecaIcons.Messages,
-                    title = if (searching) "Aucun résultat" else "Aucune conversation",
+                    title = stringResource(if (searching) R.string.no_results else R.string.no_conversations),
                     description = if (searching) {
-                        "Rien ne correspond à « $query »."
+                        stringResource(R.string.nothing_matches, query)
                     } else {
-                        "Les SMS de ce téléphone apparaîtront ici."
+                        stringResource(R.string.no_conversations_hint)
                     },
                     modifier = Modifier.fillParentMaxHeight(0.6f),
                 )
             }
         }
         if (pinned.isNotEmpty()) {
-            item(key = "pinned-label", contentType = "label") { SecaSectionLabel("Épinglées") }
+            item(key = "pinned-label", contentType = "label") { SecaSectionLabel(stringResource(R.string.pinned)) }
             itemsIndexed(pinned, key = { _, c -> "pinned-${c.threadId}" }, contentType = { _, _ -> "conversation" }) { index, c ->
                 SecaGroupItem(index = index, count = pinned.size) { row(c) }
             }
@@ -237,7 +241,7 @@ private fun ConversationList(
             }
         }
         if (hits.isNotEmpty()) {
-            item(key = "hits-label", contentType = "label") { SecaSectionLabel("Messages") }
+            item(key = "hits-label", contentType = "label") { SecaSectionLabel(stringResource(R.string.messages)) }
             itemsIndexed(hits, key = { _, m -> "hit-${m.id}" }, contentType = { _, _ -> "hit" }) { index, message ->
                 SecaGroupItem(index = index, count = hits.size) {
                     MessageHit(message, ui, query, onOpen = { viewModel.openConversation(message.address) })
@@ -255,8 +259,8 @@ private fun ConversationList(
                 ) {
                     SecaSettingRow(
                         icon = SecaIcons.Archive,
-                        title = "Conversations archivées",
-                        subtitle = if (archivedCount == 1) "1 conversation" else "$archivedCount conversations",
+                        title = stringResource(R.string.archived_conversations),
+                        subtitle = pluralStringResource(R.plurals.conversations_count, archivedCount, archivedCount),
                     )
                 }
             }
@@ -271,8 +275,8 @@ private fun ConversationList(
                 ) {
                     SecaSettingRow(
                         icon = SecaIcons.Block,
-                        title = "Indésirables",
-                        subtitle = if (spamCount == 1) "1 conversation publicitaire" else "$spamCount conversations publicitaires",
+                        title = stringResource(R.string.spam),
+                        subtitle = pluralStringResource(R.plurals.spam_count, spamCount, spamCount),
                     )
                 }
             }
@@ -285,11 +289,11 @@ private fun ConversationList(
 internal fun ArchivedScreen(ui: MessagesUi, viewModel: MessagesViewModel) = FolderScreen(
     ui = ui,
     viewModel = viewModel,
-    title = "Archivées",
+    title = stringResource(R.string.archived),
     ids = ui.archived - ui.spam,
     icon = SecaIcons.Archive,
-    emptyTitle = "Aucune conversation archivée",
-    emptyDescription = "Une conversation archivée revient d'elle-même quand un nouveau message arrive.",
+    emptyTitle = stringResource(R.string.no_archived),
+    emptyDescription = stringResource(R.string.no_archived_hint),
 )
 
 /** Advertising, kept out of the way and silent until the owner takes a conversation back out. */
@@ -297,11 +301,11 @@ internal fun ArchivedScreen(ui: MessagesUi, viewModel: MessagesViewModel) = Fold
 internal fun SpamScreen(ui: MessagesUi, viewModel: MessagesViewModel) = FolderScreen(
     ui = ui,
     viewModel = viewModel,
-    title = "Indésirables",
+    title = stringResource(R.string.spam),
     ids = ui.spam,
     icon = SecaIcons.Block,
-    emptyTitle = "Aucun SMS indésirable",
-    emptyDescription = "Les SMS publicitaires sont rangés ici, sans notification. « Pas indésirable » ramène une conversation dans la liste.",
+    emptyTitle = stringResource(R.string.no_spam),
+    emptyDescription = stringResource(R.string.no_spam_hint),
 )
 
 @Composable
@@ -373,10 +377,10 @@ private fun DeleteConversationDialog(name: String, onDismiss: () -> Unit, onConf
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-        title = { Text("Supprimer la conversation ?") },
-        text = { Text("Tous les messages avec $name seront supprimés de ce téléphone.") },
-        confirmButton = { TextButton(onClick = onConfirm) { Text("Supprimer") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+        title = { Text(stringResource(R.string.delete_conversation_title)) },
+        text = { Text(stringResource(R.string.delete_conversation_text, name)) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.delete)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -404,7 +408,7 @@ private fun ConversationRow(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .combinedClickable(onClick = onOpen, onLongClickLabel = "Plus d'actions", onLongClick = { menuOpen = true })
+                .combinedClickable(onClick = onOpen, onLongClickLabel = stringResource(R.string.more_actions), onLongClick = { menuOpen = true })
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
             PersonAvatar(contact, ui, size = 48.dp)
@@ -426,7 +430,7 @@ private fun ConversationRow(
                     if (ui.scheduledFor(conversation.address).isNotEmpty()) {
                         Icon(
                             SecaIcons.Schedule,
-                            contentDescription = "Message programmé",
+                            contentDescription = stringResource(R.string.scheduled_message),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .padding(start = 8.dp)
@@ -436,7 +440,7 @@ private fun ConversationRow(
                     if (pinned) {
                         Icon(
                             SecaIcons.PushPin,
-                            contentDescription = "Épinglée",
+                            contentDescription = stringResource(R.string.pinned_one),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
                                 .padding(start = 8.dp)
@@ -452,7 +456,7 @@ private fun ConversationRow(
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = (if (conversation.outgoing) "Vous : " else "") + conversation.snippet,
+                        text = if (conversation.outgoing) stringResource(R.string.you_prefix, conversation.snippet) else conversation.snippet,
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (unread) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
@@ -480,46 +484,46 @@ private fun ConversationRow(
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             if (unread) {
-                MenuEntry("Marquer comme lu", SecaIcons.Check) {
+                MenuEntry(stringResource(R.string.mark_read), SecaIcons.Check) {
                     menuOpen = false
                     onMarkRead()
                 }
             }
             if (spam) {
-                MenuEntry("Pas indésirable", SecaIcons.Check) {
+                MenuEntry(stringResource(R.string.not_spam), SecaIcons.Check) {
                     menuOpen = false
                     onSpam()
                 }
             } else {
-                MenuEntry(if (pinned) "Désépingler" else "Épingler", SecaIcons.PushPin) {
+                MenuEntry(stringResource(if (pinned) R.string.unpin else R.string.pin), SecaIcons.PushPin) {
                     menuOpen = false
                     onPin()
                 }
-                MenuEntry(if (archived) "Désarchiver" else "Archiver", SecaIcons.Archive) {
+                MenuEntry(stringResource(if (archived) R.string.unarchive else R.string.archive), SecaIcons.Archive) {
                     menuOpen = false
                     onArchive()
                 }
-                MenuEntry("Indésirable", SecaIcons.Block) {
+                MenuEntry(stringResource(R.string.mark_spam), SecaIcons.Block) {
                     menuOpen = false
                     onSpam()
                 }
             }
-            MenuEntry("Appeler", SecaIcons.Phone) {
+            MenuEntry(stringResource(R.string.call), SecaIcons.Phone) {
                 menuOpen = false
                 call(context, conversation.address)
             }
             if (contact != null) {
-                MenuEntry("Voir la fiche", SecaIcons.Contacts) {
+                MenuEntry(stringResource(R.string.view_contact), SecaIcons.Contacts) {
                     menuOpen = false
                     openContact(context, contact.id, contact.lookupKey)
                 }
             } else {
-                MenuEntry("Ajouter aux contacts", SecaIcons.PersonAdd) {
+                MenuEntry(stringResource(R.string.add_to_contacts), SecaIcons.PersonAdd) {
                     menuOpen = false
                     addContact(context, conversation.address)
                 }
             }
-            MenuEntry("Supprimer la conversation", SecaIcons.Delete) {
+            MenuEntry(stringResource(R.string.delete_conversation), SecaIcons.Delete) {
                 menuOpen = false
                 onDelete()
             }
@@ -561,7 +565,7 @@ private fun MessageHit(message: Message, ui: MessagesUi, query: String, onOpen: 
                 )
             }
             Text(
-                text = (if (message.outgoing) "Vous : " else "") + excerptOf(message.body, query),
+                text = if (message.outgoing) stringResource(R.string.you_prefix, excerptOf(message.body, query)) else excerptOf(message.body, query),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
@@ -594,21 +598,21 @@ private fun DefaultAppBanner(onActivate: () -> Unit, onDismiss: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(SecaIcons.Messages, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(
-                    text = "Recevoir et envoyer avec Seca",
+                    text = stringResource(R.string.default_banner_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(start = 12.dp),
                 )
             }
             Text(
-                text = "Android ne confie les SMS qu'à une seule application à la fois.",
+                text = stringResource(R.string.default_banner_text),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
             Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = onActivate) { Text("Activer") }
-                TextButton(onClick = onDismiss, modifier = Modifier.padding(start = 8.dp)) { Text("Plus tard") }
+                Button(onClick = onActivate) { Text(stringResource(R.string.turn_on)) }
+                TextButton(onClick = onDismiss, modifier = Modifier.padding(start = 8.dp)) { Text(stringResource(R.string.later)) }
             }
         }
     }

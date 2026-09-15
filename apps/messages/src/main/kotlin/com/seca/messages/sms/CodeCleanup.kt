@@ -7,13 +7,15 @@ import android.content.Intent
 import android.net.Uri
 import android.os.SystemClock
 import androidx.core.content.edit
+import androidx.annotation.StringRes
+import com.seca.messages.R
 
 /** How long a text holding a verification code stays on the phone. */
-enum class CodeLifetime(val label: String, val millis: Long?) {
-    Always("Garder", null),
-    QuarterHour("15 min", 15L * 60 * 1000),
-    Hour("1 heure", 60L * 60 * 1000),
-    Day("24 heures", 24L * 60 * 60 * 1000),
+enum class CodeLifetime(@StringRes val label: Int, val millis: Long?) {
+    Always(R.string.code_keep, null),
+    QuarterHour(R.string.code_quarter_hour, 15L * 60 * 1000),
+    Hour(R.string.code_hour, 60L * 60 * 1000),
+    Day(R.string.code_day, 24L * 60 * 60 * 1000),
 }
 
 /**

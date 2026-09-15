@@ -40,6 +40,10 @@ import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.component.rememberContactPhoto
+import com.seca.core.design.label
+import androidx.compose.ui.platform.LocalResources
+import com.seca.core.contacts.describe
+import androidx.compose.ui.res.stringResource
 
 /** Who a number belongs to, what can be done with it, and every call with them. */
 @Composable
@@ -64,11 +68,11 @@ internal fun CallDetailScreen(
             SecaTopBar(title = "", onBack = { viewModel.back() }) {
                 Box {
                     IconButton(onClick = { menuOpen = true }) {
-                        Icon(SecaIcons.MoreVert, contentDescription = "Plus d'options")
+                        Icon(SecaIcons.MoreVert, contentDescription = stringResource(R.string.more_options))
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(
-                            text = { Text("Copier le numéro") },
+                            text = { Text(stringResource(R.string.copy_number)) },
                             leadingIcon = { Icon(SecaIcons.ContentCopy, contentDescription = null) },
                             onClick = {
                                 menuOpen = false
@@ -77,7 +81,7 @@ internal fun CallDetailScreen(
                         )
                         if (history.isNotEmpty()) {
                             DropdownMenuItem(
-                                text = { Text("Supprimer cet historique") },
+                                text = { Text(stringResource(R.string.delete_this_history)) },
                                 leadingIcon = { Icon(SecaIcons.Delete, contentDescription = null) },
                                 onClick = {
                                     menuOpen = false
@@ -106,23 +110,23 @@ internal fun CallDetailScreen(
                 ) {
                     SecaActionButton(
                         SecaIcons.Phone,
-                        "Appeler",
+                        stringResource(R.string.call),
                         onClick = { onCall(match?.number?.raw ?: number) },
                         modifier = Modifier.weight(1f),
                         emphasized = true,
                     )
-                    SecaActionButton(SecaIcons.Messages, "Message", onClick = { sms(context, number) }, modifier = Modifier.weight(1f))
+                    SecaActionButton(SecaIcons.Messages, stringResource(R.string.message), onClick = { sms(context, number) }, modifier = Modifier.weight(1f))
                     if (contact != null) {
                         SecaActionButton(
                             SecaIcons.Contacts,
-                            "Fiche",
+                            stringResource(R.string.contact_card),
                             onClick = { openContact(context, contact.id, contact.lookupKey) },
                             modifier = Modifier.weight(1f),
                         )
                     } else {
                         SecaActionButton(
                             SecaIcons.PersonAdd,
-                            "Ajouter",
+                            stringResource(R.string.add),
                             onClick = { addContact(context, number) },
                             modifier = Modifier.weight(1f),
                         )
@@ -138,7 +142,7 @@ internal fun CallDetailScreen(
                 )
             }
             if (history.isNotEmpty()) {
-                item(key = "history-label") { SecaSectionLabel("Historique") }
+                item(key = "history-label") { SecaSectionLabel(stringResource(R.string.history)) }
                 itemsIndexed(history, key = { _, call -> call.id }) { index, call ->
                     SecaGroupItem(index = index, count = history.size) { HistoryRow(call, ui, showNumbers) }
                 }
@@ -183,9 +187,9 @@ private fun Header(number: String, match: NumberMatch?, ui: PhoneUi) {
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
             ) {
-                SecaProfileBadge(profile.name, tone = ui.profiles.toneOf(profile), size = 28.dp)
+                SecaProfileBadge(profile.label(), tone = ui.profiles.toneOf(profile), size = 28.dp)
                 Text(
-                    text = profile.name,
+                    text = profile.label(),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(start = 8.dp),
@@ -198,7 +202,7 @@ private fun Header(number: String, match: NumberMatch?, ui: PhoneUi) {
                 modifier = Modifier.padding(top = 12.dp),
             )
         } else {
-            ui.numbers.describe(number)?.let {
+            ui.numbers.describe(number, LocalResources.current)?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodyLarge,
@@ -214,7 +218,7 @@ private fun Header(number: String, match: NumberMatch?, ui: PhoneUi) {
 private fun HistoryRow(call: CallRecord, ui: PhoneUi, showNumber: Boolean) {
     val context = LocalContext.current
     val details = listOfNotNull(
-        "${dayLabel(call.date)}, ${timeOf(context, call.date)}",
+        "${dayLabel(context, call.date)}, ${timeOf(context, call.date)}",
         ui.simLabels[call.accountId],
         durationOf(call.durationSeconds),
         if (showNumber) ui.numbers.display(call.number) else null,
@@ -227,7 +231,7 @@ private fun HistoryRow(call: CallRecord, ui: PhoneUi, showNumber: Boolean) {
     ) {
         CallTypeIcon(call.type, Modifier.size(20.dp))
         Column(Modifier.padding(start = 16.dp)) {
-            Text(call.type.label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(call.type.label), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
             Text(details, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

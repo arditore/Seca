@@ -7,9 +7,15 @@
     <!-- Fingerprint or phone code, only when the owner turns the app lock on. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
-    <!-- "Appeler" calls in one tap through Seca Phone, when it is signed with the same key. -->
+    <!-- "Call" places the call in one tap through Seca Phone, when it is signed with the same
+         key. Declared here too: Android grants it only if it was defined when this app was
+         installed, so it holds whether Seca Phone is installed before or after. -->
+    <permission
+        android:name="com.seca.permission.PLACE_CALLS"
+        android:label="@string/permission_place_calls"
+        android:protectionLevel="signature" />
     <uses-permission android:name="com.seca.permission.PLACE_CALLS" />
-    <!-- Asked only when the user opens "Ma fiche" and chooses to read the SIM numbers. -->
+    <!-- Asked only when the user opens "My card" and chooses to read the SIM numbers. -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
 
@@ -17,7 +23,7 @@
          no other app can. -->
     <permission
         android:name="com.seca.permission.READ_PROFILES"
-        android:label="Lire les profils Seca"
+        android:label="@string/permission_read_profiles"
         android:protectionLevel="signature" />
 
     <!-- The bottom bar opens the other Seca apps when they are installed. -->
@@ -30,7 +36,7 @@
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="Seca Contacts"
+        android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.SecaContacts">
         <activity

@@ -34,6 +34,7 @@ import com.seca.core.design.SecaMotion
 import com.seca.core.design.SecaTheme
 import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaSuiteBar
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun ContactsApp(
@@ -86,16 +87,15 @@ fun ContactsApp(
             ) { padding ->
                 SecaEmptyState(
                     icon = SecaIcons.Contacts,
-                    title = "Vos contacts, chez vous",
-                    description = "Seca Contacts affiche les contacts enregistrés sur ce téléphone. " +
-                        "Rien ne quitte l'appareil : l'application n'a pas accès à Internet.",
+                    title = stringResource(R.string.permission_title),
+                    description = stringResource(R.string.permission_description),
                     modifier = Modifier.padding(padding),
                     action = {
                         if (permanentlyDenied) {
-                            Button(onClick = { openAppSettings(context) }) { Text("Ouvrir les réglages") }
+                            Button(onClick = { openAppSettings(context) }) { Text(stringResource(R.string.open_settings)) }
                         } else {
                             Button(onClick = { readLauncher.launch(Manifest.permission.READ_CONTACTS) }) {
-                                Text("Autoriser l'accès")
+                                Text(stringResource(R.string.allow_access))
                             }
                         }
                     },

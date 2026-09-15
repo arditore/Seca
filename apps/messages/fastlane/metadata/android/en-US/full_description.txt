@@ -1,4 +1,4 @@
-Seca Messages is the messaging app of the Seca suite: Contacts, Phone and Messages, three apps sharing one Material 3 Expressive design, built for privacy and for phones without Google. The interface is in French.
+Seca Messages is the messaging app of the Seca suite: Contacts, Phone and Messages, three apps sharing one Material 3 Expressive design, built for privacy. They run on any phone with Android 12 or newer, with or without Google, and are at their best on GrapheneOS. In English and French.
 
 <b>Seca Link: end-to-end encrypted</b>
 <ul>

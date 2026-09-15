@@ -1,4 +1,4 @@
-Seca Téléphone est l'application d'appels de la suite Seca : Contacts, Téléphone et Messages, trois applications au même design Material 3 Expressive, pensées pour la vie privée et pour les téléphones sans Google.
+Seca Téléphone est l'application d'appels de la suite Seca : Contacts, Téléphone et Messages, trois applications au même design Material 3 Expressive, pensées pour la vie privée. Elles fonctionnent sur tout téléphone sous Android 12 ou plus récent, avec ou sans Google, et donnent le meilleur d'elles-mêmes sur GrapheneOS. En français et en anglais.
 
 <b>Vos appels restent sur votre téléphone</b>
 <ul>

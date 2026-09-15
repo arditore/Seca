@@ -7,7 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 
 /**
- * Places a call for Seca Contacts' "Appeler", in one tap. Reachable only by
+ * Places a call for Seca Contacts' "Call", in one tap. Reachable only by
  * apps holding the signature permission set in the manifest.
  *
  * Without the right to call yet, it opens the keypad with the number instead,

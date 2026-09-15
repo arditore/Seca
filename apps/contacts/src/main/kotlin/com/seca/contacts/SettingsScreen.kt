@@ -45,9 +45,13 @@ import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
+import android.Manifest
 import com.seca.core.model.Profile
 import com.seca.core.suite.SuiteBackupSection
 import java.time.LocalDate
+import com.seca.core.design.label
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 /** What a .vcf file may be labelled as, depending on the app that made it. */
 private val VCardTypes = arrayOf("text/x-vcard", "text/vcard", "text/directory", "text/plain", "application/octet-stream")
@@ -68,6 +72,17 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
         backupTarget = it
     }
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { restoreSource = it }
+    // A restoration first asks to write the contacts, to bring back those missing. Refused, the
+    // contacts already on the phone are still filed in their profiles.
+    var afterWriteAsked by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val writeAsk = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        afterWriteAsked?.invoke()
+        afterWriteAsked = null
+    }
+    val askWriteThen: (() -> Unit) -> Unit = { action ->
+        afterWriteAsked = action
+        writeAsk.launch(Manifest.permission.WRITE_CONTACTS)
+    }
     var adding by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<Profile?>(null) }
     var deleting by remember { mutableStateOf<Profile?>(null) }
@@ -85,13 +100,13 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                 .padding(bottom = 32.dp),
         ) {
             Text(
-                text = "Paramètres",
+                text = stringResource(R.string.settings),
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
             )
 
-            SecaSectionLabel("Couleurs")
+            SecaSectionLabel(stringResource(R.string.colors))
             SecaGroupItem(index = 0, count = 2) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -111,12 +126,12 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                             .padding(horizontal = 16.dp),
                     ) {
                         Text(
-                            text = "Couleurs dynamiques",
+                            text = stringResource(R.string.dynamic_colors),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            text = "Assorties au fond d'écran du téléphone",
+                            text = stringResource(R.string.dynamic_colors_hint),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -134,16 +149,12 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                                 .padding(start = 16.dp),
                         ) {
                             Text(
-                                text = "Palette Seca",
+                                text = stringResource(R.string.seca_palette),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
-                                text = if (dynamic) {
-                                    "Pour remplacer les couleurs du fond d'écran"
-                                } else {
-                                    "Chaque application Seca en prend sa propre nuance"
-                                },
+                                text = stringResource(if (dynamic) R.string.seca_palette_hint_dynamic else R.string.seca_palette_hint_on),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -165,9 +176,9 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                     }
                 }
             }
-            SecaHint("Le mode clair ou sombre suit celui du téléphone.")
+            SecaHint(stringResource(R.string.dark_mode_hint))
 
-            SecaSectionLabel("Profils")
+            SecaSectionLabel(stringResource(R.string.profiles))
             val total = ui.profiles.size + 1
             ui.profiles.forEachIndexed { index, profile ->
                 SecaGroupItem(index = index, count = total) {
@@ -185,61 +196,61 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
                     IconBadge(SecaIcons.Add)
                     Text(
-                        text = "Ajouter un profil",
+                        text = stringResource(R.string.add_profile),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(start = 16.dp),
                     )
                 }
             }
-            SecaHint("Rangez vos contacts par profil, comme Travail ou Famille. Supprimer un profil ne supprime aucun contact.")
+            SecaHint(stringResource(R.string.profiles_hint))
 
-            SecaSectionLabel("Sauvegarde")
+            SecaSectionLabel(stringResource(R.string.backup))
             SecaGroupItem(index = 0, count = 4, onClick = { backupLauncher.launch("seca-contacts-${LocalDate.now()}.seca") }) {
                 SecaSettingRow(
                     icon = SecaIcons.Lock,
-                    title = "Sauvegarde chiffrée",
-                    subtitle = "Contacts, profils et Ma fiche, protégés par un mot de passe",
+                    title = stringResource(R.string.encrypted_backup),
+                    subtitle = stringResource(R.string.encrypted_backup_hint),
                 )
             }
-            SecaGroupItem(index = 1, count = 4, onClick = { restoreLauncher.launch(arrayOf("*/*")) }) {
+            SecaGroupItem(index = 1, count = 4, onClick = { askWriteThen { restoreLauncher.launch(arrayOf("*/*")) } }) {
                 SecaSettingRow(
                     icon = SecaIcons.Download,
-                    title = "Restaurer une sauvegarde",
-                    subtitle = "Remet les contacts manquants, chacun dans son profil",
+                    title = stringResource(R.string.restore_backup),
+                    subtitle = stringResource(R.string.restore_backup_hint),
                 )
             }
             SecaGroupItem(index = 2, count = 4, onClick = { exportLauncher.launch("contacts-seca-${LocalDate.now()}.vcf") }) {
                 SecaSettingRow(
                     icon = SecaIcons.Upload,
-                    title = "Exporter les contacts",
-                    subtitle = "Un fichier .vcf, gardé où vous voulez",
+                    title = stringResource(R.string.export_contacts),
+                    subtitle = stringResource(R.string.export_contacts_hint),
                 )
             }
             SecaGroupItem(index = 3, count = 4, onClick = { importLauncher.launch(VCardTypes) }) {
                 SecaSettingRow(
                     icon = SecaIcons.Download,
-                    title = "Importer des contacts",
-                    subtitle = "Depuis un fichier .vcf ; ceux déjà présents sont ignorés",
+                    title = stringResource(R.string.import_contacts),
+                    subtitle = stringResource(R.string.import_contacts_hint),
                 )
             }
-            SecaHint("Seca ne synchronise rien : gardez une copie de vos contacts ailleurs que sur ce téléphone.")
+            SecaHint(stringResource(R.string.backup_hint))
 
-            SuiteBackupSection()
+            SuiteBackupSection(beforeRestore = askWriteThen)
 
-            SecaSectionLabel("Rangement")
+            SecaSectionLabel(stringResource(R.string.tidy_up))
             SecaGroupItem(index = 0, count = 1, onClick = { viewModel.open(DuplicatesRoute) }) {
                 SecaSettingRow(
                     icon = SecaIcons.Contacts,
-                    title = "Doublons",
-                    subtitle = "Réunir les fiches d'une même personne",
+                    title = stringResource(R.string.duplicates),
+                    subtitle = stringResource(R.string.duplicates_row_hint),
                 )
             }
 
-            SecaSectionLabel("Protection")
-            SecaPrivacySettingsGroup("Seca Contacts")
+            SecaSectionLabel(stringResource(R.string.protection))
+            SecaPrivacySettingsGroup(stringResource(R.string.app_name))
 
-            SecaSectionLabel("Confidentialité")
+            SecaSectionLabel(stringResource(R.string.privacy))
             SecaGroupItem(index = 0, count = 1) {
                 Row(Modifier.padding(16.dp)) {
                     IconBadge(SecaIcons.Lock)
@@ -249,14 +260,12 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                             .padding(start = 16.dp),
                     ) {
                         Text(
-                            text = "Tout reste sur ce téléphone",
+                            text = stringResource(R.string.privacy_title),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            text = "Seca Contacts n'a pas accès à Internet. Vos contacts, vos profils et vos " +
-                                "réglages ne quittent jamais l'appareil, et les contacts créés ici ne sont " +
-                                "synchronisés avec aucun compte.",
+                            text = stringResource(R.string.privacy_text),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp),
@@ -269,8 +278,8 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
 
     backupTarget?.let { uri ->
         SecaPassphraseDialog(
-            title = "Chiffrer la sauvegarde",
-            confirmLabel = "Chiffrer",
+            title = stringResource(R.string.encrypt_backup),
+            confirmLabel = stringResource(R.string.encrypt),
             creating = true,
             onDismiss = { backupTarget = null },
             onConfirm = {
@@ -281,22 +290,22 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
     }
     restoreSource?.let { uri ->
         SecaPassphraseDialog(
-            title = "Ouvrir la sauvegarde",
-            confirmLabel = "Restaurer",
+            title = stringResource(R.string.open_backup),
+            confirmLabel = stringResource(R.string.restore),
             creating = false,
             onDismiss = { restoreSource = null },
             onConfirm = { passphrase ->
                 restoreSource = null
-                withWrite { viewModel.importBackup(uri, passphrase) }
+                viewModel.importBackup(uri, passphrase)
             },
         )
     }
 
     if (adding) {
         ProfileNameDialog(
-            title = "Nouveau profil",
+            title = stringResource(R.string.new_profile),
             initial = "",
-            confirmLabel = "Créer",
+            confirmLabel = stringResource(R.string.create),
             onDismiss = { adding = false },
             onConfirm = {
                 viewModel.addProfile(it)
@@ -306,9 +315,9 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
     }
     renaming?.let { profile ->
         ProfileNameDialog(
-            title = "Renommer le profil",
+            title = stringResource(R.string.rename_profile),
             initial = profile.name,
-            confirmLabel = "Renommer",
+            confirmLabel = stringResource(R.string.rename),
             onDismiss = { renaming = null },
             onConfirm = {
                 viewModel.renameProfile(profile.id, it)
@@ -320,17 +329,17 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
         AlertDialog(
             onDismissRequest = { deleting = null },
             icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-            title = { Text("Supprimer « ${profile.name} » ?") },
-            text = { Text("Ses contacts reviennent dans Principal. Aucun contact n'est supprimé.") },
+            title = { Text(stringResource(R.string.delete_profile_title, profile.name)) },
+            text = { Text(stringResource(R.string.delete_profile_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         viewModel.deleteProfile(profile.id)
                         deleting = null
                     },
-                ) { Text("Supprimer") }
+                ) { Text(stringResource(R.string.delete)) }
             },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -369,25 +378,25 @@ private fun ProfileRow(
             .fillMaxWidth()
             .padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
     ) {
-        SecaProfileBadge(profile.name, tone = tone, size = 40.dp)
+        SecaProfileBadge(profile.label(), tone = tone, size = 40.dp)
         Column(
             Modifier
                 .weight(1f)
                 .padding(start = 16.dp),
         ) {
-            Text(profile.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(profile.label(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
             Text(
-                text = if (count == 1) "1 contact" else "$count contacts",
+                text = pluralStringResource(R.plurals.contacts_count, count, count),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         if (editable) {
             IconButton(onClick = onRename) {
-                Icon(SecaIcons.Edit, contentDescription = "Renommer ${profile.name}")
+                Icon(SecaIcons.Edit, contentDescription = stringResource(R.string.rename_named, profile.name))
             }
             IconButton(onClick = onDelete) {
-                Icon(SecaIcons.Delete, contentDescription = "Supprimer ${profile.name}")
+                Icon(SecaIcons.Delete, contentDescription = stringResource(R.string.delete_named, profile.name))
             }
         }
     }

@@ -18,6 +18,8 @@ data class VCardContact(
     val website: String = "",
     val birthday: String = "",
     val note: String = "",
+    /** The Seca Contacts profile the contact is filed in, by name; empty for Principal. */
+    val profile: String = "",
 )
 
 /**
@@ -46,6 +48,12 @@ object VCard {
             if (contact.website.isNotBlank()) line("URL:${escape(contact.website)}")
             if (contact.birthday.isNotBlank()) line("BDAY:${escape(contact.birthday)}")
             if (contact.note.isNotBlank()) line("NOTE:${escape(contact.note)}")
+            if (contact.profile.isNotBlank()) {
+                // Other apps file the contact in a group from its categories. Seca reads back only its
+                // own property, never the categories other apps export, such as "myContacts".
+                line("CATEGORIES:${escape(contact.profile)}")
+                line("X-SECA-PROFILE:${escape(contact.profile)}")
+            }
             line("END:VCARD")
         }
     }
@@ -91,6 +99,7 @@ object VCard {
                 "URL" -> card?.website = unescape(value)
                 "BDAY" -> card?.birthday = unescape(value).trim()
                 "NOTE" -> card?.note = unescape(value)
+                "X-SECA-PROFILE" -> card?.profile = unescape(value)
             }
         }
         return contacts
@@ -105,6 +114,7 @@ object VCard {
         var website = ""
         var birthday = ""
         var note = ""
+        var profile = ""
         val phones = mutableListOf<ContactField>()
         val emails = mutableListOf<ContactField>()
         val addresses = mutableListOf<ContactField>()
@@ -124,6 +134,7 @@ object VCard {
                 website = website,
                 birthday = birthday,
                 note = note,
+                profile = profile,
             )
         }
     }

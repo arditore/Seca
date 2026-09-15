@@ -63,6 +63,9 @@ import com.seca.core.model.SecaContact
 import com.seca.core.model.initialsOf
 import java.text.Normalizer
 import kotlinx.coroutines.launch
+import com.seca.core.design.label
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 @Composable
 internal fun HomeScreen(
@@ -88,9 +91,9 @@ internal fun HomeScreen(
         bottomBar = { SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = onOpenSibling) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                text = { Text("Nouveau contact") },
+                text = { Text(stringResource(R.string.new_contact)) },
                 icon = {
-                    Icon(SecaIcons.PersonAdd, contentDescription = if (fabExpanded) null else "Nouveau contact")
+                    Icon(SecaIcons.PersonAdd, contentDescription = if (fabExpanded) null else stringResource(R.string.new_contact))
                 },
                 onClick = { viewModel.open(Screen.Edit(null)) },
                 expanded = fabExpanded,
@@ -114,9 +117,9 @@ internal fun HomeScreen(
     }
     if (addingProfile) {
         ProfileNameDialog(
-            title = "Nouveau profil",
+            title = stringResource(R.string.new_profile),
             initial = "",
-            confirmLabel = "Créer",
+            confirmLabel = stringResource(R.string.create),
             onDismiss = { addingProfile = false },
             onConfirm = {
                 viewModel.addProfile(it)
@@ -145,11 +148,11 @@ private fun HomeTopBar(
         SecaSearchField(
             query = ui.query,
             onQueryChange = onQueryChange,
-            placeholder = "Rechercher un contact",
+            placeholder = stringResource(R.string.search_contacts),
             modifier = Modifier.padding(horizontal = 16.dp),
         ) {
             IconButton(onClick = onOpenSettings) {
-                Icon(SecaIcons.Settings, contentDescription = "Paramètres")
+                Icon(SecaIcons.Settings, contentDescription = stringResource(R.string.settings))
             }
         }
         LazyRow(
@@ -160,7 +163,7 @@ private fun HomeTopBar(
             // Every contact first, then one tab per profile.
             item(key = "all-profiles") {
                 ProfileTab(
-                    name = "Tous",
+                    name = stringResource(R.string.all),
                     tone = null,
                     count = ui.contacts.size,
                     selected = ui.showingAll,
@@ -169,7 +172,7 @@ private fun HomeTopBar(
             }
             itemsIndexed(ui.profiles, key = { _, profile -> profile.id }) { index, profile ->
                 ProfileTab(
-                    name = profile.name,
+                    name = profile.label(),
                     tone = index,
                     count = ui.counts[profile.id] ?: 0,
                     selected = profile.id == ui.currentProfileId,
@@ -233,7 +236,7 @@ private fun AddProfileTab(onClick: () -> Unit) {
             modifier = Modifier.size(20.dp),
         )
         Text(
-            text = "Nouveau profil",
+            text = stringResource(R.string.new_profile),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(start = 6.dp),
@@ -268,7 +271,7 @@ private fun HomeContent(
     val sections = remember(shown, searching) {
         if (searching) emptyMap() else shown.groupBy { sectionLetterOf(it.displayName) }
     }
-    // Where each letter's title sits in the list: after "Ma fiche" and the favourites.
+    // Where each letter's title sits in the list: after "My card" and the favourites.
     val letterIndex = remember(sections, favorites) {
         var index = 1 + if (favorites.isNotEmpty()) 2 else 0
         sections.mapValues { (_, group) -> index.also { index += 1 + group.size } }
@@ -294,12 +297,12 @@ private fun HomeContent(
             if (searching) {
                 // Search looks through every profile; results are grouped by profile.
                 shown.groupBy { ui.profileOf(it) }.forEach { (profile, group) ->
-                    item(key = "profile-${profile.id}", contentType = "label") { SecaSectionLabel(profile.name) }
+                    item(key = "profile-${profile.id}", contentType = "label") { SecaSectionLabel(profile.label()) }
                     contactGroup(group, keyPrefix = "result", ui = ui, onOpen = onOpen)
                 }
             } else {
                 if (favorites.isNotEmpty()) {
-                    item(key = "favorites-label", contentType = "label") { SecaSectionLabel("Favoris") }
+                    item(key = "favorites-label", contentType = "label") { SecaSectionLabel(stringResource(R.string.favorites)) }
                     item(key = "favorites", contentType = "favorites") { FavoritesRow(favorites, ui, onOpen) }
                 }
                 sections.forEach { (letter, group) ->
@@ -309,7 +312,7 @@ private fun HomeContent(
                 if (shown.isNotEmpty()) {
                     item(key = "count") {
                         Text(
-                            text = if (shown.size == 1) "1 contact" else "${shown.size} contacts",
+                            text = pluralStringResource(R.plurals.contacts_count, shown.size, shown.size),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
@@ -403,26 +406,26 @@ private fun EmptyHome(ui: ContactsUi, searching: Boolean, modifier: Modifier = M
     when {
         searching -> SecaEmptyState(
             icon = SecaIcons.Search,
-            title = "Aucun résultat",
-            description = "Aucun contact ne correspond à « ${ui.query.trim()} ».",
+            title = stringResource(R.string.no_results),
+            description = stringResource(R.string.no_results_hint, ui.query.trim()),
             modifier = modifier,
         )
         ui.currentProfileId == ProfileStore.Principal.id -> SecaEmptyState(
             icon = SecaIcons.Contacts,
-            title = "Aucun contact",
-            description = "Les contacts enregistrés sur ce téléphone apparaîtront ici.",
+            title = stringResource(R.string.no_contacts),
+            description = stringResource(R.string.no_contacts_hint),
             modifier = modifier,
         )
         else -> SecaEmptyState(
             icon = SecaIcons.Label,
-            title = "« ${ui.currentProfile.name} » est vide",
-            description = "Ouvrez la fiche d'un contact pour le ranger ici, ou créez-en un.",
+            title = stringResource(R.string.profile_empty, ui.currentProfile.label()),
+            description = stringResource(R.string.profile_empty_hint),
             modifier = modifier,
         )
     }
 }
 
-/** "Ma fiche": the owner's own card, first in the list. */
+/** "My card": the owner's own card, first in the list. */
 @Composable
 private fun MyCardRow(ui: ContactsUi, onClick: () -> Unit) {
     val mine = ui.myNumbers
@@ -450,7 +453,7 @@ private fun MyCardRow(ui: ContactsUi, onClick: () -> Unit) {
                 .padding(start = 16.dp),
         ) {
             Text(
-                text = ui.myCard.displayName,
+                text = ui.myCard.name.ifBlank { stringResource(R.string.my_card) },
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
@@ -458,7 +461,7 @@ private fun MyCardRow(ui: ContactsUi, onClick: () -> Unit) {
             )
             Text(
                 text = if (mine.isEmpty()) {
-                    "Ajoutez votre numéro, votre nom et une photo"
+                    stringResource(R.string.my_card_hint)
                 } else {
                     mine.joinToString(" · ", transform = ui.numbers::display)
                 },

@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.sp
 /**
  * Seca's type scale.
  *
- * Uses the platform font so the apps sit naturally on GrapheneOS and no font
+ * Uses the platform font so the apps sit naturally on the phone's system and no font
  * binary ships in the APK. Display and headline weights are heavier than the
  * Material default to give screens a clearer hierarchy.
  */

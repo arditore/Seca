@@ -34,6 +34,8 @@ import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.color.darkSchemeFor
 import com.seca.core.design.color.lightSchemeFor
+import androidx.compose.ui.res.stringResource
+import com.seca.core.design.R
 
 /**
  * One colour choice, drawn like Android's own wallpaper-and-style swatches: a
@@ -89,7 +91,7 @@ fun SecaPaletteSwatch(
             }
         }
         Text(
-            text = palette?.label ?: "Fond d'écran",
+            text = stringResource(palette?.label ?: R.string.design_palette_wallpaper),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,

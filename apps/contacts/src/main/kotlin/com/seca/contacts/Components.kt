@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.model.Profile
+import com.seca.core.design.label
+import androidx.compose.ui.res.stringResource
 
 @Composable
 internal fun ProfileNameDialog(
@@ -35,14 +37,14 @@ internal fun ProfileNameDialog(
                 value = name,
                 onValueChange = { name = it },
                 singleLine = true,
-                label = { Text("Nom du profil") },
+                label = { Text(stringResource(R.string.profile_name)) },
                 shape = MaterialTheme.shapes.medium,
             )
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) { Text(confirmLabel) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -51,10 +53,10 @@ internal fun ProfileNameDialog(
 internal fun ProfileMenuItems(ui: ContactsUi, selectedId: String, onSelect: (Profile) -> Unit) {
     ui.profiles.forEachIndexed { index, profile ->
         DropdownMenuItem(
-            text = { Text(profile.name) },
-            leadingIcon = { SecaProfileBadge(profile.name, tone = index, size = 28.dp) },
+            text = { Text(profile.label()) },
+            leadingIcon = { SecaProfileBadge(profile.label(), tone = index, size = 28.dp) },
             trailingIcon = if (profile.id == selectedId) {
-                { Icon(SecaIcons.Check, contentDescription = "Profil actuel") }
+                { Icon(SecaIcons.Check, contentDescription = stringResource(R.string.current_profile)) }
             } else {
                 null
             },

@@ -188,7 +188,7 @@ class LinkService : Service() {
         LinkTyping.stopped(message.number)
         // The conversation already on screen shows it; a notification would only repeat it.
         if (!ActiveConversation.isShown(message.number)) {
-            runCatching { MessageNotifications.notifyLink(this, message.number, LinkConversations.previewOf(message)) }
+            runCatching { MessageNotifications.notifyLink(this, message.number, LinkConversations.previewOf(this, message)) }
         }
         // Sent aside, so the notices that follow on this relay do not wait for every relay to answer.
         scope.launch { runCatching { link.send(message.number, LinkPayload.Delivered(listOf(message.id))) } }

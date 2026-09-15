@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="design_app_contacts">Contacts</string>
+    <string name="design_app_locked">%1$s est verrouillé</string>
+    <string name="design_app_locked_hint">Son contenu reste caché jusqu\'au déverrouillage.</string>
+    <string name="design_app_messages">Messages</string>
+    <string name="design_app_phone">Téléphone</string>
+    <string name="design_back">Retour</string>
+    <string name="design_cancel">Annuler</string>
+    <string name="design_clear_search">Effacer la recherche</string>
+    <string name="design_close">Fermer</string>
+    <string name="design_lock_app">Verrouiller %1$s</string>
+    <string name="design_lock_app_on">Empreinte ou code du téléphone à l\'ouverture</string>
+    <string name="design_lock_app_unavailable">Définissez d\'abord un verrouillage d\'écran dans Android</string>
+    <string name="design_palette_dusk">Crépuscule</string>
+    <string name="design_palette_forest">Forêt</string>
+    <string name="design_palette_ocean">Océan</string>
+    <string name="design_palette_slate">Ardoise</string>
+    <string name="design_palette_wallpaper">Fond d\'écran</string>
+    <string name="design_passphrase">Mot de passe</string>
+    <string name="design_passphrase_confirm">Confirmer le mot de passe</string>
+    <string name="design_passphrase_creating_hint">Sans ce mot de passe, la sauvegarde ne s\'ouvre plus : personne ne peut le retrouver.</string>
+    <string name="design_passphrase_opening_hint">Le mot de passe choisi au moment de la sauvegarde.</string>
+    <plurals name="design_passphrase_too_short">
+        <item quantity="one">Au moins %d caractère</item>
+        <item quantity="many">Au moins %d caractères</item>
+        <item quantity="other">Au moins %d caractères</item>
+    </plurals>
+    <string name="design_private_screen">Écran privé</string>
+    <string name="design_private_screen_hint">Bloque les captures et masque l\'aperçu dans les apps récentes</string>
+    <string name="design_profile_principal">Principal</string>
+    <string name="design_unlock">Déverrouiller</string>
+    <string name="design_unlock_app">Déverrouiller %1$s</string>
+</resources>

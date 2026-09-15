@@ -101,7 +101,7 @@ internal fun sendSpecialCode(context: Context, typed: String): Boolean {
 
 /** Copies [number]; Android confirms it on screen by itself. */
 internal fun copyNumber(context: Context, number: String) {
-    context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Numéro", number))
+    context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.number), number))
 }
 
 /**

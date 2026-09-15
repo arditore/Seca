@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Deep teal, from the Contacts identity's hue in the default Océan palette.
+    <!-- Deep teal, from the Contacts identity's hue in the default Ocean palette.
          A launcher icon is rendered by the system before any Compose theme
          exists, so it cannot follow the user's palette choice. -->
     <color name="ic_launcher_background">#FF1F6F74</color>

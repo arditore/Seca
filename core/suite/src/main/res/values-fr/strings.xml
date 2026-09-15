@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="suite_app_contacts">Seca Contacts</string>
+    <string name="suite_app_messages">Seca Messages</string>
+    <string name="suite_app_phone">Seca Téléphone</string>
+    <string name="suite_backing_up">Sauvegarde des trois applis…</string>
+    <string name="suite_backup_all">Sauvegarder les trois applis</string>
+    <string name="suite_backup_all_hint">Contacts et profils, appels et filtrage, SMS et conversations, dans un fichier chiffré</string>
+    <string name="suite_done">C\'est fait</string>
+    <string name="suite_empty">La sauvegarde ne contient rien à restaurer</string>
+    <string name="suite_encrypt">Chiffrer</string>
+    <string name="suite_encrypt_title">Chiffrer la sauvegarde</string>
+    <string name="suite_failed">Impossible</string>
+    <string name="suite_hint">Pratique pour changer de téléphone. Installez d\'abord les trois applis et donnez-leur leurs autorisations. Les clés Seca Link restent dans ce téléphone : il faudra reconnecter vos contacts.</string>
+    <string name="suite_line">%1$s : %2$s</string>
+    <string name="suite_no_app">Aucune application Seca n\'a répondu</string>
+    <string name="suite_not_installed">pas installée, sa part attend dans le fichier</string>
+    <string name="suite_not_saved">non sauvegardée, ouvrez-la une fois puis recommencez</string>
+    <string name="suite_not_suite">Ce fichier n\'est pas une sauvegarde de la suite Seca</string>
+    <string name="suite_open_title">Ouvrir la sauvegarde</string>
+    <string name="suite_permission_label">sauvegarder la suite Seca</string>
+    <string name="suite_restore">Restaurer</string>
+    <string name="suite_restore_all">Restaurer les trois applis</string>
+    <string name="suite_restore_all_hint">Chaque appli installée reprend sa part ; rien n\'est remplacé</string>
+    <string name="suite_restore_failed">restauration impossible</string>
+    <string name="suite_restoring">Restauration des trois applis…</string>
+    <string name="suite_saved">sauvegardée</string>
+    <string name="suite_section">Toute la suite Seca</string>
+    <string name="suite_still_restoring">restauration encore en cours</string>
+    <string name="suite_unreachable">injoignable</string>
+    <string name="suite_unreadable">Ce fichier ne peut pas être lu</string>
+    <string name="suite_working_hint">Chaque appli prépare sa part. Cela peut prendre un moment avec beaucoup de messages.</string>
+    <string name="suite_write_failed">Le fichier n\'a pas pu être écrit</string>
+    <string name="suite_wrong_password">Mot de passe incorrect, ou fichier abîmé</string>
+</resources>

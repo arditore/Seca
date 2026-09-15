@@ -72,7 +72,7 @@ class LinkConversations(context: Context) {
             val number = keyOf(conversation.address) ?: return@map conversation
             val newest = latest[number]
             val merged = if (newest != null && newest.date > conversation.date) {
-                conversation.copy(snippet = previewOf(newest), date = newest.date, outgoing = newest.outgoing)
+                conversation.copy(snippet = previewOf(appContext, newest), date = newest.date, outgoing = newest.outgoing)
             } else {
                 conversation
             }
@@ -241,20 +241,14 @@ class LinkConversations(context: Context) {
     }
 
     companion object {
-        /** How a photo reads in the conversation list and in notifications. */
-        const val PHOTO = "📷 Photo"
-
-        /** How a voice message reads in the conversation list and in notifications. */
-        const val VOICE = "🎤 Message vocal"
-
         private const val TYPING_EVERY_MILLIS = 4_000L
         private const val MILLIS_PER_SECOND = 1000L
         private val lastTyping = ConcurrentHashMap<String, Long>()
 
         /** A message as a notification or the conversation list shows it. */
-        fun previewOf(message: LinkMessage): String = when {
-            message.media?.startsWith("audio/") == true -> VOICE
-            message.media != null && message.body.isEmpty() -> PHOTO
+        fun previewOf(context: Context, message: LinkMessage): String = when {
+            message.media?.startsWith("audio/") == true -> context.getString(R.string.preview_voice)
+            message.media != null && message.body.isEmpty() -> context.getString(R.string.preview_photo)
             else -> message.body
         }
     }

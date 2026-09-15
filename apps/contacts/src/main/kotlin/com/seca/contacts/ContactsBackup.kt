@@ -15,10 +15,11 @@ import com.seca.core.suite.SuiteBackup
 import com.seca.core.suite.SuiteBackupProvider
 import org.json.JSONArray
 import org.json.JSONObject
+import androidx.annotation.PluralsRes
 
 /**
  * Seca Contacts' part of a backup: every contact with its profile, the
- * profiles, "Ma fiche" and the suite's colours. The app's own encrypted backup
+ * profiles, "My card" and the suite's colours. The app's own encrypted backup
  * and the suite's share it.
  */
 internal class ContactsBackup(private val context: Context) {
@@ -44,7 +45,7 @@ internal class ContactsBackup(private val context: Context) {
                     entries.forEach { (key, card) ->
                         // A contact whose profile was deleted is in Principal.
                         val profile = assignments[key]?.takeIf { id -> profiles.any { it.id == id } } ?: ProfileStore.Principal.id
-                        put(JSONObject().put("profile", profile).put("vcard", VCard.write(listOf(card))))
+                        put(JSONObject().put("profile", profile).put("key", key).put("vcard", VCard.write(listOf(card))))
                     }
                 },
             )
@@ -52,11 +53,11 @@ internal class ContactsBackup(private val context: Context) {
             .apply { store.palette()?.let { put("palette", it.name) } }
             .put(
                 SuiteBackup.KEY_SUMMARY,
-                if (readable) SuiteBackup.plural(entries.size, "contact", "contacts") else "profils seulement, l'accès aux contacts est refusé",
+                if (readable) quantity(R.plurals.contacts_count, entries.size) else context.getString(R.string.backup_profiles_only),
             )
     }
 
-    /** Puts back what this phone is missing: profiles, contacts each in its profile, "Ma fiche" when empty. Returns what came back. */
+    /** Puts back what this phone is missing: profiles, contacts each in its profile, "My card" when empty. Returns what came back. */
     suspend fun restore(part: JSONObject): String {
         val profiles = part.optJSONArray("profiles") ?: JSONArray()
         for (index in 0 until profiles.length()) {
@@ -68,7 +69,7 @@ internal class ContactsBackup(private val context: Context) {
         if (store.palette() == null) {
             SecaPalette.entries.firstOrNull { it.name == part.optString("palette") }?.let(store::setPalette)
         }
-        // "Ma fiche" only comes back onto a phone where it was never filled in.
+        // "My card" only comes back onto a phone where it was never filled in.
         part.optJSONObject("myCard")?.let { card ->
             val current = myCards.load()
             if (current.name.isBlank() && current.numbers.isEmpty()) {
@@ -77,24 +78,46 @@ internal class ContactsBackup(private val context: Context) {
             }
         }
         val contacts = part.optJSONArray("contacts") ?: JSONArray()
-        if (contacts.length() == 0) return "profils remis"
-        if (!granted(Manifest.permission.READ_CONTACTS) || !granted(Manifest.permission.WRITE_CONTACTS)) {
-            return "profils remis ; ouvrez Seca Contacts, autorisez les contacts, puis restaurez à nouveau pour les fiches"
-        }
+        if (contacts.length() == 0) return context.getString(R.string.backup_profiles_restored)
+        if (!granted(Manifest.permission.READ_CONTACTS)) return context.getString(R.string.backup_profiles_restored_no_access)
+        // Filing a contact already on the phone only needs to read the contacts; bringing back a
+        // missing one needs to write them, which Seca Contacts asks for only when it is needed.
+        val canWrite = granted(Manifest.permission.WRITE_CONTACTS)
         val existing = repository.contacts()
+        val profileIds = store.profiles().map { it.id }.toSet()
+        val filed = store.assignments().filterValues { it in profileIds }.toMutableMap()
         var added = 0
+        var inProfile = 0
+        var missing = 0
         for (index in 0 until contacts.length()) {
             val item = contacts.optJSONObject(index) ?: continue
             val card = VCard.parse(item.optString("vcard")).firstOrNull() ?: continue
-            val contactId = existing.firstOrNull { it.isSameAs(card, numbers) }?.id
-                ?: repository.createContact(card.toInput())?.also { added++ }
-                ?: continue
-            repository.lookupKeyOf(contactId)?.let { store.assign(it, item.optString("profile", ProfileStore.Principal.id)) }
+            // The same phone knows the contact by its key; another phone recognises it by name and number.
+            val savedKey = item.optString("key")
+            val key = existing.firstOrNull { savedKey.isNotEmpty() && it.lookupKey == savedKey }?.lookupKey
+                ?: existing.firstOrNull { it.isSameAs(card, numbers) }?.lookupKey
+                ?: if (canWrite) repository.createContact(card.toInput())?.also { added++ }?.let { repository.lookupKeyOf(it) } else null
+            if (key.isNullOrEmpty()) {
+                missing++
+                continue
+            }
+            val profile = item.optString("profile", ProfileStore.Principal.id)
+            // A contact the owner already filed on this phone stays where it is.
+            if (profile == ProfileStore.Principal.id || profile !in profileIds || key in filed) continue
+            filed[key] = profile
+            inProfile++
         }
-        return SuiteBackup.plural(added, "contact ajouté", "contacts ajoutés")
+        store.assignAll(filed)
+        return buildList {
+            add(quantity(R.plurals.backup_contacts_filed, inProfile))
+            if (added > 0) add(quantity(R.plurals.contacts_added, added))
+            if (missing > 0) add(quantity(R.plurals.backup_contacts_missing, missing))
+        }.joinToString(", ")
     }
 
     private fun granted(permission: String) = context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+
+    private fun quantity(@PluralsRes id: Int, count: Int): String = context.resources.getQuantityString(id, count, count)
 
     companion object {
         const val APP = "seca-contacts"
