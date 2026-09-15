@@ -11,14 +11,14 @@ RepoType: git
 Repo: https://github.com/arditore/Seca.git
 
 Builds:
-  - versionName: 0.1.0-beta3
-    versionCode: 3
-    commit: v0.1.0-beta3
+  - versionName: 0.1.0-beta4
+    versionCode: 4
+    commit: v0.1.0-beta4
     subdir: apps/contacts
     gradle:
       - yes
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 0.1.0-beta3
-CurrentVersionCode: 3
+CurrentVersion: 0.1.0-beta4
+CurrentVersionCode: 4

@@ -52,9 +52,17 @@ This repository is ready for it: `settings.gradle.kts` takes libsignal from wher
 when nothing is said. `apps/messages/build.gradle.kts` takes its NDK version from
 `seca.ndkVersion` the same way.
 
-**What is not proven yet:** this recipe has never run on an F-Droid build server. libsignal's
-Android build wants a JDK 21 and its own NDK, and the build is long. Expect a few rounds with the
-maintainers on the merge request; that is what the review is for.
+**What has been proven, and where.** The recipe was run on Ubuntu 24.04, the family F-Droid
+builds on: libsignal 0.102.2 compiled from its Rust sources for `arm64-v8a` and `armeabi-v7a`,
+and `libsignal-android-0.102.2.aar` published into the local Maven folder carrying both native
+libraries. Getting there taught the recipe four things it was missing — `protobuf-compiler`,
+`libprotobuf-dev`, `cmake` with `ninja-build`, and `clang` with `libclang-dev` — and that
+libsignal rebuilds every ABI unless told otherwise, hence `-PandroidArchs=aarch64,arm`. It needs
+a JDK 21 and NDK 28, and the Rust version libsignal pins itself.
+
+**What is still unproven:** the same recipe inside F-Droid own build server, where the toolchain
+is installed differently. Expect a round or two with the maintainers; that is what the review is
+for.
 
 ## Steps that need an account
 

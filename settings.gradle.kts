@@ -12,20 +12,13 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // libsignal, from wherever this build is told to take it. F-Droid builds every
-        // dependency from source, so its recipe compiles libsignal and points this at the
-        // folder it published into: -Pseca.libsignal.repo=/path/to/maven. Without it, the
-        // build takes libsignal from Signal's own repository, and only its group from
-        // there, so no other dependency can be swapped in through it.
-        val libsignalRepo = providers.gradleProperty("seca.libsignal.repo").orNull
+        // libsignal, from wherever this build is told to take it: the address lives in
+        // gradle.properties, and a build that compiles libsignal itself, as F-Droid does, passes
+        // the folder it published into instead. Only the org.signal group is taken from there, so
+        // no other dependency can be swapped in through it.
+        val libsignalRepo = providers.gradleProperty("seca.libsignal.repo").get()
         exclusiveContent {
-            forRepository {
-                when (libsignalRepo) {
-                    null -> maven("https://build-artifacts.signal.org/libraries/maven/")
-                    "mavenLocal" -> mavenLocal()
-                    else -> maven(libsignalRepo)
-                }
-            }
+            forRepository { if (libsignalRepo == "mavenLocal") mavenLocal() else maven(libsignalRepo) }
             filter { includeGroup("org.signal") }
         }
     }

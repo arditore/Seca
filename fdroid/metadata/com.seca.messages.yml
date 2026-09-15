@@ -11,9 +11,9 @@ RepoType: git
 Repo: https://github.com/arditore/Seca.git
 
 Builds:
-  - versionName: 0.1.0-beta3
-    versionCode: 3
-    commit: v0.1.0-beta3
+  - versionName: 0.1.0-beta4
+    versionCode: 4
+    commit: v0.1.0-beta4
     subdir: apps/messages
     sudo:
       - apt-get update
@@ -29,9 +29,7 @@ Builds:
     prebuild:
       - . "$HOME/.cargo/env"
       - rustup target add aarch64-linux-android armv7-linux-androideabi
-      - ANDROID_NDK_HOME=$$NDK$$ $$libsignal$$/java/build_jni.sh android-aarch64
-      - ANDROID_NDK_HOME=$$NDK$$ $$libsignal$$/java/build_jni.sh android-arm
-      - cd $$libsignal$$/java && ./gradlew --no-daemon :android:publishToMavenLocal
+      - cd $$libsignal$$/java && ANDROID_NDK_HOME=$$NDK$$ ./gradlew --no-daemon -PandroidArchs=aarch64,arm :android:publishToMavenLocal
     ndk: 28.0.13004108
     gradleprops:
       - seca.libsignal.repo=mavenLocal
@@ -39,5 +37,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 0.1.0-beta3
-CurrentVersionCode: 3
+CurrentVersion: 0.1.0-beta4
+CurrentVersionCode: 4

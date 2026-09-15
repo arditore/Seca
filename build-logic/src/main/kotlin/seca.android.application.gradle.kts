@@ -14,8 +14,7 @@ extensions.configure<ApplicationExtension> {
         // still what many phones run. Newer APIs are checked for and fall back gracefully.
         minSdk = 31
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.1.0-beta3"
+        // Each app writes its own version: F-Droid reads it from the app build file, not from here.
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

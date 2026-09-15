@@ -7,6 +7,10 @@ android {
     namespace = "com.seca.messages"
     defaultConfig {
         applicationId = "com.seca.messages"
+        // Written out here, not only in the shared convention plugin: F-Droid reads the version
+        // of an app from its own build file, and finds nothing in a plugin it does not run.
+        versionCode = 4
+        versionName = "0.1.0-beta4"
         // Both ARM builds of libsignal: 64-bit for nearly every phone, 32-bit for the entry-level
         // phones whose Android runs in 32-bit. The x86 builds only serve emulators and Chromebooks.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
