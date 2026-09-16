@@ -5,9 +5,9 @@ person with an account somewhere.
 
 | App | F-Droid | IzzyOnDroid |
 |---|---|---|
-| Seca Contacts | merge request !49024, under review | ready to request |
-| Seca Phone | merge request !49025, under review | ready to request |
-| Seca Messages | merge request !49106, under review | ready to request |
+| Seca Contacts | merge request !49024, green, reproducible build verified | ready to request |
+| Seca Phone | merge request !49025, green, reproducible build verified | ready to request |
+| Seca Messages | merge request !49106, green, reproducible build verified | ready to request |
 
 ## Decisions taken
 
@@ -77,12 +77,24 @@ build tools 36.0.0 and the same NDK 28.0.13004108, and only signed on the machin
 key — signatures are stripped before the two builds are compared, so signing where the key lives
 changes nothing.
 
-One thing had to be fixed for that to hold: BoringSSL, inside libsignal, writes the full path of
-every source file into its native library, through the `__FILE__` of its assertions. Two machines
-never share that path. So both builds now compile it with
-`-ffile-prefix-map=<libsignal>=.`, which makes those paths relative, and the native library comes
-out identical wherever it is built. The recipe carries the same flag; `scratchpad` scripts aside,
-the whole procedure is: build in Linux, sign on Windows, attach to the GitHub release.
+Three things had to be fixed for that to hold, all found by comparing their build against ours:
+
+1. **Signing must not touch the archive.** `apksigner` re-aligns an APK as it signs, which moves
+   every entry and breaks the signature copy their verification does. `--alignment-preserved`
+   leaves the archive exactly as the build produced it, so the signature is all that is added.
+2. **BoringSSL writes absolute paths into libsignal's native library**, through the `__FILE__` of
+   its assertions, and two machines never share that path. Both builds now compile it with
+   `-ffile-prefix-map=<libsignal>=.`, which makes those paths relative.
+3. **The GNU build id.** With the paths fixed, their library and ours still differed by exactly 8
+   bytes in 8.9 MB: the id the linker computes from debug information that still names local
+   folders, and which survives the stripping that removes that information. libsignal asks for it
+   itself, in `rust/bridge/jni/build.rs`, after anything passed on the command line, so the recipe
+   changes the request rather than the flags around it.
+
+Proven twice over: libsignal built from scratch in two different folders gives byte-identical
+libraries for both ABIs, and F-Droid's own server rebuilt all three published APKs and verified
+them — `...successfully verified`. The whole procedure is: build in Linux, sign on Windows, attach
+to the GitHub release.
 
 ## Steps that need an account
 
