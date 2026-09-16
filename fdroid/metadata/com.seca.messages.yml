@@ -21,15 +21,16 @@ Builds:
       - apt-get update
       - apt-get install -y --no-install-recommends build-essential curl unzip protobuf-compiler
         libprotobuf-dev cmake ninja-build clang libclang-dev pkg-config
-      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile
-        minimal --default-toolchain 1.98.1
-      - chown -R vagrant:vagrant /opt/rustup || true
+      - install -d -o vagrant -g vagrant /opt/rust
+      - sudo -u vagrant env RUSTUP_HOME=/opt/rust/rustup CARGO_HOME=/opt/rust/cargo
+        sh -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s --
+        -y --profile minimal --default-toolchain 1.98.1 --no-modify-path"
     gradle:
       - yes
     srclibs:
       - libsignal@v0.102.2
     prebuild:
-      - . "$HOME/.cargo/env"
+      - export RUSTUP_HOME=/opt/rust/rustup CARGO_HOME=/opt/rust/cargo PATH="/opt/rust/cargo/bin:$PATH"
       - rustup target add aarch64-linux-android armv7-linux-androideabi
       - cd $$libsignal$$/java && ANDROID_NDK_HOME=$$NDK$$ ./gradlew --no-daemon -PandroidArchs=aarch64,arm
         :android:publishToMavenLocal :client:publishToMavenLocal
