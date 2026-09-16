@@ -108,6 +108,11 @@ To publish a new version: update `versionName`, `versionCode`, `commit` (the ful
 `CurrentVersion` and `CurrentVersionCode` in each file, and open one merge request per app —
 or let `AutoUpdateMode: Version` do it once the apps are published.
 
+**While a merge request is still waiting**, a new release goes into that same merge request, not
+into a new one: push the updated recipe to its branch. Their reviewer asked for exactly that, and
+a recipe left pointing at an older commit would have them test a version nobody runs any more.
+Their queue is long, so expect the wait to be measured in weeks.
+
 ### IzzyOnDroid, for the three apps
 
 Requirements already met: APKs signed with the release key, attached to the latest GitHub release,
