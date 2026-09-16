@@ -2,8 +2,15 @@ plugins {
     `kotlin-dsl`
 }
 
+// No toolchain pinned to one JDK: any from 17 up builds this. A distribution build server brings
+// its own, and asking for an exact one there fails before a line is compiled.
 java {
-    toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+kotlin {
+    compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
 }
 
 dependencies {

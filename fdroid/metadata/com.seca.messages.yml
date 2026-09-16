@@ -13,9 +13,9 @@ RepoType: git
 Repo: https://github.com/arditore/Seca.git
 
 Builds:
-  - versionName: 0.1.0-beta4
-    versionCode: 4
-    commit: v0.1.0-beta4
+  - versionName: 0.1.0-beta5
+    versionCode: 5
+    commit: v0.1.0-beta5
     subdir: apps/messages
     sudo:
       - apt-get update
@@ -42,5 +42,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 0.1.0-beta4
-CurrentVersionCode: 4
+CurrentVersion: 0.1.0-beta5
+CurrentVersionCode: 5

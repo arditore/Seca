@@ -52,13 +52,16 @@ This repository is ready for it: `settings.gradle.kts` takes libsignal from wher
 when nothing is said. `apps/messages/build.gradle.kts` takes its NDK version from
 `seca.ndkVersion` the same way.
 
-**What has been proven, and where.** The recipe was run on Ubuntu 24.04, the family F-Droid
-builds on: libsignal 0.102.2 compiled from its Rust sources for `arm64-v8a` and `armeabi-v7a`,
-and `libsignal-android-0.102.2.aar` published into the local Maven folder carrying both native
-libraries. Getting there taught the recipe four things it was missing — `protobuf-compiler`,
-`libprotobuf-dev`, `cmake` with `ninja-build`, and `clang` with `libclang-dev` — and that
-libsignal rebuilds every ABI unless told otherwise, hence `-PandroidArchs=aarch64,arm`. It needs
-a JDK 21 and NDK 28, and the Rust version libsignal pins itself.
+**What has been proven, and where.** The recipe was run on Ubuntu 24.04, the family F-Droid builds
+on. libsignal 0.102.2 compiled from its Rust sources for `arm64-v8a` and `armeabi-v7a`, both
+`libsignal-android` and `libsignal-client` published into the local Maven folder, and Seca Messages
+then built against them: a 23 MB APK, from sources all the way down.
+
+Getting there taught the recipe what it was missing: `protobuf-compiler` and `libprotobuf-dev`,
+`cmake` with `ninja-build`, `clang` with `libclang-dev`, the flag that keeps libsignal to the two
+ABIs this app ships (`-PandroidArchs=aarch64,arm`), and that publishing the Android artifact alone
+is not enough — `libsignal-android` depends on `libsignal-client`, which must be published too. It
+needs a JDK 21 and NDK 28, and the Rust version libsignal pins itself.
 
 **What is still unproven:** the same recipe inside F-Droid own build server, where the toolchain
 is installed differently. Expect a round or two with the maintainers; that is what the review is

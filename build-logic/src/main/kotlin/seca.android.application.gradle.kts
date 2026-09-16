@@ -74,7 +74,9 @@ extensions.configure<ApplicationExtension> {
 }
 
 kotlin {
-    jvmToolchain(17)
+    // The bytecode targets Java 17, but any JDK from 17 up may compile it: a build server that
+    // brings its own JDK, F-Droid for one, has no reason to install another.
+    compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
 }
 
 // One check per release variant: it inspects exactly what ships in the APK.

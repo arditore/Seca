@@ -1,0 +1,1 @@
+Fifth beta, for F-Droid: Seca now builds with any JDK from 17 up, each app carries its own version where F-Droid reads it, and no third-party Maven address is left in the build scripts. Nothing changes on the phone.

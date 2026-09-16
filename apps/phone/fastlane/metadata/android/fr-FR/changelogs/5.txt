@@ -1,0 +1,1 @@
+Cinquième bêta, pour F-Droid : Seca se construit désormais avec n'importe quel JDK 17 ou plus récent, chaque application porte sa version là où F-Droid la lit, et plus aucune adresse Maven tierce ne subsiste dans les scripts de construction. Rien ne change sur le téléphone.
