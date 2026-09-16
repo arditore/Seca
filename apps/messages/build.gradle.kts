@@ -9,8 +9,8 @@ android {
         applicationId = "com.seca.messages"
         // Written out here, not only in the shared convention plugin: F-Droid reads the version
         // of an app from its own build file, and finds nothing in a plugin it does not run.
-        versionCode = 5
-        versionName = "0.1.0-beta5"
+        versionCode = 6
+        versionName = "0.1.0-beta6"
         // Both ARM builds of libsignal: 64-bit for nearly every phone, 32-bit for the entry-level
         // phones whose Android runs in 32-bit. The x86 builds only serve emulators and Chromebooks.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
@@ -18,10 +18,11 @@ android {
     buildFeatures { compose = true }
     // libsignal uses Java APIs newer than Android offers everywhere; desugaring supplies them.
     compileOptions { isCoreLibraryDesugaringEnabled = true }
-    // The NDK strips the debug symbols out of libsignal's native code as the APK is packaged,
-    // which takes it from over a hundred megabytes to about ten.
-    // A build that has another NDK at hand, F-Droid's for one, says so rather than installing this one.
-    ndkVersion = providers.gradleProperty("seca.ndkVersion").getOrElse("30.0.16248370")
+    // The NDK strips the debug symbols out of libsignal native code as the APK is packaged,
+    // which takes it from over a hundred megabytes to about ten. This is the version F-Droid
+    // builds with, so that their APK and the one published here come out the same; a build with
+    // another NDK at hand says so rather than installing this one.
+    ndkVersion = providers.gradleProperty("seca.ndkVersion").getOrElse("28.0.13004108")
     packaging {
         jniLibs {
             // libsignal ships a second build of its native code, for its own tests.

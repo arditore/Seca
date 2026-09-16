@@ -1,0 +1,1 @@
+Sixth beta, for F-Droid again: the build patches itself where their scanner needs it, installs Rust the way their servers expect, and pins the same NDK as theirs so their APK and this one come out identical. Nothing changes on the phone.

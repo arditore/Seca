@@ -1,0 +1,1 @@
+Sixième bêta, encore pour F-Droid : la construction s'adapte à ce que leur analyseur demande, installe Rust comme leurs serveurs l'attendent, et fixe le même NDK qu'eux pour que leur APK et celui-ci soient identiques. Rien ne change sur le téléphone.
