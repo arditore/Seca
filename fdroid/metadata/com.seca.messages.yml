@@ -34,6 +34,8 @@ Builds:
         ../../settings.gradle.kts
       - cd $$libsignal$$ && export CFLAGS="-ffile-prefix-map=$(pwd -P)=." CXXFLAGS="-ffile-prefix-map=$(pwd
         -P)=."
+      - export RUSTFLAGS="-C link-arg=-Wl,--build-id=none"
+      - sed -i 's|-Wl,--build-id|-Wl,--build-id=none|' $$libsignal$$/rust/bridge/jni/build.rs
       - cd $$libsignal$$/java && ANDROID_NDK_HOME=$$NDK$$ ./gradlew --no-daemon -PandroidArchs=aarch64,arm
         :android:publishToMavenLocal :client:publishToMavenLocal
     ndk: 28.0.13004108
