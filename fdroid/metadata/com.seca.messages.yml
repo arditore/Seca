@@ -11,37 +11,36 @@ AutoName: Seca Messages
 
 RepoType: git
 Repo: https://github.com/arditore/Seca.git
+Binaries: https://github.com/arditore/Seca/releases/download/v%v/seca-messages-%v.apk
 
 Builds:
-  - versionName: 0.1.0-beta5
-    versionCode: 5
-    commit: v0.1.0-beta5
+  - versionName: 0.1.0-beta6
+    versionCode: 6
+    commit: 097d0599867785dbf4fe89812aa48b6be0a716d9
     subdir: apps/messages
     sudo:
       - apt-get update
-      - apt-get install -y --no-install-recommends build-essential curl unzip protobuf-compiler
-        libprotobuf-dev cmake ninja-build clang libclang-dev pkg-config
-      - install -d -o vagrant -g vagrant /opt/rust
-      - sudo -u vagrant env RUSTUP_HOME=/opt/rust/rustup CARGO_HOME=/opt/rust/cargo
-        sh -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s --
-        -y --profile minimal --default-toolchain 1.98.1 --no-modify-path"
+      - apt-get install -y --no-install-recommends build-essential protobuf-compiler
+        libprotobuf-dev cmake ninja-build clang libclang-dev pkg-config rustup
     gradle:
       - yes
     srclibs:
       - libsignal@v0.102.2
     prebuild:
-      - export RUSTUP_HOME=/opt/rust/rustup CARGO_HOME=/opt/rust/cargo PATH="/opt/rust/cargo/bin:$PATH"
+      - export PATH="$HOME/.cargo/bin:$PATH"
+      - rustup default 1.98.1
       - rustup target add aarch64-linux-android armv7-linux-androideabi
+      - sed -i '/libsignal repository (start)/,/libsignal repository (end)/c\mavenLocal()'
+        ../../settings.gradle.kts
+      - cd $$libsignal$$ && export CFLAGS="-ffile-prefix-map=$(pwd -P)=." CXXFLAGS="-ffile-prefix-map=$(pwd
+        -P)=."
       - cd $$libsignal$$/java && ANDROID_NDK_HOME=$$NDK$$ ./gradlew --no-daemon -PandroidArchs=aarch64,arm
         :android:publishToMavenLocal :client:publishToMavenLocal
-    scanignore:
-      - settings.gradle.kts
     ndk: 28.0.13004108
-    gradleprops:
-      - seca.libsignal.repo=mavenLocal
-      - seca.ndkVersion=28.0.13004108
+
+AllowedAPKSigningKeys: 2fdea7b46beffe16459bb4dcdd34db5e0cb912274a5eb628e4b0d8a596211790
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 0.1.0-beta5
-CurrentVersionCode: 5
+CurrentVersion: 0.1.0-beta6
+CurrentVersionCode: 6
