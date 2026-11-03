@@ -9,6 +9,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import com.seca.core.design.color.darkSchemeFor
 import com.seca.core.design.color.lightSchemeFor
@@ -62,6 +63,20 @@ fun SecaTheme(
         shapes = SecaShapes,
         typography = SecaTypography,
     ) {
-        CompositionLocalProvider(LocalToneScheme provides toneScheme, content = content)
+        CompositionLocalProvider(
+            LocalToneScheme provides toneScheme,
+            LocalBlackTheme provides (darkTheme && black),
+            content = content,
+        )
     }
 }
+
+/**
+ * Whether the black theme is on, for the few places a colour scheme cannot say it.
+ *
+ * Material's bars sit on `surfaceContainer`, a tinted grey, which is right in the ordinary
+ * dark theme and wrong under this one: the bar at the bottom of the screen is what shows
+ * behind the phone's own navigation bar, so a grey there is a grey strip across the bottom
+ * of a screen that is meant to be unlit.
+ */
+val LocalBlackTheme = staticCompositionLocalOf { false }

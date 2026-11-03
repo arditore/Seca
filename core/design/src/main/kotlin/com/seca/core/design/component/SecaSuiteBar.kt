@@ -1,12 +1,15 @@
 package com.seca.core.design.component
 
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.seca.core.design.LocalBlackTheme
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaIcons
 import androidx.compose.ui.res.stringResource
@@ -27,7 +30,16 @@ fun SecaSuiteBar(
     onSelect: (SecaAppIdentity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    NavigationBar(modifier = modifier) {
+    // This bar is what shows behind the phone's own navigation bar, so under the black theme it
+    // has to be black as well: Material would otherwise leave a grey strip across the bottom.
+    NavigationBar(
+        modifier = modifier,
+        containerColor = if (LocalBlackTheme.current) {
+            MaterialTheme.colorScheme.surface
+        } else {
+            NavigationBarDefaults.containerColor
+        },
+    ) {
         SecaAppIdentity.entries.forEach { identity ->
             NavigationBarItem(
                 selected = identity == current,
