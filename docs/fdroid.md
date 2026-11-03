@@ -5,9 +5,17 @@ person with an account somewhere.
 
 | App | F-Droid | IzzyOnDroid |
 |---|---|---|
-| Seca Contacts | merge request !49024, green, reproducible build verified | ready to request |
-| Seca Phone | merge request !49025, green, reproducible build verified | ready to request |
-| Seca Messages | merge request !49106, green, reproducible build verified | ready to request |
+| Seca Contacts | **published**, reproducible: f-droid.org hands out the file published here | ready to request |
+| Seca Phone | **published**, reproducible | ready to request |
+| Seca Messages | merge request !49106 closed after a month of silence, to reopen | ready to request |
+
+The reproducible build is not a claim: the APK f-droid.org serves for Seca Contacts has the
+same SHA-256 as the one attached to the GitHub release, `11f14bf8…` for 0.1.0-beta6. Their
+server rebuilt it, found the same bytes, and distributes ours with this project's signature.
+
+Both published apps follow new tags by themselves (`AutoUpdateMode: Version`), so a release
+here reaches F-Droid without a merge request — as long as the APK published here stays
+reproducible, which means building it the way their server does. See below.
 
 ## Decisions taken
 
@@ -95,6 +103,31 @@ Proven twice over: libsignal built from scratch in two different folders gives b
 libraries for both ABIs, and F-Droid's own server rebuilt all three published APKs and verified
 them — `...successfully verified`. The whole procedure is: build in Linux, sign on Windows, attach
 to the GitHub release.
+
+## Seca Messages: the second review, and what it still needs
+
+A second reviewer went through 0.1.0-beta6 in detail on 3 October, and the merge request was
+closed on 1 November for having had no answer in between. Reopening it needs three things, two
+of which are done here:
+
+1. **The licence had to agree with itself.** The metadata said AGPL-3.0-or-later, because the app
+   links libsignal, while the repository said GPL. Seca Messages now carries its own
+   `apps/messages/LICENSE`, the AGPL, and the README says which app is under which.
+2. **Incoming MMS are not supported, and the listing has to say so.** As the default SMS app,
+   Seca Messages is the only app the phone hands them to, so adopting it cost a user their
+   picture messages without a word. `full_description.txt` now says it first, in both languages.
+3. **secp256k1 is still a prebuilt binary, and that one is not finished.**
+   `fr.acinq.secp256k1:secp256k1-kmp-jni-android` ships `libsecp256k1-jni.so`, which F-Droid does
+   not accept any more than libsignal's. The recipe now builds it from the `Secp256k1Kmp` srclib,
+   the way `com.gorunjinian.metrovault` already does: the SDK's own cmake, the submodule
+   checkout, and the same `-Wl,--build-id=none` the linker needs for the library to come out the
+   same on two machines. `settings.gradle.kts` takes both libraries, and only those two, from the
+   folder the build publishes them into — `mavenLocal()` left among the other repositories would
+   have let Maven Central answer first and ship the prebuilt library after all.
+
+   **What is missing is on this side:** the APK published here must carry that same from-source
+   library, or their reproducibility check fails. So secp256k1 has to be compiled here too,
+   before Seca Messages is resubmitted.
 
 ## Steps that need an account
 

@@ -14,9 +14,9 @@ Repo: https://github.com/arditore/Seca.git
 Binaries: https://github.com/arditore/Seca/releases/download/v%v/seca-contacts-%v.apk
 
 Builds:
-  - versionName: 0.1.0-beta6
-    versionCode: 6
-    commit: 097d0599867785dbf4fe89812aa48b6be0a716d9
+  - versionName: 0.1.0-beta7
+    versionCode: 7
+    commit: dbe710ad3d057d331a70edf270d0b2d59e9b53a9
     subdir: apps/contacts
     gradle:
       - yes
@@ -27,5 +27,5 @@ AllowedAPKSigningKeys: 2fdea7b46beffe16459bb4dcdd34db5e0cb912274a5eb628e4b0d8a59
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 0.1.0-beta6
-CurrentVersionCode: 6
+CurrentVersion: 0.1.0-beta7
+CurrentVersionCode: 7
