@@ -32,8 +32,23 @@ class InCallActivity : ComponentActivity() {
         handle(intent)
     }
 
+    /**
+     * While this screen is in front, the ringing notification stops floating over it: it would
+     * land on the very answer and decline buttons it duplicates.
+     */
+    override fun onResume() {
+        super.onResume()
+        CallSession.screenVisible(true)
+    }
+
+    override fun onPause() {
+        CallSession.screenVisible(false)
+        super.onPause()
+    }
+
     override fun onDestroy() {
         holdProximity(false)
+        CallSession.screenVisible(false)
         super.onDestroy()
     }
 
@@ -45,6 +60,9 @@ class InCallActivity : ComponentActivity() {
     }
 
     private fun holdProximity(hold: Boolean) {
+        // A case or a screen protector can keep the sensor covered, which would leave the screen
+        // dark for the whole call. The owner can turn this off in settings.
+        if (hold && !InCallSettings(this).proximity) return
         val power = getSystemService(PowerManager::class.java) ?: return
         if (!power.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) return
         if (hold) {

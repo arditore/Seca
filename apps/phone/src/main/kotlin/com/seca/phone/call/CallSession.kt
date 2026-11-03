@@ -301,6 +301,16 @@ object CallSession {
         _ended.value = null
     }
 
+    /**
+     * Told by the call screen whether it is in front of the owner. While it is, the ringing
+     * notification has nothing to announce that the screen is not already showing, so it stops
+     * popping up over it.
+     */
+    fun screenVisible(visible: Boolean) {
+        CallNotifications.screenVisible(visible)
+        changed()
+    }
+
     private fun changed() {
         _calls.value = tracked.map(::viewOf)
         appContext?.let { CallNotifications.update(it, _calls.value, service) }

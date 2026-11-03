@@ -32,6 +32,7 @@ import com.seca.phone.R
 internal object CallNotifications {
 
     private const val INCOMING = "incoming_calls"
+    private const val INCOMING_QUIET = "incoming_calls_quiet"
     private const val ONGOING = "ongoing_calls"
     private const val MISSED = "missed_calls"
     const val NOTIFICATION_ID = 7
@@ -39,6 +40,28 @@ internal object CallNotifications {
 
     /** Decoding a photo takes a moment; each caller's is drawn once per call. */
     private val icons = HashMap<String, Icon>()
+
+    /**
+     * Whether the call screen is in front of the owner.
+     *
+     * A ringing call is announced twice over: the screen itself, and the notification Android
+     * floats over whatever is on top. When our own screen is the thing on top, that floating copy
+     * only lands in the way of the very buttons it duplicates — so while the screen is there the
+     * notification goes to a quiet channel, which Android keeps in the shade instead.
+     */
+    private var screenVisible = false
+
+    /**
+     * Whether the screen has been in front at all during this call. Leaving it must not float the
+     * notification back up: that would fire its full-screen intent and drag the owner back to the
+     * screen they just left. Once seen, the notification stays in the shade for this call.
+     */
+    private var screenSeen = false
+
+    fun screenVisible(visible: Boolean) {
+        screenVisible = visible
+        if (visible) screenSeen = true
+    }
 
     fun update(context: Context, calls: List<CallView>, service: Service?) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
@@ -49,6 +72,7 @@ internal object CallNotifications {
                 service?.stopForeground(Service.STOP_FOREGROUND_REMOVE)
                 manager.cancel(NOTIFICATION_ID)
                 icons.clear()
+                screenSeen = false
             }
             primary.state == Call.STATE_RINGING || primary.state == Call.STATE_SIMULATED_RINGING ->
                 manager.notify(NOTIFICATION_ID, incoming(context, manager, primary))
@@ -59,7 +83,7 @@ internal object CallNotifications {
     private fun incoming(context: Context, manager: NotificationManager, view: CallView): Notification {
         val title = view.title(context, CallSession.numbers)
         val screen = screenIntent(context, answer = false)
-        val builder = base(context, INCOMING)
+        val builder = base(context, if (screenVisible || screenSeen) INCOMING_QUIET else INCOMING)
             .setContentTitle(title)
             .setContentText(view.subtitle(CallSession.numbers) ?: context.getString(R.string.call_status_incoming))
             .setContentIntent(screen)
@@ -237,6 +261,15 @@ internal object CallNotifications {
         manager.createNotificationChannel(
             NotificationChannel(INCOMING, context.getString(R.string.channel_incoming), NotificationManager.IMPORTANCE_HIGH).apply {
                 description = context.getString(R.string.channel_incoming_desc)
+                setSound(null, null)
+                enableVibration(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            },
+        )
+        manager.createNotificationChannel(
+            // The same notification, kept in the shade: used while the call screen is already up.
+            NotificationChannel(INCOMING_QUIET, context.getString(R.string.channel_incoming_quiet), NotificationManager.IMPORTANCE_LOW).apply {
+                description = context.getString(R.string.channel_incoming_quiet_desc)
                 setSound(null, null)
                 enableVibration(false)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC

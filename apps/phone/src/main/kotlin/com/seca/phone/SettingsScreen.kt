@@ -35,9 +35,11 @@ import com.seca.core.design.component.SecaHint
 import com.seca.core.design.component.SecaPaletteSwatch
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
+import com.seca.core.design.component.SecaSwitchRow
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 import com.seca.core.suite.SuiteBackupSection
+import com.seca.phone.call.InCallSettings
 import com.seca.phone.screening.BlockMode
 import com.seca.phone.screening.ScreeningSettings
 import android.Manifest
@@ -179,7 +181,7 @@ internal fun SettingsScreen(
 
             SecaSectionLabel(stringResource(R.string.colors))
             if (ui.profiles.connected) {
-                SecaGroupItem(index = 0, count = 2) {
+                SecaGroupItem(index = 0, count = 3) {
                     SecaSettingRow(
                         icon = SecaIcons.AutoAwesome,
                         title = stringResource(R.string.dynamic_colors),
@@ -192,7 +194,16 @@ internal fun SettingsScreen(
                         trailing = { Switch(checked = dynamic, onCheckedChange = null) },
                     )
                 }
-                SecaGroupItem(index = 1, count = 2) {
+                SecaGroupItem(index = 1, count = 3) {
+                    SecaSwitchRow(
+                        icon = SecaIcons.DarkMode,
+                        title = stringResource(R.string.black_theme),
+                        subtitle = stringResource(R.string.black_theme_hint),
+                        checked = ui.black,
+                        onCheckedChange = viewModel::setBlack,
+                    )
+                }
+                SecaGroupItem(index = 2, count = 3) {
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -212,6 +223,36 @@ internal fun SettingsScreen(
             } else {
                 SecaHint(stringResource(R.string.colors_need_contacts))
             }
+
+            SecaSectionLabel(stringResource(R.string.call_screen))
+            val inCall = remember { InCallSettings(context) }
+            var showLabels by remember { mutableStateOf(inCall.showLabels) }
+            var screenOffNearEar by remember { mutableStateOf(inCall.proximity) }
+            SecaGroupItem(index = 0, count = 2) {
+                SecaSwitchRow(
+                    icon = SecaIcons.Subject,
+                    title = stringResource(R.string.button_labels),
+                    subtitle = stringResource(R.string.button_labels_hint),
+                    checked = showLabels,
+                    onCheckedChange = { on ->
+                        showLabels = on
+                        inCall.showLabels = on
+                    },
+                )
+            }
+            SecaGroupItem(index = 1, count = 2) {
+                SecaSwitchRow(
+                    icon = SecaIcons.VisibilityOff,
+                    title = stringResource(R.string.screen_off_near_ear),
+                    subtitle = stringResource(R.string.screen_off_near_ear_hint),
+                    checked = screenOffNearEar,
+                    onCheckedChange = { on ->
+                        screenOffNearEar = on
+                        inCall.proximity = on
+                    },
+                )
+            }
+            SecaHint(stringResource(R.string.call_screen_hint))
 
             SecaSectionLabel(stringResource(R.string.calls))
             calls.forEachIndexed { index, entry ->

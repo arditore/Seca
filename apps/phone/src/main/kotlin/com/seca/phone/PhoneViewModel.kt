@@ -80,6 +80,9 @@ data class PhoneUi(
     /** The palette picked in Seca Contacts; null follows the wallpaper. */
     val palette: SecaPalette? get() = SecaPalette.entries.firstOrNull { it.name == profiles.palette }
 
+    /** Whether the dark theme goes down to black, as picked anywhere in the suite. */
+    val black: Boolean get() = profiles.black
+
     fun profileOf(contact: SecaContact): Profile = profiles.profileForKey(contact.lookupKey)
 
     fun toneOf(contact: SecaContact): Int = profiles.toneOf(profileOf(contact))
@@ -171,6 +174,11 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
     /** Sets the palette of every Seca app; null follows the wallpaper. */
     fun setPalette(palette: SecaPalette?) {
         viewModelScope.launch { sharedProfiles.setPalette(palette?.name) }
+    }
+
+    /** Takes the dark theme down to black, in all three apps; Seca Contacts keeps the choice. */
+    fun setBlack(black: Boolean) {
+        viewModelScope.launch { sharedProfiles.setBlack(black) }
     }
 
     /** Stops or lets again the calls from every contact of [profileId], for as long as the owner chose. */

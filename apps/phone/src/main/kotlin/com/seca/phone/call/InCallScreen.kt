@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,6 +70,15 @@ import com.seca.phone.R
 /** How long the screen stays to say how the call ended. */
 private const val ENDED_MILLIS = 1500L
 
+/**
+ * Whether the buttons carry their name under the icon, as the owner chose.
+ *
+ * Read by every button rather than passed down through each of them. The name
+ * stays the button's spoken label either way, so hiding it changes what is
+ * drawn and nothing of what a screen reader says.
+ */
+internal val LocalCallLabels = staticCompositionLocalOf { true }
+
 private val InCallKeys = listOf('1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#')
 
 /** The ready-made texts for declining a call with a message. */
@@ -101,15 +112,20 @@ internal fun InCallRoot(onScreenOffNearEar: (Boolean) -> Unit, onDone: () -> Uni
     val earpiece = audio.route?.kind.let { it == null || it == AudioKind.Earpiece }
     LaunchedEffect(talking, earpiece) { onScreenOffNearEar(talking && earpiece) }
 
-    SecaTheme(identity = SecaAppIdentity.Phone, palette = rememberSuitePalette()) {
-        Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
-            if (shown != null) CallScreen(shown, calls, audio)
+    val (palette, black) = rememberSuiteColors()
+    val context = LocalContext.current
+    val labels = remember(context) { InCallSettings(context).showLabels }
+    SecaTheme(identity = SecaAppIdentity.Phone, palette = palette, black = black) {
+        CompositionLocalProvider(LocalCallLabels provides labels) {
+            Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
+                if (shown != null) CallScreen(shown, calls, audio, black = black)
+            }
         }
     }
 }
 
 @Composable
-private fun CallScreen(view: CallView, calls: List<CallView>, audio: AudioView) {
+private fun CallScreen(view: CallView, calls: List<CallView>, audio: AudioView, black: Boolean) {
     val numbers = CallSession.numbers
     val context = LocalContext.current
     val title = view.title(context, numbers)
@@ -120,8 +136,13 @@ private fun CallScreen(view: CallView, calls: List<CallView>, audio: AudioView) 
     Box(
         Modifier
             .fillMaxSize()
-            // A wash of the profile colour, so the category is felt before it is read.
-            .background(Brush.verticalGradient(listOf(tint.copy(alpha = 0.5f), MaterialTheme.colorScheme.surface))),
+            // A wash of the profile colour, so the category is felt before it is read. On a black
+            // theme it is barely there: the point of that theme is a screen that stays unlit.
+            .background(
+                Brush.verticalGradient(
+                    listOf(tint.copy(alpha = if (black) 0.14f else 0.5f), MaterialTheme.colorScheme.surface),
+                ),
+            ),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -435,13 +456,15 @@ private fun CallControl(
         ) {
             Icon(icon, contentDescription = null, tint = if (enabled) content else content.copy(alpha = 0.38f))
         }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            modifier = Modifier.padding(top = 8.dp),
-        )
+        if (LocalCallLabels.current) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
     }
 }
 
@@ -458,12 +481,14 @@ private fun RoundAction(icon: ImageVector, label: String, container: Color, cont
         ) {
             Icon(icon, contentDescription = null, tint = content)
         }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 8.dp),
-        )
+        if (LocalCallLabels.current) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
     }
 }
 
@@ -594,13 +619,13 @@ private fun QuickReplyDialog(onDismiss: () -> Unit, onSend: (String) -> Unit) {
     )
 }
 
-/** The palette chosen in Seca Contacts, so the call screen matches the rest of the suite. */
+/** The colours chosen in Seca Contacts, so the call screen matches the rest of the suite. */
 @Composable
-private fun rememberSuitePalette(): SecaPalette? {
+private fun rememberSuiteColors(): Pair<SecaPalette?, Boolean> {
     val context = LocalContext.current
-    val palette by produceState<SecaPalette?>(initialValue = null, context) {
-        val name = SharedProfilesClient(context.contentResolver).load().palette
-        value = SecaPalette.entries.firstOrNull { it.name == name }
+    val colors by produceState<Pair<SecaPalette?, Boolean>>(null to false, context) {
+        val shared = SharedProfilesClient(context.contentResolver).load()
+        value = SecaPalette.entries.firstOrNull { it.name == shared.palette } to shared.black
     }
-    return palette
+    return colors
 }

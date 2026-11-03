@@ -68,6 +68,14 @@
     <string name="carrier_settings_hint">Forwarding, call waiting, caller ID</string>
     <string name="channel_incoming">Incoming calls</string>
     <string name="channel_incoming_desc">To answer or decline. The ringtone stays Android\'s.</string>
+    <string name="channel_incoming_quiet">Incoming calls, call screen open</string>
+    <string name="channel_incoming_quiet_desc">The same notification, kept in the shade: the call screen is already showing.</string>
+    <string name="call_screen">Call screen</string>
+    <string name="call_screen_hint">This is also the screen a call is answered from without unlocking.</string>
+    <string name="button_labels">Button names</string>
+    <string name="button_labels_hint">The name under each button during a call. Off leaves the icons alone.</string>
+    <string name="screen_off_near_ear">Screen off near the ear</string>
+    <string name="screen_off_near_ear_hint">The proximity sensor darkens the screen while talking, so a cheek presses nothing. Turn it off if a case keeps the sensor covered.</string>
     <string name="channel_missed">Missed calls</string>
     <string name="channel_missed_desc">Who called while you were away, to call back or write.</string>
     <string name="channel_ongoing_desc">During a call, to go back to the call screen or hang up.</string>
@@ -78,6 +86,8 @@
     <string name="clear_history_title">Clear the whole history?</string>
     <string name="colors">Colors</string>
     <string name="colors_need_contacts">Install Seca Contacts to choose the suite\'s colors.</string>
+    <string name="black_theme">Pure black</string>
+    <string name="black_theme_hint">In dark mode, backgrounds go to black. On an OLED screen those pixels stay unlit.</string>
     <string name="colors_shared_hint">Colors are shared by all Seca apps. Dark mode follows the phone.</string>
     <string name="contact_card">Contact</string>
     <string name="contacts">Contacts</string>

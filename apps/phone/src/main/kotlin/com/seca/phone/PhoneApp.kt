@@ -170,7 +170,7 @@ fun PhoneApp(
     }
     BackHandler(enabled = viewModel.backStack.size > 1) { viewModel.back() }
 
-    SecaTheme(identity = SecaAppIdentity.Phone, palette = ui.palette) {
+    SecaTheme(identity = SecaAppIdentity.Phone, palette = ui.palette, black = ui.black) {
         simChoice?.let { ask ->
             SimChooserDialog(
                 sims = ask.sims,
