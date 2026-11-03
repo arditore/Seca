@@ -86,6 +86,14 @@ class ProfileStore(context: Context) {
         announceChange()
     }
 
+    /** Whether the dark theme goes down to black. Off by default: Material's own dark theme. */
+    fun black(): Boolean = prefs.getBoolean(KEY_BLACK, false)
+
+    fun setBlack(black: Boolean) {
+        prefs.edit { putBoolean(KEY_BLACK, black) }
+        announceChange()
+    }
+
     private fun customProfiles(): List<Profile> {
         val json = prefs.getString(KEY_PROFILES, null)?.let { JSONArray(it) } ?: return emptyList()
         return (0 until json.length()).map { index ->
@@ -120,5 +128,6 @@ class ProfileStore(context: Context) {
         private const val KEY_ASSIGNMENTS = "assignments"
         private const val KEY_CURRENT = "current_profile"
         private const val KEY_PALETTE = "palette"
+        private const val KEY_BLACK = "black_theme"
     }
 }

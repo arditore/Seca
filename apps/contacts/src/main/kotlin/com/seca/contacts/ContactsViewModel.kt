@@ -10,6 +10,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.seca.core.contacts.ContactDetail
 import com.seca.core.contacts.ContactInput
+import com.seca.core.contacts.ContactWriteException
 import com.seca.core.contacts.ContactsRepository
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.SharedProfilesClient
@@ -55,6 +56,8 @@ data class ContactsUi(
     val query: String = "",
     /** Null, the default, follows the wallpaper colours (Material You). */
     val palette: SecaPalette? = null,
+    /** Whether the dark theme goes down to black, for OLED screens. */
+    val black: Boolean = false,
     val myCard: MyCard = MyCard(),
     val myPhoto: ImageBitmap? = null,
     /** The phone's SIM lines, read only once the owner allowed it. */
@@ -172,6 +175,12 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
         refreshPreferences()
     }
 
+    /** Takes the dark theme down to black, in all three apps. */
+    fun setBlack(black: Boolean) {
+        store.setBlack(black)
+        refreshPreferences()
+    }
+
     /** Writes every contact to the chosen .vcf file, each with the profile it is filed in. */
     fun exportContacts(uri: Uri) {
         viewModelScope.launch {
@@ -201,10 +210,16 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
             }
             val existing = _ui.value.contacts
             var added = 0
+            var refused = 0
             val filed = store.assignments().toMutableMap()
             cards.forEach { card ->
-                val key = existing.firstOrNull { it.isSameAs(card) }?.lookupKey
-                    ?: repository.createContact(card.toInput())?.also { added++ }?.let { repository.lookupKeyOf(it) }
+                val key = existing.firstOrNull { it.isSameAs(card) }?.lookupKey ?: try {
+                    repository.createContact(card.toInput())?.also { added++ }?.let { repository.lookupKeyOf(it) }
+                } catch (e: ContactWriteException) {
+                    // One contact the provider refuses does not stop the rest of the file.
+                    refused++
+                    null
+                }
                 // A card exported by Seca names its profile: the contact goes back there, unless already filed here.
                 if (card.profile.isBlank() || key.isNullOrEmpty() || key in filed) return@forEach
                 val profile = store.profiles().firstOrNull { it.name.equals(card.profile, ignoreCase = true) }
@@ -217,7 +232,9 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
             toast(
                 when {
                     cards.isEmpty() -> text(R.string.no_contacts_in_file)
+                    added == 0 && refused > 0 -> text(R.string.contact_not_saved)
                     added == 0 -> text(R.string.contacts_already_here)
+                    refused > 0 -> text(R.string.contacts_imported_some_refused, added, refused)
                     else -> quantity(R.plurals.contacts_imported, added)
                 },
             )
@@ -319,7 +336,15 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     fun save(existing: ContactDetail?, input: ContactInput, profileId: String) {
         viewModelScope.launch {
             val id: Long = if (existing == null) {
-                repository.createContact(input) ?: return@launch
+                // A phone whose provider refuses to write says so, rather than leaving the
+                // owner pressing a button that appears to do nothing.
+                try {
+                    repository.createContact(input) ?: return@launch
+                } catch (e: ContactWriteException) {
+                    val said = e.message?.takeIf { it.isNotBlank() }
+                    toast(if (said == null) text(R.string.contact_not_saved) else text(R.string.contact_not_saved_because, said))
+                    return@launch
+                }
             } else {
                 repository.updateContact(existing, input)
                 existing.id
@@ -399,6 +424,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                 currentProfileId = store.currentProfileId(),
                 assignments = store.assignments(),
                 palette = store.palette(),
+                black = store.black(),
             )
         }
     }

@@ -32,8 +32,9 @@ class ProfilesProvider : ContentProvider() {
             "assignments" -> MatrixCursor(
                 arrayOf(SharedProfilesContract.COLUMN_LOOKUP_KEY, SharedProfilesContract.COLUMN_PROFILE_ID),
             ).apply { store.assignments().forEach { (key, profileId) -> addRow(arrayOf(key, profileId)) } }
-            "settings" -> MatrixCursor(arrayOf(SharedProfilesContract.COLUMN_PALETTE))
-                .apply { addRow(arrayOf(store.palette()?.name)) }
+            "settings" -> MatrixCursor(
+                arrayOf(SharedProfilesContract.COLUMN_PALETTE, SharedProfilesContract.COLUMN_BLACK),
+            ).apply { addRow(arrayOf<Any?>(store.palette()?.name, if (store.black()) 1 else 0)) }
             else -> return null
         }
         cursor.setNotificationUri(requireContext().contentResolver, SharedProfilesContract.BASE_URI)
@@ -44,20 +45,31 @@ class ProfilesProvider : ContentProvider() {
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? = throw UnsupportedOperationException(READ_ONLY)
 
-    /** The palette is the one setting the suite shares: the other Seca apps may change it. */
+    /**
+     * The colours are what the suite shares: the palette and whether the dark theme goes down to
+     * black. Either can be set from any of the three apps, so one choice dresses all of them.
+     */
     override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int {
-        if (uri.lastPathSegment != "settings" || values?.containsKey(SharedProfilesContract.COLUMN_PALETTE) != true) {
-            throw UnsupportedOperationException(READ_ONLY)
+        if (uri.lastPathSegment != "settings" || values == null) throw UnsupportedOperationException(READ_ONLY)
+        val store = ProfileStore(requireContext())
+        var changed = 0
+        if (values.containsKey(SharedProfilesContract.COLUMN_PALETTE)) {
+            val name = values.getAsString(SharedProfilesContract.COLUMN_PALETTE)
+            store.setPalette(SecaPalette.entries.firstOrNull { it.name == name })
+            changed++
         }
-        val name = values.getAsString(SharedProfilesContract.COLUMN_PALETTE)
-        ProfileStore(requireContext()).setPalette(SecaPalette.entries.firstOrNull { it.name == name })
-        return 1
+        if (values.containsKey(SharedProfilesContract.COLUMN_BLACK)) {
+            store.setBlack(values.getAsInteger(SharedProfilesContract.COLUMN_BLACK) == 1)
+            changed++
+        }
+        if (changed == 0) throw UnsupportedOperationException(READ_ONLY)
+        return changed
     }
 
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int =
         throw UnsupportedOperationException(READ_ONLY)
 
     private companion object {
-        const val READ_ONLY = "Only the palette can be changed outside Seca Contacts"
+        const val READ_ONLY = "Only the shared colours can be changed outside Seca Contacts"
     }
 }

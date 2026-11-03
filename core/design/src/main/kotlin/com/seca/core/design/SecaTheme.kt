@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.seca.core.design.color.darkSchemeFor
 import com.seca.core.design.color.lightSchemeFor
+import com.seca.core.design.color.pureBlack
 
 /**
  * The single entry point for Seca visuals.
@@ -23,7 +24,8 @@ import com.seca.core.design.color.lightSchemeFor
  * [palette] in settings; with a palette, each [identity] shifts its hue so the
  * three apps become distinguishable. [darkTheme] follows the system and is
  * never toggled inside an app — the parameter exists so tests can assert both
- * themes.
+ * themes. [black] takes the dark backgrounds down to black, for OLED screens;
+ * in the light theme it changes nothing.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -31,6 +33,7 @@ fun SecaTheme(
     identity: SecaAppIdentity,
     palette: SecaPalette? = null,
     darkTheme: Boolean = isSystemInDarkTheme(),
+    black: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -39,7 +42,7 @@ fun SecaTheme(
         palette == null -> dynamicLightColorScheme(context)
         darkTheme -> darkSchemeFor(palette, identity)
         else -> lightSchemeFor(palette, identity)
-    }
+    }.let { if (darkTheme && black) it.pureBlack() else it }
 
     // Profile colours start from the palette itself rather than from each app's shifted hue,
     // so a profile wears the same colour in all three apps.

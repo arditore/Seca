@@ -91,6 +91,9 @@ data class MessagesUi(
     /** The palette picked in Seca Contacts; null follows the wallpaper. */
     val palette: SecaPalette? get() = SecaPalette.entries.firstOrNull { it.name == profiles.palette }
 
+    /** Whether the dark theme goes down to black, as picked anywhere in the suite. */
+    val black: Boolean get() = profiles.black
+
     fun contactOf(address: String): SecaContact? = index?.find(address)?.contact
 
     fun nameOf(address: String): String = contactOf(address)?.displayName ?: numbers.display(address)
@@ -619,6 +622,11 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     /** Sets the palette of every Seca app; null follows the wallpaper. */
     fun setPalette(palette: SecaPalette?) {
         viewModelScope.launch { sharedProfiles.setPalette(palette?.name) }
+    }
+
+    /** Takes the dark theme down to black, in all three apps; Seca Contacts keeps the choice. */
+    fun setBlack(black: Boolean) {
+        viewModelScope.launch { sharedProfiles.setBlack(black) }
     }
 
     // Numbers are read here, off the main thread, before the screen sees them:

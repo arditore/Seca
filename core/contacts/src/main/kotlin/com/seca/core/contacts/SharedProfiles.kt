@@ -35,6 +35,7 @@ object SharedProfilesContract {
     const val COLUMN_LOOKUP_KEY = "lookup_key"
     const val COLUMN_PROFILE_ID = "profile_id"
     const val COLUMN_PALETTE = "palette"
+    const val COLUMN_BLACK = "black"
 }
 
 /** What a Seca app needs from Seca Contacts' profiles. */
@@ -44,6 +45,8 @@ data class SharedProfiles(
     val assignments: Map<String, String> = emptyMap(),
     /** The palette picked in Seca Contacts, by name, or null for the wallpaper colours. */
     val palette: String? = null,
+    /** Whether the dark theme goes down to black, as OLED screens are at their best. */
+    val black: Boolean = false,
     /** Whether Seca Contacts answered: without it there are no profiles to show nor colours to set. */
     val connected: Boolean = false,
 ) {
@@ -73,13 +76,22 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
                 val profile = c.getColumnIndexOrThrow(SharedProfilesContract.COLUMN_PROFILE_ID)
                 buildMap { while (c.moveToNext()) put(c.getString(key), c.getString(profile)) }
             }
-            val palette = resolver.query(SharedProfilesContract.SETTINGS_URI, null, null, null, null)?.use { c ->
-                if (c.moveToFirst()) c.getString(c.getColumnIndexOrThrow(SharedProfilesContract.COLUMN_PALETTE)) else null
+            val settings = resolver.query(SharedProfilesContract.SETTINGS_URI, null, null, null, null)?.use { c ->
+                if (!c.moveToFirst()) {
+                    null
+                } else {
+                    val palette = c.getString(c.getColumnIndexOrThrow(SharedProfilesContract.COLUMN_PALETTE))
+                    // An older Seca Contacts has no such column: its dark theme is the usual one.
+                    val black = c.getColumnIndex(SharedProfilesContract.COLUMN_BLACK)
+                        .takeIf { it >= 0 }?.let { c.getInt(it) == 1 } == true
+                    palette to black
+                }
             }
             SharedProfiles(
                 profiles = profiles?.takeIf { it.isNotEmpty() } ?: listOf(Profile.Principal),
                 assignments = assignments.orEmpty(),
-                palette = palette,
+                palette = settings?.first,
+                black = settings?.second == true,
                 connected = profiles != null,
             )
         } catch (e: SecurityException) {
@@ -88,13 +100,22 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
     }
 
     /** Sets the palette of every Seca app, kept by Seca Contacts; false when it cannot be reached. */
-    suspend fun setPalette(palette: String?): Boolean = withContext(Dispatchers.IO) {
+    suspend fun setPalette(palette: String?): Boolean =
+        write(ContentValues().apply { put(SharedProfilesContract.COLUMN_PALETTE, palette) })
+
+    /** Takes the dark theme of every Seca app down to black, or back to Material's own. */
+    suspend fun setBlack(black: Boolean): Boolean =
+        write(ContentValues().apply { put(SharedProfilesContract.COLUMN_BLACK, if (black) 1 else 0) })
+
+    private suspend fun write(values: ContentValues): Boolean = withContext(Dispatchers.IO) {
         try {
-            val values = ContentValues().apply { put(SharedProfilesContract.COLUMN_PALETTE, palette) }
             resolver.update(SharedProfilesContract.SETTINGS_URI, values, null, null) > 0
         } catch (e: SecurityException) {
             false
         } catch (e: IllegalArgumentException) {
+            false
+        } catch (e: UnsupportedOperationException) {
+            // An older Seca Contacts refuses what it does not know how to keep.
             false
         }
     }

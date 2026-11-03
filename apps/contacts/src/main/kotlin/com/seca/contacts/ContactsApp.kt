@@ -77,7 +77,7 @@ fun ContactsApp(
     }
     BackHandler(enabled = viewModel.backStack.size > 1) { viewModel.back() }
 
-    SecaTheme(identity = SecaAppIdentity.Contacts, palette = ui.palette) {
+    SecaTheme(identity = SecaAppIdentity.Contacts, palette = ui.palette, black = ui.black) {
         if (!permissionGranted) {
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.surface,

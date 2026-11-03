@@ -88,7 +88,7 @@ fun MessagesApp(
     LaunchedEffect(smsGranted, contactsGranted) { viewModel.start(smsGranted, contactsGranted) }
     BackHandler(enabled = viewModel.backStack.size > 1) { viewModel.back() }
 
-    SecaTheme(identity = SecaAppIdentity.Messages, palette = ui.palette) {
+    SecaTheme(identity = SecaAppIdentity.Messages, palette = ui.palette, black = ui.black) {
         BackgroundAccessPrompt()
         if (!smsGranted) {
             Scaffold(

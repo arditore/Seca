@@ -49,6 +49,9 @@
         <item quantity="other">%d contacts added</item>
     </plurals>
     <string name="contacts_already_here">These contacts are already on this phone</string>
+    <string name="contact_not_saved">This phone refused to save the contact. Its contacts may be managed by an account this app cannot write to.</string>
+    <string name="contact_not_saved_because">This phone refused to save the contact: %1$s</string>
+    <string name="contacts_imported_some_refused">%1$d contacts added, %2$d refused by the phone.</string>
     <plurals name="contacts_count">
         <item quantity="one">%d contact</item>
         <item quantity="other">%d contacts</item>
@@ -64,6 +67,8 @@
     <string name="create">Create</string>
     <string name="current_profile">Current profile</string>
     <string name="current_type">Current type</string>
+    <string name="black_theme">Pure black</string>
+    <string name="black_theme_hint">In dark mode, backgrounds go to black. On an OLED screen those pixels stay unlit.</string>
     <string name="dark_mode_hint">Light or dark mode follows the phone.</string>
     <string name="delete">Delete</string>
     <string name="delete_contact_text">“%1$s” will be deleted from this phone. This cannot be undone.</string>
@@ -117,7 +122,7 @@
     <string name="new_profile">New profile</string>
     <string name="no_contact_info">No number or email address.</string>
     <string name="no_contacts">No contacts</string>
-    <string name="no_contacts_hint">Contacts saved on this phone will show up here.</string>
+    <string name="no_contacts_hint">Contacts saved on this phone will show up here. If this phone keeps contacts you cannot see here, it is limiting what this app is allowed to read: check its permission for contacts.</string>
     <string name="no_contacts_in_file">No contacts in this file</string>
     <string name="no_duplicates">No duplicates</string>
     <string name="no_duplicates_hint">No two contacts share a name or a number.</string>

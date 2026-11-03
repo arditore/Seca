@@ -67,6 +67,8 @@
     <string name="codes_mismatch">Les codes ne correspondent pas</string>
     <string name="colors">Couleurs</string>
     <string name="colors_need_contacts">Installez Seca Contacts pour choisir les couleurs de la suite.</string>
+    <string name="black_theme">Noir absolu</string>
+    <string name="black_theme_hint">En mode sombre, les fonds passent au noir. Sur un écran OLED, ces pixels restent éteints.</string>
     <string name="colors_shared_hint">Les couleurs sont communes à toutes les applications Seca. Le mode sombre suit le téléphone.</string>
     <string name="compare_hint">Comparez ces chiffres avec ceux du téléphone de %1$s, ou montrez-lui ce code. S\'ils sont identiques, personne ne s\'interpose entre vous.</string>
     <string name="connect_in_person">Connecter en face à face</string>

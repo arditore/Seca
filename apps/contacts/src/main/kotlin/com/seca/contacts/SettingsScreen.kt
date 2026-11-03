@@ -43,6 +43,7 @@ import com.seca.core.design.component.SecaPassphraseDialog
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
+import com.seca.core.design.component.SecaSwitchRow
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 import android.Manifest
@@ -107,7 +108,7 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
             )
 
             SecaSectionLabel(stringResource(R.string.colors))
-            SecaGroupItem(index = 0, count = 2) {
+            SecaGroupItem(index = 0, count = 3) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -139,7 +140,16 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                     Switch(checked = dynamic, onCheckedChange = null)
                 }
             }
-            SecaGroupItem(index = 1, count = 2) {
+            SecaGroupItem(index = 1, count = 3) {
+                SecaSwitchRow(
+                    icon = SecaIcons.DarkMode,
+                    title = stringResource(R.string.black_theme),
+                    subtitle = stringResource(R.string.black_theme_hint),
+                    checked = ui.black,
+                    onCheckedChange = viewModel::setBlack,
+                )
+            }
+            SecaGroupItem(index = 2, count = 3) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconBadge(SecaIcons.Palette)

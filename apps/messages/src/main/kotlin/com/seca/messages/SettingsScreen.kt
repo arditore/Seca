@@ -35,6 +35,7 @@ import com.seca.core.design.component.SecaHint
 import com.seca.core.design.component.SecaPaletteSwatch
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
+import com.seca.core.design.component.SecaSwitchRow
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 import com.seca.core.suite.SuiteBackupSection
@@ -106,7 +107,7 @@ internal fun SettingsScreen(
 
             SecaSectionLabel(stringResource(R.string.colors))
             if (ui.profiles.connected) {
-                SecaGroupItem(index = 0, count = 2) {
+                SecaGroupItem(index = 0, count = 3) {
                     SecaSettingRow(
                         icon = SecaIcons.AutoAwesome,
                         title = stringResource(R.string.dynamic_colors),
@@ -119,7 +120,16 @@ internal fun SettingsScreen(
                         trailing = { Switch(checked = dynamic, onCheckedChange = null) },
                     )
                 }
-                SecaGroupItem(index = 1, count = 2) {
+                SecaGroupItem(index = 1, count = 3) {
+                    SecaSwitchRow(
+                        icon = SecaIcons.DarkMode,
+                        title = stringResource(R.string.black_theme),
+                        subtitle = stringResource(R.string.black_theme_hint),
+                        checked = ui.black,
+                        onCheckedChange = viewModel::setBlack,
+                    )
+                }
+                SecaGroupItem(index = 2, count = 3) {
                     Row(
                         Modifier
                             .fillMaxWidth()

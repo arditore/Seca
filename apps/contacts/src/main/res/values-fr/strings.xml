@@ -53,6 +53,9 @@
         <item quantity="other">%d contacts ajoutés</item>
     </plurals>
     <string name="contacts_already_here">Ces contacts sont déjà sur ce téléphone</string>
+    <string name="contact_not_saved">Ce téléphone a refusé d\'enregistrer le contact. Son répertoire est peut-être géré par un compte où cette application ne peut pas écrire.</string>
+    <string name="contact_not_saved_because">Ce téléphone a refusé d\'enregistrer le contact : %1$s</string>
+    <string name="contacts_imported_some_refused">%1$d contacts ajoutés, %2$d refusés par le téléphone.</string>
     <plurals name="contacts_count">
         <item quantity="one">%d contact</item>
         <item quantity="many">%d contacts</item>
@@ -71,6 +74,8 @@
     <string name="create">Créer</string>
     <string name="current_profile">Profil actuel</string>
     <string name="current_type">Type actuel</string>
+    <string name="black_theme">Noir absolu</string>
+    <string name="black_theme_hint">En mode sombre, les fonds passent au noir. Sur un écran OLED, ces pixels restent éteints.</string>
     <string name="dark_mode_hint">Le mode clair ou sombre suit celui du téléphone.</string>
     <string name="delete">Supprimer</string>
     <string name="delete_contact_text">« %1$s » sera supprimé de ce téléphone. C\'est définitif.</string>
@@ -126,7 +131,7 @@
     <string name="new_profile">Nouveau profil</string>
     <string name="no_contact_info">Aucun numéro ni adresse e-mail.</string>
     <string name="no_contacts">Aucun contact</string>
-    <string name="no_contacts_hint">Les contacts enregistrés sur ce téléphone apparaîtront ici.</string>
+    <string name="no_contacts_hint">Les contacts enregistrés sur ce téléphone apparaîtront ici. Si le téléphone contient des contacts absents de cette liste, c\'est qu\'il limite ce que cette application peut lire : vérifiez son autorisation d\'accès aux contacts.</string>
     <string name="no_contacts_in_file">Aucun contact dans ce fichier</string>
     <string name="no_duplicates">Aucun doublon</string>
     <string name="no_duplicates_hint">Aucun contact ne porte le même nom ou le même numéro qu\'un autre.</string>

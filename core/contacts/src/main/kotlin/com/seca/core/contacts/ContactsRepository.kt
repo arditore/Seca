@@ -207,31 +207,46 @@ class ContactsRepository(
         )
     }
 
-    /** Creates a contact stored on this device only. Returns its contact id. */
+    /**
+     * Creates a contact stored on this device only. Returns its contact id.
+     *
+     * The contact belongs to no account, which is what keeps it on the phone. Not every phone's
+     * contacts provider accepts that the same way: some want the account columns set to nothing,
+     * others want them left out of the insert entirely. Both are tried before giving up, and
+     * giving up throws [ContactWriteException] rather than returning quietly, so the screen can
+     * say what the provider refused instead of looking as though nothing was pressed.
+     */
     suspend fun createContact(input: ContactInput): Long? = withContext(Dispatchers.IO) {
-        val ops = arrayListOf<ContentProviderOperation>()
-        ops += ContentProviderOperation.newInsert(RawContacts.CONTENT_URI)
-            // A null account is the device's own: attached to no account, never synced.
-            .withValue(RawContacts.ACCOUNT_TYPE, null)
-            .withValue(RawContacts.ACCOUNT_NAME, null)
-            .build()
-        if (displayNameOf(input).isNotEmpty()) {
-            ops += nameRow(input).withValueBackReference(Data.RAW_CONTACT_ID, 0).build()
+        var refusal: Exception? = null
+        for (nameTheAccount in listOf(true, false)) {
+            val ops = arrayListOf<ContentProviderOperation>()
+            val raw = ContentProviderOperation.newInsert(RawContacts.CONTENT_URI)
+            if (nameTheAccount) {
+                raw.withValue(RawContacts.ACCOUNT_TYPE, null).withValue(RawContacts.ACCOUNT_NAME, null)
+            }
+            ops += raw.build()
+            if (displayNameOf(input).isNotEmpty()) {
+                ops += nameRow(input).withValueBackReference(Data.RAW_CONTACT_ID, 0).build()
+            }
+            input.phones.filter { it.value.isNotBlank() }.forEach { field ->
+                ops += fieldRow(Phone.CONTENT_ITEM_TYPE, field).withValueBackReference(Data.RAW_CONTACT_ID, 0).build()
+            }
+            input.emails.filter { it.value.isNotBlank() }.forEach { field ->
+                ops += fieldRow(Email.CONTENT_ITEM_TYPE, field).withValueBackReference(Data.RAW_CONTACT_ID, 0).build()
+            }
+            input.addresses.filter { it.value.isNotBlank() }.forEach { field ->
+                ops += fieldRow(StructuredPostal.CONTENT_ITEM_TYPE, field).withValueBackReference(Data.RAW_CONTACT_ID, 0).build()
+            }
+            singleRows(input).forEach { row -> ops += row.withValueBackReference(Data.RAW_CONTACT_ID, 0).build() }
+            val rawContactId = try {
+                resolver.applyBatch(ContactsContract.AUTHORITY, ops).firstOrNull()?.uri?.let { ContentUris.parseId(it) }
+            } catch (e: Exception) {
+                refusal = e
+                null
+            }
+            if (rawContactId != null) return@withContext contactIdOf(rawContactId)
         }
-        input.phones.filter { it.value.isNotBlank() }.forEach { field ->
-            ops += fieldRow(Phone.CONTENT_ITEM_TYPE, field).withValueBackReference(Data.RAW_CONTACT_ID, 0).build()
-        }
-        input.emails.filter { it.value.isNotBlank() }.forEach { field ->
-            ops += fieldRow(Email.CONTENT_ITEM_TYPE, field).withValueBackReference(Data.RAW_CONTACT_ID, 0).build()
-        }
-        input.addresses.filter { it.value.isNotBlank() }.forEach { field ->
-            ops += fieldRow(StructuredPostal.CONTENT_ITEM_TYPE, field).withValueBackReference(Data.RAW_CONTACT_ID, 0).build()
-        }
-        singleRows(input).forEach { row -> ops += row.withValueBackReference(Data.RAW_CONTACT_ID, 0).build() }
-        val rawContactId = resolver.applyBatch(ContactsContract.AUTHORITY, ops)
-            .firstOrNull()?.uri?.let { ContentUris.parseId(it) }
-            ?: return@withContext null
-        contactIdOf(rawContactId)
+        throw ContactWriteException(refusal?.message ?: refusal?.javaClass?.simpleName ?: "")
     }
 
     suspend fun updateContact(detail: ContactDetail, input: ContactInput) {
@@ -674,3 +689,12 @@ internal fun groupContacts(contacts: List<ContactRow>, phones: List<PhoneRow>): 
         )
     }
 }
+
+/**
+ * The phone's contacts provider refused to write a contact.
+ *
+ * [message] is what it said, when it said anything: there is no catalogue of reasons a provider
+ * can refuse, and a phone maker is free to add its own, so the words are carried to the screen
+ * rather than translated into a guess.
+ */
+class ContactWriteException(message: String) : Exception(message)

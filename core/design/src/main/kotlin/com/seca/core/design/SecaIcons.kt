@@ -130,6 +130,13 @@ object SecaIcons {
     val CallMerge: ImageVector = svg("CallMerge", "M17,20.41L18.41,19 15,15.59 13.59,17 17,20.41zM7.5,8H11v5.59L5.59,19 7,20.41l6,-6V8h3.5L12,3.5 7.5,8z")
     val AutoAwesome: ImageVector = svg("AutoAwesome", "M19,9l1.25,-2.75L23,5l-2.75,-1.25L19,1l-1.25,2.75L15,5l2.75,1.25L19,9zM11.5,9.5L9,4 6.5,9.5 1,12l5.5,2.5L9,20l2.5,-5.5L17,12l-5.5,-2.5zM19,15l-1.25,2.75L15,19l2.75,1.25L19,23l1.25,-2.75L23,19l-2.75,-1.25L19,15z")
 
+    val DarkMode: ImageVector = svg(
+        "DarkMode",
+        "M12,3c-4.97,0 -9,4.03 -9,9s4.03,9 9,9 9,-4.03 9,-9c0,-0.46 -0.04,-0.92 -0.1,-1.36 " +
+            "-0.98,1.37 -2.58,2.26 -4.4,2.26 -2.98,0 -5.4,-2.42 -5.4,-5.4 0,-1.81 0.89,-3.42 " +
+            "2.26,-4.4 -0.44,-0.06 -0.9,-0.1 -1.36,-0.1z",
+    )
+
     /** Builds a 24dp icon from standard Material SVG path data. */
     private fun svg(name: String, pathData: String): ImageVector =
         ImageVector.Builder(
