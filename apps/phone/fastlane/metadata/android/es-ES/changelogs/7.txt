@@ -1,0 +1,1 @@
+El español, y el polaco gracias a tmpjx555. Un tema negro absoluto para pantallas OLED. En la pantalla de llamada: la notificación ya no aparece sobre los botones de responder y rechazar que duplica, los nombres bajo los botones se pueden ocultar, y el sensor de proximidad se puede desactivar si una funda lo tapa.

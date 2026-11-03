@@ -1,0 +1,26 @@
+Seca Contacts es la agenda de la suite Seca: Contactos, Teléfono y Mensajes, tres aplicaciones con un mismo diseño Material 3 Expressive, pensadas para la privacidad. Funcionan en cualquier teléfono con Android 12 o posterior, con o sin Google, y dan lo mejor de sí en GrapheneOS. En español, inglés, francés y polaco.
+
+<b>Tus contactos se quedan en tu teléfono</b>
+<ul>
+<li>Sin permiso de Internet: la aplicación no puede enviar nada a ningún sitio.</li>
+<li>Los contactos se quedan en la agenda propia de Android, donde DAVx⁵ o la sincronización que elijas puede alcanzarlos.</li>
+<li>Funciona con los Contact Scopes de GrapheneOS.</li>
+</ul>
+
+<b>Ordenados como vives</b>
+<ul>
+<li>Perfiles de color (Familia, Trabajo…), cuyo color se traslada a Seca Phone y a Seca Messages.</li>
+<li>Favoritos, búsqueda instantánea, desplazamiento rápido por letra.</li>
+<li>Duplicados encontrados por nombre o por número, fusionados sin perder nada.</li>
+<li>Tu propia ficha, compartida como código QR.</li>
+</ul>
+
+<b>Además</b>
+<ul>
+<li>Importación y exportación de vCard.</li>
+<li>Copia de seguridad cifrada con contraseña.</li>
+<li>Bloqueo de la aplicación, y vista previa oculta en las apps recientes.</li>
+<li>Colores del fondo de pantalla o paletas Seca, tema oscuro y negro absoluto para pantallas OLED.</li>
+</ul>
+
+Sin anuncios, sin rastreadores, sin cuenta. Código abierto.

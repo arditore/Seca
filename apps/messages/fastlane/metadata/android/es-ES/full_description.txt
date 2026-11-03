@@ -1,0 +1,32 @@
+Seca Messages es la aplicación de mensajes de la suite Seca: Contactos, Teléfono y Mensajes, tres aplicaciones con un mismo diseño Material 3 Expressive, pensadas para la privacidad. Funcionan en cualquier teléfono con Android 12 o posterior, con o sin Google, y dan lo mejor de sí en GrapheneOS. En español, inglés, francés y polaco.
+
+<b>Seca Link: cifrado de extremo a extremo</b>
+<ul>
+<li>Entre dos teléfonos con Seca, los mensajes viajan cifrados con el protocolo de Signal (libsignal, PQXDH post-cuántico), sin pasar por la operadora.</li>
+<li>Sin cuenta y sin servidor de Seca: los mensajes cifrados viajan por relés Nostr públicos, que no ven ni quién escribe ni qué se escribe.</li>
+<li>Dos contactos se conectan con un SMS invisible; después todo pasa por Internet.</li>
+<li>Confirmaciones de lectura e indicador de escritura, cada uno desactivable.</li>
+<li>Número de seguridad para comparar, o para escanear como código QR.</li>
+<li>Desactivado por defecto: sin Seca Link, la aplicación no usa Internet.</li>
+<li>Fotos y mensajes de voz cifrados; el micrófono solo se pide en el momento de grabar uno.</li>
+<li>Cuatro relés públicos vienen configurados (relay.damus.io, nos.lol, relay.primal.net, nostr.mom) y la lista es tuya.</li>
+</ul>
+
+<b>SMS</b>
+<ul>
+<li><b>Los MMS, los mensajes multimedia de la operadora, todavía no están soportados.</b> Como aplicación de SMS por defecto, Seca Messages es la única a la que el teléfono se los entrega: una foto o un mensaje de grupo enviado por MMS no llegará hasta una versión posterior. Las fotos enviadas por Seca Link no se ven afectadas.</li>
+<li>Conversaciones con la foto y el perfil de tus contactos, búsqueda en todos los mensajes.</li>
+<li>Responder desde la notificación, mensajes programados.</li>
+<li>Códigos de verificación copiados con un toque y borrados automáticamente al rato.</li>
+<li>Mensajes publicitarios archivados como spam.</li>
+<li>Conversaciones fijadas y archivadas.</li>
+</ul>
+
+<b>Además</b>
+<ul>
+<li>Copia de seguridad cifrada con contraseña.</li>
+<li>Bloqueo de la aplicación, y vista previa oculta en las apps recientes.</li>
+<li>Colores del fondo de pantalla o paletas Seca, tema oscuro y negro absoluto para pantallas OLED.</li>
+</ul>
+
+Sin anuncios, sin rastreadores, sin cuenta. Código abierto.
