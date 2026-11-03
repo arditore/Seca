@@ -13,10 +13,12 @@
     <string name="backup">Copia de seguridad</string>
     <plurals name="backup_contacts_filed">
         <item quantity="one">%d contacto de vuelta en su perfil</item>
+        <item quantity="many">%d de contactos de vuelta en sus perfiles</item>
         <item quantity="other">%d contactos de vuelta en sus perfiles</item>
     </plurals>
     <plurals name="backup_contacts_missing">
         <item quantity="one">%d ficha ausente no recreada: permite editar los contactos y restaura de nuevo</item>
+        <item quantity="many">%d de fichas ausentes no recreadas: permite editar los contactos y restaura de nuevo</item>
         <item quantity="other">%d fichas ausentes no recreadas: permite editar los contactos y restaura de nuevo</item>
     </plurals>
     <string name="backup_done">Copia cifrada: %1$s</string>
@@ -32,6 +34,7 @@
     <string name="cancel">Cancelar</string>
     <plurals name="cards_merged">
         <item quantity="one">%d ficha combinada</item>
+        <item quantity="many">%d de fichas combinadas</item>
         <item quantity="other">%d fichas combinadas</item>
     </plurals>
     <string name="change_photo">Cambiar la foto</string>
@@ -46,22 +49,26 @@
     <string name="contact_ringtone">Tono del contacto</string>
     <plurals name="contacts_added">
         <item quantity="one">%d contacto añadido</item>
+        <item quantity="many">%d de contactos añadidos</item>
         <item quantity="other">%d contactos añadidos</item>
     </plurals>
     <string name="contacts_already_here">Estos contactos ya están en este teléfono</string>
     <string name="contact_not_saved">Este teléfono se negó a guardar el contacto. Puede que su agenda la gestione una cuenta en la que esta aplicación no puede escribir.</string>
     <string name="contact_not_saved_because">Este teléfono se negó a guardar el contacto: %1$s</string>
-    <string name="contacts_imported_some_refused">%1$d contactos añadidos, %2$d rechazados por el teléfono.</string>
+    <string name="contacts_imported_some_refused">Añadidos: %1$d. Rechazados por el teléfono: %2$d.</string>
     <plurals name="contacts_count">
         <item quantity="one">%d contacto</item>
+        <item quantity="many">%d de contactos</item>
         <item quantity="other">%d contactos</item>
     </plurals>
     <plurals name="contacts_exported">
         <item quantity="one">%d contacto exportado</item>
+        <item quantity="many">%d de contactos exportados</item>
         <item quantity="other">%d contactos exportados</item>
     </plurals>
     <plurals name="contacts_imported">
         <item quantity="one">%d contacto importado</item>
+        <item quantity="many">%d de contactos importados</item>
         <item quantity="other">%d contactos importados</item>
     </plurals>
     <string name="create">Crear</string>
@@ -101,11 +108,13 @@
     <string name="merge">Combinar</string>
     <plurals name="merge_cards">
         <item quantity="one">Combinar %d ficha</item>
+        <item quantity="many">Combinar %d de fichas</item>
         <item quantity="other">Combinar estas %d fichas</item>
     </plurals>
     <string name="merge_cards_text">%1$s pasará a ser un solo contacto, archivado en el perfil de la primera ficha.</string>
     <plurals name="merge_cards_title">
         <item quantity="one">¿Combinar %d ficha?</item>
+        <item quantity="many">¿Combinar %d de fichas?</item>
         <item quantity="other">¿Combinar %d fichas?</item>
     </plurals>
     <string name="merge_failed">No se pudo combinar</string>

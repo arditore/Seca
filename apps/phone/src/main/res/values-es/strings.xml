@@ -14,10 +14,12 @@
     <string name="audio_speaker">Altavoz</string>
     <plurals name="backup_calls_added">
         <item quantity="one">%d llamada añadida, filtrado restaurado</item>
+        <item quantity="many">%d de llamadas añadidas, filtrado restaurado</item>
         <item quantity="other">%d llamadas añadidas, filtrado restaurado</item>
     </plurals>
     <plurals name="backup_calls_and_filtering">
         <item quantity="one">%d llamada y el filtrado</item>
+        <item quantity="many">%d de llamadas y el filtrado</item>
         <item quantity="other">%d llamadas y el filtrado</item>
     </plurals>
     <string name="backup_filtering_restored">filtrado restaurado</string>
@@ -93,6 +95,7 @@
     <string name="contacts">Contactos</string>
     <plurals name="contacts_count">
         <item quantity="one">%d contacto</item>
+        <item quantity="many">%d de contactos</item>
         <item quantity="other">%d contactos</item>
     </plurals>
     <string name="copy_number">Copiar el número</string>
@@ -109,6 +112,7 @@
     <string name="default_on_hint">Pantalla de llamada, perfil de quien llama, bloqueo de números</string>
     <plurals name="delete_calls">
         <item quantity="one">Eliminar %d llamada</item>
+        <item quantity="many">Eliminar estas %d de llamadas</item>
         <item quantity="other">Eliminar estas %d llamadas</item>
     </plurals>
     <string name="delete_from_history">Eliminar del historial</string>
@@ -147,6 +151,7 @@
     <string name="message">Mensaje</string>
     <plurals name="missed_calls">
         <item quantity="one">%d llamada perdida</item>
+        <item quantity="many">%d de llamadas perdidas</item>
         <item quantity="other">%d llamadas perdidas</item>
     </plurals>
     <string name="missed_open_history">Abre el historial para ver quién llamó</string>

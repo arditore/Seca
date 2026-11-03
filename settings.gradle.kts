@@ -13,13 +13,28 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         // libsignal repository (start)
-        // Where libsignal comes from: the address lives in gradle.properties, and only the
-        // org.signal group is ever taken from there. A build that compiles libsignal itself, as
-        // F-Droid does, replaces everything between these two markers with its own folder.
+        // Where the two libraries with native code come from.
+        //
+        // libsignal is published on Signal's own Maven repository, whose address lives in
+        // gradle.properties; secp256k1 comes from Maven Central like everything else. A build
+        // that compiles both itself, as F-Droid does, points this at the folder it published
+        // them into, and then takes both from there and nothing else from it. Such a build
+        // replaces everything between these two markers, because its scanner reads an address
+        // held in a variable as an unknown repository.
         val libsignalRepo = providers.gradleProperty("seca.libsignal.repo").get()
-        exclusiveContent {
-            forRepository { if (libsignalRepo == "mavenLocal") mavenLocal() else maven(libsignalRepo) }
-            filter { includeGroup("org.signal") }
+        if (libsignalRepo == "mavenLocal") {
+            exclusiveContent {
+                forRepository { mavenLocal() }
+                filter {
+                    includeGroup("org.signal")
+                    includeGroup("fr.acinq.secp256k1")
+                }
+            }
+        } else {
+            exclusiveContent {
+                forRepository { maven(libsignalRepo) }
+                filter { includeGroup("org.signal") }
+            }
         }
         // libsignal repository (end)
     }

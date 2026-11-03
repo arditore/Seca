@@ -1,4 +1,4 @@
-Seca Messages est la messagerie de la suite Seca : Contacts, Téléphone et Messages, trois applications au même design Material 3 Expressive, pensées pour la vie privée. Elles fonctionnent sur tout téléphone sous Android 12 ou plus récent, avec ou sans Google, et donnent le meilleur d'elles-mêmes sur GrapheneOS. En français et en anglais.
+Seca Messages est la messagerie de la suite Seca : Contacts, Téléphone et Messages, trois applications au même design Material 3 Expressive, pensées pour la vie privée. Elles fonctionnent sur tout téléphone sous Android 12 ou plus récent, avec ou sans Google, et donnent le meilleur d'elles-mêmes sur GrapheneOS. En français, anglais, espagnol et polonais.
 
 <b>Seca Link : chiffré de bout en bout</b>
 <ul>
@@ -8,10 +8,13 @@ Seca Messages est la messagerie de la suite Seca : Contacts, Téléphone et Mess
 <li>Accusés de lecture et indicateur d'écriture, désactivables.</li>
 <li>Numéro de sécurité à comparer ou à scanner par QR code.</li>
 <li>Désactivé par défaut : sans Seca Link, l'application n'utilise pas Internet.</li>
+<li>Photos et messages vocaux chiffrés ; le micro n'est demandé qu'au moment où vous en enregistrez un.</li>
+<li>Quatre relais publics sont réglés par défaut (relay.damus.io, nos.lol, relay.primal.net, nostr.mom) et la liste vous appartient.</li>
 </ul>
 
 <b>SMS</b>
 <ul>
+<li><b>Les MMS, les messages multimédias de l'opérateur, ne sont pas encore pris en charge.</b> En tant qu'application SMS par défaut, Seca Messages est la seule à qui le téléphone les confie : une photo ou un message de groupe envoyé en MMS n'arrivera donc pas avant une version ultérieure. Les photos envoyées par Seca Link ne sont pas concernées.</li>
 <li>Conversations avec la photo et le profil de vos contacts, recherche dans tous les messages.</li>
 <li>Réponse depuis la notification, messages programmés.</li>
 <li>Codes de vérification copiables en un geste et effacés automatiquement après un délai.</li>

@@ -48,10 +48,12 @@
     <string name="clock">Reloj</string>
     <plurals name="clock_ahead">
         <item quantity="one">El teléfono va %d s adelantado: corregido con la hora de los relés</item>
+        <item quantity="many">El teléfono va %d de segundos adelantado: corregido con la hora de los relés</item>
         <item quantity="other">El teléfono va %d s adelantado: corregido con la hora de los relés</item>
     </plurals>
     <plurals name="clock_behind">
         <item quantity="one">El teléfono va %d s atrasado: corregido con la hora de los relés</item>
+        <item quantity="many">El teléfono va %d de segundos atrasado: corregido con la hora de los relés</item>
         <item quantity="other">El teléfono va %d s atrasado: corregido con la hora de los relés</item>
     </plurals>
     <string name="clock_on_time">En hora con los relés</string>
@@ -80,6 +82,7 @@
     <string name="conversations">Conversaciones</string>
     <plurals name="conversations_count">
         <item quantity="one">%d conversación</item>
+        <item quantity="many">%d de conversaciones</item>
         <item quantity="other">%d conversaciones</item>
     </plurals>
     <string name="copy">Copiar</string>
@@ -90,6 +93,7 @@
     <string name="day_at">%1$s a las %2$s</string>
     <plurals name="days_ago">
         <item quantity="one">hace %d día</item>
+        <item quantity="many">hace %d de días</item>
         <item quantity="other">hace %d días</item>
     </plurals>
     <string name="default_banner_text">Android entrega los mensajes a una sola aplicación a la vez.</string>
@@ -135,6 +139,7 @@
     <string name="got_it">Entendido</string>
     <plurals name="hours_ago">
         <item quantity="one">hace %d h</item>
+        <item quantity="many">hace %d de h</item>
         <item quantity="other">hace %d h</item>
     </plurals>
     <string name="in_an_hour">En una hora</string>
@@ -160,6 +165,7 @@
     <string name="link_keys_unavailable">Claves no disponibles: %1$s</string>
     <plurals name="link_messages_count">
         <item quantity="one">%d mensaje de Seca Link</item>
+        <item quantity="many">%d de mensajes de Seca Link</item>
         <item quantity="other">%d mensajes de Seca Link</item>
     </plurals>
     <string name="link_no_relay">Ningún relé aceptó la clave</string>
@@ -169,6 +175,7 @@
     <string name="link_publish_failed">La publicación falló: %1$s</string>
     <plurals name="link_published">
         <item quantity="one">Clave publicada en %d relé</item>
+        <item quantity="many">Clave publicada en %d de relés</item>
         <item quantity="other">Clave publicada en %d relés</item>
     </plurals>
     <string name="link_publishing">Publicando tu clave…</string>
@@ -189,15 +196,18 @@
     <string name="messages">Mensajes</string>
     <plurals name="messages_added">
         <item quantity="one">%d mensaje añadido</item>
+        <item quantity="many">%d de mensajes añadidos</item>
         <item quantity="other">%d mensajes añadidos</item>
     </plurals>
     <plurals name="messages_count">
         <item quantity="one">%d mensaje</item>
+        <item quantity="many">%d de mensajes</item>
         <item quantity="other">%d mensajes</item>
     </plurals>
     <string name="mic_unavailable">El micrófono no está disponible</string>
     <plurals name="minutes_ago">
         <item quantity="one">hace %d min</item>
+        <item quantity="many">hace %d de min</item>
         <item quantity="other">hace %d min</item>
     </plurals>
     <string name="mismatch_hint">Comprueba que sea de verdad el código de %1$s. Si sigue sin coincidir, alguien podría estar en medio: no compartas nada delicado.</string>
@@ -284,6 +294,7 @@
     <string name="relays">Relés</string>
     <plurals name="relays_count">
         <item quantity="one">%d relé Nostr público y gratuito</item>
+        <item quantity="many">%d de relés Nostr públicos y gratuitos</item>
         <item quantity="other">%d relés Nostr públicos y gratuitos</item>
     </plurals>
     <string name="relays_hint">Los relés Nostr son públicos, gratuitos y los mantienen voluntarios. Solo reciben claves públicas y mensajes cifrados, y ven la dirección IP del teléfono. Solo se aceptan conexiones cifradas (wss).</string>
@@ -313,6 +324,7 @@
     <string name="scheduled_at">Programado · %1$s</string>
     <plurals name="scheduled_count">
         <item quantity="one">%d mensaje programado</item>
+        <item quantity="many">%d de mensajes programados</item>
         <item quantity="other">%d mensajes programados</item>
     </plurals>
     <string name="scheduled_message">Mensaje programado</string>
@@ -332,16 +344,19 @@
     <string name="show_code_hint">Muestra este código a %1$s, o escanea el suyo: vuestros mensajes irán cifrados sin esperar un SMS.</string>
     <plurals name="sms_added">
         <item quantity="one">%d SMS añadido</item>
+        <item quantity="many">%d de SMS añadidos</item>
         <item quantity="other">%d SMS añadidos</item>
     </plurals>
     <string name="sms_app">Aplicación de SMS</string>
     <plurals name="sms_count">
         <item quantity="one">%d SMS</item>
+        <item quantity="many">%d de SMS</item>
         <item quantity="other">%d SMS</item>
     </plurals>
     <string name="spam">Spam</string>
     <plurals name="spam_count">
         <item quantity="one">%d conversación publicitaria</item>
+        <item quantity="many">%d de conversaciones publicitarias</item>
         <item quantity="other">%d conversaciones publicitarias</item>
     </plurals>
     <string name="this_evening">Esta tarde</string>
@@ -351,20 +366,24 @@
     <string name="through_tor">A través de Tor, con Orbot</string>
     <plurals name="timer_days">
         <item quantity="one">%d día</item>
+        <item quantity="many">%d de días</item>
         <item quantity="other">%d días</item>
     </plurals>
     <string name="timer_hint">Los mensajes nuevos se borran de los dos teléfonos tras este plazo.</string>
     <plurals name="timer_hours">
         <item quantity="one">%d h</item>
+        <item quantity="many">%d de h</item>
         <item quantity="other">%d h</item>
     </plurals>
     <plurals name="timer_minutes">
         <item quantity="one">%d min</item>
+        <item quantity="many">%d de min</item>
         <item quantity="other">%d min</item>
     </plurals>
     <string name="timer_off">Desactivado</string>
     <plurals name="timer_weeks">
         <item quantity="one">%d semana</item>
+        <item quantity="many">%d de semanas</item>
         <item quantity="other">%d semanas</item>
     </plurals>
     <string name="to">Para</string>

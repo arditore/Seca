@@ -23,6 +23,7 @@
     <string name="design_passphrase_opening_hint">La contraseña elegida al hacer la copia.</string>
     <plurals name="design_passphrase_too_short">
         <item quantity="one">Al menos %d carácter</item>
+        <item quantity="many">Al menos %d de caracteres</item>
         <item quantity="other">Al menos %d caracteres</item>
     </plurals>
     <string name="design_private_screen">Pantalla privada</string>

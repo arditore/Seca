@@ -9,8 +9,8 @@ android {
         applicationId = "com.seca.contacts"
         // Written out here, not only in the shared convention plugin: F-Droid reads the version
         // of an app from its own build file, and finds nothing in a plugin it does not run.
-        versionCode = 6
-        versionName = "0.1.0-beta6"
+        versionCode = 7
+        versionName = "0.1.0-beta7"
     }
     buildFeatures { compose = true }
 }

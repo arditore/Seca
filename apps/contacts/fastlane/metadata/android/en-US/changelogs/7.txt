@@ -1,0 +1,1 @@
+Spanish, and Polish thanks to tmpjx555. A pure black theme for OLED screens, shared by the three apps. A phone that refuses to save a contact now says so instead of letting the button appear to do nothing, and the empty list explains that a phone can limit which contacts an app may read.

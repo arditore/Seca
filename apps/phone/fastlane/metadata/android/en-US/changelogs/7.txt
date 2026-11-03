@@ -1,0 +1,1 @@
+Spanish, and Polish thanks to tmpjx555. A pure black theme for OLED screens. On the call screen: the notification no longer floats over the answer and decline buttons it duplicates, the names under the buttons can be hidden, and the proximity sensor can be turned off for a case that keeps it covered.

@@ -1,0 +1,1 @@
+L'espagnol, et le polonais grâce à tmpjx555. Un thème noir absolu pour les écrans OLED. Sur l'écran d'appel : la notification ne surgit plus par-dessus les boutons répondre et refuser qu'elle duplique, les noms sous les boutons peuvent être masqués, et le capteur de proximité se désactive pour une coque qui le masque.

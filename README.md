@@ -127,4 +127,9 @@ SECA_SCREENSHOTS=build/captures ./gradlew testDebugUnitTest --tests "*Screenshot
 
 ## License
 
-[GPL-3.0-or-later](LICENSE).
+[GPL-3.0-or-later](LICENSE), except Seca Messages.
+
+Seca Messages is [AGPL-3.0-or-later](apps/messages/LICENSE). It links libsignal,
+which Signal publishes under the AGPL, and the AGPL asks the whole work to be
+offered under its own terms. Seca Contacts, Seca Phone and every shared module
+stay GPL-3.0-or-later.

@@ -1,0 +1,1 @@
+Spanish, and Polish thanks to tmpjx555. A pure black theme for OLED screens, shared by the three apps. The listing now says plainly that incoming MMS are not supported yet, so nobody adopts Seca Messages and loses them without warning.

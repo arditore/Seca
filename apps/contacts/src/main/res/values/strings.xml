@@ -51,7 +51,7 @@
     <string name="contacts_already_here">These contacts are already on this phone</string>
     <string name="contact_not_saved">This phone refused to save the contact. Its contacts may be managed by an account this app cannot write to.</string>
     <string name="contact_not_saved_because">This phone refused to save the contact: %1$s</string>
-    <string name="contacts_imported_some_refused">%1$d contacts added, %2$d refused by the phone.</string>
+    <string name="contacts_imported_some_refused">Added: %1$d. Refused by the phone: %2$d.</string>
     <plurals name="contacts_count">
         <item quantity="one">%d contact</item>
         <item quantity="other">%d contacts</item>
