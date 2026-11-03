@@ -1,0 +1,1 @@
+secp256k1 is now built from its own sources, like libsignal: Seca Messages carries no prebuilt native library any more, which is what F-Droid asks of it. The navigation bar follows the black theme too.

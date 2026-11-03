@@ -1,0 +1,1 @@
+La barra de navegación también sigue el tema negro, en vez de dejar el gris de Material en una franja abajo. El polaco cubre ya las opciones de la pantalla de llamada añadidas desde la traducción.

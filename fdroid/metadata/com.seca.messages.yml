@@ -32,8 +32,8 @@ Builds:
       - rustup default 1.98.1
       - rustup target add aarch64-linux-android armv7-linux-androideabi
       - sed -i '/libsignal repository (start)/,/libsignal repository (end)/c\exclusiveContent
-        { forRepository { mavenLocal() } ; filter { includeGroup("org.signal") ; includeGroup("fr.acinq.secp256k1")
-        } }' ../../settings.gradle.kts
+        { forRepository { mavenLocal() } ; filter { includeGroup("org.signal") ; includeModule("fr.acinq.secp256k1",
+        "secp256k1-kmp-jni-android") } }' ../../settings.gradle.kts
       - echo 'target_link_options( secp256k1-jni PRIVATE -Wl,--build-id=none )' >>
         $$Secp256k1Kmp$$/jni/android/src/main/CMakeLists.txt
       - cd $$libsignal$$ && export CFLAGS="-ffile-prefix-map=$(pwd -P)=." CXXFLAGS="-ffile-prefix-map=$(pwd

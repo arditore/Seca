@@ -27,7 +27,9 @@ dependencyResolutionManagement {
                 forRepository { mavenLocal() }
                 filter {
                     includeGroup("org.signal")
-                    includeGroup("fr.acinq.secp256k1")
+                    // Only the artifact that carries native code: the Kotlin wrapper around it
+                    // holds no binary and goes on coming from Maven Central like everything else.
+                    includeModule("fr.acinq.secp256k1", "secp256k1-kmp-jni-android")
                 }
             }
         } else {

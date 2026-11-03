@@ -1,0 +1,1 @@
+La barre de navigation suit aussi le thème noir : elle affichait encore le gris teinté de Material, ce qui laissait une bande grise en bas d'un écran censé rester éteint. Le polonais couvre maintenant les chaînes ajoutées depuis la traduction.

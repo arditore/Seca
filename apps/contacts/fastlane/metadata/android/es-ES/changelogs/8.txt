@@ -1,0 +1,1 @@
+La barra de navegación también sigue el tema negro: todavía mostraba el gris de Material, lo que dejaba una franja gris en la parte baja de una pantalla que debe quedar apagada. El polaco cubre ya las cadenas añadidas desde la traducción.

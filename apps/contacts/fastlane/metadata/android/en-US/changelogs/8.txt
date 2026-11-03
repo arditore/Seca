@@ -1,0 +1,1 @@
+The navigation bar follows the black theme too: it was still showing Material's tinted grey, which left a grey strip across the bottom of a screen meant to be unlit. Polish now covers the strings added since the translation was contributed.
