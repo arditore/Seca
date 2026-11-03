@@ -203,4 +203,14 @@
     <string name="wifi_calling">Połączenia przez Wi-Fi</string>
     <string name="wifi_calling_hint">Rozmawiaj przez Wi-Fi, gdy sygnał sieci komórkowej jest słaby</string>
     <string name="yesterday">Wczoraj</string>
+    <string name="black_theme">Czysta czerń</string>
+    <string name="black_theme_hint">W trybie ciemnym tła stają się czarne. Na ekranie OLED te piksele pozostają zgaszone.</string>
+    <string name="button_labels">Nazwy przycisków</string>
+    <string name="button_labels_hint">Nazwa pod każdym przyciskiem w trakcie połączenia. Wyłączone — zostają same ikony.</string>
+    <string name="call_screen">Ekran połączenia</string>
+    <string name="call_screen_hint">To także ekran, z którego odbiera się połączenie bez odblokowywania telefonu.</string>
+    <string name="channel_incoming_quiet">Połączenia przychodzące, ekran połączenia otwarty</string>
+    <string name="channel_incoming_quiet_desc">To samo powiadomienie, zostawione w panelu: ekran połączenia jest już widoczny.</string>
+    <string name="screen_off_near_ear">Ekran zgaszony przy uchu</string>
+    <string name="screen_off_near_ear_hint">Czujnik zbliżeniowy gasi ekran w trakcie rozmowy, żeby policzek niczego nie nacisnął. Wyłącz, jeśli etui zasłania czujnik.</string>
 </resources>
