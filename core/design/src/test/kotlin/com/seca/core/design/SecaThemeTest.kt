@@ -152,4 +152,50 @@ class SecaThemeTest {
             assertNotEquals("${role.name} (sombre)", role.get(baselineDark), role.get(dark!!))
         }
     }
+
+    @Test
+    fun `the black theme takes the dark backgrounds to black and leaves the accents alone`() {
+        var plain: ColorScheme? = null
+        var black: ColorScheme? = null
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = true) {
+                plain = MaterialTheme.colorScheme
+                Text("dark")
+            }
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = true, black = true) {
+                black = MaterialTheme.colorScheme
+                Text("black")
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(Color.Black, black!!.surface)
+        assertEquals(Color.Black, black!!.background)
+        // What a card sits on has to stay apart from the page under it, or depth disappears.
+        assertNotEquals(black!!.surface, black!!.surfaceContainer)
+        assertNotEquals(black!!.surfaceContainer, black!!.surfaceContainerHigh)
+        // Accents and text are the palette's business, not the theme's: they must not move.
+        assertEquals(plain!!.primary, black!!.primary)
+        assertEquals(plain!!.onSurface, black!!.onSurface)
+        assertEquals(plain!!.onSurfaceVariant, black!!.onSurfaceVariant)
+        assertEquals(plain!!.outline, black!!.outline)
+    }
+
+    @Test
+    fun `the black theme changes nothing in the light theme`() {
+        var plain: ColorScheme? = null
+        var black: ColorScheme? = null
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
+                plain = MaterialTheme.colorScheme
+                Text("light")
+            }
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false, black = true) {
+                black = MaterialTheme.colorScheme
+                Text("light-black")
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(plain!!.surface, black!!.surface)
+        assertEquals(plain!!.background, black!!.background)
+    }
 }
