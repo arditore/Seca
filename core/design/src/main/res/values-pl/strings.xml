@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="design_app_contacts">Kontakty</string>
+    <string name="design_app_locked">%1$s jest zablokowana</string>
+    <string name="design_app_locked_hint">Zawartość pozostaje ukryta do odblokowania.</string>
+    <string name="design_app_messages">Wiadomości</string>
+    <string name="design_app_phone">Telefon</string>
+    <string name="design_back">Wstecz</string>
+    <string name="design_cancel">Anuluj</string>
+    <string name="design_clear_search">Wyczyść wyszukiwanie</string>
+    <string name="design_close">Zamknij</string>
+    <string name="design_lock_app">Zablokuj %1$s</string>
+    <string name="design_lock_app_on">Odcisk palca lub kod telefonu przy otwieraniu</string>
+    <string name="design_lock_app_unavailable">Najpierw ustaw blokadę ekranu w Androidzie</string>
+    <string name="design_palette_dusk">Zmierzch</string>
+    <string name="design_palette_forest">Las</string>
+    <string name="design_palette_ocean">Ocean</string>
+    <string name="design_palette_slate">Grafit</string>
+    <string name="design_palette_wallpaper">Tapeta</string>
+    <string name="design_passphrase">Hasło</string>
+    <string name="design_passphrase_confirm">Potwierdź hasło</string>
+    <string name="design_passphrase_creating_hint">Bez tego hasła kopii nie da się już nigdy otworzyć: nikt jej nie odzyska.</string>
+    <string name="design_passphrase_opening_hint">Hasło wybrane przy tworzeniu kopii.</string>
+    <plurals name="design_passphrase_too_short">
+        <item quantity="one">Co najmniej %d znak</item>
+        <item quantity="few">Co najmniej %d znaki</item>
+        <item quantity="many">Co najmniej %d znaków</item>
+        <item quantity="other">Co najmniej %d znaku</item>
+    </plurals>
+    <string name="design_private_screen">Ekran prywatny</string>
+    <string name="design_private_screen_hint">Blokuje zrzuty ekranu i ukrywa podgląd w ostatnich aplikacjach</string>
+    <string name="design_profile_principal">Główny</string>
+    <string name="design_unlock">Odblokuj</string>
+    <string name="design_unlock_app">Odblokuj %1$s</string>
+</resources>

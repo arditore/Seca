@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="link_accept_intro">Seca Link: invitación aceptada, nuestros mensajes van cifrados.</string>
+    <string name="link_encryption_failed">Falló el cifrado</string>
+    <string name="link_incomplete_invitation">Invitación incompleta</string>
+    <string name="link_invalid_keys">Claves no válidas: %1$s</string>
+    <string name="link_invite_intro">Seca Link: te invito a una conversación cifrada con Seca Messages.</string>
+    <string name="link_keys_not_found">No se encontraron las claves en los relés</string>
+    <string name="link_no_key_received">No se recibió ninguna clave de este contacto</string>
+    <string name="link_no_network">Sin acceso a la red</string>
+    <string name="link_no_relay_accepted">Ningún relé aceptó el mensaje</string>
+    <string name="link_not_kept">Aceptó las claves pero no las conserva</string>
+    <string name="link_unknown_contact">Contacto desconocido</string>
+    <string name="link_untrusted_key">Clave no aprobada: %1$s</string>
+</resources>

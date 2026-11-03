@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="design_app_contacts">Contactos</string>
+    <string name="design_app_locked">%1$s está bloqueada</string>
+    <string name="design_app_locked_hint">Su contenido queda oculto hasta que se desbloquee.</string>
+    <string name="design_app_messages">Mensajes</string>
+    <string name="design_app_phone">Teléfono</string>
+    <string name="design_back">Atrás</string>
+    <string name="design_cancel">Cancelar</string>
+    <string name="design_clear_search">Borrar la búsqueda</string>
+    <string name="design_close">Cerrar</string>
+    <string name="design_lock_app">Bloquear %1$s</string>
+    <string name="design_lock_app_on">Huella o código del teléfono al abrir</string>
+    <string name="design_lock_app_unavailable">Primero establece un bloqueo de pantalla en Android</string>
+    <string name="design_palette_dusk">Crepúsculo</string>
+    <string name="design_palette_forest">Bosque</string>
+    <string name="design_palette_ocean">Océano</string>
+    <string name="design_palette_slate">Pizarra</string>
+    <string name="design_palette_wallpaper">Fondo de pantalla</string>
+    <string name="design_passphrase">Contraseña</string>
+    <string name="design_passphrase_confirm">Confirma la contraseña</string>
+    <string name="design_passphrase_creating_hint">Sin esta contraseña la copia no se podrá abrir nunca más: nadie puede recuperarla.</string>
+    <string name="design_passphrase_opening_hint">La contraseña elegida al hacer la copia.</string>
+    <plurals name="design_passphrase_too_short">
+        <item quantity="one">Al menos %d carácter</item>
+        <item quantity="other">Al menos %d caracteres</item>
+    </plurals>
+    <string name="design_private_screen">Pantalla privada</string>
+    <string name="design_private_screen_hint">Impide las capturas y oculta la vista previa en las apps recientes</string>
+    <string name="design_profile_principal">Principal</string>
+    <string name="design_unlock">Desbloquear</string>
+    <string name="design_unlock_app">Desbloquear %1$s</string>
+</resources>

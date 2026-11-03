@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="contacts_number_short">Número corto</string>
+    <string name="contacts_number_unknown">Número incompleto o desconocido</string>
+</resources>
