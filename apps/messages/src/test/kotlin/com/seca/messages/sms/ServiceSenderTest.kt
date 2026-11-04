@@ -45,3 +45,41 @@ class ServiceSenderTest {
         assertFalse(isServiceSender("+99912345678", known = false, note = NumberNote.Unknown))
     }
 }
+
+/**
+ * India's own conventions, told to us by a user there (issue #13).
+ *
+ * They are applied on an Indian SIM and nowhere else: eight digits is an ordinary phone number
+ * in Norway or Singapore, and treating one as a service would split a person's messages apart.
+ */
+class IndianSenderTest {
+
+    @Test
+    fun `a registered Indian sender is a service, whatever its classification`() {
+        listOf("AX-ADHAAR-S", "JD-HDFCBK-T", "AD-MYNTRA-P", "VD-GOVIND-G").forEach { sender ->
+            assertTrue(sender, isServiceSender(sender, known = false, note = null, region = "IN"))
+        }
+    }
+
+    @Test
+    fun `a foreign service writing to India is a service`() {
+        // Google, Steam and the like: eight or five digits beginning with a five.
+        assertTrue(isServiceSender("57575625", known = false, note = NumberNote.Unknown, region = "IN"))
+        assertTrue(isServiceSender("57575", known = false, note = NumberNote.Unknown, region = "IN"))
+    }
+
+    @Test
+    fun `an Indian person is not a service`() {
+        // Indian mobile numbers begin with 6, 7, 8 or 9.
+        listOf("+916312345678", "9012345678", "7712345678").forEach { number ->
+            assertFalse(number, isServiceSender(number, known = false, note = NumberNote.Unknown, region = "IN"))
+        }
+    }
+
+    @Test
+    fun `eight digits elsewhere is somebody's phone number`() {
+        // Norway, Denmark, Singapore, Hong Kong: eight digits is an ordinary number.
+        assertFalse(isServiceSender("57575625", known = false, note = NumberNote.Unknown, region = "NO"))
+        assertFalse(isServiceSender("57575625", known = false, note = NumberNote.Unknown, region = null))
+    }
+}

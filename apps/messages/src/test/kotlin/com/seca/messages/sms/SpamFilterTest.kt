@@ -4,25 +4,37 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * What gets filed away as advertising.
+ *
+ * Two worlds meet here: France, where the law makes every commercial text carry a way out, and
+ * India, where the regulator classifies the sender itself. The second is the stronger signal —
+ * it says what a message is before anyone reads a word of it.
+ */
 class SpamFilterTest {
 
     @Test
-    fun `a commercial text offering STOP to a 36xxx number is advertising`() {
-        assertTrue(SpamFilter.isCommercial("+33612345678", "Soldes -50 % ce week-end ! STOP au 36180"))
-        assertTrue(SpamFilter.isCommercial("38100", "Votre offre fibre vous attend. Stop SMS 36111"))
-        assertTrue(SpamFilter.isCommercial("BOUTIQUE", "Nouveautés en magasin. STOP 36063"))
+    fun `a French commercial text names its way out`() {
+        assertTrue(SpamFilter.isCommercial("36180", "Profitez de nos offres ! STOP au 36180"))
+        assertTrue(SpamFilter.isCommercial("PROMOS", "Nos soldes commencent. Pour ne plus recevoir nos messages, désinscription ici"))
     }
 
     @Test
-    fun `a brand or short code offering to unsubscribe is advertising`() {
-        assertTrue(SpamFilter.isCommercial("MAGASIN", "Pour vous désinscrire, répondez ARRET"))
-        assertTrue(SpamFilter.isCommercial("36555", "Pour ne plus recevoir nos offres, cliquez ici"))
+    fun `an Indian promotional sender is advertising, whatever it writes`() {
+        assertTrue(SpamFilter.isCommercial("AD-MYNTRA-P", "Flat 50% off this weekend only"))
+        assertTrue(SpamFilter.isCommercial("am-flipkt-p", "Big billion days are here"))
     }
 
     @Test
-    fun `ordinary texts are not`() {
-        assertFalse(SpamFilter.isCommercial("+33612345678", "On se voit à 18h ? Sinon stop, je rentre"))
-        assertFalse(SpamFilter.isCommercial("+33612345678", "Je me suis désinscrit du club, tu viens quand même ?"))
-        assertFalse(SpamFilter.isCommercial("BANQUE", "Votre code de connexion est 482913"))
+    fun `an Indian bank or government sender is never advertising`() {
+        // The word that would otherwise file it away is in the text on purpose.
+        assertFalse(SpamFilter.isCommercial("JD-HDFCBK-T", "341112 is your OTP. To unsubscribe from alerts, call us."))
+        assertFalse(SpamFilter.isCommercial("AX-ADHAAR-S", "597588 is OTP for Aadhaar. Ne plus recevoir: visit uidai.gov.in"))
+        assertFalse(SpamFilter.isCommercial("VD-GOVIND-G", "Votre rendez-vous est confirmé. Désabonnement possible."))
+    }
+
+    @Test
+    fun `an ordinary person is never advertising`() {
+        assertFalse(SpamFilter.isCommercial("+33612345678", "On se voit à 18h ? Je ne veux plus recevoir de pluie."))
     }
 }

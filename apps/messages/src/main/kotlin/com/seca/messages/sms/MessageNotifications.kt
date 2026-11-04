@@ -77,11 +77,15 @@ internal object MessageNotifications {
      * a number that could be called: a name like "AX-ADHAAR-S", or a short code. A number that
      * simply cannot be parsed stays a conversation: a stranger is still a person.
      */
-    private fun isService(context: Context, address: String): Boolean = isServiceSender(
-        address = address,
-        known = contactOf(context, address) != null,
-        note = PhoneNumbers(PhoneNumbers.detectRegion(context)).note(address),
-    )
+    private fun isService(context: Context, address: String): Boolean {
+        val region = PhoneNumbers.detectRegion(context)
+        return isServiceSender(
+            address = address,
+            known = contactOf(context, address) != null,
+            note = PhoneNumbers(region).note(address),
+            region = region,
+        )
+    }
 
     /**
      * One notification for one message from a service, carrying its own time, so the newest is
@@ -443,13 +447,28 @@ internal object MessageNotifications {
 /**
  * Whether messages from [address] come from a service rather than from someone to talk to.
  *
- * [known] says whether the sender is in the contacts, [note] what the number looks like. A
- * sender with a letter in it — "AX-ADHAAR-S", "AMAZON" — is a service, and so is a short code.
- * Anything else stays a conversation, including a number nobody could parse: a stranger with a
- * foreign number is still a person, and splitting their messages apart would be the worse error.
+ * [known] says whether the sender is in the contacts, [note] what the number looks like, and
+ * [region] which country's conventions apply. A sender with a letter in it — "AX-ADHAAR-S",
+ * "AMAZON" — is a service, and so is a short code. Anything else stays a conversation, including
+ * a number nobody could parse: a stranger with a foreign number is still a person, and splitting
+ * their messages apart would be the worse error.
+ *
+ * India has one convention worth knowing, since it catches what the general rules miss: a
+ * service writing from outside the country uses an eight or five digit number beginning with a
+ * five, which no Indian person's number does. That test is applied only on an Indian SIM, since
+ * eight digits is an ordinary number in Norway, Denmark or Singapore.
  */
-internal fun isServiceSender(address: String, known: Boolean, note: NumberNote?): Boolean = when {
+internal fun isServiceSender(address: String, known: Boolean, note: NumberNote?, region: String? = null): Boolean = when {
     known -> false
     address.any(Char::isLetter) -> true
-    else -> note == NumberNote.Short
+    note == NumberNote.Short -> true
+    region.equals("IN", ignoreCase = true) -> indianServiceNumber(address)
+    else -> false
 }
+
+private fun indianServiceNumber(address: String): Boolean {
+    val digits = address.filter(Char::isDigit)
+    return digits.length in INDIAN_SERVICE_DIGITS && digits.startsWith('5') && !address.trimStart().startsWith("+")
+}
+
+private val INDIAN_SERVICE_DIGITS = 5..8
