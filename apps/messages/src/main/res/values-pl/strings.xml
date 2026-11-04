@@ -417,5 +417,5 @@
     <string name="your_link_code">Twój kod Seca Link</string>
     <string name="your_reply">Twoja odpowiedź</string>
     <string name="black_theme">Czysta czerń</string>
-    <string name="black_theme_hint">W trybie ciemnym tła stają się czarne. Na ekranie OLED te piksele pozostają zgaszone.</string>
+    <string name="black_theme_hint">W trybie ciemnym tło zmienia kolor na czarny. Na ekranie OLED te piksele pozostają wyłączone.</string>
 </resources>
