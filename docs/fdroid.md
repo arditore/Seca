@@ -7,7 +7,7 @@ person with an account somewhere.
 |---|---|---|
 | Seca Contacts | **published**, reproducible: f-droid.org hands out the file published here | ready to request |
 | Seca Phone | **published**, reproducible | ready to request |
-| Seca Messages | merge request !49106 closed after a month of silence, to reopen | ready to request |
+| Seca Messages | merge request !49106 reopened at 0.1.0-beta8, with both native libraries built from source | ready to request |
 
 The reproducible build is not a claim: the APK f-droid.org serves for Seca Contacts has the
 same SHA-256 as the one attached to the GitHub release, `11f14bf8…` for 0.1.0-beta6. Their
@@ -116,18 +116,26 @@ of which are done here:
 2. **Incoming MMS are not supported, and the listing has to say so.** As the default SMS app,
    Seca Messages is the only app the phone hands them to, so adopting it cost a user their
    picture messages without a word. `full_description.txt` now says it first, in both languages.
-3. **secp256k1 is still a prebuilt binary, and that one is not finished.**
+3. **secp256k1 was a prebuilt binary, and is not any more.**
    `fr.acinq.secp256k1:secp256k1-kmp-jni-android` ships `libsecp256k1-jni.so`, which F-Droid does
-   not accept any more than libsignal's. The recipe now builds it from the `Secp256k1Kmp` srclib,
-   the way `com.gorunjinian.metrovault` already does: the SDK's own cmake, the submodule
-   checkout, and the same `-Wl,--build-id=none` the linker needs for the library to come out the
-   same on two machines. `settings.gradle.kts` takes both libraries, and only those two, from the
-   folder the build publishes them into — `mavenLocal()` left among the other repositories would
-   have let Maven Central answer first and ship the prebuilt library after all.
+   not accept any more than libsignal's. The recipe builds it from the `Secp256k1Kmp` srclib, the
+   way `com.gorunjinian.metrovault` already does: the SDK's own cmake, the submodule checkout, and
+   the same `-Wl,--build-id=none` the linker needs for the library to come out the same on two
+   machines. The APK published here carries that same from-source library, built in WSL by
+   `scratchpad/wsl-secp256k1.sh`, or their reproducibility check would fail.
 
-   **What is missing is on this side:** the APK published here must carry that same from-source
-   library, or their reproducibility check fails. So secp256k1 has to be compiled here too,
-   before Seca Messages is resubmitted.
+   The patched repository block is an `exclusiveContent` naming `org.signal` and the module
+   `fr.acinq.secp256k1:secp256k1-kmp-jni-android`, so Maven Central cannot answer for either and
+   no prebuilt library can slip back in. It names that one module rather than the whole group on
+   purpose: `secp256k1-kmp-jni-common` is a Kotlin wrapper with no binary in it, and it is not
+   published locally. A bare `mavenLocal()` among the other repositories, as the first draft had,
+   would have let Maven Central answer first and ship the prebuilt library after all — their
+   reviewer caught that before the build did.
+
+**The check that proves it, before publishing:** every native library in the APK, stripped of its
+build id and of any absolute path. `strings -a` and `readelf -n` over `lib/*/*.so` must come back
+empty for `/home/`, `/opt/`, `/builds/` and `Build ID` on the two libraries built here. The three
+AndroidX libraries keep their build ids, which is harmless: both sides download the same file.
 
 ## Steps that need an account
 
