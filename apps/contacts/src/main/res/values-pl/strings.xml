@@ -116,7 +116,7 @@
     <string name="message">Wiadomość</string>
     <string name="more_options">Więcej opcji</string>
     <string name="my_card">Moja wizytówka</string>
-    <string name="my_card_hint">Dodaj swój numer, imię i nazwisko oraz zdjęcie</string>
+    <string name="my_card_hint">To, co przekazujesz kodem QR, gdy ktoś prosi o twój numer</string>
     <string name="my_card_privacy">Moja wizytówka pozostaje w Seca Contacts: nie jest udostępniana innym aplikacjom ani synchronizowana. Przekazujesz ją komuś tylko wtedy, gdy pokażesz swój kod QR.</string>
     <string name="my_card_qr">Kod QR Twojej wizytówki</string>
     <string name="my_card_qr_hint">Zeskanuj go aparatem drugiego telefonu, aby dodać swoją wizytówkę. Żadne dane nie są przesyłane przez internet, a zdjęcie nie jest dołączane.</string>

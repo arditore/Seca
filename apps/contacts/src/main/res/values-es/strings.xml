@@ -121,7 +121,7 @@
     <string name="message">Mensaje</string>
     <string name="more_options">Más opciones</string>
     <string name="my_card">Mi ficha</string>
-    <string name="my_card_hint">Añade tu número, tu nombre y una foto</string>
+    <string name="my_card_hint">Lo que entregas por código QR cuando alguien te pide tu número</string>
     <string name="my_card_privacy">Mi ficha se queda en Seca Contacts: no se comparte con otras aplicaciones ni se sincroniza. Solo el código QR, cuando lo muestras, se la da a alguien.</string>
     <string name="my_card_qr">Código QR de tu ficha</string>
     <string name="my_card_qr_hint">Escanéalo con la cámara del otro teléfono para añadir tu ficha. Nada pasa por Internet, y la foto no se incluye.</string>

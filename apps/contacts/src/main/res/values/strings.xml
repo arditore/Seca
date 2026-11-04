@@ -112,7 +112,7 @@
     <string name="message">Message</string>
     <string name="more_options">More options</string>
     <string name="my_card">My card</string>
-    <string name="my_card_hint">Add your number, your name and a photo</string>
+    <string name="my_card_hint">What you hand over by QR code when someone asks for your number</string>
     <string name="my_card_privacy">My card stays in Seca Contacts: it is neither shared with other apps nor synced. Only the QR code, when you show it, gives it to someone.</string>
     <string name="my_card_qr">QR code of your card</string>
     <string name="my_card_qr_hint">Scan it with the other phone\'s camera to add your card. Nothing goes through the Internet, and the photo is not included.</string>
