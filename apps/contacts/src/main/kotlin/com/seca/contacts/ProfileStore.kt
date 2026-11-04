@@ -89,6 +89,13 @@ class ProfileStore(context: Context) {
     /** Whether the dark theme goes down to black. Off by default: Material's own dark theme. */
     fun black(): Boolean = prefs.getBoolean(KEY_BLACK, false)
 
+    /** Whether the owner's own card sits at the top of the list. Shown unless they say otherwise. */
+    fun showMyCard(): Boolean = prefs.getBoolean(KEY_MY_CARD, true)
+
+    fun setShowMyCard(show: Boolean) {
+        prefs.edit { putBoolean(KEY_MY_CARD, show) }
+    }
+
     fun setBlack(black: Boolean) {
         prefs.edit { putBoolean(KEY_BLACK, black) }
         announceChange()
@@ -129,5 +136,6 @@ class ProfileStore(context: Context) {
         private const val KEY_CURRENT = "current_profile"
         private const val KEY_PALETTE = "palette"
         private const val KEY_BLACK = "black_theme"
+        private const val KEY_MY_CARD = "show_my_card"
     }
 }

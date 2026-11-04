@@ -183,4 +183,6 @@
     <string name="website">Website</string>
     <string name="wrong_password">Wrong password, or damaged file</string>
     <string name="your_name">Your name</string>
+    <string name="show_my_card">Show My card</string>
+    <string name="show_my_card_hint">Your own card at the top of the list. Hidden, it is still in the settings.</string>
 </resources>

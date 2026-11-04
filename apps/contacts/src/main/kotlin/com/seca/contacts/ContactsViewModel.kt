@@ -58,6 +58,8 @@ data class ContactsUi(
     val palette: SecaPalette? = null,
     /** Whether the dark theme goes down to black, for OLED screens. */
     val black: Boolean = false,
+    /** Whether the owner's own card sits at the top of the list. */
+    val showMyCard: Boolean = true,
     val myCard: MyCard = MyCard(),
     val myPhoto: ImageBitmap? = null,
     /** The phone's SIM lines, read only once the owner allowed it. */
@@ -180,6 +182,12 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     /** Takes the dark theme down to black, in all three apps. */
     fun setBlack(black: Boolean) {
         store.setBlack(black)
+        refreshPreferences()
+    }
+
+    /** Shows or hides the owner's own card at the top of the list. */
+    fun setShowMyCard(show: Boolean) {
+        store.setShowMyCard(show)
         refreshPreferences()
     }
 
@@ -427,6 +435,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                 assignments = store.assignments(),
                 palette = store.palette(),
                 black = store.black(),
+                showMyCard = store.showMyCard(),
             )
         }
     }

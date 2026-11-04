@@ -287,7 +287,7 @@ private fun HomeContent(
             contentPadding = PaddingValues(end = if (showScroller) 20.dp else 0.dp, bottom = 112.dp),
         ) {
             if (!searching) {
-                item(key = "my-card", contentType = "my-card") { MyCardRow(ui, onOpenMyCard) }
+                if (ui.showMyCard) item(key = "my-card", contentType = "my-card") { MyCardRow(ui, onOpenMyCard) }
                 if (shown.isEmpty()) {
                     item(key = "empty", contentType = "empty") {
                         EmptyHome(ui, searching = false, modifier = Modifier.fillParentMaxHeight(0.6f))

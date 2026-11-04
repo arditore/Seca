@@ -192,4 +192,6 @@
     <string name="contact_not_saved">Ten telefon odrzucił próbę zapisania kontaktu. Otwórz własną aplikację Kontakty w telefonie, znajdź w jej ustawieniach, gdzie zapisywane są nowe kontakty, i wybierz tam konto.</string>
     <string name="contact_not_saved_because">Ten telefon odrzucił próbę zapisania kontaktu: %1$s</string>
     <string name="contacts_imported_some_refused">Dodano: %1$d. Odrzucone przez telefon: %2$d.</string>
+    <string name="show_my_card">Pokaż Moją wizytówkę</string>
+    <string name="show_my_card_hint">Twoja własna wizytówka na górze listy. Ukryta, pozostaje w ustawieniach.</string>
 </resources>

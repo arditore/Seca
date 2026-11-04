@@ -249,7 +249,16 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
             SuiteBackupSection(beforeRestore = askWriteThen)
 
             SecaSectionLabel(stringResource(R.string.tidy_up))
-            SecaGroupItem(index = 0, count = 1, onClick = { viewModel.open(DuplicatesRoute) }) {
+            SecaGroupItem(index = 0, count = 2) {
+                SecaSwitchRow(
+                    icon = SecaIcons.PersonOutline,
+                    title = stringResource(R.string.show_my_card),
+                    subtitle = stringResource(R.string.show_my_card_hint),
+                    checked = ui.showMyCard,
+                    onCheckedChange = viewModel::setShowMyCard,
+                )
+            }
+            SecaGroupItem(index = 1, count = 2, onClick = { viewModel.open(DuplicatesRoute) }) {
                 SecaSettingRow(
                     icon = SecaIcons.Contacts,
                     title = stringResource(R.string.duplicates),

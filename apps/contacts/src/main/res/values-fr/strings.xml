@@ -192,4 +192,6 @@
     <string name="website">Site web</string>
     <string name="wrong_password">Mot de passe incorrect, ou fichier abîmé</string>
     <string name="your_name">Votre nom</string>
+    <string name="show_my_card">Afficher Ma fiche</string>
+    <string name="show_my_card_hint">Votre propre fiche en haut de la liste. Masquée, elle reste dans les paramètres.</string>
 </resources>

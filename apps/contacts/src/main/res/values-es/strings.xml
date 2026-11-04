@@ -192,4 +192,6 @@
     <string name="website">Sitio web</string>
     <string name="wrong_password">Contraseña incorrecta, o archivo dañado</string>
     <string name="your_name">Tu nombre</string>
+    <string name="show_my_card">Mostrar Mi ficha</string>
+    <string name="show_my_card_hint">Tu propia ficha en lo alto de la lista. Oculta, sigue estando en los ajustes.</string>
 </resources>
