@@ -1,0 +1,1 @@
+Sin cambios en esta aplicación: las tres se publican juntas. Seca Contacts necesitaba una corrección para los teléfonos donde no se podía guardar ningún contacto.

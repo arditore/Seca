@@ -1,0 +1,1 @@
+Contacts are saved where the phone says new contacts go. Since Android 16 that is the owner's choice — a cloud account that syncs, the device, or the SIM — and ignoring it stopped one phone from saving a single contact. A contact created here now reaches the account the phone names, as it would from the phone's own contacts app.

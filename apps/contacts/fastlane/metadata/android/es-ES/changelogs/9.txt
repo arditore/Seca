@@ -1,0 +1,1 @@
+Los contactos se guardan donde el teléfono indica que van los contactos nuevos. Desde Android 16 eso lo elige su dueño — una cuenta que se sincroniza, el dispositivo o la tarjeta SIM — e ignorarlo impedía que un teléfono guardara un solo contacto. Un contacto creado aquí llega ahora a la cuenta que el teléfono indica.

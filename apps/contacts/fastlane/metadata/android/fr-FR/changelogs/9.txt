@@ -1,0 +1,1 @@
+Les contacts sont enregistrés là où le téléphone indique que vont les nouveaux contacts. Depuis Android 16 c'est au propriétaire de choisir — un compte qui se synchronise, l'appareil, ou la carte SIM — et ignorer ce choix empêchait un téléphone d'enregistrer le moindre contact. Un contact créé ici rejoint maintenant le compte que le téléphone désigne.

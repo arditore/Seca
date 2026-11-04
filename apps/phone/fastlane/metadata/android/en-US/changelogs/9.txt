@@ -1,0 +1,1 @@
+No change in this app: the three are released together. Seca Contacts needed a fix for phones where no contact could be saved at all.
