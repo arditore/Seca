@@ -76,6 +76,8 @@
     <string name="call_screen_hint">C\'est aussi depuis cet écran qu\'un appel se prend sans déverrouiller.</string>
     <string name="button_labels">Noms des boutons</string>
     <string name="button_labels_hint">Le nom sous chaque bouton pendant un appel. Désactivé, il ne reste que les icônes.</string>
+    <string name="decline_and_reply_hint">Les quatre phrases proposées quand vous refusez un appel par message</string>
+    <string name="save">Enregistrer</string>
     <string name="screen_off_near_ear">Écran éteint près de l\'oreille</string>
     <string name="screen_off_near_ear_hint">Le capteur de proximité éteint l\'écran pendant la conversation, pour qu\'une joue n\'appuie sur rien. À désactiver si une coque le masque.</string>
     <string name="channel_missed">Appels manqués</string>

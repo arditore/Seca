@@ -76,6 +76,8 @@
     <string name="call_screen_hint">Es también la pantalla desde la que se responde sin desbloquear.</string>
     <string name="button_labels">Nombres de los botones</string>
     <string name="button_labels_hint">El nombre bajo cada botón durante una llamada. Desactivado, solo quedan los iconos.</string>
+    <string name="decline_and_reply_hint">Las cuatro frases que se ofrecen al rechazar una llamada con un mensaje</string>
+    <string name="save">Guardar</string>
     <string name="screen_off_near_ear">Pantalla apagada junto a la oreja</string>
     <string name="screen_off_near_ear_hint">El sensor de proximidad apaga la pantalla mientras hablas, para que la mejilla no pulse nada. Desactívalo si una funda tapa el sensor.</string>
     <string name="channel_missed">Llamadas perdidas</string>

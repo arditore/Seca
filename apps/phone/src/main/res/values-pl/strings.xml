@@ -93,6 +93,7 @@
     <string name="current_output">Bieżące wyjście</string>
     <string name="decline">Odrzuć</string>
     <string name="decline_and_reply">Odrzuć i odpowiedz</string>
+    <string name="decline_and_reply_hint">Cztery zdania proponowane przy odrzucaniu połączenia wiadomością</string>
     <string name="default_banner_text">Zobaczysz, kto dzwoni oraz jego profil, a także będziesz mieć możliwość odbierania połączeń z poziomu ekranu blokady.</string>
     <string name="default_banner_title">Odbieraj połączenia w Seca</string>
     <string name="default_hint">Android nadal odpowiada za dzwonienie i wibracje; Seca wyświetla ekran połączenia. W każdej chwili możesz wrócić do poprzednich ustawień.</string>
@@ -175,6 +176,7 @@
     <string name="quick_reply_meeting">Jestem na spotkaniu.</string>
     <string name="quick_reply_text_me">Napisz do mnie SMS-a.</string>
     <string name="reply_with_message">Odpowiedz wiadomością</string>
+    <string name="save">Zapisz</string>
     <string name="search_hint">Szukaj kontaktów lub numerów</string>
     <string name="send_message">Wyślij wiadomość</string>
     <string name="settings">Ustawienia</string>

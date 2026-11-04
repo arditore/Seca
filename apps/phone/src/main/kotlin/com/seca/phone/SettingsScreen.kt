@@ -3,6 +3,7 @@ package com.seca.phone
 import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,6 +48,7 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.seca.core.design.label
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.res.stringResource
 
 /** A way into one of the system's own call screens; [intents] are tried in order. */
@@ -228,7 +231,11 @@ internal fun SettingsScreen(
             val inCall = remember { InCallSettings(context) }
             var showLabels by remember { mutableStateOf(inCall.showLabels) }
             var screenOffNearEar by remember { mutableStateOf(inCall.proximity) }
-            SecaGroupItem(index = 0, count = 2) {
+            var editingReplies by remember { mutableStateOf(false) }
+            if (editingReplies) {
+                QuickRepliesDialog(settings = inCall, onDismiss = { editingReplies = false })
+            }
+            SecaGroupItem(index = 0, count = 3) {
                 SecaSwitchRow(
                     icon = SecaIcons.Subject,
                     title = stringResource(R.string.button_labels),
@@ -240,7 +247,7 @@ internal fun SettingsScreen(
                     },
                 )
             }
-            SecaGroupItem(index = 1, count = 2) {
+            SecaGroupItem(index = 1, count = 3) {
                 SecaSwitchRow(
                     icon = SecaIcons.VisibilityOff,
                     title = stringResource(R.string.screen_off_near_ear),
@@ -250,6 +257,13 @@ internal fun SettingsScreen(
                         screenOffNearEar = on
                         inCall.proximity = on
                     },
+                )
+            }
+            SecaGroupItem(index = 2, count = 3, onClick = { editingReplies = true }) {
+                SecaSettingRow(
+                    icon = SecaIcons.Messages,
+                    title = stringResource(R.string.decline_and_reply),
+                    subtitle = stringResource(R.string.decline_and_reply_hint),
                 )
             }
             SecaHint(stringResource(R.string.call_screen_hint))
@@ -311,4 +325,44 @@ internal fun SettingsScreen(
             dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
+}
+
+/**
+ * The four sentences offered when a call is declined with a message.
+ *
+ * Asked for by someone whose phone lets its own dialer's four be edited, and who found Seca's
+ * fixed. Android keeps no shared list — each dialer holds its own, where no other app can read
+ * it — so this is Seca's own, and emptying a line puts the shipped sentence back.
+ */
+@Composable
+private fun QuickRepliesDialog(settings: InCallSettings, onDismiss: () -> Unit) {
+    val defaults = remember(settings) { settings.defaultReplies }
+    val texts = remember(settings) { settings.replies.toMutableStateList() }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(SecaIcons.Messages, contentDescription = null) },
+        title = { Text(stringResource(R.string.decline_and_reply)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                texts.forEachIndexed { index, text ->
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { texts[index] = it },
+                        placeholder = { Text(defaults[index]) },
+                        singleLine = false,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    settings.replies = texts
+                    onDismiss()
+                },
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }

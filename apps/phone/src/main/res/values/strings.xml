@@ -74,6 +74,8 @@
     <string name="call_screen_hint">This is also the screen a call is answered from without unlocking.</string>
     <string name="button_labels">Button names</string>
     <string name="button_labels_hint">The name under each button during a call. Off leaves the icons alone.</string>
+    <string name="decline_and_reply_hint">The four sentences offered when you decline a call with a message</string>
+    <string name="save">Save</string>
     <string name="screen_off_near_ear">Screen off near the ear</string>
     <string name="screen_off_near_ear_hint">The proximity sensor darkens the screen while talking, so a cheek presses nothing. Turn it off if a case keeps the sensor covered.</string>
     <string name="channel_missed">Missed calls</string>

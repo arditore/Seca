@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -66,6 +67,13 @@ import androidx.compose.ui.platform.LocalResources
 import com.seca.core.contacts.describe
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import kotlin.math.abs
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 
 @Composable
 internal fun HomeScreen(
@@ -88,6 +96,10 @@ internal fun HomeScreen(
         onOpen = { viewModel.open(PhoneScreen.CallDetail(it)) },
         onDelete = onDeleteCalls,
     )
+    // One list, read by the pills and by the swipe, so a swipe always lands on the pill next to
+    // the one lit up. Built here rather than inside the row: two lists would drift apart.
+    val filters = filtersOf(ui)
+    val filterRow = rememberLazyListState()
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
@@ -111,7 +123,7 @@ internal fun HomeScreen(
                     }
                 }
                 if (ui.query.isBlank()) {
-                    FilterRow(ui, onSelect = viewModel::setFilter)
+                    FilterRow(ui, filters, filterRow, onSelect = viewModel::setFilter)
                     // Blocked profiles stay in sight, so a quiet phone is never a mystery.
                     BlockedProfilesBanner(
                         ui = ui,
@@ -149,6 +161,7 @@ internal fun HomeScreen(
                     showBanner = !isDefaultDialer && !bannerDismissed,
                     onBecomeDefault = onBecomeDefault,
                     onDismissBanner = { bannerDismissed = true },
+                    modifier = Modifier.swipeBetween(filters, ui.filter, viewModel::setFilter),
                 )
             }
         }
@@ -162,25 +175,45 @@ private class RowActions(
     val onDelete: (List<Long>) -> Unit,
 )
 
+/** The history's filters, in the order they are offered: how calls went, then the profiles. */
+private fun filtersOf(ui: PhoneUi): List<CallFilter> =
+    CallFilter.ByType + if (ui.profiles.connected && ui.profiles.profiles.size > 1) {
+        ui.profiles.profiles.map { CallFilter.ByProfile(it.id) }
+    } else {
+        emptyList()
+    }
+
 /** The history's filters: how calls went, then — with more than one — the profiles. */
 @Composable
-private fun FilterRow(ui: PhoneUi, onSelect: (CallFilter) -> Unit) {
-    val profiles = if (ui.profiles.connected && ui.profiles.profiles.size > 1) ui.profiles.profiles else emptyList()
+private fun FilterRow(
+    ui: PhoneUi,
+    filters: List<CallFilter>,
+    state: LazyListState,
+    onSelect: (CallFilter) -> Unit,
+) {
+    // Chosen by a swipe, the pill may be off the side of the screen; it is brought back so the
+    // row always shows where you now are.
+    val chosen = filters.indexOf(ui.filter)
+    LaunchedEffect(chosen) { if (chosen >= 0) state.animateScrollToItem(chosen) }
     LazyRow(
+        state = state,
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.padding(top = 12.dp),
     ) {
-        items(CallFilter.ByType, key = { it.toString() }) { filter ->
-            SecaChoicePill(stringResource(filterLabel(filter)), selected = ui.filter == filter, onClick = { onSelect(filter) })
-        }
-        items(profiles, key = { "profile-${it.id}" }) { profile ->
-            val filter = CallFilter.ByProfile(profile.id)
+        items(filters, key = { it.toString() }) { filter ->
+            val profile = (filter as? CallFilter.ByProfile)?.let { byProfile ->
+                ui.profiles.profiles.firstOrNull { it.id == byProfile.profileId }
+            }
             SecaChoicePill(
-                label = profile.label(),
+                label = profile?.label() ?: stringResource(filterLabel(filter)),
                 selected = ui.filter == filter,
                 onClick = { onSelect(filter) },
-                leading = { SecaProfileBadge(profile.label(), tone = ui.profiles.toneOf(profile), size = 28.dp) },
+                leading = if (profile == null) {
+                    null
+                } else {
+                    { SecaProfileBadge(profile.label(), tone = ui.profiles.toneOf(profile), size = 28.dp) }
+                },
             )
         }
     }
@@ -205,12 +238,15 @@ private fun Recents(
     showBanner: Boolean,
     onBecomeDefault: () -> Unit,
     onDismissBanner: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     if (!ui.loaded) return
     val favorites = remember(ui.contacts) { ui.contacts.filter { it.isFavorite && it.phoneNumbers.isNotEmpty() } }
     val showFavorites = favorites.isNotEmpty() && ui.filter == CallFilter.All
     if (ui.groups.isEmpty() && !showFavorites) {
-        Column {
+        // The swipe has to work here too: a filter with nothing under it is exactly where
+        // someone wants to move on to the next one.
+        Column(modifier.fillMaxSize()) {
             if (showBanner) DefaultDialerBanner(onBecomeDefault, onDismissBanner)
             EmptyHistory(ui.filter)
         }
@@ -220,7 +256,7 @@ private fun Recents(
     val byDay = remember(ui.groups) { ui.groups.groupBy { dayOf(it.latest.date) } }
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         // Room at the bottom so the last call clears the floating button.
         contentPadding = PaddingValues(bottom = 112.dp),
     ) {
@@ -545,3 +581,44 @@ private val Accents = Regex("\\p{M}+")
 
 private fun searchable(text: String): String =
     Normalizer.normalize(text, Normalizer.Form.NFD).replace(Accents, "").lowercase()
+
+/**
+ * Moves to the filter beside this one when the history is dragged sideways.
+ *
+ * Asked for by someone checking their calls one-handed and in a hurry: the pills sit at the top
+ * of the screen, which is the far end of a thumb. The list scrolls up and down as before — a
+ * drag only counts once it has clearly gone sideways and far enough to mean it.
+ *
+ * It does not wrap around. Running off the end of a list of filters tells you nothing about
+ * where you are; stopping at the end does.
+ */
+@Composable
+private fun Modifier.swipeBetween(
+    filters: List<CallFilter>,
+    current: CallFilter,
+    onSelect: (CallFilter) -> Unit,
+): Modifier {
+    val travel = with(LocalDensity.current) { SWIPE_TRAVEL.toPx() }
+    // Right means "the one before" where the language is written right to left.
+    val forward = if (LocalLayoutDirection.current == LayoutDirection.Rtl) 1 else -1
+    return pointerInput(filters, current) {
+        var moved = 0f
+        detectHorizontalDragGestures(
+            onDragStart = { moved = 0f },
+            onDragEnd = {
+                if (abs(moved) >= travel) {
+                    val here = filters.indexOf(current)
+                    val there = here + if (moved < 0) forward else -forward
+                    if (here >= 0 && there in filters.indices) onSelect(filters[there])
+                }
+            },
+            onHorizontalDrag = { change, amount ->
+                moved += amount
+                change.consume()
+            },
+        )
+    }
+}
+
+/** How far sideways a drag must go before it changes the filter. */
+private val SWIPE_TRAVEL = 72.dp

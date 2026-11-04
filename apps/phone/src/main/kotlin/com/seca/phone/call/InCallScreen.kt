@@ -81,13 +81,6 @@ internal val LocalCallLabels = staticCompositionLocalOf { true }
 
 private val InCallKeys = listOf('1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#')
 
-/** The ready-made texts for declining a call with a message. */
-private val QuickReplies = listOf(
-    R.string.quick_reply_call_back,
-    R.string.quick_reply_cant_talk,
-    R.string.quick_reply_meeting,
-    R.string.quick_reply_text_me,
-)
 
 /**
  * The call screen: who is calling and their Seca profile, then the buttons
@@ -594,14 +587,17 @@ private fun KeypadPanel(view: CallView, onClose: () -> Unit) {
 
 @Composable
 private fun QuickReplyDialog(onDismiss: () -> Unit, onSend: (String) -> Unit) {
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(SecaIcons.Messages, contentDescription = null) },
         title = { Text(stringResource(R.string.decline_and_reply)) },
         text = {
             Column {
-                QuickReplies.forEach { id ->
-                    val reply = stringResource(id)
+                // Read each time the dialog opens, so a reply edited in the settings is the one
+                // offered on the next call rather than the one the app started with.
+                val replies = remember(context) { InCallSettings(context).replies }
+                replies.forEach { reply ->
                     Text(
                         text = reply,
                         style = MaterialTheme.typography.bodyLarge,
