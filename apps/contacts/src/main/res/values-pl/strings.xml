@@ -188,8 +188,8 @@
     <string name="wrong_password">Błędne hasło lub uszkodzony plik</string>
     <string name="your_name">Twoje imię i nazwisko</string>
     <string name="black_theme">Czysta czerń</string>
-    <string name="black_theme_hint">W trybie ciemnym tła stają się czarne. Na ekranie OLED te piksele pozostają zgaszone.</string>
-    <string name="contact_not_saved">Ten telefon odmówił zapisania kontaktu. Otwórz własną aplikację Kontakty w telefonie, znajdź w jej ustawieniach, gdzie zapisywane są nowe kontakty, i wybierz tam konto.</string>
-    <string name="contact_not_saved_because">Ten telefon odmówił zapisania kontaktu: %1$s</string>
-    <string name="contacts_imported_some_refused">Dodano: %1$d. Odrzucono przez telefon: %2$d.</string>
+    <string name="black_theme_hint">W trybie ciemnym tło zmienia kolor na czarny. Na ekranie OLED te piksele pozostają wyłączone.</string>
+    <string name="contact_not_saved">Ten telefon odrzucił próbę zapisania kontaktu. Otwórz własną aplikację Kontakty w telefonie, znajdź w jej ustawieniach, gdzie zapisywane są nowe kontakty, i wybierz tam konto.</string>
+    <string name="contact_not_saved_because">Ten telefon odrzucił próbę zapisania kontaktu: %1$s</string>
+    <string name="contacts_imported_some_refused">Dodano: %1$d. Odrzucone przez telefon: %2$d.</string>
 </resources>
