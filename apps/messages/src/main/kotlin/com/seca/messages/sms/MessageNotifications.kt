@@ -18,6 +18,7 @@ import android.provider.ContactsContract.PhoneLookup
 import android.provider.Telephony
 import android.provider.Telephony.Sms
 import android.util.Log
+import com.seca.core.contacts.NumberNote
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.design.notification.NotificationAvatars
 import com.seca.messages.LinkConversations
@@ -53,11 +54,92 @@ internal object MessageNotifications {
     private const val TAG_LINK_STOPPED = "link-stopped"
     private const val LOG_TAG = "SecaNotifications"
 
+    /** A message is identified to the second: the same one notified twice replaces itself. */
+    private const val MILLIS_PER_SECOND = 1000L
+
     fun notifyIncoming(context: Context, address: String, body: String) {
         val threadId = threadOf(context, address)
+        if (isService(context, address)) {
+            showServiceMessage(context, address, threadId, body)
+            return
+        }
         val unread = unreadOf(context, threadId).ifEmpty { listOf(body to System.currentTimeMillis()) }
         showConversation(context, address, threadId, unread, code = OneTimeCode.find(body), encrypted = false)
     }
+
+    /**
+     * Whether messages from [address] come from a service rather than from someone to talk to.
+     *
+     * A conversation has two sides. A bank, a delivery or a one-time code has one, and its
+     * messages have nothing to do with each other: three of them merged into a conversation read
+     * as one wall of text where the newest is the hardest to find, which is exactly what a code
+     * is wanted for. Such a sender is recognised by what it is not — not in the contacts, and not
+     * a number that could be called: a name like "AX-ADHAAR-S", or a short code. A number that
+     * simply cannot be parsed stays a conversation: a stranger is still a person.
+     */
+    private fun isService(context: Context, address: String): Boolean = isServiceSender(
+        address = address,
+        known = contactOf(context, address) != null,
+        note = PhoneNumbers(PhoneNumbers.detectRegion(context)).note(address),
+    )
+
+    /**
+     * One notification for one message from a service, carrying its own time, so the newest is
+     * the one at the top of the shade rather than the last line of a paragraph.
+     */
+    private fun showServiceMessage(context: Context, address: String, threadId: Long, body: String) {
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        ensureChannels(context, manager)
+        if (!manager.areNotificationsEnabled()) return
+
+        val now = System.currentTimeMillis()
+        val name = PhoneNumbers(PhoneNumbers.detectRegion(context)).display(address)
+        val notificationCode = codeOf(threadId, address)
+        val markRead = PendingIntent.getBroadcast(
+            context,
+            notificationCode,
+            actionIntent(context, MessageActionReceiver.MARK_READ, threadId, address),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val notification = Notification.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_message)
+            .setColor(NotificationAvatars.accentOf(context))
+            .setContentTitle(name)
+            .setContentText(body)
+            .setStyle(Notification.BigTextStyle().bigText(body))
+            .setLargeIcon(NotificationAvatars.bitmapFor(context, name, null))
+            .setCategory(Notification.CATEGORY_MESSAGE)
+            .setWhen(now)
+            .setShowWhen(true)
+            .setAutoCancel(true)
+            // Kept together in the shade, and still one notification each: dismissing the code
+            // you have just used leaves the others where they are.
+            .setGroup(serviceTag(threadId))
+            .setContentIntent(openIntent(context, threadId, address, notificationCode))
+            .apply {
+                OneTimeCode.find(body)?.let { oneTimeCode ->
+                    val copy = PendingIntent.getBroadcast(
+                        context,
+                        oneTimeCode.hashCode(),
+                        actionIntent(context, MessageActionReceiver.COPY_CODE, threadId, address).putExtra(EXTRA_CODE, oneTimeCode),
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                    )
+                    addAction(Notification.Action.Builder(null, context.getString(R.string.copy_code_named, oneTimeCode), copy).build())
+                }
+            }
+            .addAction(
+                Notification.Action.Builder(null, context.getString(R.string.mark_read), markRead)
+                    .setSemanticAction(Notification.Action.SEMANTIC_ACTION_MARK_AS_READ)
+                    .build(),
+            )
+            .build()
+        // The time is the identity: two messages from the same service are two notifications,
+        // and the same message notified twice replaces itself rather than piling up.
+        manager.notify(serviceTag(threadId), (address + now / MILLIS_PER_SECOND).hashCode(), notification)
+    }
+
+    /** What marks a service's notifications as belonging to one thread, so they can be taken down together. */
+    private fun serviceTag(threadId: Long): String = "service-$threadId"
 
     /** A Seca Link message arrived, shown in the conversation's notification with its lock. */
     fun notifyLink(context: Context, number: String, body: String) {
@@ -152,7 +234,14 @@ internal object MessageNotifications {
     /** Clears a conversation's notification, once it has been read or answered. */
     fun cancel(context: Context, threadId: Long) {
         if (threadId < 0) return
-        context.getSystemService(NotificationManager::class.java)?.cancel(codeOf(threadId, ""))
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        manager.cancel(codeOf(threadId, ""))
+        // A service's messages are a notification each: reading the conversation has read all of
+        // them, so they all go, rather than leaving yesterday's codes behind.
+        val tag = serviceTag(threadId)
+        runCatching { manager.activeNotifications.filter { it.tag == tag } }
+            .getOrDefault(emptyList())
+            .forEach { manager.cancel(it.tag, it.id) }
     }
 
     /** A scheduled message could not leave, most likely because Seca is no longer the SMS app. */
@@ -349,4 +438,18 @@ internal object MessageNotifications {
             },
         )
     }
+}
+
+/**
+ * Whether messages from [address] come from a service rather than from someone to talk to.
+ *
+ * [known] says whether the sender is in the contacts, [note] what the number looks like. A
+ * sender with a letter in it — "AX-ADHAAR-S", "AMAZON" — is a service, and so is a short code.
+ * Anything else stays a conversation, including a number nobody could parse: a stranger with a
+ * foreign number is still a person, and splitting their messages apart would be the worse error.
+ */
+internal fun isServiceSender(address: String, known: Boolean, note: NumberNote?): Boolean = when {
+    known -> false
+    address.any(Char::isLetter) -> true
+    else -> note == NumberNote.Short
 }
