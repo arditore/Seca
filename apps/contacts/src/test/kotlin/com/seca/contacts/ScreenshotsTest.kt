@@ -22,9 +22,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
+import java.util.Locale
 
 /**
  * Draws the main screens with made-up contacts, to look at them or to
@@ -33,7 +35,7 @@ import java.io.File
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "fr-rFR-w411dp-h914dp-xxhdpi")
+@Config(sdk = [35], qualifiers = "w411dp-h914dp-xxhdpi")
 class ScreenshotsTest {
 
     @get:Rule
@@ -44,6 +46,20 @@ class ScreenshotsTest {
     @Before
     fun onlyWhenAsked() {
         assumeTrue("SECA_SCREENSHOTS names no folder", folder != null)
+        speak(System.getenv("SECA_SCREENSHOTS_LANGUAGE") ?: "en-rUS")
+    }
+
+    /**
+     * Draws in one language rather than in whichever one the machine happens to run.
+     *
+     * The listings carry one set of images per language, and they were all being drawn in the
+     * language of the computer that made them. Both halves are set: the phone's own, which the
+     * screens read their words from, and the one Java formats dates and numbers with.
+     */
+    private fun speak(language: String) {
+        RuntimeEnvironment.setQualifiers("+$language")
+        val parts = language.split("-")
+        Locale.setDefault(Locale.Builder().setLanguage(parts[0]).setRegion(parts.getOrNull(1)?.removePrefix("r") ?: "").build())
     }
 
     @Test
@@ -113,12 +129,28 @@ class ScreenshotsTest {
             contacts = contacts,
             profiles = listOf(
                 ProfileStore.Principal,
-                Profile("famille", "Famille"),
-                Profile("travail", "Travail"),
-                Profile("sport", "Sport"),
+                sampleProfile("famille"),
+                sampleProfile("travail"),
+                sampleProfile("sport"),
             ),
             currentProfileId = ProfileStore.ALL,
             assignments = names.mapIndexed { index, (_, profile) -> "contact-$index" to profile }.toMap(),
         )
     }
 }
+
+/**
+ * A profile named the way someone drawing these screens in this language would have named it.
+ *
+ * These are names a person types, not words the app ships, so they do not come from the
+ * resources — and left as one language they made every listing's images look half translated.
+ */
+internal fun sampleProfile(key: String): Profile = Profile(
+    key,
+    when (Locale.getDefault().language) {
+        "fr" -> mapOf("famille" to "Famille", "travail" to "Travail", "sport" to "Sport")
+        "es" -> mapOf("famille" to "Familia", "travail" to "Trabajo", "sport" to "Deporte")
+        "pl" -> mapOf("famille" to "Rodzina", "travail" to "Praca", "sport" to "Sport")
+        else -> mapOf("famille" to "Family", "travail" to "Work", "sport" to "Sport")
+    }.getValue(key),
+)

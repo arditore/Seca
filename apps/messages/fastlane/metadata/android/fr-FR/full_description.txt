@@ -14,7 +14,7 @@ Seca Messages est la messagerie de la suite Seca : Contacts, Téléphone et Mess
 
 <b>SMS</b>
 <ul>
-<li><b>Les MMS, les messages multimédias de l'opérateur, ne sont pas encore pris en charge.</b> En tant qu'application SMS par défaut, Seca Messages est la seule à qui le téléphone les confie : une photo ou un message de groupe envoyé en MMS n'arrivera donc pas avant une version ultérieure. Les photos envoyées par Seca Link ne sont pas concernées.</li>
+<li><b>MMS : une photo qu'on vous envoie arrive et s'affiche dans la conversation, avec le texte envoyé avec elle. En envoyer n'est pas encore possible</b>, pas plus que les conversations de groupe passant par MMS ; les deux sont en cours. Les photos envoyées par Seca Link ne sont pas concernées.</li>
 <li>Conversations avec la photo et le profil de vos contacts, recherche dans tous les messages.</li>
 <li>Réponse depuis la notification, messages programmés.</li>
 <li>Codes de vérification copiables en un geste et effacés automatiquement après un délai.</li>
