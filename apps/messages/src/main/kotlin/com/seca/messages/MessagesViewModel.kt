@@ -10,6 +10,7 @@ import com.seca.core.contacts.ContactsRepository
 import com.seca.core.contacts.NumberIndex
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.SharedProfiles
+import com.seca.core.contacts.SharedProfilesCache
 import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.design.SecaPalette
 import com.seca.core.link.LinkSettings
@@ -109,7 +110,10 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     private val repository = MessagesRepository(application)
     private val contacts = ContactsRepository(application.contentResolver, numbers)
     private val sharedProfiles = SharedProfilesClient(application.contentResolver)
-    private val _ui = MutableStateFlow(MessagesUi(numbers))
+    // The colours Seca Contacts last gave, so the first frame is already the right one rather
+    // than Material dark for the moment it takes to ask another process.
+    private val colours = SharedProfilesCache(application)
+    private val _ui = MutableStateFlow(MessagesUi(numbers, profiles = colours.remembered()))
     val ui: StateFlow<MessagesUi> = _ui.asStateFlow()
 
     /** Kept here rather than in the composition, so it survives rotation. */
@@ -662,6 +666,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
 
     private suspend fun loadProfiles() {
         val profiles = sharedProfiles.load()
+        colours.remember(profiles)
         _ui.update { it.copy(profiles = profiles) }
     }
 }

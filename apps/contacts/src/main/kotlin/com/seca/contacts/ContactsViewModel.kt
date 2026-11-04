@@ -93,7 +93,9 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     private val store = ProfileStore(application)
     private val myCards = MyCardStore(application)
     private val resolver = application.contentResolver
-    private val _ui = MutableStateFlow(ContactsUi(numbers = numbers))
+    // Read here rather than waited for: these live in this app's own preferences, so the first
+    // frame can already be the right colour instead of flashing Material dark on the way.
+    private val _ui = MutableStateFlow(ContactsUi(numbers = numbers, palette = store.palette(), black = store.black()))
     val ui: StateFlow<ContactsUi> = _ui.asStateFlow()
 
     /** Kept here rather than in the composition, so it survives rotation. */
