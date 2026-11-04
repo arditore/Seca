@@ -24,6 +24,7 @@ import com.seca.core.design.notification.NotificationAvatars
 import com.seca.messages.LinkConversations
 import com.seca.messages.MainActivity
 import com.seca.messages.R
+import com.seca.messages.mms.MmsPdu
 import com.seca.messages.link.LinkMessages
 
 /**
@@ -65,6 +66,21 @@ internal object MessageNotifications {
         }
         val unread = unreadOf(context, threadId).ifEmpty { listOf(body to System.currentTimeMillis()) }
         showConversation(context, address, threadId, unread, code = OneTimeCode.find(body), encrypted = false)
+    }
+
+    /**
+     * What a multimedia message says in one line: its words when it has any, and otherwise what
+     * it carries, since a photo with no caption still has to read as something.
+     */
+    fun previewOf(context: Context, retrieved: MmsPdu.Retrieved): String {
+        retrieved.text.takeIf { it.isNotBlank() }?.let { return it }
+        retrieved.subject?.takeIf { it.isNotBlank() }?.let { return it }
+        val kind = retrieved.parts.firstOrNull { !it.isText }?.contentType.orEmpty()
+        return when {
+            kind.startsWith("image/") -> context.getString(R.string.preview_photo)
+            kind.startsWith("audio/") -> context.getString(R.string.preview_voice)
+            else -> context.getString(R.string.preview_photo)
+        }
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.seca.messages
 
 import android.Manifest
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
@@ -111,6 +112,7 @@ import androidx.compose.ui.platform.LocalResources
 import com.seca.core.contacts.describe
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.core.net.toUri
 
 /** Two messages closer than this, from the same side, read as one block. */
 private const val JOIN_MILLIS = 2 * 60 * 1000L
@@ -124,6 +126,9 @@ private const val TYPING_SHOWN_MILLIS = 6_000L
 /** A photo in a bubble is decoded no larger than this; the viewer takes a larger one. */
 private const val PREVIEW_EDGE_PX = 900
 private const val VIEWER_EDGE_PX = 2400
+
+/** What a content address begins with, as a picture message's photo is named. */
+private const val CONTENT_SCHEME = "content:"
 
 private const val TICK_MILLIS = 200L
 
@@ -465,7 +470,8 @@ private fun joined(first: Message, second: Message): Boolean =
 @Composable
 private fun previewOf(message: Message): String = when {
     message.audio != null -> stringResource(R.string.preview_voice)
-    message.image != null -> stringResource(R.string.preview_photo)
+    // A photo with words quotes the words; a photo on its own says that it is one.
+    message.image != null -> message.body.ifBlank { stringResource(R.string.preview_photo) }
     else -> message.body.ifEmpty { stringResource(R.string.preview_photo) }
 }
 
@@ -725,7 +731,7 @@ private fun Bubble(
                 onLongClick = { menuOpen = true },
             )
             when {
-                image != null -> PhotoBubble(image, shape, container, modifier = touch)
+                image != null -> PhotoBubble(image, shape, container, content, message.body, modifier = touch)
                 audio != null -> VoiceBubble(audio, shape, container, content, modifier = touch)
                 else -> Column(
                     Modifier
@@ -883,24 +889,43 @@ private fun QuoteBox(quoted: Message?, contactName: String, content: Color) {
 
 /** A photo in the conversation, at its own proportions within the bubble's width. */
 @Composable
-private fun PhotoBubble(path: String, shape: RoundedCornerShape, container: Color, modifier: Modifier = Modifier) {
+private fun PhotoBubble(
+    path: String,
+    shape: RoundedCornerShape,
+    container: Color,
+    content: Color,
+    caption: String,
+    modifier: Modifier = Modifier,
+) {
     val photo = rememberPhoto(path, PREVIEW_EDGE_PX)
     val frame = Modifier
         .widthIn(max = 260.dp)
         .clip(shape)
         .background(container)
         .then(modifier)
-    if (photo == null) {
-        Box(frame.size(width = 220.dp, height = 160.dp))
-    } else {
-        Image(
-            bitmap = photo,
-            contentDescription = stringResource(R.string.photo),
-            contentScale = ContentScale.Crop,
-            modifier = frame
-                .heightIn(max = 360.dp)
-                .aspectRatio(photo.width.toFloat() / photo.height, matchHeightConstraintsFirst = photo.height > photo.width),
-        )
+    // A picture message usually carries words with the photo, and they belong to it: one bubble,
+    // the photo above and what was written below, rather than the words thrown away.
+    Column(frame) {
+        if (photo == null) {
+            Box(Modifier.size(width = 220.dp, height = 160.dp))
+        } else {
+            Image(
+                bitmap = photo,
+                contentDescription = stringResource(R.string.photo),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .heightIn(max = 360.dp)
+                    .aspectRatio(photo.width.toFloat() / photo.height, matchHeightConstraintsFirst = photo.height > photo.width),
+            )
+        }
+        if (caption.isNotBlank()) {
+            Text(
+                text = caption,
+                style = MaterialTheme.typography.bodyLarge,
+                color = content,
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            )
+        }
     }
 }
 
@@ -1096,10 +1121,11 @@ private fun PhotoViewer(path: String, onDismiss: () -> Unit) {
 /** The photo at [path], decoded off the main thread no larger than [maxEdge] pixels; null until it is ready. */
 @Composable
 private fun rememberPhoto(path: String, maxEdge: Int): ImageBitmap? {
+    val resolver = LocalContext.current.contentResolver
     val photo by produceState<ImageBitmap?>(initialValue = null, path, maxEdge) {
         value = withContext(Dispatchers.IO) {
             runCatching {
-                ImageDecoder.decodeBitmap(ImageDecoder.createSource(File(path))) { decoder, info, _ ->
+                ImageDecoder.decodeBitmap(photoSource(resolver, path)) { decoder, info, _ ->
                     val scale = min(1f, maxEdge.toFloat() / max(info.size.width, info.size.height))
                     if (scale < 1f) decoder.setTargetSize((info.size.width * scale).roundToInt(), (info.size.height * scale).roundToInt())
                 }.asImageBitmap()
@@ -1109,18 +1135,35 @@ private fun rememberPhoto(path: String, maxEdge: Int): ImageBitmap? {
     return photo
 }
 
-/** Copies a Seca Link photo into the phone's gallery, under Pictures/Seca, only when the owner asks. */
+/**
+ * Where a photo is to be read from.
+ *
+ * A Seca Link photo is a file this app wrote itself; a picture message's photo stays in the
+ * phone's own store, where every messaging app can see it, and is named by a content address.
+ * Both are shown the same way, so this is the one place that tells them apart.
+ */
+private fun photoSource(resolver: ContentResolver, path: String): ImageDecoder.Source =
+    if (path.startsWith(CONTENT_SCHEME)) ImageDecoder.createSource(resolver, path.toUri())
+    else ImageDecoder.createSource(File(path))
+
+/** Copies a photo into the phone's gallery, under Pictures/Seca, only when the owner asks. */
 private suspend fun saveToGallery(context: Context, path: String): Boolean = withContext(Dispatchers.IO) {
     runCatching {
         val resolver = context.contentResolver
+        val stored = path.startsWith(CONTENT_SCHEME)
+        // A picture message brings its own kind with it; a Seca Link photo is always a WebP.
+        val type = (if (stored) resolver.getType(path.toUri()) else null) ?: "image/webp"
         val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, "Seca-${System.currentTimeMillis()}.webp")
-            put(MediaStore.Images.Media.MIME_TYPE, "image/webp")
+            put(MediaStore.Images.Media.DISPLAY_NAME, "Seca-${System.currentTimeMillis()}.${type.substringAfterLast('/')}")
+            put(MediaStore.Images.Media.MIME_TYPE, type)
             put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Seca")
             put(MediaStore.Images.Media.IS_PENDING, 1)
         }
         val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return@runCatching false
-        resolver.openOutputStream(uri)?.use { out -> File(path).inputStream().use { it.copyTo(out) } }
+        resolver.openOutputStream(uri)?.use { out ->
+            val source = if (stored) resolver.openInputStream(path.toUri()) else File(path).inputStream()
+            source?.use { it.copyTo(out) }
+        }
         resolver.update(uri, ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }, null, null)
         true
     }.getOrDefault(false)

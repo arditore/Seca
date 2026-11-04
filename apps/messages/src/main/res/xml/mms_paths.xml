@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Where the telephony service writes a multimedia message it has fetched, and nowhere
+         else: one folder of this app's cache, emptied as each message is read. -->
+    <cache-path
+        name="mms"
+        path="mms/" />
+</paths>

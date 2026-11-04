@@ -119,10 +119,28 @@
             </intent-filter>
         </receiver>
 
+        <!-- The answer from the carrier, once a multimedia message has been fetched.
+             From this app only: the broadcast names this class. -->
+        <receiver
+            android:name=".mms.MmsDownloadReceiver"
+            android:exported="false" />
+
         <!-- Sent status, quick reply and mark as read, from this app only. -->
         <receiver
             android:name=".sms.MessageActionReceiver"
             android:exported="false" />
+
+        <!-- Where the telephony service puts a multimedia message it has fetched for us.
+             Nothing is exported: the URI is granted to the telephony service for one file. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.mms"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/mms_paths" />
+        </provider>
 
         <!-- The conversation avatars, which Android reads to draw a conversation notification.
              Nothing is exported: Android grants the URI to whoever it hands the notification to. -->

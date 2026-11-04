@@ -8,3 +8,5 @@ captures/
 *.apk
 *.aab
 .superpowers/
+.vscode/
+build-logic/bin/

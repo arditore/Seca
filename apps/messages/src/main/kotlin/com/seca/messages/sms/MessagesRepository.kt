@@ -7,7 +7,10 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.provider.Telephony
+import android.provider.Telephony.Mms
 import android.provider.Telephony.Sms
+import com.seca.messages.R
+import com.seca.messages.mms.MmsReader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -108,12 +111,34 @@ class MessagesRepository(private val context: Context) {
                 }
             }
         }
-        latest.values.map { it.copy(unread = unread[it.threadId] ?: 0) }
+        // Picture messages are kept in their own table, and a conversation's newest message may
+        // well be one of them: without this, the list would show a text from last week under a
+        // photo that arrived this morning, or no conversation at all where only photos were sent.
+        val pictures = MmsReader.latestPerThread(resolver)
+        val picturesUnread = MmsReader.unreadPerThread(resolver)
+        pictures.forEach { (thread, message) ->
+            val text = latest[thread]
+            if (text == null || message.date > text.date) {
+                latest[thread] = Conversation(
+                    threadId = thread,
+                    address = message.address.ifEmpty { text?.address.orEmpty() },
+                    snippet = message.body.ifBlank { context.getString(R.string.photo) },
+                    date = message.date,
+                    unread = 0,
+                    outgoing = message.outgoing,
+                )
+            }
+        }
+        latest.values
+            .map { it.copy(unread = (unread[it.threadId] ?: 0) + (picturesUnread[it.threadId] ?: 0)) }
+            .sortedByDescending(Conversation::date)
     }
 
     /** The messages of one conversation, oldest first, as a chat reads. */
     suspend fun messages(threadId: Long): List<Message> = withContext(Dispatchers.IO) {
-        readMessages("${Sms.THREAD_ID} = ?", arrayOf(threadId.toString()), "${Sms.DATE} ASC")
+        val texts = readMessages("${Sms.THREAD_ID} = ?", arrayOf(threadId.toString()), "${Sms.DATE} ASC")
+        val pictures = MmsReader.messages(resolver, threadId)
+        if (pictures.isEmpty()) texts else (texts + pictures).sortedBy(Message::date)
     }
 
     /** Messages containing [text], newest first, across every conversation. */
@@ -226,18 +251,29 @@ class MessagesRepository(private val context: Context) {
             runCatching {
                 resolver.update(Sms.CONTENT_URI, values, "${Sms.THREAD_ID} = ? AND ${Sms.READ} = 0", arrayOf(threadId.toString()))
             }
+            // The same for the picture messages, or the conversation would keep claiming unread
+            // ones the owner has just been looking at.
+            runCatching {
+                resolver.update(Mms.CONTENT_URI, values, "${Mms.THREAD_ID} = ? AND ${Mms.READ} = 0", arrayOf(threadId.toString()))
+            }
         }
     }
 
     suspend fun deleteMessage(id: Long) {
         withContext(Dispatchers.IO) {
-            runCatching { resolver.delete(Uri.withAppendedPath(Sms.CONTENT_URI, id.toString()), null, null) }
+            val uri =
+                if (MmsReader.isMms(id)) MmsReader.uriOf(id)
+                else Uri.withAppendedPath(Sms.CONTENT_URI, id.toString())
+            runCatching { resolver.delete(uri, null, null) }
         }
     }
 
     suspend fun deleteConversation(threadId: Long) {
         withContext(Dispatchers.IO) {
             runCatching { resolver.delete(Sms.CONTENT_URI, "${Sms.THREAD_ID} = ?", arrayOf(threadId.toString())) }
+            // Deleting a conversation means all of it: the picture messages go as well, or they
+            // would come back on their own the moment the list was read again.
+            runCatching { resolver.delete(Mms.CONTENT_URI, "${Mms.THREAD_ID} = ?", arrayOf(threadId.toString())) }
         }
     }
 
