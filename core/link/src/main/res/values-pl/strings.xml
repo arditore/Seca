@@ -5,10 +5,10 @@
     <string name="link_incomplete_invitation">Niepełne zaproszenie</string>
     <string name="link_invalid_keys">Nieprawidłowe klucze: %1$s</string>
     <string name="link_invite_intro">Seca Link: zapraszam cię do szyfrowanej rozmowy w Seca Messages.</string>
-    <string name="link_keys_not_found">Nie znaleziono kluczy na przekaźnikach</string>
+    <string name="link_keys_not_found">Nie znaleziono kluczy na bramkach</string>
     <string name="link_no_key_received">Nie otrzymano klucza od tego kontaktu</string>
     <string name="link_no_network">Brak dostępu do sieci</string>
-    <string name="link_no_relay_accepted">Żaden przekaźnik nie przyjął wiadomości</string>
+    <string name="link_no_relay_accepted">Żadna bramka nie przyjęła wiadomości</string>
     <string name="link_not_kept">Przyjął klucze, ale ich nie przechowuje</string>
     <string name="link_unknown_contact">Nieznany kontakt</string>
     <string name="link_untrusted_key">Klucz niezatwierdzony: %1$s</string>
