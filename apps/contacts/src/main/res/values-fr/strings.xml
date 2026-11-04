@@ -53,7 +53,7 @@
         <item quantity="other">%d contacts ajoutés</item>
     </plurals>
     <string name="contacts_already_here">Ces contacts sont déjà sur ce téléphone</string>
-    <string name="contact_not_saved">Ce téléphone a refusé d\'enregistrer le contact. Son répertoire est peut-être géré par un compte où cette application ne peut pas écrire.</string>
+    <string name="contact_not_saved">Ce téléphone a refusé d\'enregistrer le contact. Ouvrez son application Contacts, cherchez dans ses paramètres où sont enregistrés les nouveaux contacts, et choisissez-y un compte.</string>
     <string name="contact_not_saved_because">Ce téléphone a refusé d\'enregistrer le contact : %1$s</string>
     <string name="contacts_imported_some_refused">Ajoutés : %1$d. Refusés par le téléphone : %2$d.</string>
     <plurals name="contacts_count">

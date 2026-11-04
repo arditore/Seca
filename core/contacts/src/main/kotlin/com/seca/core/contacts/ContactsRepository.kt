@@ -6,9 +6,11 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.database.ContentObserver
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
+import androidx.annotation.RequiresApi
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Note
@@ -208,21 +210,27 @@ class ContactsRepository(
     }
 
     /**
-     * Creates a contact stored on this device only. Returns its contact id.
+     * Creates a contact and returns its contact id.
      *
-     * The contact belongs to no account, which is what keeps it on the phone. Not every phone's
-     * contacts provider accepts that the same way: some want the account columns set to nothing,
-     * others want them left out of the insert entirely. Both are tried before giving up, and
-     * giving up throws [ContactWriteException] rather than returning quietly, so the screen can
+     * Where it is kept is the owner's choice, not this app's. From Android 16 the phone's own
+     * settings name where new contacts go — a cloud account that syncs, the device itself, or the
+     * SIM — and an app is asked to respect it: writing on the device while that choice names a
+     * cloud account is what Android warns against, and at least one phone refuses it outright.
+     * So [placesForNewContact] asks the phone first, and the older ways of saying "device only"
+     * are only tried after that. Seca still sends nothing anywhere: it has no Internet permission
+     * at all, and a contact that syncs does so through the account's own sync, as it would from
+     * the phone's own contacts app.
+     *
+     * Giving up throws [ContactWriteException] rather than returning quietly, so the screen can
      * say what the provider refused instead of looking as though nothing was pressed.
      */
     suspend fun createContact(input: ContactInput): Long? = withContext(Dispatchers.IO) {
         var refusal: Exception? = null
-        for (nameTheAccount in listOf(true, false)) {
+        for (place in placesForNewContact()) {
             val ops = arrayListOf<ContentProviderOperation>()
             val raw = ContentProviderOperation.newInsert(RawContacts.CONTENT_URI)
-            if (nameTheAccount) {
-                raw.withValue(RawContacts.ACCOUNT_TYPE, null).withValue(RawContacts.ACCOUNT_NAME, null)
+            if (place != null) {
+                raw.withValue(RawContacts.ACCOUNT_TYPE, place.type).withValue(RawContacts.ACCOUNT_NAME, place.name)
             }
             ops += raw.build()
             if (displayNameOf(input).isNotEmpty()) {
@@ -246,7 +254,39 @@ class ContactsRepository(
             }
             if (rawContactId != null) return@withContext contactIdOf(rawContactId)
         }
-        throw ContactWriteException(refusal?.message ?: refusal?.javaClass?.simpleName ?: "")
+        throw ContactWriteException(describe(refusal))
+    }
+
+    private fun placesForNewContact(): List<Place?> =
+        placesToTry(if (Build.VERSION.SDK_INT >= ANDROID_16) syncedAccountChosen() else null)
+
+    /**
+     * The cloud or SIM account the phone names for new contacts, or null when it names neither.
+     *
+     * Only those two need naming: a contact meant for the device is written by saying nothing,
+     * which the provider reads as "wherever the owner's choice points".
+     */
+    @RequiresApi(ANDROID_16)
+    private fun syncedAccountChosen(): Place? = runCatching {
+        val setting = RawContacts.DefaultAccount.getDefaultAccountForNewContacts(resolver)
+        when (setting.state) {
+            RawContacts.DefaultAccount.DefaultAccountAndState.DEFAULT_ACCOUNT_STATE_CLOUD,
+            RawContacts.DefaultAccount.DefaultAccountAndState.DEFAULT_ACCOUNT_STATE_SIM,
+            -> setting.account?.let { Place(it.type, it.name) }
+            else -> null
+        }
+    }.getOrNull()
+
+    /** What went wrong, named so that a truncated copy still says which failure it was. */
+    private fun describe(refusal: Exception?): String = when {
+        refusal == null -> ""
+        refusal.message.isNullOrBlank() -> refusal.javaClass.simpleName
+        else -> "${refusal.javaClass.simpleName}: ${refusal.message}"
+    }
+
+    private companion object {
+        /** Android 16, the version that gave the owner a say in where new contacts are kept. */
+        const val ANDROID_16 = 36
     }
 
     suspend fun updateContact(detail: ContactDetail, input: ContactInput) {
@@ -698,3 +738,26 @@ internal fun groupContacts(contacts: List<ContactRow>, phones: List<PhoneRow>): 
  * rather than translated into a guess.
  */
 class ContactWriteException(message: String) : Exception(message)
+
+/** One place a contact can be kept: an account, by type and name. */
+internal class Place(val type: String?, val name: String?)
+
+/**
+ * The places a new contact is offered to, in order, until one is accepted.
+ *
+ * 1. [chosen], the account the phone names for new contacts when that is a cloud or SIM account.
+ *    From Android 16 the owner picks this in the phone's settings, and an app that ignores it
+ *    writes a contact where the owner did not ask for it — or is refused outright, which is what
+ *    a Pixel on Android 17 does when its choice names a cloud account.
+ * 2. No account columns at all. Android saves such a contact wherever the owner's choice points,
+ *    so this covers "on this phone" without naming it, and it is the only form phones before
+ *    Android 16 were ever asked to understand.
+ * 3. The columns set to nothing. How a device-only contact was written before that choice
+ *    existed, kept because some providers still want exactly that.
+ *
+ * Nothing further is tried: guessing an account from where the other contacts live would put a
+ * contact in a syncing account the owner did not choose, and a refusal said out loud is better
+ * than that.
+ */
+internal fun placesToTry(chosen: Place?): List<Place?> =
+    listOfNotNull(chosen) + listOf(null, Place(null, null))

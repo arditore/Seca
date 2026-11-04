@@ -53,7 +53,7 @@
         <item quantity="other">%d contactos añadidos</item>
     </plurals>
     <string name="contacts_already_here">Estos contactos ya están en este teléfono</string>
-    <string name="contact_not_saved">Este teléfono se negó a guardar el contacto. Puede que su agenda la gestione una cuenta en la que esta aplicación no puede escribir.</string>
+    <string name="contact_not_saved">Este teléfono se negó a guardar el contacto. Abre la aplicación Contactos del teléfono, busca en sus ajustes dónde se guardan los contactos nuevos, y elige una cuenta allí.</string>
     <string name="contact_not_saved_because">Este teléfono se negó a guardar el contacto: %1$s</string>
     <string name="contacts_imported_some_refused">Añadidos: %1$d. Rechazados por el teléfono: %2$d.</string>
     <plurals name="contacts_count">
