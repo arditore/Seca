@@ -17,6 +17,7 @@ data class VCardContact(
     val jobTitle: String = "",
     val website: String = "",
     val birthday: String = "",
+    val anniversary: String = "",
     val note: String = "",
     /** The Seca Contacts profile the contact is filed in, by name; empty for Principal. */
     val profile: String = "",
@@ -28,6 +29,18 @@ data class VCardContact(
  *
  * Writes version 3.0. Reads 2.1, 3.0 and 4.0, including the quoted-printable
  * names older phones export for accented letters.
+ *
+ * A field the owner named themselves is written the way Apple's and Google's cards write it:
+ * the property is put in a group, and a second line in the same group carries the name.
+ *
+ * ```
+ * item1.TEL;TYPE=VOICE:+33123456789
+ * item1.X-ABLabel:Holiday house
+ * ```
+ *
+ * Reading is more forgiving than writing, since other apps settled this differently: a group's
+ * label is used when there is one, and otherwise a type nobody recognises is taken to be the
+ * name itself, which is what Android's own exporter produces.
  */
 object VCard {
 
@@ -39,14 +52,34 @@ object VCard {
             line("VERSION:3.0")
             line("N:${escape(contact.familyName)};${escape(contact.givenName)};;;")
             line("FN:${escape(contact.displayName.ifBlank { nameOf(contact.givenName, contact.familyName) })}")
-            contact.phones.forEach { line("TEL;TYPE=${phoneTypeName(it.type)}:${escape(it.value)}") }
-            contact.emails.forEach { line("EMAIL;TYPE=${emailTypeName(it.type)}:${escape(it.value)}") }
+            // Groups are numbered across the whole card: a label belongs to one property only.
+            var group = 0
+            fun labelled(field: ContactField, body: () -> String) {
+                val name = field.customLabel
+                if (name == null) {
+                    line(body())
+                } else {
+                    val prefix = "item${++group}."
+                    line(prefix + body())
+                    line("${prefix}X-ABLabel:${escape(name)}")
+                }
+            }
+            contact.phones.forEach { field ->
+                labelled(field) { "TEL;TYPE=${phoneTypeName(field.type)}:${escape(field.value)}" }
+            }
+            contact.emails.forEach { field ->
+                labelled(field) { "EMAIL;TYPE=${emailTypeName(field.type)}:${escape(field.value)}" }
+            }
             // An address is written whole, in the street field: Seca keeps it as one line.
-            contact.addresses.forEach { line("ADR;TYPE=${addressTypeName(it.type)}:;;${escape(it.value)};;;;") }
+            contact.addresses.forEach { field ->
+                labelled(field) { "ADR;TYPE=${addressTypeName(field.type)}:;;${escape(field.value)};;;;" }
+            }
             if (contact.organization.isNotBlank()) line("ORG:${escape(contact.organization)}")
             if (contact.jobTitle.isNotBlank()) line("TITLE:${escape(contact.jobTitle)}")
             if (contact.website.isNotBlank()) line("URL:${escape(contact.website)}")
             if (contact.birthday.isNotBlank()) line("BDAY:${escape(contact.birthday)}")
+            // X-ANNIVERSARY is what Android writes and reads; version 3.0 has no property for it.
+            if (contact.anniversary.isNotBlank()) line("X-ANNIVERSARY:${escape(contact.anniversary)}")
             if (contact.note.isNotBlank()) line("NOTE:${escape(contact.note)}")
             if (contact.profile.isNotBlank()) {
                 // Other apps file the contact in a group from its categories. Seca reads back only its
@@ -64,12 +97,16 @@ object VCard {
         for (line in unfold(text)) {
             val colon = line.indexOf(':').takeIf { it > 0 } ?: continue
             val parts = line.substring(0, colon).split(';')
-            // "item1.TEL" is a grouped property: the group does not matter here.
+            // "item1.TEL" is a grouped property: the group is how a label finds its field.
+            val group = parts.first().substringBefore('.', "").takeIf { it.isNotEmpty() }
             val name = parts.first().substringAfter('.').uppercase()
             val params = parts.drop(1).map { it.uppercase() }
-            val types = params.flatMap { param ->
-                if (param.startsWith("TYPE=")) param.removePrefix("TYPE=").split(',') else listOf(param)
-            }.map { it.trim('"') }.toSet()
+            // Kept as written as well as upper-cased: a type nobody recognises may be a name the
+            // owner typed, and "Holiday house" must not come back shouting.
+            val written = parts.drop(1).flatMap { param ->
+                if (param.uppercase().startsWith("TYPE=")) param.drop("TYPE=".length).split(',') else listOf(param)
+            }.map { it.trim('"') }
+            val types = written.map { it.uppercase() }.toSet()
             val raw = line.substring(colon + 1)
             val value = if ("ENCODING=QUOTED-PRINTABLE" in params || "QUOTED-PRINTABLE" in params) decodeQuotedPrintable(raw) else raw
             when (name) {
@@ -84,12 +121,12 @@ object VCard {
                     it.given = fields.getOrElse(1) { "" }
                 }
                 "FN" -> card?.display = unescape(value)
-                "TEL" -> card?.phones?.add(ContactField(null, unescape(value).removePrefix("tel:").trim(), phoneTypeOf(types)))
-                "EMAIL" -> card?.emails?.add(ContactField(null, unescape(value).trim(), emailTypeOf(types)))
+                "TEL" -> card?.addPhone(group, unescape(value).removePrefix("tel:").trim(), types, written)
+                "EMAIL" -> card?.addEmail(group, unescape(value).trim(), types, written)
                 // The parts of an address, minus the post-office box, joined back into one line.
                 "ADR" -> splitUnescaped(value).drop(2).filter { it.isNotBlank() }.joinToString(", ")
                     .takeIf { it.isNotBlank() }
-                    ?.let { card?.addresses?.add(ContactField(null, it, addressTypeOf(types))) }
+                    ?.let { card?.addAddress(group, it, types, written) }
                 "ORG" -> card?.let { current ->
                     val parts = splitUnescaped(value)
                     current.organization = parts.firstOrNull().orEmpty()
@@ -98,7 +135,9 @@ object VCard {
                 "TITLE" -> card?.jobTitle = unescape(value)
                 "URL" -> card?.website = unescape(value)
                 "BDAY" -> card?.birthday = unescape(value).trim()
+                "ANNIVERSARY", "X-ANNIVERSARY" -> card?.anniversary = unescape(value).trim()
                 "NOTE" -> card?.note = unescape(value)
+                "X-ABLABEL" -> if (group != null) card?.name(group, unescape(value).trim())
                 "X-SECA-PROFILE" -> card?.profile = unescape(value)
             }
         }
@@ -113,11 +152,48 @@ object VCard {
         var jobTitle = ""
         var website = ""
         var birthday = ""
+        var anniversary = ""
         var note = ""
         var profile = ""
         val phones = mutableListOf<ContactField>()
         val emails = mutableListOf<ContactField>()
         val addresses = mutableListOf<ContactField>()
+
+        /** Which list each group's field went into, so its label can be put back on it later. */
+        private val grouped = mutableMapOf<String, Pair<MutableList<ContactField>, Int>>()
+
+        /**
+         * Adds a field, remembering its group, and taking an unrecognised type as its name.
+         *
+         * Android exports a custom label as the type itself, with or without an X- in front,
+         * so a card from the phone's own contacts app keeps its "ABC" even though no
+         * X-ABLabel line follows it.
+         */
+        fun addPhone(group: String?, value: String, types: Set<String>, written: List<String>) =
+            add(phones, group, value, phoneTypeOf(types), written)
+
+        fun addEmail(group: String?, value: String, types: Set<String>, written: List<String>) =
+            add(emails, group, value, emailTypeOf(types), written)
+
+        fun addAddress(group: String?, value: String, types: Set<String>, written: List<String>) =
+            add(addresses, group, value, addressTypeOf(types), written)
+
+        private fun add(into: MutableList<ContactField>, group: String?, value: String, type: Int, written: List<String>) {
+            val named = written.firstOrNull { it.length > 2 && it.startsWith("X-", ignoreCase = true) }?.drop(2)
+            into += if (named == null) {
+                ContactField(null, value, type)
+            } else {
+                ContactField(null, value, CUSTOM_TYPE, named)
+            }
+            if (group != null) grouped[group] = into to into.lastIndex
+        }
+
+        /** Gives the field written in [group] the name that followed it. */
+        fun name(group: String, label: String) {
+            if (label.isEmpty()) return
+            val (into, index) = grouped[group] ?: return
+            into[index] = into[index].copy(type = CUSTOM_TYPE, label = label)
+        }
 
         fun build(): VCardContact? {
             val shown = display.ifBlank { nameOf(given, family) }
@@ -133,6 +209,7 @@ object VCard {
                 jobTitle = jobTitle,
                 website = website,
                 birthday = birthday,
+                anniversary = anniversary,
                 note = note,
                 profile = profile,
             )

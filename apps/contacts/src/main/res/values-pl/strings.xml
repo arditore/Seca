@@ -9,6 +9,7 @@
     <string name="address">Adres</string>
     <string name="all">Wszystkie</string>
     <string name="allow_access">Zezwól na dostęp</string>
+    <string name="anniversary">Rocznica</string>
     <string name="app_name">Kontakty</string>
     <string name="backup">Kopia zapasowa</string>
     <plurals name="backup_contacts_filed">
@@ -100,6 +101,7 @@
     <string name="import_contacts">Importuj kontakty</string>
     <string name="import_contacts_hint">Z pliku .vcf; kontakty, które już tu są, zostaną pominięte</string>
     <string name="job_title">Stanowisko</string>
+    <string name="label_name">Etykieta</string>
     <string name="merge">Scal</string>
     <plurals name="merge_cards">
         <item quantity="one">Scal %d wizytówkę</item>

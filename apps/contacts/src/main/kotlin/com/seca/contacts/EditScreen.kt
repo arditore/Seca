@@ -51,6 +51,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.ContactDetail
+import com.seca.core.contacts.CUSTOM_TYPE
 import com.seca.core.contacts.ContactField
 import com.seca.core.contacts.ContactInput
 import com.seca.core.design.SecaIcons
@@ -64,8 +65,10 @@ import androidx.compose.ui.res.stringResource
 import com.seca.core.contacts.describe
 
 /** The kinds offered in the editor; any other kind a contact already has is kept and shown. */
-private val PhoneTypes = listOf(Phone.TYPE_MOBILE, Phone.TYPE_HOME, Phone.TYPE_WORK, Phone.TYPE_MAIN, Phone.TYPE_OTHER)
-private val EmailTypes = listOf(Email.TYPE_HOME, Email.TYPE_WORK, Email.TYPE_MOBILE, Email.TYPE_OTHER)
+// Custom comes last in each list: it is the one that asks a question back.
+private val PhoneTypes =
+    listOf(Phone.TYPE_MOBILE, Phone.TYPE_HOME, Phone.TYPE_WORK, Phone.TYPE_MAIN, Phone.TYPE_OTHER, CUSTOM_TYPE)
+private val EmailTypes = listOf(Email.TYPE_HOME, Email.TYPE_WORK, Email.TYPE_MOBILE, Email.TYPE_OTHER, CUSTOM_TYPE)
 private val AddressTypes = listOf(StructuredPostal.TYPE_HOME, StructuredPostal.TYPE_WORK, StructuredPostal.TYPE_OTHER)
 
 @Composable
@@ -87,6 +90,7 @@ internal fun EditScreen(
     var jobTitle by remember(id) { mutableStateOf("") }
     var website by remember(id) { mutableStateOf("") }
     var birthday by remember(id) { mutableStateOf("") }
+    var anniversary by remember(id) { mutableStateOf("") }
     var note by remember(id) { mutableStateOf("") }
     val resources = LocalResources.current
     // "All" is a way of looking at the list, not a profile: a new contact starts in Principal.
@@ -109,6 +113,7 @@ internal fun EditScreen(
                 jobTitle = loaded.jobTitle
                 website = loaded.website?.value.orEmpty()
                 birthday = loaded.birthday?.value.orEmpty()
+                anniversary = loaded.anniversary?.value.orEmpty()
                 note = loaded.note?.value.orEmpty()
                 profileId = ui.profileForKey(loaded.lookupKey).id
             }
@@ -143,6 +148,7 @@ internal fun EditScreen(
                             jobTitle = jobTitle,
                             website = website,
                             birthday = birthday,
+                            anniversary = anniversary,
                             note = note,
                         )
                         withWrite { viewModel.save(existing, input, profileId) }
@@ -234,7 +240,11 @@ internal fun EditScreen(
                 }
 
                 FormSection(SecaIcons.Cake) {
-                    BirthdayField(birthday) { birthday = it }
+                    DateField(birthday, stringResource(R.string.birthday)) { birthday = it }
+                }
+
+                FormSection(SecaIcons.Event) {
+                    DateField(anniversary, stringResource(R.string.anniversary)) { anniversary = it }
                 }
 
                 FormSection(SecaIcons.Subject) {
@@ -331,6 +341,8 @@ private fun FieldList(
             type = field.type,
             types = types,
             typeLabel = typeLabel,
+            customLabel = field.label.orEmpty(),
+            onCustomLabelChange = { fields[index] = field.copy(label = it) },
             onTypeChange = { fields[index] = field.copy(type = it) },
             supporting = describe?.invoke(field.value),
             // A lone empty field has nothing to remove.
@@ -350,6 +362,8 @@ private fun FieldEditor(
     type: Int,
     types: List<Int>,
     typeLabel: (Int) -> String,
+    customLabel: String,
+    onCustomLabelChange: (String) -> Unit,
     onTypeChange: (Int) -> Unit,
     removable: Boolean,
     supporting: String?,
@@ -377,7 +391,26 @@ private fun FieldEditor(
                 Spacer(Modifier.size(48.dp))
             }
         }
-        TypeSelector(type, types, typeLabel, onTypeChange)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TypeSelector(type, types, typeLabel, onTypeChange)
+            // Only a field the owner is naming themselves asks for a word.
+            if (type == CUSTOM_TYPE) {
+                OutlinedTextField(
+                    value = customLabel,
+                    onValueChange = onCustomLabelChange,
+                    label = { Text(stringResource(R.string.label_name)) },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        imeAction = ImeAction.Next,
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 8.dp, end = 48.dp),
+                )
+            }
+        }
     }
 }
 
@@ -406,16 +439,16 @@ private fun PlainField(
     )
 }
 
-/** The birthday, chosen in the system's date picker and kept as the provider writes it. */
+/** A date, chosen in the system's picker and kept as the provider writes it. */
 @Composable
-private fun BirthdayField(value: String, onChange: (String) -> Unit) {
+private fun DateField(value: String, label: String, onChange: (String) -> Unit) {
     val context = LocalContext.current
     Box {
         OutlinedTextField(
             value = if (value.isBlank()) "" else formatBirthday(value),
             onValueChange = {},
             readOnly = true,
-            label = { Text(stringResource(R.string.birthday)) },
+            label = { Text(label) },
             shape = MaterialTheme.shapes.medium,
             trailingIcon = {
                 if (value.isNotBlank()) {

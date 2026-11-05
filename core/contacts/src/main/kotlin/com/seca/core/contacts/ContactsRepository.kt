@@ -30,8 +30,26 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.withContext
 
-/** One phone number or e-mail address of a contact; [id] is null until it is saved. */
-data class ContactField(val id: Long?, val value: String, val type: Int)
+/**
+ * One phone number, e-mail address or postal address of a contact; [id] is null until saved.
+ *
+ * [label] is the name the owner gave this one when [type] is [CUSTOM_TYPE] - "ABC", "Holiday
+ * house". The provider keeps it beside the type, and it is the whole of what a custom type
+ * means: without it such a field comes back as a plain one, which is what it used to do here.
+ */
+data class ContactField(val id: Long?, val value: String, val type: Int, val label: String? = null) {
+
+    /** What to show for this field's kind, when it is the owner's own word rather than a type. */
+    val customLabel: String? get() = label?.takeIf { type == CUSTOM_TYPE && it.isNotBlank() }
+}
+
+/**
+ * The type that means "the owner named this one themselves".
+ *
+ * Android spells it once per kind - `Phone.TYPE_CUSTOM`, `Email.TYPE_CUSTOM`,
+ * `StructuredPostal.TYPE_CUSTOM` - and all three are zero, so one name serves for all three.
+ */
+const val CUSTOM_TYPE: Int = Phone.TYPE_CUSTOM
 
 /** Everything the contact screen and the editor need about one contact. */
 data class ContactDetail(
@@ -54,6 +72,8 @@ data class ContactDetail(
     val sendToVoicemail: Boolean,
     /** As the provider keeps it: "1990-05-12", or "--05-12" for a day without a year. */
     val birthday: ContactField?,
+    /** The same, for the day two people mark together; another app may have written it. */
+    val anniversary: ContactField?,
     val note: ContactField?,
     /** Where new rows are written: the device-only raw contact when there is one. */
     val rawContactId: Long,
@@ -71,6 +91,7 @@ data class ContactInput(
     val jobTitle: String = "",
     val website: String = "",
     val birthday: String = "",
+    val anniversary: String = "",
     val note: String = "",
 )
 
@@ -140,6 +161,7 @@ class ContactsRepository(
         var organization: ContactField? = null
         var website: ContactField? = null
         var birthday: ContactField? = null
+        var anniversary: ContactField? = null
         var note: ContactField? = null
         val phones = mutableListOf<ContactField>()
         val emails = mutableListOf<ContactField>()
@@ -161,14 +183,15 @@ class ContactsRepository(
                         familyName = cursor.getString(4).orEmpty()
                     }
                     // For a number, an e-mail or an address, DATA1 is the value and DATA2 its type.
+                    // DATA3 holds the owner's own word for the field, kept for a custom type.
                     Phone.CONTENT_ITEM_TYPE -> cursor.getString(2)?.let {
-                        phones += ContactField(dataId, it, cursor.getInt(3))
+                        phones += ContactField(dataId, it, cursor.getInt(3), cursor.getString(4))
                     }
                     Email.CONTENT_ITEM_TYPE -> cursor.getString(2)?.let {
-                        emails += ContactField(dataId, it, cursor.getInt(3))
+                        emails += ContactField(dataId, it, cursor.getInt(3), cursor.getString(4))
                     }
                     StructuredPostal.CONTENT_ITEM_TYPE -> cursor.getString(2)?.let {
-                        addresses += ContactField(dataId, it, cursor.getInt(3))
+                        addresses += ContactField(dataId, it, cursor.getInt(3), cursor.getString(4))
                     }
                     // The company sits in DATA1 and the job title in DATA4, in one row.
                     Organization.CONTENT_ITEM_TYPE -> if (organization == null) {
@@ -178,8 +201,13 @@ class ContactsRepository(
                     Website.CONTENT_ITEM_TYPE -> if (website == null) {
                         cursor.getString(2)?.let { website = ContactField(dataId, it, cursor.getInt(3)) }
                     }
-                    Event.CONTENT_ITEM_TYPE -> if (birthday == null && cursor.getInt(3) == Event.TYPE_BIRTHDAY) {
-                        cursor.getString(2)?.let { birthday = ContactField(dataId, it, Event.TYPE_BIRTHDAY) }
+                    Event.CONTENT_ITEM_TYPE -> when (cursor.getInt(3)) {
+                        Event.TYPE_BIRTHDAY -> if (birthday == null) {
+                            cursor.getString(2)?.let { birthday = ContactField(dataId, it, Event.TYPE_BIRTHDAY) }
+                        }
+                        Event.TYPE_ANNIVERSARY -> if (anniversary == null) {
+                            cursor.getString(2)?.let { anniversary = ContactField(dataId, it, Event.TYPE_ANNIVERSARY) }
+                        }
                     }
                     Note.CONTENT_ITEM_TYPE -> if (note == null) {
                         cursor.getString(2)?.takeIf { it.isNotBlank() }?.let { note = ContactField(dataId, it, 0) }
@@ -203,6 +231,7 @@ class ContactsRepository(
             ringtone = head.ringtone,
             sendToVoicemail = head.sendToVoicemail,
             birthday = birthday,
+            anniversary = anniversary,
             note = note,
             rawContactId = rawContactId,
             nameDataId = nameDataId,
@@ -321,6 +350,9 @@ class ContactsRepository(
             syncSingle(ops, detail.rawContactId, Website.CONTENT_ITEM_TYPE, detail.website, input.website)
             syncSingle(ops, detail.rawContactId, Event.CONTENT_ITEM_TYPE, detail.birthday, input.birthday) {
                 withValue(Event.TYPE, Event.TYPE_BIRTHDAY)
+            }
+            syncSingle(ops, detail.rawContactId, Event.CONTENT_ITEM_TYPE, detail.anniversary, input.anniversary) {
+                withValue(Event.TYPE, Event.TYPE_ANNIVERSARY)
             }
             syncSingle(ops, detail.rawContactId, Note.CONTENT_ITEM_TYPE, detail.note, input.note)
             resolver.applyBatch(ContactsContract.AUTHORITY, ops)
@@ -595,6 +627,7 @@ class ContactsRepository(
             .withValue(Data.MIMETYPE, mimeType)
             .withValue(Data.DATA1, field.value.trim())
             .withValue(Data.DATA2, field.type)
+            .withValue(Data.DATA3, field.customLabel)
             .apply { normalizedNumber(mimeType, field.value)?.let { withValue(Phone.NORMALIZED_NUMBER, it) } }
 
     /**
@@ -622,6 +655,13 @@ class ContactsRepository(
                 dataRow(Event.CONTENT_ITEM_TYPE)
                     .withValue(Event.START_DATE, input.birthday.trim())
                     .withValue(Event.TYPE, Event.TYPE_BIRTHDAY),
+            )
+        }
+        if (input.anniversary.isNotBlank()) {
+            add(
+                dataRow(Event.CONTENT_ITEM_TYPE)
+                    .withValue(Event.START_DATE, input.anniversary.trim())
+                    .withValue(Event.TYPE, Event.TYPE_ANNIVERSARY),
             )
         }
         if (input.note.isNotBlank()) {
@@ -680,11 +720,12 @@ class ContactsRepository(
             val savedId = field.id
             if (savedId == null) {
                 ops += fieldRow(mimeType, field).withValue(Data.RAW_CONTACT_ID, rawContactId).build()
-            } else if (before.firstOrNull { it.id == savedId }.let { it == null || it.value != field.value || it.type != field.type }) {
+            } else if (before.firstOrNull { it.id == savedId }.let { it == null || it != field }) {
                 ops += ContentProviderOperation.newUpdate(Data.CONTENT_URI)
                     .withSelection("${Data._ID} = ?", arrayOf(savedId.toString()))
                     .withValue(Data.DATA1, field.value.trim())
                     .withValue(Data.DATA2, field.type)
+                    .withValue(Data.DATA3, field.customLabel)
                     .apply { normalizedNumber(mimeType, field.value)?.let { withValue(Phone.NORMALIZED_NUMBER, it) } }
                     .build()
             }

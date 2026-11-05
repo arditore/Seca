@@ -140,6 +140,7 @@ internal fun VCardContact.toInput() = ContactInput(
     jobTitle = jobTitle,
     website = website,
     birthday = birthday,
+    anniversary = anniversary,
     note = note,
 )
 

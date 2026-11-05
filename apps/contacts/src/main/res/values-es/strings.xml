@@ -9,6 +9,7 @@
     <string name="address">Dirección</string>
     <string name="all">Todos</string>
     <string name="allow_access">Permitir el acceso</string>
+    <string name="anniversary">Aniversario</string>
     <string name="app_name">Seca Contacts</string>
     <string name="backup">Copia de seguridad</string>
     <plurals name="backup_contacts_filed">
@@ -105,6 +106,7 @@
     <string name="import_contacts">Importar contactos</string>
     <string name="import_contacts_hint">Desde un archivo .vcf; los que ya están aquí se omiten</string>
     <string name="job_title">Cargo</string>
+    <string name="label_name">Etiqueta</string>
     <string name="merge">Combinar</string>
     <plurals name="merge_cards">
         <item quantity="one">Combinar %d ficha</item>

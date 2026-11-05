@@ -276,7 +276,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 FieldRow(
                     icon = SecaIcons.Phone,
                     value = ui.numbers.display(field.value),
-                    label = Phone.getTypeLabel(resources, field.type, "").toString(),
+                    label = Phone.getTypeLabel(resources, field.type, field.customLabel.orEmpty()).toString(),
                     onClick = { dial(context, field.value) },
                 ) {
                     FilledTonalIconButton(onClick = { sms(context, field.value) }) {
@@ -290,7 +290,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 FieldRow(
                     icon = SecaIcons.Email,
                     value = field.value,
-                    label = Email.getTypeLabel(resources, field.type, "").toString(),
+                    label = Email.getTypeLabel(resources, field.type, field.customLabel.orEmpty()).toString(),
                     onClick = { email(context, field.value) },
                 )
             }
@@ -300,7 +300,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 FieldRow(
                     icon = SecaIcons.Place,
                     value = field.value,
-                    label = StructuredPostal.getTypeLabel(resources, field.type, "").toString(),
+                    label = StructuredPostal.getTypeLabel(resources, field.type, field.customLabel.orEmpty()).toString(),
                     onClick = { openMap(context, field.value) },
                 )
             }
@@ -328,10 +328,12 @@ private fun About(detail: ContactDetail) {
         .joinToString(" · ")
     val companyLabel = stringResource(R.string.company)
     val birthdayLabel = stringResource(R.string.birthday)
+    val anniversaryLabel = stringResource(R.string.anniversary)
     val notesLabel = stringResource(R.string.notes)
     val rows = buildList {
         if (company.isNotBlank()) add(Triple(SecaIcons.Work, company, companyLabel))
         detail.birthday?.let { add(Triple(SecaIcons.Cake, formatBirthday(it.value), birthdayLabel)) }
+        detail.anniversary?.let { add(Triple(SecaIcons.Event, formatBirthday(it.value), anniversaryLabel)) }
         detail.note?.let { add(Triple(SecaIcons.Subject, it.value, notesLabel)) }
     }
     if (rows.isEmpty()) return
