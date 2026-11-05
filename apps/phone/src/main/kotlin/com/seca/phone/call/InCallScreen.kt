@@ -49,6 +49,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.design.SecaAppIdentity
+import android.net.Uri
+import androidx.core.net.toUri
+import android.content.Context
+import com.seca.phone.placeCall
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.SecaTheme
@@ -124,6 +128,7 @@ private fun CallScreen(view: CallView, calls: List<CallView>, audio: AudioView, 
     val title = view.title(context, numbers)
     val (tint, _) = secaToneColors(view.caller?.tone ?: 0)
     var keypad by remember { mutableStateOf(false) }
+    var dialling by remember { mutableStateOf(false) }
     var replies by remember { mutableStateOf(false) }
 
     Box(
@@ -177,7 +182,20 @@ private fun CallScreen(view: CallView, calls: List<CallView>, audio: AudioView, 
                     IncomingControls(view, onReplies = { replies = true })
                 view.state == Call.STATE_DISCONNECTED -> Box(Modifier.height(24.dp))
                 keypad -> KeypadPanel(view, onClose = { keypad = false })
-                else -> ActiveControls(view, calls, audio, onKeypad = { keypad = true })
+                dialling -> DialPanel(
+                    onClose = { dialling = false },
+                    onCall = { number ->
+                        dialling = false
+                        placeSecondCall(context, number)
+                    },
+                )
+                else -> ActiveControls(
+                    view = view,
+                    calls = calls,
+                    audio = audio,
+                    onKeypad = { keypad = true },
+                    onAddCall = { dialling = true },
+                )
             }
         }
     }
@@ -324,9 +342,18 @@ private fun IncomingControls(view: CallView, onReplies: () -> Unit) {
 }
 
 @Composable
-private fun ActiveControls(view: CallView, calls: List<CallView>, audio: AudioView, onKeypad: () -> Unit) {
+private fun ActiveControls(
+    view: CallView,
+    calls: List<CallView>,
+    audio: AudioView,
+    onKeypad: () -> Unit,
+    onAddCall: () -> Unit,
+) {
     val another = calls.any { it.call !== view.call && !it.isConferencePart }
     val canMerge = view.canMerge || view.call.conferenceableCalls.isNotEmpty()
+    // Offered only while there is room for a second call and the line can be held: a
+    // button that dialled into a call the network would drop is worse than no button.
+    val canAdd = !another && view.canHold && view.state == Call.STATE_ACTIVE
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
             CallControl(SecaIcons.MicOff, stringResource(R.string.mute), checked = audio.muted) { CallSession.setMuted(!audio.muted) }
@@ -345,6 +372,9 @@ private fun ActiveControls(view: CallView, calls: List<CallView>, audio: AudioVi
                 checked = view.state == Call.STATE_HOLDING,
                 enabled = view.canHold,
             ) { CallSession.toggleHold(view) }
+            if (canAdd) {
+                CallControl(SecaIcons.PersonAdd, stringResource(R.string.add_call), checked = false, onClick = onAddCall)
+            }
             if (another) CallControl(SecaIcons.SwapCalls, stringResource(R.string.swap), checked = false) { CallSession.swap() }
             if (canMerge) CallControl(SecaIcons.CallMerge, stringResource(R.string.merge), checked = false) { CallSession.merge(view) }
         }
@@ -624,4 +654,105 @@ private fun rememberSuiteColors(): Pair<SecaPalette?, Boolean> {
         value = SecaPalette.entries.firstOrNull { it.name == shared.palette } to shared.black
     }
     return colors
+}
+
+/**
+ * The keypad for calling someone else without leaving the call.
+ *
+ * Asked for in #8, where the other half - Swap and Merge - was already there: a second call had
+ * to be started from the dialer, which meant leaving the call screen to do it.
+ *
+ * It looks like the in-call keypad and does the opposite: nothing is sent down the line, the
+ * digits make a number, and the call button places it. Android puts the first call on hold by
+ * itself, and Merge appears once both are up.
+ */
+@Composable
+private fun DialPanel(onClose: () -> Unit, onCall: (String) -> Unit) {
+    var typed by remember { mutableStateOf("") }
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = typed.ifEmpty { stringResource(R.string.add_call) },
+            style = MaterialTheme.typography.headlineSmall,
+            color = if (typed.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.StartEllipsis,
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
+        InCallKeys.chunked(3).forEach { row ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.padding(bottom = 10.dp),
+            ) {
+                row.forEach { key ->
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(68.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            .clickable(role = Role.Button) { typed += key },
+                    ) {
+                        Text(
+                            text = key.toString(),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp, bottom = 16.dp),
+        ) {
+            TextButton(onClick = onClose, modifier = Modifier.width(96.dp)) { Text(stringResource(R.string.cancel)) }
+            val (container, content) = secaCallColors()
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(width = 96.dp, height = 60.dp)
+                    .clip(CircleShape)
+                    .background(if (typed.isEmpty()) MaterialTheme.colorScheme.surfaceContainerHigh else container)
+                    .clickable(
+                        enabled = typed.isNotEmpty(),
+                        role = Role.Button,
+                        onClickLabel = stringResource(R.string.call),
+                    ) { onCall(typed) },
+            ) {
+                Icon(
+                    SecaIcons.Phone,
+                    contentDescription = stringResource(R.string.call),
+                    tint = if (typed.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else content,
+                )
+            }
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .width(96.dp)
+                    .clickable(
+                        enabled = typed.isNotEmpty(),
+                        role = Role.Button,
+                        onClickLabel = stringResource(R.string.erase),
+                    ) { typed = typed.dropLast(1) },
+            ) {
+                if (typed.isNotEmpty()) {
+                    Icon(SecaIcons.Backspace, contentDescription = stringResource(R.string.erase))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Places the second call, on the same SIM as the one already up.
+ *
+ * Asking which SIM here would be wrong twice over: the first call is holding that line, and a
+ * second call on the other SIM could not be merged with it.
+ */
+private fun placeSecondCall(context: Context, number: String) {
+    val account = CallSession.calls.value.firstOrNull()?.call?.details?.accountHandle
+    placeCall(context, number, account)
 }

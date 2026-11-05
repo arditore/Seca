@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="add">Dodaj</string>
+    <string name="add_call">Dodaj połączenie</string>
     <string name="add_to_contacts">Dodaj do kontaktów</string>
     <string name="allow_access">Zezwól na dostęp</string>
     <string name="allow_calls">Zezwól na wykonywanie połączeń z aplikacji Seca Phone</string>

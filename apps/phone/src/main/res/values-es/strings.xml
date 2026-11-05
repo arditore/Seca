@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="add">Añadir</string>
+    <string name="add_call">Añadir llamada</string>
     <string name="add_to_contacts">Añadir a los contactos</string>
     <string name="allow_access">Permitir el acceso</string>
     <string name="allow_calls">Permite las llamadas para llamar desde Seca Phone</string>

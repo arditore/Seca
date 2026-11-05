@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="add">Ajouter</string>
+    <string name="add_call">Ajouter un appel</string>
     <string name="add_to_contacts">Ajouter aux contacts</string>
     <string name="allow_access">Autoriser l\'accès</string>
     <string name="allow_calls">Autorisez les appels pour appeler depuis Seca Téléphone</string>
