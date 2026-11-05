@@ -326,8 +326,9 @@ internal fun ConversationContent(
                 }
             },
             bottomBar = {
-                // Asked once per conversation: the SIMs do not change while it is open.
-                val sims = remember { viewModel.sims() }
+                // Asked once per conversation, off the main thread: the SIMs do not change
+                // while it is open, and the composer draws without them until they arrive.
+                val sims by produceState(initialValue = emptyList<SendingSim>()) { value = viewModel.sims() }
                 Composer(
                     text = text,
                     onText = {

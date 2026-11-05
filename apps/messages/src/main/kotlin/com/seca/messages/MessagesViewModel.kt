@@ -439,8 +439,15 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    /** The SIMs a text can be sent from, when there is more than one to choose between. */
-    fun sims(): List<SendingSim> = sendingSims(getApplication()).takeIf { it.size > 1 }.orEmpty()
+    /**
+     * The SIMs a text can be sent from, when there is more than one to choose between.
+     *
+     * Suspending because reading them is a call into the telephony service, and a conversation
+     * should not wait on one before it can be drawn.
+     */
+    suspend fun sims(): List<SendingSim> = withContext(Dispatchers.IO) {
+        sendingSims(getApplication()).takeIf { it.size > 1 }.orEmpty()
+    }
 
     /** Sends the voice message recorded at [path] through Seca Link, then lets the recording go. */
     fun sendVoice(address: String, path: String) {

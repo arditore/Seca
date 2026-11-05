@@ -17,10 +17,19 @@ import androidx.core.net.toUri
  */
 internal object MmsReader {
 
-    /** The messages of one conversation, oldest first, as [Message] like any other. */
-    fun messages(resolver: ContentResolver, threadId: Long): List<Message> =
-        rows(resolver, "${Mms.THREAD_ID} = ?", arrayOf(threadId.toString()), "${Mms.DATE} ASC")
-            .map { it.message(resolver) }
+    /**
+     * The messages of one conversation, oldest first, as [Message] like any other.
+     *
+     * The parts of every message are fetched in one query rather than one each. Opening a
+     * conversation is a screen the owner waits on, and a long-running thread of pictures would
+     * otherwise ask the store twice per message before anything could be drawn.
+     */
+    fun messages(resolver: ContentResolver, threadId: Long): List<Message> {
+        val rows = rows(resolver, "${Mms.THREAD_ID} = ?", arrayOf(threadId.toString()), "${Mms.DATE} ASC")
+        if (rows.isEmpty()) return emptyList()
+        val parts = partsOf(resolver, rows.map(Row::id))
+        return rows.map { it.message(resolver, parts[it.id] ?: Parts("", null)) }
+    }
 
     /** The newest multimedia message of each conversation, for the list of conversations. */
     fun latestPerThread(resolver: ContentResolver): Map<Long, Message> =
@@ -29,7 +38,10 @@ internal object MmsReader {
             // those are then looked up in full: a phone holds hundreds of these, and each one
             // asks its own questions of the store — the rest would be read for nothing.
             .distinctBy(Row::threadId)
-            .associate { it.threadId to it.message(resolver) }
+            .let { latest ->
+                val parts = partsOf(resolver, latest.map(Row::id))
+                latest.associate { it.threadId to it.message(resolver, parts[it.id] ?: Parts("", null)) }
+            }
 
     /** How many multimedia messages each conversation has that nobody has read yet. */
     fun unreadPerThread(resolver: ContentResolver): Map<Long, Int> = runCatching {
@@ -58,9 +70,8 @@ internal object MmsReader {
     /** One row of the table, before its parts and its addresses have been looked up. */
     private class Row(val id: Long, val threadId: Long, val date: Long, val box: Int, val subject: String) {
 
-        fun message(resolver: ContentResolver): Message {
-            val parts = partsOf(resolver, id)
-            return Message(
+        fun message(resolver: ContentResolver, parts: Parts): Message =
+            Message(
                 // Ids are shared with the SMS table, so a multimedia message is numbered apart:
                 // two messages must never answer to the same id.
                 id = ID_OFFSET + id,
@@ -72,7 +83,6 @@ internal object MmsReader {
                 status = statusOf(box),
                 image = parts.image,
             )
-        }
     }
 
     private fun rows(
@@ -101,31 +111,41 @@ internal object MmsReader {
 
     private class Parts(val text: String, val image: String?)
 
-    private fun partsOf(resolver: ContentResolver, messageId: Long): Parts = runCatching {
+    /**
+     * The parts of several messages at once, by the message they belong to.
+     *
+     * One query for the lot. The ids are written into the query rather than bound, which is
+     * safe here and nowhere else: they are numbers this file read out of the store a moment
+     * ago, never anything typed, and a bound list cannot be written in SQL anyway.
+     */
+    private fun partsOf(resolver: ContentResolver, messageIds: List<Long>): Map<Long, Parts> = runCatching {
+        if (messageIds.isEmpty()) return emptyMap()
         resolver.query(
             PART_URI,
-            arrayOf("_id", "ct", "text"),
-            "mid = ?",
-            arrayOf(messageId.toString()),
+            arrayOf("_id", "ct", "text", "mid"),
+            "mid IN (${messageIds.joinToString(",")})",
+            null,
             "seq ASC",
         )?.use { c ->
-            val words = StringBuilder()
-            var image: String? = null
+            val words = HashMap<Long, StringBuilder>()
+            val images = HashMap<Long, String>()
             while (c.moveToNext()) {
+                val owner = c.getLong(3)
                 val type = c.getString(1).orEmpty()
                 when {
-                    type.startsWith("text/") -> c.getString(2)?.takeIf { it.isNotBlank() }?.let {
-                        if (words.isNotEmpty()) words.append('\n')
-                        words.append(it)
+                    type.startsWith("text/") -> c.getString(2)?.takeIf { it.isNotBlank() }?.let { said ->
+                        val sentence = words.getOrPut(owner) { StringBuilder() }
+                        if (sentence.isNotEmpty()) sentence.append('\n')
+                        sentence.append(said)
                     }
                     // The presentation part describes a slideshow; it is not something to show.
                     type == SMIL -> Unit
-                    image == null && type.startsWith("image/") -> image = "$PART_URI/${c.getLong(0)}"
+                    type.startsWith("image/") -> images.getOrPut(owner) { "$PART_URI/${c.getLong(0)}" }
                 }
             }
-            Parts(words.toString(), image)
+            (words.keys + images.keys).associateWith { Parts(words[it]?.toString().orEmpty(), images[it]) }
         }
-    }.getOrNull() ?: Parts("", null)
+    }.getOrNull().orEmpty()
 
     /** Who wrote it, or who it went to, which is the same person in a conversation of two. */
     private fun addressOf(resolver: ContentResolver, messageId: Long, box: Int): String? = runCatching {

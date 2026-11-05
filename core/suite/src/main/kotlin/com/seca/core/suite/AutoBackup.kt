@@ -53,11 +53,13 @@ object AutoBackup {
         val stamp = LocalDateTime.now().format(STAMP)
         val written = mutableListOf<String>()
 
+        // Given up on before it is used, the phrase is wiped here rather than left in memory:
+        // only the export itself clears it, and only when it gets that far.
         val complete = folder(resolver, chosen, root, app.getString(R.string.auto_folder_complete))
-            ?: return@withContext failed(settings, app.getString(R.string.auto_folder_failed))
+            ?: return@withContext failed(settings, app.getString(R.string.auto_folder_failed), phrase)
         val sealedName = "seca-$stamp.seca"
         val target = create(resolver, chosen, complete, TYPE_SEALED, sealedName)
-            ?: return@withContext failed(settings, app.getString(R.string.auto_write_failed))
+            ?: return@withContext failed(settings, app.getString(R.string.auto_write_failed), phrase)
         when (val outcome = SuiteBackup(app).export(target, phrase)) {
             is SuiteBackup.Outcome.Failed -> {
                 // A file holding nothing is worse than no file: it would be kept, counted, and
@@ -73,6 +75,7 @@ object AutoBackup {
             val open = folder(resolver, chosen, root, app.getString(R.string.auto_folder_portable))
             if (open != null) {
                 val backup = SuiteBackup(app)
+                val perRun = backup.installedApps().size
                 backup.installedApps().forEach { which ->
                     val text = backup.exportPortable(which) ?: return@forEach
                     val name = "${which.portableName}-$stamp.${which.portableExtension}"
@@ -86,7 +89,9 @@ object AutoBackup {
                         runCatching { DocumentsContract.deleteDocument(resolver, file) }
                     }
                 }
-                prune(resolver, chosen, open, settings.keep * PORTABLE_FILES_PER_RUN)
+                // As many runs kept here as in the other folder, which is a file count rather
+                // than a run count: what one run writes depends on which apps are installed.
+                prune(resolver, chosen, open, settings.keep * perRun.coerceAtLeast(1))
             }
         }
 
@@ -95,7 +100,8 @@ object AutoBackup {
         Result.Written(written)
     }
 
-    private fun failed(settings: AutoBackupSettings, reason: String): Result {
+    private fun failed(settings: AutoBackupSettings, reason: String, phrase: CharArray? = null): Result {
+        phrase?.fill(' ')
         settings.lastFailure = reason
         return Result.Failed(reason)
     }
@@ -184,9 +190,6 @@ object AutoBackup {
     }
 
     private const val TYPE_SEALED = "application/octet-stream"
-
-    /** Contacts, calls and texts: three files from one run, so three times the count is kept. */
-    private const val PORTABLE_FILES_PER_RUN = 3
 
     private val STAMP: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")
 }

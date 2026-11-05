@@ -16,6 +16,7 @@ import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -48,13 +49,24 @@ object AutoBackupSchedule {
         runCatching { alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextAt(settings), pending) }
     }
 
-    /** The next small hours that is at least one rhythm away from the last backup. */
+    /**
+     * The next small hours that is a rhythm away from the last backup written.
+     *
+     * Counted from the last one rather than from now, which matters after the phone has been
+     * off: an alarm does not survive a restart, and counting from the moment it is set again
+     * would push a weekly backup another week out every time the phone was rebooted — quietly
+     * turning "every week" into "whenever the phone last happened to be up at three".
+     */
     private fun nextAt(settings: AutoBackupSettings): Long {
         val zone = ZoneId.systemDefault()
         val last = settings.lastRun
-        val from = if (last == 0L) LocalDate.now(zone) else LocalDate.now(zone).plusDays(settings.rhythm.days.toLong() - 1)
-        var at = from.atTime(HOUR).atZone(zone).toInstant().toEpochMilli()
-        // Already past this morning's hour: the one after.
+        val due = if (last == 0L) {
+            LocalDate.now(zone)
+        } else {
+            Instant.ofEpochMilli(last).atZone(zone).toLocalDate().plusDays(settings.rhythm.days.toLong())
+        }
+        var at = due.atTime(HOUR).atZone(zone).toInstant().toEpochMilli()
+        // Already owed, or past this morning's hour: the next one that has not happened yet.
         while (at <= System.currentTimeMillis()) at += DAY_MILLIS
         return at
     }
