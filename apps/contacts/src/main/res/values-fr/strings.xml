@@ -5,6 +5,7 @@
     <string name="add_email">Ajouter une adresse e-mail</string>
     <string name="add_favorite">Ajouter aux favoris</string>
     <string name="add_number">Ajouter un numéro</string>
+    <string name="add_photo">Ajouter une photo</string>
     <string name="add_profile">Ajouter un profil</string>
     <string name="address">Adresse</string>
     <string name="all">Tous</string>
@@ -152,6 +153,7 @@
     <string name="permission_place_calls">passer des appels avec Seca Téléphone</string>
     <string name="permission_read_profiles">lire les profils Seca</string>
     <string name="permission_title">Vos contacts, chez vous</string>
+    <string name="photo_not_saved">Ce téléphone a refusé d\'enregistrer la photo pour ce contact.</string>
     <string name="pick_date">Choisir une date</string>
     <string name="privacy">Confidentialité</string>
     <string name="privacy_text">Seca Contacts n\'a pas accès à Internet. Vos contacts, vos profils et vos réglages ne quittent jamais l\'appareil, et les contacts créés ici ne sont synchronisés avec aucun compte.</string>

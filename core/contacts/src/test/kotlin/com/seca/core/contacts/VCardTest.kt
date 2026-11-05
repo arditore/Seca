@@ -2,6 +2,7 @@ package com.seca.core.contacts
 
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -119,5 +120,48 @@ class VCardTest {
         """.trimIndent()
 
         assertEquals(ContactField(null, "+33612345678", Phone.TYPE_MOBILE), VCard.parse(export).single().phones.single())
+    }
+
+    @Test
+    fun `a picture travels in the card, and comes back the same bytes`() {
+        val jpeg = ByteArray(300) { (it * 7).toByte() }
+        val camille = VCardContact(
+            givenName = "Camille",
+            familyName = "Durand",
+            displayName = "Camille Durand",
+            phones = listOf(ContactField(null, "+33612345678", Phone.TYPE_MOBILE)),
+            emails = emptyList(),
+            photo = jpeg,
+        )
+
+        val written = VCard.write(listOf(camille))
+        val back = VCard.parse(written).single()
+
+        assertArrayEquals(jpeg, back.photo)
+        assertEquals(camille, back)
+        // Long enough to be folded, which is what makes the unfolding on the way back matter.
+        assertTrue(written, written.lines().any { it.startsWith(" ") })
+    }
+
+    @Test
+    fun `a picture written as a data URI, the way version 4 writes it, is read back`() {
+        val export = """
+            BEGIN:VCARD
+            VERSION:4.0
+            FN:Camille Durand
+            PHOTO:data:image/jpeg;base64,/9j/4AAQSkZJRg==
+            END:VCARD
+        """.trimIndent()
+
+        val photo = VCard.parse(export).single().photo
+
+        assertArrayEquals(byteArrayOf(-1, -40, -1, -32, 0, 16, 74, 70, 73, 70), photo)
+    }
+
+    @Test
+    fun `a card with no picture says so rather than carrying an empty one`() {
+        val card = VCardContact("Camille", "Durand", "Camille Durand", emptyList(), emptyList())
+
+        assertEquals(null, VCard.parse(VCard.write(listOf(card))).single().photo)
     }
 }

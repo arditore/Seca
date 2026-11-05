@@ -10,6 +10,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.seca.core.contacts.ContactDetail
 import com.seca.core.contacts.ContactInput
+import com.seca.core.contacts.squareJpeg
 import com.seca.core.contacts.Place
 import com.seca.core.contacts.ContactWriteException
 import com.seca.core.contacts.ContactsRepository
@@ -225,7 +226,10 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
             val filed = store.assignments().toMutableMap()
             cards.forEach { card ->
                 val key = existing.firstOrNull { it.isSameAs(card) }?.lookupKey ?: try {
-                    repository.createContact(card.toInput())?.also { added++ }?.let { repository.lookupKeyOf(it) }
+                    repository.createContact(card.toInput())?.also { added++ }?.also { newId ->
+                        // The picture travels in the card; it is put back once the contact exists.
+                        card.photo?.let { repository.setPhoto(newId, it) }
+                    }?.let { repository.lookupKeyOf(it) }
                 } catch (e: ContactWriteException) {
                     // One contact the provider refuses does not stop the rest of the file.
                     refused++
@@ -348,7 +352,35 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     suspend fun savingPlaces(): Pair<List<Place>, Place> =
         repository.placesToSaveIn() to repository.placeByDefault()
 
-    fun save(existing: ContactDetail?, input: ContactInput, profileId: String, into: Place? = null) {
+    /**
+     * What is to become of a contact's picture when the editor is saved.
+     *
+     * Three states rather than a nullable one, because "leave it alone" and "take it away"
+     * are different instructions and a null cannot say which was meant.
+     */
+    sealed interface Picture {
+        data object Unchanged : Picture
+        data object Removed : Picture
+        data class Chosen(val jpeg: ByteArray) : Picture {
+            // Compared by identity: two different pictures of the same size are not the same
+            // picture, and nothing here needs to know whether their bytes match.
+            override fun equals(other: Any?): Boolean = this === other
+
+            override fun hashCode(): Int = System.identityHashCode(this)
+        }
+    }
+
+    /** Shrinks and crops a picked image, off the main thread; null when it cannot be read. */
+    suspend fun pictureFrom(uri: Uri): Picture.Chosen? =
+        squareJpeg(getApplication(), uri)?.let(Picture::Chosen)
+
+    fun save(
+        existing: ContactDetail?,
+        input: ContactInput,
+        profileId: String,
+        into: Place? = null,
+        picture: Picture = Picture.Unchanged,
+    ) {
         viewModelScope.launch {
             val id: Long = if (existing == null) {
                 // A phone whose provider refuses to write says so, rather than leaving the
@@ -363,6 +395,13 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
             } else {
                 repository.updateContact(existing, input)
                 existing.id
+            }
+            // Written after the contact exists: a new one has no rows to hang a picture on
+            // until it has been created.
+            when (picture) {
+                is Picture.Chosen -> if (!repository.setPhoto(id, picture.jpeg)) toast(text(R.string.photo_not_saved))
+                Picture.Removed -> repository.setPhoto(id, null)
+                Picture.Unchanged -> Unit
             }
             // The provider rebuilds a contact's key when its name changes, so the profile is
             // filed again under the key the contact has now, and the old one is let go.

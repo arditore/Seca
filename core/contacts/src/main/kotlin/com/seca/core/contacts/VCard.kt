@@ -4,6 +4,7 @@ import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import java.io.ByteArrayOutputStream
+import kotlin.io.encoding.Base64
 
 /** A contact as a vCard carries it. */
 data class VCardContact(
@@ -19,9 +20,38 @@ data class VCardContact(
     val birthday: String = "",
     val anniversary: String = "",
     val note: String = "",
+    /** The contact's picture as a JPEG, or null; compared by identity, as pictures are. */
+    val photo: ByteArray? = null,
     /** The Seca Contacts profile the contact is filed in, by name; empty for Principal. */
     val profile: String = "",
-)
+) {
+
+    // A data class holding a ByteArray compares it by identity, which would make two
+    // readings of the same card unequal. The bytes are compared properly here instead.
+    override fun equals(other: Any?): Boolean = this === other ||
+        (
+            other is VCardContact &&
+                givenName == other.givenName && familyName == other.familyName &&
+                displayName == other.displayName && phones == other.phones &&
+                emails == other.emails && addresses == other.addresses &&
+                organization == other.organization && jobTitle == other.jobTitle &&
+                website == other.website && birthday == other.birthday &&
+                anniversary == other.anniversary && note == other.note &&
+                profile == other.profile && photo.contentEquals(other.photo)
+            )
+
+    override fun hashCode(): Int {
+        var result = givenName.hashCode()
+        listOf(familyName, displayName, organization, jobTitle, website, birthday, anniversary, note, profile)
+            .forEach { result = HASH_STEP * result + it.hashCode() }
+        listOf(phones, emails, addresses).forEach { result = HASH_STEP * result + it.hashCode() }
+        return HASH_STEP * result + photo.contentHashCode()
+    }
+
+    private companion object {
+        const val HASH_STEP = 31
+    }
+}
 
 /**
  * Reads and writes vCards, the file every contacts app exchanges: Seca's way
@@ -81,6 +111,11 @@ object VCard {
             // X-ANNIVERSARY is what Android writes and reads; version 3.0 has no property for it.
             if (contact.anniversary.isNotBlank()) line("X-ANNIVERSARY:${escape(contact.anniversary)}")
             if (contact.note.isNotBlank()) line("NOTE:${escape(contact.note)}")
+            // The picture, base64 as every version of vCard carries it. Folded like any
+            // other long line, which is what readers expect of it.
+            contact.photo?.takeIf { it.isNotEmpty() }?.let {
+                line("PHOTO;ENCODING=b;TYPE=JPEG:" + Base64.encode(it))
+            }
             if (contact.profile.isNotBlank()) {
                 // Other apps file the contact in a group from its categories. Seca reads back only its
                 // own property, never the categories other apps export, such as "myContacts".
@@ -137,6 +172,10 @@ object VCard {
                 "BDAY" -> card?.birthday = unescape(value).trim()
                 "ANNIVERSARY", "X-ANNIVERSARY" -> card?.anniversary = unescape(value).trim()
                 "NOTE" -> card?.note = unescape(value)
+                // Version 4.0 writes it as a data URI; 2.1 and 3.0 as plain base64.
+                "PHOTO", "LOGO" -> card?.let { current ->
+                    if (current.photo == null) current.photo = decodeBase64(value.substringAfterLast(","))
+                }
                 "X-ABLABEL" -> if (group != null) card?.name(group, unescape(value).trim())
                 "X-SECA-PROFILE" -> card?.profile = unescape(value)
             }
@@ -155,6 +194,7 @@ object VCard {
         var anniversary = ""
         var note = ""
         var profile = ""
+        var photo: ByteArray? = null
         val phones = mutableListOf<ContactField>()
         val emails = mutableListOf<ContactField>()
         val addresses = mutableListOf<ContactField>()
@@ -212,9 +252,15 @@ object VCard {
                 anniversary = anniversary,
                 note = note,
                 profile = profile,
+                photo = photo,
             )
         }
     }
+
+    /** Base64 as a vCard writes it, with the line breaks and spaces folding left in it. */
+    private fun decodeBase64(value: String): ByteArray? = runCatching {
+        Base64.decode(value.filterNot(Char::isWhitespace))
+    }.getOrNull()?.takeIf { it.isNotEmpty() }
 
     private fun nameOf(given: String, family: String) =
         listOf(given, family).filter(String::isNotBlank).joinToString(" ")

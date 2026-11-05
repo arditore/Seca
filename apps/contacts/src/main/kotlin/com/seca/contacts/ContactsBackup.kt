@@ -96,7 +96,10 @@ internal class ContactsBackup(private val context: Context) {
             val savedKey = item.optString("key")
             val key = existing.firstOrNull { savedKey.isNotEmpty() && it.lookupKey == savedKey }?.lookupKey
                 ?: existing.firstOrNull { it.isSameAs(card, numbers) }?.lookupKey
-                ?: if (canWrite) repository.createContact(card.toInput())?.also { added++ }?.let { repository.lookupKeyOf(it) } else null
+                ?: if (canWrite) repository.createContact(card.toInput())?.also { added++ }?.also { newId ->
+                    // The picture travels in the card; it is put back once the contact exists.
+                    card.photo?.let { repository.setPhoto(newId, it) }
+                }?.let { repository.lookupKeyOf(it) } else null
             if (key.isNullOrEmpty()) {
                 missing++
                 continue

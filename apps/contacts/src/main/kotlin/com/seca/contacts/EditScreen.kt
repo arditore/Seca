@@ -58,6 +58,15 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.draw.clip
+import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import com.seca.core.design.component.rememberContactPhoto
+import kotlinx.coroutines.launch
 import com.seca.core.contacts.ContactField
 import com.seca.core.contacts.ContactInput
 import com.seca.core.design.SecaIcons
@@ -105,6 +114,22 @@ internal fun EditScreen(
     var places by remember { mutableStateOf(emptyList<Place>()) }
     var savingIn by remember(id) { mutableStateOf<Place?>(null) }
     var choosingPlace by remember { mutableStateOf(false) }
+    // The picture the contact already has, and what the owner has decided to do about it.
+    val saved = rememberContactPhoto(id)
+    var picture by remember(id) { mutableStateOf<ContactsViewModel.Picture>(ContactsViewModel.Picture.Unchanged) }
+    var preview by remember(id) { mutableStateOf<ImageBitmap?>(null) }
+    val scope = rememberCoroutineScope()
+    val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { picked ->
+        if (picked != null) {
+            scope.launch {
+                val chosen = viewModel.pictureFrom(picked)
+                if (chosen != null) {
+                    picture = chosen
+                    preview = BitmapFactory.decodeByteArray(chosen.jpeg, 0, chosen.jpeg.size)?.asImageBitmap()
+                }
+            }
+        }
+    }
     // "All" is a way of looking at the list, not a profile: a new contact starts in Principal.
     var profileId by remember(id) {
         mutableStateOf(ui.currentProfileId.takeIf { !ui.showingAll } ?: ProfileStore.Principal.id)
@@ -180,7 +205,7 @@ internal fun EditScreen(
                             anniversary = anniversary,
                             note = note,
                         )
-                        withWrite { viewModel.save(existing, input, profileId, savingIn) }
+                        withWrite { viewModel.save(existing, input, profileId, savingIn, picture) }
                     },
                     modifier = Modifier.padding(end = 8.dp),
                 ) { Text(stringResource(R.string.save)) }
@@ -196,9 +221,12 @@ internal fun EditScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(bottom = 32.dp),
             ) {
-                // The avatar follows the name as it is typed.
-                Box(
-                    contentAlignment = Alignment.Center,
+                // The avatar follows the name as it is typed, and is where the picture is
+                // changed: the editor used to draw a made-up one even for a contact who had
+                // a photograph, which read as the photograph having been lost.
+                val shown = preview ?: saved.takeIf { picture != ContactsViewModel.Picture.Removed }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 16.dp),
@@ -211,7 +239,26 @@ internal fun EditScreen(
                         tone = ui.profiles.indexOfFirst { it.id == profileId }.coerceAtLeast(0),
                         seed = existing?.displayName ?: "new-contact",
                         expressive = true,
+                        photo = shown,
+                        modifier = Modifier.clickable(onClickLabel = stringResource(R.string.change_photo)) {
+                            pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
                     )
+                    Row {
+                        TextButton(
+                            onClick = {
+                                pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            },
+                        ) { Text(stringResource(if (shown == null) R.string.add_photo else R.string.change_photo)) }
+                        if (shown != null) {
+                            TextButton(
+                                onClick = {
+                                    picture = ContactsViewModel.Picture.Removed
+                                    preview = null
+                                },
+                            ) { Text(stringResource(R.string.remove_photo)) }
+                        }
+                    }
                 }
 
                 FormSection(SecaIcons.PersonOutline) {

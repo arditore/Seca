@@ -16,6 +16,7 @@ import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.Photo
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.CommonDataKinds.Website
@@ -403,6 +404,57 @@ class ContactsRepository(
         }
     }
 
+    /**
+     * Gives a contact the picture in [jpeg], or takes their picture away with null.
+     *
+     * Written through the provider's own display-photo door, which takes a full-sized image and
+     * makes the small one from it itself - so the picture looks right both in a list row and on
+     * the contact's page, and every other app on the phone sees the same one.
+     *
+     * A contact whose rows belong to an account that will not be written to falls back to the
+     * plain photo row, which is all some sync adapters accept. False when neither works, so the
+     * screen can say so instead of appearing to have done something.
+     */
+    suspend fun setPhoto(contactId: Long, jpeg: ByteArray?): Boolean = withContext(Dispatchers.IO) {
+        val rawContactId = primaryRawContact(contactId) ?: return@withContext false
+        if (jpeg == null) {
+            return@withContext runCatching {
+                resolver.delete(
+                    Data.CONTENT_URI,
+                    "${Data.RAW_CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
+                    arrayOf(rawContactId.toString(), Photo.CONTENT_ITEM_TYPE),
+                ) >= 0
+            }.getOrDefault(false)
+        }
+        val through = Uri.withAppendedPath(
+            ContentUris.withAppendedId(RawContacts.CONTENT_URI, rawContactId),
+            RawContacts.DisplayPhoto.CONTENT_DIRECTORY,
+        )
+        val written = runCatching {
+            resolver.openAssetFileDescriptor(through, "rw")?.createOutputStream()?.use { it.write(jpeg) } != null
+        }.getOrDefault(false)
+        if (written) return@withContext true
+        runCatching {
+            val values = ContentValues().apply {
+                put(Data.RAW_CONTACT_ID, rawContactId)
+                put(Data.MIMETYPE, Photo.CONTENT_ITEM_TYPE)
+                put(Photo.PHOTO, jpeg)
+            }
+            val existing = resolver.query(
+                Data.CONTENT_URI,
+                arrayOf(Data._ID),
+                "${Data.RAW_CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
+                arrayOf(rawContactId.toString(), Photo.CONTENT_ITEM_TYPE),
+                null,
+            )?.use { if (it.moveToFirst()) it.getLong(0) else null }
+            if (existing == null) {
+                resolver.insert(Data.CONTENT_URI, values) != null
+            } else {
+                resolver.update(Data.CONTENT_URI, values, "${Data._ID} = ?", arrayOf(existing.toString())) > 0
+            }
+        }.getOrDefault(false)
+    }
+
     /** Gives a contact their own ringtone, or null to go back to the phone's. */
     suspend fun setRingtone(id: Long, ringtone: String?) {
         withContext(Dispatchers.IO) {
@@ -509,10 +561,16 @@ class ContactsRepository(
                         card.given = c.getString(4).orEmpty()
                         card.family = c.getString(5).orEmpty()
                     }
-                    Phone.CONTENT_ITEM_TYPE -> c.getString(3)?.let { card.phones += ContactField(null, it, c.getInt(4)) }
-                    Email.CONTENT_ITEM_TYPE -> c.getString(3)?.let { card.emails += ContactField(null, it, c.getInt(4)) }
+                    // DATA3 carries the owner's own word for a field; without it a custom
+                    // one came out of a backup as a plain one.
+                    Phone.CONTENT_ITEM_TYPE -> c.getString(3)?.let {
+                        card.phones += ContactField(null, it, c.getInt(4), c.getString(5))
+                    }
+                    Email.CONTENT_ITEM_TYPE -> c.getString(3)?.let {
+                        card.emails += ContactField(null, it, c.getInt(4), c.getString(5))
+                    }
                     StructuredPostal.CONTENT_ITEM_TYPE -> c.getString(3)?.let {
-                        card.addresses += ContactField(null, it, c.getInt(4))
+                        card.addresses += ContactField(null, it, c.getInt(4), c.getString(5))
                     }
                     Organization.CONTENT_ITEM_TYPE -> if (card.organization.isEmpty() && card.jobTitle.isEmpty()) {
                         card.organization = c.getString(3).orEmpty()
@@ -523,16 +581,44 @@ class ContactsRepository(
                 }
             }
         }
-        // Birthdays come from their own rows: only the birthday among a contact's dates.
+        // Dates come from their own rows, and a contact may have both kinds.
         resolver.query(
             Data.CONTENT_URI,
-            arrayOf(Data.CONTACT_ID, Data.DATA1),
-            "${Data.MIMETYPE} = ? AND ${Data.DATA2} = ?",
-            arrayOf(Event.CONTENT_ITEM_TYPE, Event.TYPE_BIRTHDAY.toString()),
+            arrayOf(Data.CONTACT_ID, Data.DATA1, Data.DATA2),
+            "${Data.MIMETYPE} = ? AND ${Data.DATA2} IN (?, ?)",
+            arrayOf(Event.CONTENT_ITEM_TYPE, Event.TYPE_BIRTHDAY.toString(), Event.TYPE_ANNIVERSARY.toString()),
             null,
         )?.use { c ->
             while (c.moveToNext()) {
-                cards[c.getLong(0)]?.let { card -> if (card.birthday.isEmpty()) card.birthday = c.getString(1).orEmpty() }
+                val card = cards[c.getLong(0)] ?: continue
+                val date = c.getString(1).orEmpty()
+                if (c.getInt(2) == Event.TYPE_BIRTHDAY) {
+                    if (card.birthday.isEmpty()) card.birthday = date
+                } else if (card.anniversary.isEmpty()) {
+                    card.anniversary = date
+                }
+            }
+        }
+        // Pictures, read one at a time and only for the contacts that have one: asking for
+        // the whole column would pull every image into memory at once.
+        resolver.query(
+            Data.CONTENT_URI,
+            arrayOf(Data.CONTACT_ID),
+            "${Data.MIMETYPE} = ?",
+            arrayOf(Photo.CONTENT_ITEM_TYPE),
+            null,
+        )?.use { c ->
+            while (c.moveToNext()) {
+                val id = c.getLong(0)
+                val card = cards[id] ?: continue
+                if (card.photo != null) continue
+                card.photo = runCatching {
+                    Contacts.openContactPhotoInputStream(
+                        resolver,
+                        ContentUris.withAppendedId(Contacts.CONTENT_URI, id),
+                        true,
+                    )?.use { stream -> stream.readBytes() }
+                }.getOrNull()?.takeIf { it.isNotEmpty() }
             }
         }
         cards.values
@@ -548,7 +634,9 @@ class ContactsRepository(
                     jobTitle = card.jobTitle,
                     website = card.website,
                     birthday = card.birthday,
+                    anniversary = card.anniversary,
                     note = card.note,
+                    photo = card.photo,
                 )
             }
             .sortedBy { it.second.displayName.lowercase() }
@@ -561,7 +649,9 @@ class ContactsRepository(
         var jobTitle = ""
         var website = ""
         var birthday = ""
+        var anniversary = ""
         var note = ""
+        var photo: ByteArray? = null
         val phones = mutableListOf<ContactField>()
         val emails = mutableListOf<ContactField>()
         val addresses = mutableListOf<ContactField>()
