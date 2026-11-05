@@ -253,9 +253,9 @@ class ContactsRepository(
      * Giving up throws [ContactWriteException] rather than returning quietly, so the screen can
      * say what the provider refused instead of looking as though nothing was pressed.
      */
-    suspend fun createContact(input: ContactInput): Long? = withContext(Dispatchers.IO) {
+    suspend fun createContact(input: ContactInput, into: Place? = null): Long? = withContext(Dispatchers.IO) {
         var refusal: Exception? = null
-        for (place in placesForNewContact()) {
+        for (place in placesForNewContact(into)) {
             val ops = arrayListOf<ContentProviderOperation>()
             val raw = ContentProviderOperation.newInsert(RawContacts.CONTENT_URI)
             if (place != null) {
@@ -286,8 +286,46 @@ class ContactsRepository(
         throw ContactWriteException(describe(refusal))
     }
 
-    private fun placesForNewContact(): List<Place?> =
-        placesToTry(if (Build.VERSION.SDK_INT >= ANDROID_16) syncedAccountChosen() else null)
+    private fun placesForNewContact(into: Place?): List<Place?> = when {
+        // The owner named a place on the screen: that is the answer, not a starting point.
+        into?.onPhoneOnly == true -> listOf(null, Place(null, null))
+        into != null -> listOf(into)
+        else -> placesToTry(if (Build.VERSION.SDK_INT >= ANDROID_16) syncedAccountChosen() else null)
+    }
+
+    /**
+     * Where a contact can be saved: the accounts already holding contacts, then the phone.
+     *
+     * Read from the contacts themselves rather than from the phone's list of accounts, so
+     * Seca needs no permission to see accounts and shows nothing that is not already
+     * visible in the address book. An account that holds no contact is not offered: there
+     * would be no way to know whether it can take one.
+     */
+    suspend fun placesToSaveIn(): List<Place> = withContext(Dispatchers.IO) {
+        val accounts = LinkedHashSet<Place>()
+        runCatching {
+            resolver.query(
+                RawContacts.CONTENT_URI,
+                arrayOf(RawContacts.ACCOUNT_TYPE, RawContacts.ACCOUNT_NAME),
+                "${RawContacts.DELETED} = 0",
+                null,
+                null,
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    val type = cursor.getString(0)
+                    val name = cursor.getString(1)
+                    if (!type.isNullOrEmpty() && !name.isNullOrEmpty()) accounts += Place(type, name)
+                }
+            }
+        }
+        // The phone itself is always a place, and always the last one offered.
+        accounts.toList() + Place(null, null)
+    }
+
+    /** Where the phone says a new contact goes, which is where Seca puts one unasked. */
+    suspend fun placeByDefault(): Place = withContext(Dispatchers.IO) {
+        (if (Build.VERSION.SDK_INT >= ANDROID_16) syncedAccountChosen() else null) ?: Place(null, null)
+    }
 
     /**
      * The cloud or SIM account the phone names for new contacts, or null when it names neither.
@@ -780,8 +818,17 @@ internal fun groupContacts(contacts: List<ContactRow>, phones: List<PhoneRow>): 
  */
 class ContactWriteException(message: String) : Exception(message)
 
-/** One place a contact can be kept: an account, by type and name. */
-internal class Place(val type: String?, val name: String?)
+/**
+ * One place a contact can be kept: an account, by type and name.
+ *
+ * Both null means the phone itself, with no account behind it - a contact that syncs
+ * nowhere and leaves with no one.
+ */
+data class Place(val type: String?, val name: String?) {
+
+    /** Kept on the phone and nowhere else. */
+    val onPhoneOnly: Boolean get() = type.isNullOrEmpty()
+}
 
 /**
  * The places a new contact is offered to, in order, until one is accepted.

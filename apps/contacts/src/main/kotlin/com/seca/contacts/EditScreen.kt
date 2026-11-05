@@ -52,6 +52,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.ContactDetail
 import com.seca.core.contacts.CUSTOM_TYPE
+import com.seca.core.contacts.Place
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.RadioButton
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.clip
 import com.seca.core.contacts.ContactField
 import com.seca.core.contacts.ContactInput
 import com.seca.core.design.SecaIcons
@@ -93,12 +99,23 @@ internal fun EditScreen(
     var anniversary by remember(id) { mutableStateOf("") }
     var note by remember(id) { mutableStateOf("") }
     val resources = LocalResources.current
+    // Where a new contact goes. An existing one is not moved from here: changing the
+    // account a contact lives in is another operation, with its own ways of going wrong,
+    // and Android has a screen for it.
+    var places by remember { mutableStateOf(emptyList<Place>()) }
+    var savingIn by remember(id) { mutableStateOf<Place?>(null) }
+    var choosingPlace by remember { mutableStateOf(false) }
     // "All" is a way of looking at the list, not a profile: a new contact starts in Principal.
     var profileId by remember(id) {
         mutableStateOf(ui.currentProfileId.takeIf { !ui.showingAll } ?: ProfileStore.Principal.id)
     }
 
     LaunchedEffect(id) {
+        if (id == null) {
+            val (available, byDefault) = viewModel.savingPlaces()
+            places = available
+            savingIn = available.firstOrNull { it == byDefault } ?: byDefault
+        }
         if (id != null) {
             val loaded = viewModel.detail(id)
             existing = loaded
@@ -122,6 +139,18 @@ internal fun EditScreen(
         if (phones.isEmpty()) phones.add(ContactField(null, prefillPhone.orEmpty(), Phone.TYPE_MOBILE))
         if (emails.isEmpty()) emails.add(ContactField(null, "", Email.TYPE_HOME))
         ready = true
+    }
+
+    if (choosingPlace) {
+        SavingPlaceDialog(
+            places = places,
+            chosen = savingIn,
+            onDismiss = { choosingPlace = false },
+            onPick = {
+                savingIn = it
+                choosingPlace = false
+            },
+        )
     }
 
     val canSave = ready &&
@@ -151,7 +180,7 @@ internal fun EditScreen(
                             anniversary = anniversary,
                             note = note,
                         )
-                        withWrite { viewModel.save(existing, input, profileId) }
+                        withWrite { viewModel.save(existing, input, profileId, savingIn) }
                     },
                     modifier = Modifier.padding(end = 8.dp),
                 ) { Text(stringResource(R.string.save)) }
@@ -188,6 +217,18 @@ internal fun EditScreen(
                 FormSection(SecaIcons.PersonOutline) {
                     NameField(givenName, stringResource(R.string.given_name)) { givenName = it }
                     NameField(familyName, stringResource(R.string.family_name)) { familyName = it }
+                }
+
+                // Said even when there is only one place: an address book that quietly
+                // writes into an account that syncs should say so, whosever account it is.
+                if (id == null && savingIn != null) {
+                    FormSection(SecaIcons.Shield) {
+                        SavingPlaceRow(
+                            place = savingIn,
+                            choosable = places.size > 1,
+                            onChoose = { choosingPlace = true },
+                        )
+                    }
                 }
 
                 FormSection(SecaIcons.Phone) {
@@ -517,3 +558,83 @@ private fun AddFieldButton(label: String, onClick: () -> Unit) {
         Text(label, modifier = Modifier.padding(start = 8.dp))
     }
 }
+
+/** Where this contact will be kept, and the way to change it when there is a choice. */
+@Composable
+private fun SavingPlaceRow(place: Place?, choosable: Boolean, onChoose: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .then(if (choosable) Modifier.clickable(onClick = onChoose) else Modifier)
+            .padding(vertical = 8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.saved_in),
+            style = MaterialTheme.typography.labelLarge,
+            color = colors.onSurfaceVariant,
+        )
+        Text(
+            text = placeName(place),
+            style = MaterialTheme.typography.bodyLarge,
+            color = colors.onSurface,
+        )
+        Text(
+            text = stringResource(
+                when {
+                    place == null || place.onPhoneOnly -> R.string.saved_on_phone_hint
+                    else -> R.string.saved_in_account_hint
+                },
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun SavingPlaceDialog(places: List<Place>, chosen: Place?, onDismiss: () -> Unit, onPick: (Place) -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(SecaIcons.Shield, contentDescription = null) },
+        title = { Text(stringResource(R.string.saved_in)) },
+        text = {
+            Column {
+                places.forEach { place ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.large)
+                            .selectable(selected = place == chosen, role = Role.RadioButton) { onPick(place) }
+                            .padding(vertical = 6.dp),
+                    ) {
+                        RadioButton(selected = place == chosen, onClick = null)
+                        Column(Modifier.padding(start = 12.dp)) {
+                            Text(
+                                text = placeName(place),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            // The account's type as the phone spells it: not pretty, but true,
+                            // and it is what tells two accounts of the same name apart.
+                            place.type?.takeIf { it.isNotEmpty() }?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+    )
+}
+
+@Composable
+private fun placeName(place: Place?): String =
+    place?.name?.takeIf { !place.onPhoneOnly && it.isNotEmpty() } ?: stringResource(R.string.on_this_phone)

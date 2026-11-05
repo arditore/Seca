@@ -136,6 +136,7 @@
     <string name="notes">Notes</string>
     <string name="number">Number</string>
     <string name="on">On</string>
+    <string name="on_this_phone">This phone only</string>
     <string name="open_backup">Open the backup</string>
     <string name="open_settings">Open settings</string>
     <string name="permission_description">Seca Contacts shows the contacts saved on this phone. Nothing leaves the device: the app has no Internet access.</string>
@@ -167,6 +168,9 @@
     <string name="restore_backup">Restore a backup</string>
     <string name="restore_backup_hint">Brings back missing contacts, each in its profile</string>
     <string name="save">Save</string>
+    <string name="saved_in">Saved in</string>
+    <string name="saved_in_account_hint">This account syncs it to wherever the account goes</string>
+    <string name="saved_on_phone_hint">Kept here and nowhere else; it syncs with nothing</string>
     <string name="search_contacts">Search contacts</string>
     <string name="seca_palette">Seca palette</string>
     <string name="seca_palette_hint_dynamic">To replace the wallpaper colors</string>

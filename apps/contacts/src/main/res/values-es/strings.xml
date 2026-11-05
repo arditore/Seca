@@ -145,6 +145,7 @@
     <string name="notes">Notas</string>
     <string name="number">Número</string>
     <string name="on">Activado</string>
+    <string name="on_this_phone">Solo este teléfono</string>
     <string name="open_backup">Abrir la copia</string>
     <string name="open_settings">Abrir los ajustes</string>
     <string name="permission_description">Seca Contacts muestra los contactos guardados en este teléfono. Nada sale del dispositivo: la aplicación no tiene acceso a Internet.</string>
@@ -176,6 +177,9 @@
     <string name="restore_backup">Restaurar una copia</string>
     <string name="restore_backup_hint">Recupera los contactos ausentes, cada uno en su perfil</string>
     <string name="save">Guardar</string>
+    <string name="saved_in">Guardado en</string>
+    <string name="saved_in_account_hint">Esta cuenta lo sincroniza allá donde vaya</string>
+    <string name="saved_on_phone_hint">Se queda aquí y en ningún otro sitio; no se sincroniza con nada</string>
     <string name="search_contacts">Buscar contactos</string>
     <string name="seca_palette">Paleta Seca</string>
     <string name="seca_palette_hint_dynamic">Para sustituir los colores del fondo de pantalla</string>

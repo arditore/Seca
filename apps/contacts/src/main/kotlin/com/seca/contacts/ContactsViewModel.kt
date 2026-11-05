@@ -10,6 +10,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.seca.core.contacts.ContactDetail
 import com.seca.core.contacts.ContactInput
+import com.seca.core.contacts.Place
 import com.seca.core.contacts.ContactWriteException
 import com.seca.core.contacts.ContactsRepository
 import com.seca.core.contacts.PhoneNumbers
@@ -343,13 +344,17 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
 
     suspend fun detail(id: Long): ContactDetail? = repository.contactDetail(id)
 
-    fun save(existing: ContactDetail?, input: ContactInput, profileId: String) {
+    /** Where a new contact can be saved, and where it goes unasked. */
+    suspend fun savingPlaces(): Pair<List<Place>, Place> =
+        repository.placesToSaveIn() to repository.placeByDefault()
+
+    fun save(existing: ContactDetail?, input: ContactInput, profileId: String, into: Place? = null) {
         viewModelScope.launch {
             val id: Long = if (existing == null) {
                 // A phone whose provider refuses to write says so, rather than leaving the
                 // owner pressing a button that appears to do nothing.
                 try {
-                    repository.createContact(input) ?: return@launch
+                    repository.createContact(input, into) ?: return@launch
                 } catch (e: ContactWriteException) {
                     val said = e.message?.takeIf { it.isNotBlank() }
                     toast(if (said == null) text(R.string.contact_not_saved) else text(R.string.contact_not_saved_because, said))
