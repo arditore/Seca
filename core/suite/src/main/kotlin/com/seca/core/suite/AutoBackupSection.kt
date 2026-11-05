@@ -189,6 +189,17 @@ fun AutoBackupSection() {
             index = 5,
             count = ROWS_WHEN_ON,
             onClick = {
+                // Forgetting the folder means giving back the right to write in it. Keeping a
+                // permanent hold on a folder the owner has told us to forget would be a strange
+                // way to honour the word.
+                folder?.let { held ->
+                    runCatching {
+                        context.contentResolver.releasePersistableUriPermission(
+                            held,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                        )
+                    }
+                }
                 settings.forget()
                 AutoBackupSchedule.arm(context)
                 folder = null
