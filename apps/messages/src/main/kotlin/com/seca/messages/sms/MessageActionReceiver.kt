@@ -40,6 +40,14 @@ class MessageActionReceiver : BroadcastReceiver() {
         val address = intent.getStringExtra(MessageNotifications.EXTRA_ADDRESS)
         when (intent.action) {
             SENT -> intent.data?.let { repository.setSent(it, sent) }
+            DELIVERED -> intent.data?.let { uri ->
+                // The network answers with a PDU of its own; the result code says nothing here.
+                val status = DeliveryReports.statusOf(
+                    intent.getByteArrayExtra(EXTRA_PDU),
+                    intent.getStringExtra(EXTRA_FORMAT),
+                )
+                repository.setDeliveryStatus(uri, status)
+            }
             REPLY -> {
                 val text = RemoteInput.getResultsFromIntent(intent)
                     ?.getCharSequence(MessageNotifications.KEY_REPLY)
@@ -77,6 +85,11 @@ class MessageActionReceiver : BroadcastReceiver() {
 
     companion object {
         const val SENT = "com.seca.messages.SENT"
+        const val DELIVERED = "com.seca.messages.DELIVERED"
+
+        /** What the telephony service puts the delivery report in; its names, not ours. */
+        private const val EXTRA_PDU = "pdu"
+        private const val EXTRA_FORMAT = "format"
         const val REPLY = "com.seca.messages.REPLY"
         const val MARK_READ = "com.seca.messages.MARK_READ"
         const val COPY_CODE = "com.seca.messages.COPY_CODE"

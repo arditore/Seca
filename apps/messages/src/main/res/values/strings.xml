@@ -104,6 +104,9 @@
     <string name="delete_conversation_text">All messages with %1$s will be deleted from this phone.</string>
     <string name="delete_conversation_title">Delete the conversation?</string>
     <string name="delivered_at">Delivered · %1$s</string>
+    <string name="delivery_reports">Delivery reports</string>
+    <string name="delivery_reports_hint">Ask the network to say when a text arrives</string>
+    <string name="delivery_reports_note">The report comes from the network, not from the other phone, so it tells them nothing about you. Many carriers send none at all, and a few charge for them; where none comes back, a message simply stays at Sent.</string>
     <string name="direct_connection">Direct connection to the relays</string>
     <string name="disappearing">Disappearing</string>
     <string name="disappearing_messages">Disappearing messages</string>
@@ -344,6 +347,7 @@
         <item quantity="one">%d advertising conversation</item>
         <item quantity="other">%d advertising conversations</item>
     </plurals>
+    <string name="text_messages">Text messages</string>
     <string name="this_evening">This evening</string>
     <string name="this_month">This month</string>
     <string name="this_phone">This phone</string>

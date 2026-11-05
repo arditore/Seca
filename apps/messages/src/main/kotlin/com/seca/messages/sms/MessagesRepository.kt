@@ -160,7 +160,7 @@ class MessagesRepository(private val context: Context) {
     private fun readMessages(selection: String, args: Array<String>, order: String): List<Message> =
         resolver.query(
             Sms.CONTENT_URI,
-            arrayOf(Sms._ID, Sms.THREAD_ID, Sms.ADDRESS, Sms.BODY, Sms.DATE, Sms.TYPE),
+            arrayOf(Sms._ID, Sms.THREAD_ID, Sms.ADDRESS, Sms.BODY, Sms.DATE, Sms.TYPE, Sms.STATUS),
             selection,
             args,
             order,
@@ -174,7 +174,7 @@ class MessagesRepository(private val context: Context) {
                             address = c.getString(2).orEmpty(),
                             body = c.getString(3).orEmpty(),
                             date = c.getLong(4),
-                            status = statusOf(c.getInt(5)),
+                            status = statusOf(c.getInt(5), c.getInt(6)),
                         ),
                     )
                 }
@@ -313,6 +313,17 @@ class MessagesRepository(private val context: Context) {
     }
 
     /** Moves a sent message to the sent folder, or marks it failed. */
+    /**
+     * Writes what the network said about a message arriving.
+     *
+     * The column is Android's own, so a report Seca receives is visible to every other
+     * messaging app on the phone, as a message Seca sent is.
+     */
+    fun setDeliveryStatus(uri: Uri, status: Int) {
+        val values = ContentValues().apply { put(Sms.STATUS, status) }
+        runCatching { resolver.update(uri, values, null, null) }
+    }
+
     fun setSent(uri: Uri, sent: Boolean) {
         val values = ContentValues().apply {
             put(Sms.TYPE, if (sent) Sms.MESSAGE_TYPE_SENT else Sms.MESSAGE_TYPE_FAILED)
@@ -332,10 +343,20 @@ class MessagesRepository(private val context: Context) {
         awaitClose { resolver.unregisterContentObserver(observer) }
     }
 
-    private fun statusOf(type: Int): MessageStatus = when (type) {
-        Sms.MESSAGE_TYPE_INBOX -> MessageStatus.Received
-        Sms.MESSAGE_TYPE_FAILED -> MessageStatus.Failed
-        Sms.MESSAGE_TYPE_OUTBOX, Sms.MESSAGE_TYPE_QUEUED -> MessageStatus.Sending
+    /**
+     * What a message is, from how it was filed and what the network said afterwards.
+     *
+     * [delivery] is the carrier's word, and most of the time there is none: a carrier that
+     * sends no report, or an owner who never asked for one, leaves STATUS_NONE behind, and
+     * the message stays at "Sent", which is all anyone here actually knows.
+     */
+    private fun statusOf(type: Int, delivery: Int = Sms.STATUS_NONE): MessageStatus = when {
+        type == Sms.MESSAGE_TYPE_INBOX -> MessageStatus.Received
+        type == Sms.MESSAGE_TYPE_FAILED -> MessageStatus.Failed
+        type == Sms.MESSAGE_TYPE_OUTBOX || type == Sms.MESSAGE_TYPE_QUEUED -> MessageStatus.Sending
+        // The network gave up on a message the phone did send: that is a failure to show.
+        delivery == Sms.STATUS_FAILED -> MessageStatus.Failed
+        delivery == Sms.STATUS_COMPLETE -> MessageStatus.Delivered
         else -> MessageStatus.Sent
     }
 }

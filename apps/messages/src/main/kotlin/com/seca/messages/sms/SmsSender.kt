@@ -38,8 +38,30 @@ class SmsSender(private val context: Context) {
                 .setData(stored),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+        // A second answer, from the network rather than from the phone, saying it arrived.
+        // Asked for only when the owner turned it on: see DeliveryReports.
+        val onDelivered = if (!DeliveryReports.enabled(context)) {
+            null
+        } else {
+            PendingIntent.getBroadcast(
+                context,
+                0,
+                Intent(context, MessageActionReceiver::class.java)
+                    .setAction(MessageActionReceiver.DELIVERED)
+                    .setData(stored),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+        }
         val sent = runCatching {
-            manager.sendMultipartTextMessage(address, null, parts, ArrayList(parts.map { onSent }), null)
+            manager.sendMultipartTextMessage(
+                address,
+                null,
+                parts,
+                ArrayList(parts.map { onSent }),
+                // One report per part; the last to arrive is the one that counts, which is
+                // right: a message is delivered when its last part is.
+                onDelivered?.let { ArrayList(parts.map { _ -> it }) },
+            )
         }.onFailure {
             stored?.let { repository.setSent(it, sent = false) }
         }.isSuccess

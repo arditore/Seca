@@ -25,6 +25,7 @@ import com.seca.core.design.component.SecaHint
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.messages.sms.CodeCleanup
+import com.seca.messages.sms.DeliveryReports
 import com.seca.messages.sms.CodeLifetime
 import com.seca.messages.sms.SpamFilter
 import kotlinx.coroutines.launch
@@ -37,6 +38,7 @@ internal fun CodeAndSpamSettings() {
     val scope = rememberCoroutineScope()
     var lifetime by remember { mutableStateOf(CodeCleanup.lifetime(context)) }
     var filterSpam by remember { mutableStateOf(SpamFilter.enabled(context)) }
+    var deliveryReports by remember { mutableStateOf(DeliveryReports.enabled(context)) }
 
     SecaSectionLabel(stringResource(R.string.verification_codes))
     SecaGroupItem(index = 0, count = 1) {
@@ -81,4 +83,23 @@ internal fun CodeAndSpamSettings() {
         )
     }
     SecaHint(stringResource(R.string.advertising_hint))
+
+    SecaSectionLabel(stringResource(R.string.text_messages))
+    SecaGroupItem(index = 0, count = 1) {
+        SecaSettingRow(
+            icon = SecaIcons.Check,
+            title = stringResource(R.string.delivery_reports),
+            subtitle = stringResource(R.string.delivery_reports_hint),
+            modifier = Modifier.toggleable(
+                value = deliveryReports,
+                role = Role.Switch,
+                onValueChange = { on ->
+                    deliveryReports = on
+                    DeliveryReports.setEnabled(context, on)
+                },
+            ),
+            trailing = { Switch(checked = deliveryReports, onCheckedChange = null) },
+        )
+    }
+    SecaHint(stringResource(R.string.delivery_reports_note))
 }

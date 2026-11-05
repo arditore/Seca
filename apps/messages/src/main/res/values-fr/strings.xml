@@ -108,6 +108,9 @@
     <string name="delete_conversation_text">Tous les messages avec %1$s seront supprimés de ce téléphone.</string>
     <string name="delete_conversation_title">Supprimer la conversation ?</string>
     <string name="delivered_at">Reçu · %1$s</string>
+    <string name="delivery_reports">Accusés de réception</string>
+    <string name="delivery_reports_hint">Demander au réseau de signaler qu\'un SMS est arrivé</string>
+    <string name="delivery_reports_note">L\'accusé vient du réseau, pas du téléphone d\'en face : il ne lui apprend rien sur vous. Beaucoup d\'opérateurs n\'en envoient aucun, certains les facturent ; quand il n\'en revient pas, le message reste simplement à Envoyé.</string>
     <string name="direct_connection">Connexion directe aux relais</string>
     <string name="disappearing">Éphémère</string>
     <string name="disappearing_messages">Messages éphémères</string>
@@ -359,6 +362,7 @@
         <item quantity="many">%d conversations publicitaires</item>
         <item quantity="other">%d conversations publicitaires</item>
     </plurals>
+    <string name="text_messages">SMS</string>
     <string name="this_evening">Ce soir</string>
     <string name="this_month">Ce mois-ci</string>
     <string name="this_phone">Ce téléphone</string>

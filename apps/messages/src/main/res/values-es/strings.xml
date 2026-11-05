@@ -108,6 +108,9 @@
     <string name="delete_conversation_text">Todos los mensajes con %1$s se eliminarán de este teléfono.</string>
     <string name="delete_conversation_title">¿Eliminar la conversación?</string>
     <string name="delivered_at">Entregado · %1$s</string>
+    <string name="delivery_reports">Informes de entrega</string>
+    <string name="delivery_reports_hint">Pedir a la red que avise cuando llegue un SMS</string>
+    <string name="delivery_reports_note">El informe viene de la red, no del otro teléfono, así que no le dice nada sobre usted. Muchas operadoras no envían ninguno y algunas los cobran; cuando no llega ninguno, el mensaje se queda simplemente en Enviado.</string>
     <string name="direct_connection">Conexión directa con los relés</string>
     <string name="disappearing">Temporales</string>
     <string name="disappearing_messages">Mensajes temporales</string>
@@ -359,6 +362,7 @@
         <item quantity="many">%d de conversaciones publicitarias</item>
         <item quantity="other">%d conversaciones publicitarias</item>
     </plurals>
+    <string name="text_messages">SMS</string>
     <string name="this_evening">Esta tarde</string>
     <string name="this_month">Este mes</string>
     <string name="this_phone">Este teléfono</string>
