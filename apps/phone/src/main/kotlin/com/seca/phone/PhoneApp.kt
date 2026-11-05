@@ -108,6 +108,26 @@ fun PhoneApp(
             callLauncher.launch(Manifest.permission.CALL_PHONE)
         }
     }
+    /**
+     * Hold the call button to use the other SIM this once.
+     *
+     * It goes through the same permission door as an ordinary call: a long press that
+     * silently did nothing because the right to call had never been asked for would be
+     * worse than one that asks.
+     */
+    val onCallWithSim: (String) -> Unit = { number ->
+        if (context.checkSelfPermission(Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+            pendingCall = number
+            callLauncher.launch(Manifest.permission.CALL_PHONE)
+        } else {
+            scope.launch {
+                when (val route = withContext(Dispatchers.IO) { routeCallOnce(context, number) }) {
+                    is SimRoute.Direct -> placeCall(context, number, route.account)
+                    is SimRoute.Ask -> simChoice = route
+                }
+            }
+        }
+    }
     val onVoicemail: () -> Unit = {
         if (!callVoicemail(context)) {
             pendingCall = VOICEMAIL
@@ -174,11 +194,17 @@ fun PhoneApp(
         simChoice?.let { ask ->
             SimChooserDialog(
                 sims = ask.sims,
-                title = stringResource(R.string.which_sim),
-                rememberLabel = stringResource(R.string.always_use_sim, ask.contactName ?: ui.numbers.display(ask.number)),
+                title = stringResource(if (ask.once) R.string.which_sim_once else R.string.which_sim),
+                // A one-off offers nothing to remember: that is what makes it one.
+                rememberLabel = if (ask.once) {
+                    null
+                } else {
+                    stringResource(R.string.always_use_sim, ask.contactName ?: ui.numbers.display(ask.number))
+                },
+                usual = ask.usual,
                 onDismiss = { simChoice = null },
                 onPick = { sim, keep ->
-                    if (keep) SimPreferences(context)[ask.key] = sim.handle
+                    if (keep && !ask.once) SimPreferences(context)[ask.key] = sim.handle
                     placeCall(context, ask.number, sim.handle)
                     simChoice = null
                 },
@@ -243,12 +269,13 @@ fun PhoneApp(
                         viewModel = viewModel,
                         listState = homeListState,
                         onCall = onCall,
+                        onCallWithSim = onCallWithSim,
                         onDeleteCalls = onDeleteCalls,
                         isDefaultDialer = isDefaultDialer,
                         onBecomeDefault = onBecomeDefault,
                     )
-                    is PhoneScreen.Dialer -> DialerScreen(screen.initial, ui, viewModel, onCall, onVoicemail)
-                    is PhoneScreen.CallDetail -> CallDetailScreen(screen.number, ui, viewModel, onCall, onDeleteCalls)
+                    is PhoneScreen.Dialer -> DialerScreen(screen.initial, ui, viewModel, onCall, onCallWithSim, onVoicemail)
+                    is PhoneScreen.CallDetail -> CallDetailScreen(screen.number, ui, viewModel, onCall, onCallWithSim, onDeleteCalls)
                     PhoneScreen.Settings -> SettingsScreen(ui, viewModel, withCallLogWrite, isDefaultDialer, onBecomeDefault)
                 }
             }

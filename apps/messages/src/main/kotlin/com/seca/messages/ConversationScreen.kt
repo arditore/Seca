@@ -19,6 +19,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -87,6 +88,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.seca.messages.sms.SendingSim
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.secaToneColors
 import com.seca.core.link.handshake.Handshake
@@ -324,6 +326,8 @@ internal fun ConversationContent(
                 }
             },
             bottomBar = {
+                // Asked once per conversation: the SIMs do not change while it is open.
+                val sims = remember { viewModel.sims() }
                 Composer(
                     text = text,
                     onText = {
@@ -334,6 +338,12 @@ internal fun ConversationContent(
                     encrypted = linked,
                     onSend = {
                         viewModel.send(screen.address, text, replyingTo?.linkId)
+                        text = ""
+                        replyingTo = null
+                    },
+                    sims = sims,
+                    onSendFrom = { subscriptionId ->
+                        viewModel.sendFrom(screen.address, text, subscriptionId)
                         text = ""
                         replyingTo = null
                     },
@@ -1253,6 +1263,9 @@ private fun Composer(
     onStartVoice: (() -> Unit)?,
     onCancelVoice: () -> Unit,
     onSendVoice: () -> Unit,
+    /** Holding Send down: which SIM to send this one from. Empty where there is no choice. */
+    sims: List<SendingSim>,
+    onSendFrom: (Int) -> Unit,
 ) {
     // How many SMS the text takes: past 160 plain characters, or 70 with accents or emoji, it is split.
     val parts = remember(text, encrypted) { if (text.isEmpty() || encrypted) 0 else SmsMessage.calculateLength(text, false)[0] }
@@ -1384,12 +1397,38 @@ private fun Composer(
                 modifier = Modifier.weight(1f),
             )
             val startVoice = onStartVoice.takeIf { text.isBlank() }
+            // Only an ordinary SMS has a SIM to choose: an encrypted message goes over the
+            // Internet, and a voice note is not a text at all.
+            val chooseSim = sims.isNotEmpty() && !encrypted && startVoice == null && enabled && text.isNotBlank()
+            var choosingSim by remember { mutableStateOf(false) }
+            if (choosingSim) {
+                SendingSimDialog(
+                    sims = sims,
+                    onDismiss = { choosingSim = false },
+                    onPick = { sim ->
+                        choosingSim = false
+                        onSendFrom(sim.subscriptionId)
+                    },
+                )
+            }
             FilledIconButton(
                 onClick = startVoice ?: onSend,
                 enabled = startVoice != null || (enabled && text.isNotBlank()),
                 modifier = Modifier
                     .padding(start = 8.dp, bottom = if (parts > 1) 24.dp else 0.dp)
-                    .size(56.dp),
+                    .size(56.dp)
+                    .then(
+                        if (!chooseSim) {
+                            Modifier
+                        } else {
+                            Modifier.combinedClickable(
+                                role = Role.Button,
+                                onClick = onSend,
+                                onLongClickLabel = stringResource(R.string.send_from_other_sim),
+                                onLongClick = { choosingSim = true },
+                            )
+                        },
+                    ),
             ) {
                 Icon(
                     if (startVoice != null) SecaIcons.Mic else SecaIcons.Send,
@@ -1404,4 +1443,46 @@ private fun Composer(
             }
         }
     }
+}
+
+/**
+ * Which SIM sends this one text.
+ *
+ * Reached by holding the send button down, and it changes nothing afterwards: the next message
+ * goes from whichever SIM the phone's own settings name, as this one would have.
+ */
+@Composable
+private fun SendingSimDialog(sims: List<SendingSim>, onDismiss: () -> Unit, onPick: (SendingSim) -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(SecaIcons.Send, contentDescription = null) },
+        title = { Text(stringResource(R.string.which_sim_once)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                sims.forEach { sim ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.large)
+                            .background(colors.surfaceContainerHighest)
+                            .clickable(onClickLabel = sim.label) { onPick(sim) }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                    ) {
+                        Text(
+                            text = sim.label,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = colors.onSurface,
+                            modifier = Modifier.weight(1f),
+                        )
+                        sim.slot?.let {
+                            Text("SIM $it", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }

@@ -68,6 +68,7 @@ internal fun DialerScreen(
     ui: PhoneUi,
     viewModel: PhoneViewModel,
     onCall: (String) -> Unit,
+    onCallWithSim: (String) -> Unit,
     onVoicemail: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -117,7 +118,12 @@ internal fun DialerScreen(
             ) {
                 Column(Modifier.padding(bottom = 8.dp)) {
                     suggestions.forEachIndexed { index, match ->
-                        SecaGroupItem(index = index, count = suggestions.size, onClick = { onCall(match.number.raw) }) {
+                        SecaGroupItem(
+                            index = index,
+                            count = suggestions.size,
+                            onClick = { onCall(match.number.raw) },
+                            onLongClick = { onCallWithSim(match.number.raw) },
+                        ) {
                             SuggestionRow(match, ui)
                         }
                     }
@@ -148,6 +154,7 @@ internal fun DialerScreen(
                     onClick = {
                         if (typed.any(Char::isDigit)) onCall(typed) else lastDialled?.let { typed = it }
                     },
+                    onLongClick = { if (typed.any(Char::isDigit)) onCallWithSim(typed) },
                 )
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     if (typed.isNotEmpty()) {
@@ -268,7 +275,7 @@ private fun Key(
 }
 
 @Composable
-private fun CallButton(onClick: () -> Unit) {
+private fun CallButton(onClick: () -> Unit, onLongClick: () -> Unit) {
     val (container, content) = secaCallColors()
     Box(
         contentAlignment = Alignment.Center,
@@ -276,7 +283,13 @@ private fun CallButton(onClick: () -> Unit) {
             .size(width = 96.dp, height = 64.dp)
             .clip(CircleShape)
             .background(container)
-            .clickable(role = Role.Button, onClick = onClick),
+            .combinedClickable(
+                role = Role.Button,
+                onClick = onClick,
+                // Held down, it asks which SIM to call with, this once.
+                onLongClickLabel = stringResource(R.string.call_with_other_sim),
+                onLongClick = onLongClick,
+            ),
     ) {
         Icon(SecaIcons.Phone, contentDescription = stringResource(R.string.call), tint = content)
     }

@@ -2,6 +2,7 @@ package com.seca.core.design.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,6 +29,9 @@ fun SecaGroupItem(
     count: Int,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    /** What holding the row down does, where a row offers something more than its tap. */
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
     content: @Composable () -> Unit,
 ) {
     Box(
@@ -37,7 +41,17 @@ fun SecaGroupItem(
             .padding(bottom = if (index < count - 1) 2.dp else 0.dp)
             .clip(segmentShape(index, count))
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+            .then(
+                when {
+                    onClick == null -> Modifier
+                    onLongClick == null -> Modifier.clickable(onClick = onClick)
+                    else -> Modifier.combinedClickable(
+                        onClick = onClick,
+                        onLongClickLabel = onLongClickLabel,
+                        onLongClick = onLongClick,
+                    )
+                },
+            ),
     ) {
         content()
     }

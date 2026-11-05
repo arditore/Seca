@@ -29,6 +29,8 @@ import com.seca.messages.sms.MessageNotifications
 import com.seca.messages.sms.MessagesRepository
 import com.seca.messages.sms.ScheduledMessage
 import com.seca.messages.sms.ScheduledMessages
+import com.seca.messages.sms.SendingSim
+import com.seca.messages.sms.sendingSims
 import com.seca.messages.sms.SmsSender
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -424,6 +426,21 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
             if (!links.sendText(address, text, replyTo)) SmsSender(getApplication()).send(address, text)
         }
     }
+
+    /**
+     * Sends by SMS from one named SIM, for this message only.
+     *
+     * Seca Link is not consulted: a SIM is an SMS idea, and this is only offered where the
+     * message was going to leave as an SMS anyway.
+     */
+    fun sendFrom(address: String, text: String, subscriptionId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            SmsSender(getApplication()).send(address, text, subscriptionId)
+        }
+    }
+
+    /** The SIMs a text can be sent from, when there is more than one to choose between. */
+    fun sims(): List<SendingSim> = sendingSims(getApplication()).takeIf { it.size > 1 }.orEmpty()
 
     /** Sends the voice message recorded at [path] through Seca Link, then lets the recording go. */
     fun sendVoice(address: String, path: String) {

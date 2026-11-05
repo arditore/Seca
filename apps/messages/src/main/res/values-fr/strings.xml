@@ -339,6 +339,7 @@
     <string name="send_encrypted">Envoyer chiffré</string>
     <string name="send_encrypted_photo">Envoyer une photo chiffrée</string>
     <string name="send_failed_retry">Échec de l\'envoi · Toucher pour réessayer</string>
+    <string name="send_from_other_sim">Envoyer depuis une autre SIM</string>
     <string name="send_now">Envoyer maintenant</string>
     <string name="send_voice">Envoyer le message vocal</string>
     <string name="sending">Envoi…</string>
@@ -415,6 +416,7 @@
     <string name="view_contact">Voir la fiche</string>
     <string name="voice_not_sent">Le message vocal n\'a pas pu être envoyé</string>
     <string name="waiting_to_send">En attente d\'envoi</string>
+    <string name="which_sim_once">Quelle SIM, pour cette fois ?</string>
     <string name="write_to">Écrire au %1$s</string>
     <string name="wrong_password">Mot de passe incorrect, ou fichier abîmé</string>
     <string name="yesterday">Hier</string>

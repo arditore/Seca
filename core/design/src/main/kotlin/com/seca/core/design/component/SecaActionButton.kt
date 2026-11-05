@@ -1,7 +1,7 @@
 package com.seca.core.design.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -27,6 +27,9 @@ fun SecaActionButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     emphasized: Boolean = false,
+    /** What holding the button down does, with the words a screen reader announces for it. */
+    onLongClick: (() -> Unit)? = null,
+    longClickLabel: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val container = when {
@@ -44,7 +47,13 @@ fun SecaActionButton(
         modifier = modifier
             .clip(MaterialTheme.shapes.large)
             .background(container)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .combinedClickable(
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick,
+                onLongClickLabel = longClickLabel,
+                onLongClick = onLongClick,
+            )
             .padding(vertical = 16.dp),
     ) {
         Icon(icon, contentDescription = null, tint = content)

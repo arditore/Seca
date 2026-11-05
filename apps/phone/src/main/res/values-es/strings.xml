@@ -64,6 +64,7 @@
     <string name="call_status_holding">En espera</string>
     <string name="call_status_incoming">Llamada entrante</string>
     <string name="call_status_select_sim">Elige una tarjeta SIM</string>
+    <string name="call_with_other_sim">Llamar con otra SIM</string>
     <string name="calls">Llamadas</string>
     <string name="cancel">Cancelar</string>
     <string name="carrier_settings">Ajustes de la operadora</string>
@@ -197,6 +198,7 @@
     <string name="sim_for">SIM para %1$s</string>
     <string name="sim_for_calling">Para llamar a %1$s</string>
     <string name="sim_tap_to_choose">Toca para elegir la SIM que llama a %1$s</string>
+    <string name="sim_usual">SIM %1$s · la habitual</string>
     <string name="swap">Alternar</string>
     <string name="tap_to_return">%1$s · Toca para volver</string>
     <string name="this_number">este número</string>
@@ -211,6 +213,7 @@
     <string name="voicemail_settings_hint">Número y ajustes del buzón de voz</string>
     <string name="when_they_call">Cuando llaman</string>
     <string name="which_sim">¿Con qué SIM llamar?</string>
+    <string name="which_sim_once">¿Qué SIM, solo esta vez?</string>
     <string name="wifi_call">Llamada por Wi-Fi</string>
     <string name="wifi_calling">Llamadas por Wi-Fi</string>
     <string name="wifi_calling_hint">Llamar por Wi-Fi cuando la red móvil es débil</string>

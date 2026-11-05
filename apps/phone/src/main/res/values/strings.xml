@@ -62,6 +62,7 @@
     <string name="call_status_holding">On hold</string>
     <string name="call_status_incoming">Incoming call</string>
     <string name="call_status_select_sim">Choose a SIM card</string>
+    <string name="call_with_other_sim">Call with another SIM</string>
     <string name="calls">Calls</string>
     <string name="cancel">Cancel</string>
     <string name="carrier_settings">Carrier settings</string>
@@ -192,6 +193,7 @@
     <string name="sim_for">SIM for %1$s</string>
     <string name="sim_for_calling">To call %1$s</string>
     <string name="sim_tap_to_choose">Tap to choose the SIM that calls %1$s</string>
+    <string name="sim_usual">SIM %1$s · usually used</string>
     <string name="swap">Swap</string>
     <string name="tap_to_return">%1$s · Tap to return</string>
     <string name="this_number">this number</string>
@@ -206,6 +208,7 @@
     <string name="voicemail_settings_hint">Voicemail number and settings</string>
     <string name="when_they_call">When they call</string>
     <string name="which_sim">Call with which SIM?</string>
+    <string name="which_sim_once">Which SIM, this once?</string>
     <string name="wifi_call">Wi-Fi call</string>
     <string name="wifi_calling">Wi-Fi calling</string>
     <string name="wifi_calling_hint">Call over Wi-Fi when the mobile network is weak</string>

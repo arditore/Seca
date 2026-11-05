@@ -21,12 +21,20 @@ class SmsSender(private val context: Context) {
 
     private val repository = MessagesRepository(context)
 
-    /** False when this phone cannot send: no permission, or no SIM able to. */
-    fun send(address: String, body: String): Boolean {
+    /**
+     * Sends [body] to [address]. False when this phone cannot send: no permission, or no
+     * SIM able to.
+     *
+     * [subscriptionId] names a SIM for this message alone, as holding the send button
+     * down offers. Left out, the phone sends on whichever SIM its own settings name.
+     */
+    fun send(address: String, body: String, subscriptionId: Int = NO_SIM_CHOSEN): Boolean {
         val text = body.trim()
         if (address.isBlank() || text.isEmpty()) return false
         if (context.checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) return false
-        val manager = context.getSystemService(SmsManager::class.java) ?: return false
+        val manager = context.getSystemService(SmsManager::class.java)?.let {
+            if (subscriptionId == NO_SIM_CHOSEN) it else it.createForSubscriptionId(subscriptionId)
+        } ?: return false
         val stored = repository.storeOutgoing(address, text)
         val parts = manager.divideMessage(text)
         // The stored message travels with the result, so the receiver knows which one to mark.
@@ -68,5 +76,10 @@ class SmsSender(private val context: Context) {
         // Writing to someone also offers them Seca Link, discreetly, when it is on.
         if (sent) CoroutineScope(Dispatchers.IO).launch { LinkSms.inviteIfDue(context.applicationContext, address) }
         return sent
+    }
+
+    companion object {
+        /** Send on whichever SIM the phone itself would have used. */
+        const val NO_SIM_CHOSEN: Int = -1
     }
 }

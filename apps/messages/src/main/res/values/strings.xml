@@ -327,6 +327,7 @@
     <string name="send_encrypted">Send encrypted</string>
     <string name="send_encrypted_photo">Send an encrypted photo</string>
     <string name="send_failed_retry">Sending failed · Tap to retry</string>
+    <string name="send_from_other_sim">Send from another SIM</string>
     <string name="send_now">Send now</string>
     <string name="send_voice">Send voice message</string>
     <string name="sending">Sending…</string>
@@ -396,6 +397,7 @@
     <string name="view_contact">View contact</string>
     <string name="voice_not_sent">The voice message could not be sent</string>
     <string name="waiting_to_send">Waiting to be sent</string>
+    <string name="which_sim_once">Which SIM, this once?</string>
     <string name="write_to">Write to %1$s</string>
     <string name="wrong_password">Wrong password, or damaged file</string>
     <string name="yesterday">Yesterday</string>

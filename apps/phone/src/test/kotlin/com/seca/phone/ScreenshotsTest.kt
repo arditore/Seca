@@ -67,17 +67,17 @@ class ScreenshotsTest {
 
     @Test
     fun home() = shoot("phone-home") {
-        HomeScreen(sampleUi(), viewModel(), rememberLazyListState(), onCall = {}, onDeleteCalls = {}, isDefaultDialer = true, onBecomeDefault = {})
+        HomeScreen(sampleUi(), viewModel(), rememberLazyListState(), onCall = {}, onCallWithSim = {}, onDeleteCalls = {}, isDefaultDialer = true, onBecomeDefault = {})
     }
 
     @Test
     fun homeDark() = shoot("phone-home-dark", dark = true) {
-        HomeScreen(sampleUi(), viewModel(), rememberLazyListState(), onCall = {}, onDeleteCalls = {}, isDefaultDialer = true, onBecomeDefault = {})
+        HomeScreen(sampleUi(), viewModel(), rememberLazyListState(), onCall = {}, onCallWithSim = {}, onDeleteCalls = {}, isDefaultDialer = true, onBecomeDefault = {})
     }
 
     @Test
     fun dialer() = shoot("phone-dialer") {
-        DialerScreen("0612", sampleUi(), viewModel(), onCall = {}, onVoicemail = {})
+        DialerScreen("0612", sampleUi(), viewModel(), onCall = {}, onCallWithSim = {}, onVoicemail = {})
     }
 
     @Test
@@ -87,7 +87,7 @@ class ScreenshotsTest {
 
     @Test
     fun callDetail() = shoot("phone-call-detail") {
-        CallDetailScreen("0698765432", sampleUi(), viewModel(), onCall = {}, onDeleteCalls = {})
+        CallDetailScreen("0698765432", sampleUi(), viewModel(), onCall = {}, onCallWithSim = {}, onDeleteCalls = {})
     }
 
     /** The launcher icon at the size app stores ask for. */

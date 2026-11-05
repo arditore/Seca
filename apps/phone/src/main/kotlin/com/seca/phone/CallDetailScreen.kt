@@ -52,6 +52,7 @@ internal fun CallDetailScreen(
     ui: PhoneUi,
     viewModel: PhoneViewModel,
     onCall: (String) -> Unit,
+    onCallWithSim: (String) -> Unit,
     onDeleteCalls: (List<Long>) -> Unit,
 ) {
     val context = LocalContext.current
@@ -114,6 +115,8 @@ internal fun CallDetailScreen(
                         onClick = { onCall(match?.number?.raw ?: number) },
                         modifier = Modifier.weight(1f),
                         emphasized = true,
+                        onLongClick = { onCallWithSim(match?.number?.raw ?: number) },
+                        longClickLabel = stringResource(R.string.call_with_other_sim),
                     )
                     SecaActionButton(SecaIcons.Messages, stringResource(R.string.message), onClick = { sms(context, number) }, modifier = Modifier.weight(1f))
                     if (contact != null) {

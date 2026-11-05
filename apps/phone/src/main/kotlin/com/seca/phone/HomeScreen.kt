@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -81,6 +82,7 @@ internal fun HomeScreen(
     viewModel: PhoneViewModel,
     listState: LazyListState,
     onCall: (String) -> Unit,
+    onCallWithSim: (String) -> Unit,
     onDeleteCalls: (List<Long>) -> Unit,
     isDefaultDialer: Boolean,
     onBecomeDefault: () -> Unit,
@@ -93,6 +95,7 @@ internal fun HomeScreen(
     val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
     val actions = RowActions(
         onCall = onCall,
+        onCallWithSim = onCallWithSim,
         onOpen = { viewModel.open(PhoneScreen.CallDetail(it)) },
         onDelete = onDeleteCalls,
     )
@@ -171,6 +174,7 @@ internal fun HomeScreen(
 /** What a history row can do; gathered so every row gets the same. */
 private class RowActions(
     val onCall: (String) -> Unit,
+    val onCallWithSim: (String) -> Unit,
     val onOpen: (String) -> Unit,
     val onDelete: (List<Long>) -> Unit,
 )
@@ -399,7 +403,15 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
                 }
             }
             if (call.callable) {
-                FilledTonalIconButton(onClick = { actions.onCall(call.number) }) {
+                FilledTonalIconButton(
+                    onClick = { actions.onCall(call.number) },
+                    modifier = Modifier.combinedClickable(
+                        role = Role.Button,
+                        onClick = { actions.onCall(call.number) },
+                        onLongClickLabel = stringResource(R.string.call_with_other_sim),
+                        onLongClick = { actions.onCallWithSim(call.number) },
+                    ),
+                ) {
                     Icon(SecaIcons.Phone, contentDescription = stringResource(R.string.call_named, title))
                 }
             }

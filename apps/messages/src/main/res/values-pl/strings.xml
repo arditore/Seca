@@ -337,6 +337,7 @@
     <string name="send_encrypted">Wyślij zaszyfrowaną</string>
     <string name="send_encrypted_photo">Wyślij zaszyfrowane zdjęcie</string>
     <string name="send_failed_retry">Wysyłanie nie powiodło się · Dotknij, aby ponowić</string>
+    <string name="send_from_other_sim">Wyślij z innej karty SIM</string>
     <string name="send_now">Wyślij teraz</string>
     <string name="send_voice">Wyślij wiadomość głosową</string>
     <string name="sending">Wysyłanie…</string>
@@ -413,6 +414,7 @@
     <string name="view_contact">Zobacz kontakt</string>
     <string name="voice_not_sent">Nie udało się wysłać wiadomości głosowej</string>
     <string name="waiting_to_send">Oczekuje na wysłanie</string>
+    <string name="which_sim_once">Która karta SIM, tym razem?</string>
     <string name="write_to">Napisz do: %1$s</string>
     <string name="wrong_password">Błędne hasło lub uszkodzony plik</string>
     <string name="yesterday">Wczoraj</string>

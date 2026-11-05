@@ -114,7 +114,18 @@ internal sealed interface SimRoute {
     /** [account] null lets Android pick, as with a single SIM. */
     data class Direct(val account: PhoneAccountHandle?) : SimRoute
 
-    data class Ask(val number: String, val sims: List<Sim>, val key: String, val contactName: String?) : SimRoute
+    data class Ask(
+        val number: String,
+        val sims: List<Sim>,
+        val key: String,
+        val contactName: String?,
+        /**
+         * This call only: nothing is remembered afterwards, and the SIM the contact is
+         * usually called with is marked so that the exception is visibly an exception.
+         */
+        val once: Boolean = false,
+        val usual: PhoneAccountHandle? = null,
+    ) : SimRoute
 }
 
 /**
@@ -128,6 +139,28 @@ internal fun routeCall(context: Context, number: String): SimRoute {
     val key = simKeyOf(contact?.first, number, PhoneNumbers(PhoneNumbers.detectRegion(context)))
     val preferred = SimPreferences(context)[key]?.takeIf { saved -> sims.any { it.handle == saved } }
     return if (preferred != null) SimRoute.Direct(preferred) else SimRoute.Ask(number, sims, key, contact?.second?.ifEmpty { null })
+}
+
+/**
+ * The same, for a call the owner asked to place on a particular SIM this once.
+ *
+ * Reached by holding the call button down rather than tapping it. Nothing is written: the
+ * contact goes on being called with whatever they were called with before, which is the
+ * whole point - a one-off that changed the setting would not be a one-off.
+ */
+internal fun routeCallOnce(context: Context, number: String): SimRoute {
+    val sims = callingSims(context)
+    if (sims.size < 2 || isEmergency(context, number)) return SimRoute.Direct(null)
+    val contact = contactFor(context, number)
+    val key = simKeyOf(contact?.first, number, PhoneNumbers(PhoneNumbers.detectRegion(context)))
+    return SimRoute.Ask(
+        number = number,
+        sims = sims,
+        key = key,
+        contactName = contact?.second?.ifEmpty { null },
+        once = true,
+        usual = SimPreferences(context)[key]?.takeIf { saved -> sims.any { it.handle == saved } },
+    )
 }
 
 private fun isEmergency(context: Context, number: String): Boolean =
@@ -144,6 +177,7 @@ internal fun SimChooserDialog(
     rememberLabel: String?,
     onDismiss: () -> Unit,
     onPick: (sim: Sim, remember: Boolean) -> Unit,
+    usual: PhoneAccountHandle? = null,
 ) {
     var keep by remember { mutableStateOf(true) }
     val colors = MaterialTheme.colorScheme
@@ -178,8 +212,15 @@ internal fun SimChooserDialog(
                         }
                         Column(Modifier.padding(start = 16.dp)) {
                             Text(sim.label, style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
-                            sim.slot?.let {
-                                Text("SIM $it", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
+                            // Which one this contact is usually called with, so that choosing
+                            // the other is seen to be the exception it is.
+                            val under = when {
+                                sim.handle == usual -> stringResource(R.string.sim_usual, sim.slot ?: sim.label)
+                                sim.slot != null -> "SIM ${sim.slot}"
+                                else -> null
+                            }
+                            under?.let {
+                                Text(it, style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
                             }
                         }
                     }
