@@ -37,6 +37,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -72,9 +76,7 @@ import kotlin.math.abs
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 
 @Composable
 internal fun HomeScreen(
@@ -611,25 +613,26 @@ private fun Modifier.swipeBetween(
     onSelect: (CallFilter) -> Unit,
 ): Modifier {
     val travel = with(LocalDensity.current) { SWIPE_TRAVEL.toPx() }
-    // Right means "the one before" where the language is written right to left.
-    val forward = if (LocalLayoutDirection.current == LayoutDirection.Rtl) 1 else -1
-    return pointerInput(filters, current) {
-        var moved = 0f
-        detectHorizontalDragGestures(
-            onDragStart = { moved = 0f },
-            onDragEnd = {
-                if (abs(moved) >= travel) {
-                    val here = filters.indexOf(current)
-                    val there = here + if (moved < 0) forward else -forward
-                    if (here >= 0 && there in filters.indices) onSelect(filters[there])
-                }
-            },
-            onHorizontalDrag = { change, amount ->
-                moved += amount
-                change.consume()
-            },
-        )
-    }
+    // Dragged leftwards, the next filter comes in from the right, as a page would. Mirrored
+    // where the language is written right to left.
+    val forward = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1 else 1
+    var moved by remember { mutableFloatStateOf(0f) }
+    // Draggable rather than a gesture detector of our own: the history is a scrolling list, and
+    // this is the machinery the list itself uses, so the two arbitrate properly and whichever
+    // direction leaves the slop first wins. The favourites row inside it goes on scrolling
+    // sideways on its own, which is the behaviour to keep.
+    return draggable(
+        state = rememberDraggableState { moved += it },
+        orientation = Orientation.Horizontal,
+        onDragStarted = { moved = 0f },
+        onDragStopped = {
+            if (abs(moved) >= travel) {
+                val here = filters.indexOf(current)
+                val there = here + if (moved < 0) forward else -forward
+                if (here >= 0 && there in filters.indices) onSelect(filters[there])
+            }
+        },
+    )
 }
 
 /** How far sideways a drag must go before it changes the filter. */

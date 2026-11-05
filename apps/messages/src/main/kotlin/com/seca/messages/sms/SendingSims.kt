@@ -6,7 +6,7 @@ import android.content.pm.PackageManager
 import android.telephony.SubscriptionManager
 
 /** A SIM a text can be sent from. [slot] counts from 1, as the phone prints it on the tray. */
-data class SendingSim(val subscriptionId: Int, val label: String, val slot: Int?)
+data class SendingSim(val subscriptionId: Int, val label: String, val slot: Int)
 
 /**
  * The SIMs this phone can send a text from, in slot order.
@@ -25,12 +25,18 @@ internal fun sendingSims(context: Context): List<SendingSim> {
     }
     val subscriptions = context.getSystemService(SubscriptionManager::class.java) ?: return emptyList()
     return runCatching {
-        subscriptions.activeSubscriptionInfoList.orEmpty().map { info ->
-            SendingSim(
-                subscriptionId = info.subscriptionId,
-                label = info.displayName?.toString()?.takeIf { it.isNotBlank() } ?: "SIM",
-                slot = info.simSlotIndex.takeIf { it >= 0 }?.plus(1),
-            )
-        }.sortedBy { it.slot ?: Int.MAX_VALUE }
+        subscriptions.activeSubscriptionInfoList.orEmpty()
+            // Only what is in a slot. A phone lists more than its SIMs here: a Pixel also
+            // reports its satellite profile and any eSIM that is loaded but not switched on,
+            // and neither can send a text. Both come back with no slot, which is the test.
+            .filter { it.simSlotIndex >= 0 }
+            .map { info ->
+                SendingSim(
+                    subscriptionId = info.subscriptionId,
+                    label = info.displayName?.toString()?.takeIf { it.isNotBlank() } ?: "SIM",
+                    slot = info.simSlotIndex + 1,
+                )
+            }
+            .sortedBy(SendingSim::slot)
     }.getOrDefault(emptyList())
 }

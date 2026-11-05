@@ -1476,9 +1476,7 @@ private fun SendingSimDialog(sims: List<SendingSim>, onDismiss: () -> Unit, onPi
                             color = colors.onSurface,
                             modifier = Modifier.weight(1f),
                         )
-                        sim.slot?.let {
-                            Text("SIM $it", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
-                        }
+                        Text("SIM ${sim.slot}", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
                     }
                 }
             }
