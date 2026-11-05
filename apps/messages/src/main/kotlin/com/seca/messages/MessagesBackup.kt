@@ -6,6 +6,10 @@ import android.content.pm.PackageManager
 import android.provider.Telephony
 import com.seca.core.link.LinkSettings
 import com.seca.core.suite.SuiteBackup
+import com.seca.core.suite.PortableXml
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import com.seca.core.suite.SuiteBackupProvider
 import com.seca.messages.link.LinkMessage
 import com.seca.messages.link.LinkMessages
@@ -243,6 +247,46 @@ internal class MessagesBackup(private val context: Context) {
 class MessagesSuiteBackup : SuiteBackupProvider() {
 
     override suspend fun exportPart(): JSONObject = MessagesBackup(requireContext()).export()
+
+    /**
+     * The text messages in the XML every archiving tool reads.
+     *
+     * Texts only. A Seca Link message is end-to-end encrypted and belongs to two phones
+     * that agreed to it; writing it into a file anything can open would undo that quietly,
+     * which is exactly the kind of thing this app must not do.
+     */
+    override suspend fun exportPortable(): String? = withContext(Dispatchers.IO) {
+        val context = requireContext()
+        if (context.checkSelfPermission(Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+            return@withContext null
+        }
+        val messages = MessagesRepository(context).allForBackup()
+        if (messages.isEmpty()) return@withContext null
+        val out = PortableXml.open("smses", messages.size)
+        messages.forEach { message ->
+            PortableXml.row(
+                out,
+                "sms",
+                listOf(
+                    "protocol" to "0",
+                    "address" to message.address,
+                    "date" to message.date.toString(),
+                    "type" to message.type.toString(),
+                    "subject" to null,
+                    "body" to message.body,
+                    "read" to if (message.read) "1" else "0",
+                    "date_sent" to message.dateSent.toString(),
+                    "readable_date" to readableDate(message.date),
+                ),
+            )
+        }
+        PortableXml.close(out, "smses")
+    }
+
+    private fun readableDate(millis: Long): String =
+        DateTimeFormatter.ofPattern("d MMM yyyy HH:mm:ss")
+            .withZone(ZoneId.systemDefault())
+            .format(Instant.ofEpochMilli(millis))
 
     override suspend fun importPart(part: JSONObject): String = MessagesBackup(requireContext()).restore(part)
 }

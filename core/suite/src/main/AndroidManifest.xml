@@ -10,6 +10,10 @@
         android:protectionLevel="signature" />
     <uses-permission android:name="com.seca.permission.BACKUP" />
 
+    <!-- One notification, and only when a backup that writes itself could not be written:
+         a backup that stops in silence is discovered on the day it was needed. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <queries>
         <package android:name="com.seca.contacts" />
         <package android:name="com.seca.phone" />

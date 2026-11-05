@@ -29,6 +29,15 @@ abstract class SuiteBackupProvider : ContentProvider() {
     /** Puts this app's part back, off the main thread; returns in a few words what came back. */
     protected abstract suspend fun importPart(part: JSONObject): String
 
+    /**
+     * This app's data in a format anything can read: a vCard, or the XML dialect that
+     * every SMS archiving tool settled on. Null from an app that has nothing portable.
+     *
+     * Lossy by nature, and meant to be: no profiles, no filtering, no pinned
+     * conversations, no Seca Link keys, because no portable format carries them.
+     */
+    protected open suspend fun exportPortable(): String? = null
+
     @Volatile
     private var lastImport: String? = null
 
@@ -36,13 +45,16 @@ abstract class SuiteBackupProvider : ContentProvider() {
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
         val (read, write) = ParcelFileDescriptor.createReliablePipe()
+        val portable = uri.lastPathSegment == SuiteBackup.PATH_PORTABLE
         return when {
             mode == "r" -> {
                 thread(name = "seca-backup-export") {
                     ParcelFileDescriptor.AutoCloseOutputStream(write).use { out ->
                         // A part that could not be read leaves the pipe empty: the backup says so for this app.
-                        val part = runCatching { runBlocking { exportPart() } }.getOrNull() ?: return@use
-                        out.write(part.toString().toByteArray(Charsets.UTF_8))
+                        val text = runCatching {
+                            runBlocking { if (portable) exportPortable() else exportPart().toString() }
+                        }.getOrNull() ?: return@use
+                        out.write(text.toByteArray(Charsets.UTF_8))
                     }
                 }
                 read

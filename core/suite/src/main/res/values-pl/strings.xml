@@ -1,5 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="auto_channel">Kopie zapasowe</string>
+    <string name="auto_choose_folder">Wybierz folder</string>
+    <string name="auto_daily">Codziennie</string>
+    <string name="auto_failed_title">Kopia nie została zapisana</string>
+    <string name="auto_folder">Folder</string>
+    <string name="auto_folder_complete">Seca - całość</string>
+    <string name="auto_folder_failed">Nie udało się utworzyć folderu.</string>
+    <string name="auto_folder_gone">Wybrany folder nie jest już dostępny. Wybierz go ponownie.</string>
+    <string name="auto_folder_none">Jeszcze nie wybrano</string>
+    <string name="auto_folder_portable">Kontakty, połączenia, SMS-y</string>
+    <string name="auto_keep">Przechowywane kopie</string>
+    <string name="auto_keep_count">Kopie: %1$d</string>
+    <string name="auto_last_run">Ostatnia: %1$s</string>
+    <string name="auto_never_run">Jeszcze żadnej</string>
+    <string name="auto_no_folder">Nie wybrano żadnego folderu.</string>
+    <string name="auto_no_passphrase">Nie udało się odczytać hasła. Ustaw je ponownie.</string>
+    <string name="auto_passphrase_hint">Przechowywane na tym telefonie, zapieczętowane przez układ bezpieczeństwa, bo kopia zapisywana o trzeciej nad ranem nie może się zatrzymać, żeby o nie poprosić. Bez niego kopii nie da się otworzyć, ani tutaj, ani nigdzie indziej.</string>
+    <string name="auto_passphrase_title">Hasło do tych kopii</string>
+    <string name="auto_portable">Zapisuj też czytelną kopię</string>
+    <string name="auto_portable_hint">Kontakty, połączenia i SMS-y w otwartych formatach</string>
+    <string name="auto_portable_warning">Ten drugi folder może odczytać wszystko, co go znajdzie: nie jest zaszyfrowany i taki ma być, żeby za dziesięć lat otworzył go dowolny program. Zawiera kontakty, rejestr połączeń i SMS-y. Nie zawiera profili, filtrowania połączeń, przypiętych rozmów ani kluczy Seca Link, bo żaden przenośny format ich nie przenosi.</string>
+    <string name="auto_rhythm">Jak często</string>
+    <string name="auto_run_now">Zapisz kopię teraz</string>
+    <string name="auto_section">Kopie zapisywane automatycznie</string>
+    <string name="auto_turn_off">Przestań zapisywać kopie</string>
+    <string name="auto_turn_off_hint">Zapomina folder i hasło; już zapisane pliki zostają</string>
+    <string name="auto_understand">Rozumiem</string>
+    <string name="auto_weekly">Co tydzień</string>
+    <string name="auto_write_failed">Nie udało się zapisać pliku.</string>
     <string name="suite_app_contacts">Seca Contacts</string>
     <string name="suite_app_messages">Seca Messages</string>
     <string name="suite_app_phone">Seca Phone</string>

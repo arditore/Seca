@@ -32,6 +32,12 @@
         <package android:name="com.seca.messages" />
     </queries>
 
+    <!-- One notification only, and only when a backup that writes itself could not be
+         written: a backup that stops in silence is discovered on the day it was needed. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- So a backup set up months ago goes on being written after a restart. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -92,6 +98,17 @@
             android:authorities="com.seca.contacts.backup"
             android:exported="true"
             android:permission="com.seca.permission.BACKUP" />
+
+        <!-- Backups that write themselves: the alarm that writes one, and the restart or update
+             that would otherwise have quietly ended them. -->
+        <receiver
+            android:name="com.seca.core.suite.AutoBackupReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

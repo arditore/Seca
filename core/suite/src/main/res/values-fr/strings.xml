@@ -1,5 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="auto_channel">Sauvegardes</string>
+    <string name="auto_choose_folder">Choisir un dossier</string>
+    <string name="auto_daily">Chaque jour</string>
+    <string name="auto_failed_title">Une sauvegarde n\'a pas été écrite</string>
+    <string name="auto_folder">Dossier</string>
+    <string name="auto_folder_complete">Seca complet</string>
+    <string name="auto_folder_failed">Le dossier n\'a pas pu être créé.</string>
+    <string name="auto_folder_gone">Le dossier choisi n\'est plus accessible. Choisissez-le à nouveau.</string>
+    <string name="auto_folder_none">Pas encore choisi</string>
+    <string name="auto_folder_portable">Contacts, appels, SMS</string>
+    <string name="auto_keep">Copies conservées</string>
+    <string name="auto_keep_count">%1$d copies</string>
+    <string name="auto_last_run">Dernière le %1$s</string>
+    <string name="auto_never_run">Aucune pour le moment</string>
+    <string name="auto_no_folder">Aucun dossier n\'a été choisi.</string>
+    <string name="auto_no_passphrase">La phrase secrète n\'a pas pu être lue. Définissez-la à nouveau.</string>
+    <string name="auto_passphrase_hint">Gardée sur ce téléphone, scellée par la puce de sécurité, parce qu\'une sauvegarde écrite à trois heures du matin ne peut pas s\'arrêter pour la demander. Sans elle, les sauvegardes ne s\'ouvrent plus, ici comme ailleurs.</string>
+    <string name="auto_passphrase_title">Une phrase secrète pour ces sauvegardes</string>
+    <string name="auto_portable">Écrire aussi une copie lisible</string>
+    <string name="auto_portable_hint">Contacts, appels et SMS dans des formats ouverts</string>
+    <string name="auto_portable_warning">Ce second dossier est lisible par tout ce qui le trouve : il n\'est pas chiffré, et c\'est voulu, pour que n\'importe quel programme puisse l\'ouvrir dans dix ans. Il contient vos contacts, votre journal d\'appels et vos SMS. Il ne contient ni vos profils, ni votre filtrage d\'appels, ni vos conversations épinglées, ni vos clés Seca Link : aucun format portable ne les transporte.</string>
+    <string name="auto_rhythm">Fréquence</string>
+    <string name="auto_run_now">En écrire une maintenant</string>
+    <string name="auto_section">Sauvegardes automatiques</string>
+    <string name="auto_turn_off">Arrêter les sauvegardes</string>
+    <string name="auto_turn_off_hint">Oublie le dossier et la phrase secrète ; les fichiers déjà écrits restent</string>
+    <string name="auto_understand">J\'ai compris</string>
+    <string name="auto_weekly">Chaque semaine</string>
+    <string name="auto_write_failed">Le fichier n\'a pas pu être écrit.</string>
     <string name="suite_app_contacts">Seca Contacts</string>
     <string name="suite_app_messages">Seca Messages</string>
     <string name="suite_app_phone">Seca Téléphone</string>

@@ -40,6 +40,7 @@ import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaSwitchRow
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
+import com.seca.core.suite.AutoBackupSection
 import com.seca.core.suite.SuiteBackupSection
 import com.seca.phone.call.InCallSettings
 import com.seca.phone.screening.BlockMode
@@ -293,6 +294,7 @@ internal fun SettingsScreen(
             }
 
             SuiteBackupSection(beforeRestore = askCallLogThen)
+            AutoBackupSection()
 
             SecaSectionLabel(stringResource(R.string.protection))
             SecaPrivacySettingsGroup(stringResource(R.string.app_name))

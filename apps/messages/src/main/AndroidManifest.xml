@@ -219,6 +219,17 @@
                 <data android:scheme="mmsto" />
             </intent-filter>
         </service>
+
+        <!-- Backups that write themselves: the alarm that writes one, and the restart or update
+             that would otherwise have quietly ended them. -->
+        <receiver
+            android:name="com.seca.core.suite.AutoBackupReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

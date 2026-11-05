@@ -2,6 +2,7 @@ package com.seca.core.suite
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.net.toUri
 import com.seca.core.model.backup.BackupCipher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -22,10 +23,32 @@ class SuiteBackup(context: Context) {
     private val appContext = context.applicationContext
     private val resolver = appContext.contentResolver
 
-    enum class App(val key: String, @StringRes val label: Int, val authority: String) {
-        Contacts("contacts", R.string.suite_app_contacts, "com.seca.contacts.backup"),
-        Phone("phone", R.string.suite_app_phone, "com.seca.phone.backup"),
-        Messages("messages", R.string.suite_app_messages, "com.seca.messages.backup"),
+    enum class App(
+        val key: String,
+        @StringRes val label: Int,
+        val authority: String,
+        /** What this app's open-format file is called, before the date and the extension. */
+        val portableName: String,
+        val portableExtension: String,
+    ) {
+        Contacts("contacts", R.string.suite_app_contacts, "com.seca.contacts.backup", "contacts", "vcf"),
+        Phone("phone", R.string.suite_app_phone, "com.seca.phone.backup", "calls", "xml"),
+        Messages("messages", R.string.suite_app_messages, "com.seca.messages.backup", "messages", "xml"),
+    }
+
+    /** The apps of the suite that are on this phone. */
+    fun installedApps(): List<App> = App.entries.filter(::installed)
+
+    /**
+     * One app's data in its open format, or null when it has none or could not be read.
+     *
+     * Read through the same provider as the encrypted part, down a pipe, so a phone full of
+     * messages is never too large to go through.
+     */
+    suspend fun exportPortable(app: App): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            resolver.openInputStream(uriOf(app, PATH_PORTABLE))?.use { it.readBytes().toString(Charsets.UTF_8) }
+        }.getOrNull()?.takeIf { it.isNotBlank() }
     }
 
     /** What a backup or a restoration gave: a line per app, or why nothing could be done. */
@@ -101,7 +124,7 @@ class SuiteBackup(context: Context) {
     private fun installed(app: App): Boolean =
         runCatching { appContext.packageManager.resolveContentProvider(app.authority, 0) != null }.getOrDefault(false)
 
-    private fun uriOf(app: App): Uri = Uri.parse("content://${app.authority}/part")
+    private fun uriOf(app: App, path: String = "part"): Uri = "content://${app.authority}/$path".toUri()
 
     companion object {
         const val PERMISSION = "com.seca.permission.BACKUP"
@@ -110,6 +133,9 @@ class SuiteBackup(context: Context) {
 
         /** In each part: a few words on what it holds. */
         const val KEY_SUMMARY = "summary"
+
+        /** The path that asks an app for its data in a format anything can read. */
+        const val PATH_PORTABLE = "portable"
 
         private const val SUITE = "seca-suite"
         private const val VERSION = 1

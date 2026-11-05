@@ -6,6 +6,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.CallLog.Calls
 import com.seca.core.suite.SuiteBackup
+import com.seca.core.suite.PortableXml
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import com.seca.core.suite.SuiteBackupProvider
 import com.seca.phone.screening.BlockFor
 import com.seca.phone.screening.BlockMode
@@ -115,6 +119,41 @@ internal class PhoneBackup(private val context: Context) {
 class PhoneSuiteBackup : SuiteBackupProvider() {
 
     override suspend fun exportPart(): JSONObject = PhoneBackup(requireContext()).export()
+
+    /** The call log in the XML every archiving tool reads. Nothing of the filtering: no format carries it. */
+    override suspend fun exportPortable(): String? = withContext(Dispatchers.IO) {
+        val context = requireContext()
+        if (context.checkSelfPermission(Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
+            return@withContext null
+        }
+        val rows = mutableListOf<List<Pair<String, String?>>>()
+        val projection = arrayOf(Calls.NUMBER, Calls.DATE, Calls.DURATION, Calls.TYPE, Calls.CACHED_NAME)
+        runCatching {
+            context.contentResolver.query(Calls.CONTENT_URI, projection, null, null, "${Calls.DATE} ASC")?.use { c ->
+                while (c.moveToNext()) {
+                    rows += listOf(
+                        "number" to c.getString(0).orEmpty(),
+                        "duration" to c.getLong(2).toString(),
+                        "date" to c.getLong(1).toString(),
+                        "type" to c.getInt(3).toString(),
+                        "presentation" to "1",
+                        "readable_date" to readableDate(c.getLong(1)),
+                        "contact_name" to c.getString(4)?.takeIf { it.isNotBlank() },
+                    )
+                }
+            }
+        }
+        if (rows.isEmpty()) return@withContext null
+        val out = PortableXml.open("calls", rows.size)
+        rows.forEach { PortableXml.row(out, "call", it) }
+        PortableXml.close(out, "calls")
+    }
+
+    /** The date as the archiving tools print it beside the number, for a human reading the file. */
+    private fun readableDate(millis: Long): String =
+        DateTimeFormatter.ofPattern("d MMM yyyy HH:mm:ss")
+            .withZone(ZoneId.systemDefault())
+            .format(Instant.ofEpochMilli(millis))
 
     override suspend fun importPart(part: JSONObject): String = PhoneBackup(requireContext()).restore(part)
 }

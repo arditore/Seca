@@ -149,5 +149,27 @@ class ContactsSuiteBackup : SuiteBackupProvider() {
 
     override suspend fun exportPart(): JSONObject = ContactsBackup(requireContext()).export()
 
+    /**
+     * Every contact as one vCard file, which every contacts app on earth reads.
+     *
+     * The profiles travel in it too, in Seca's own property, so a card exported here and
+     * read back here loses nothing - while any other app simply ignores that line.
+     */
+    override suspend fun exportPortable(): String? {
+        val context = requireContext()
+        if (context.checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) return null
+        val store = ProfileStore(context)
+        val profiles = store.profiles()
+        val assignments = store.assignments()
+        val entries = ContactsRepository(context.contentResolver).exportEntries()
+        if (entries.isEmpty()) return null
+        return VCard.write(
+            entries.map { (key, card) ->
+                val profile = assignments[key]?.let { id -> profiles.firstOrNull { it.id == id } }
+                card.copy(profile = profile?.name.orEmpty())
+            },
+        )
+    }
+
     override suspend fun importPart(part: JSONObject): String = ContactsBackup(requireContext()).restore(part)
 }

@@ -48,6 +48,7 @@ import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 import android.Manifest
 import com.seca.core.model.Profile
+import com.seca.core.suite.AutoBackupSection
 import com.seca.core.suite.SuiteBackupSection
 import java.time.LocalDate
 import com.seca.core.design.label
@@ -247,6 +248,7 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
             SecaHint(stringResource(R.string.backup_hint))
 
             SuiteBackupSection(beforeRestore = askWriteThen)
+            AutoBackupSection()
 
             SecaSectionLabel(stringResource(R.string.tidy_up))
             SecaGroupItem(index = 0, count = 2) {
