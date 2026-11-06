@@ -84,6 +84,7 @@ internal object MmsReader {
                 image = parts.image,
                 audio = parts.audio,
                 attachment = parts.other,
+                attachmentAt = parts.otherAt,
             )
     }
 
@@ -123,6 +124,7 @@ internal object MmsReader {
         val image: String?,
         val audio: String? = null,
         val other: String? = null,
+        val otherAt: String? = null,
     )
 
     /**
@@ -145,6 +147,7 @@ internal object MmsReader {
             val images = HashMap<Long, String>()
             val sounds = HashMap<Long, String>()
             val others = HashMap<Long, String>()
+            val othersAt = HashMap<Long, String>()
             while (c.moveToNext()) {
                 val owner = c.getLong(3)
                 val type = c.getString(1).orEmpty()
@@ -162,11 +165,14 @@ internal object MmsReader {
                     type == SMIL -> Unit
                     type.startsWith("image/") -> images.getOrPut(owner) { where }
                     type.startsWith("audio/") -> sounds.getOrPut(owner) { where }
-                    else -> others.getOrPut(owner) { type }
+                    else -> {
+                        others.getOrPut(owner) { type }
+                        othersAt.getOrPut(owner) { where }
+                    }
                 }
             }
             (words.keys + images.keys + sounds.keys + others.keys).associateWith {
-                Parts(words[it]?.toString().orEmpty(), images[it], sounds[it], others[it])
+                Parts(words[it]?.toString().orEmpty(), images[it], sounds[it], others[it], othersAt[it])
             }
         }
     }.getOrNull().orEmpty()

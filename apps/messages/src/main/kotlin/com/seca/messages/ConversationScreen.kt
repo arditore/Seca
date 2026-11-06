@@ -130,6 +130,9 @@ import com.seca.core.link.handshake.Handshake
 import com.seca.core.model.Profile
 import com.seca.messages.link.LinkTimers
 import com.seca.messages.link.LinkTyping
+import com.seca.messages.mms.CardFace
+import com.seca.messages.mms.SharedPart
+import com.seca.messages.mms.VCardPeek
 import com.seca.messages.sms.LinkSms
 import com.seca.messages.sms.ConversationNotice
 import com.seca.messages.sms.Message
@@ -830,9 +833,13 @@ private fun Bubble(
                 onLongClickLabel = stringResource(R.string.more_actions),
                 onLongClick = { menuOpen = true },
             )
+            val carried = message.attachment
+            val carriedAt = message.attachmentAt
             when {
                 image != null -> PhotoBubble(image, shape, container, content, message.body, modifier = touch)
                 audio != null -> VoiceBubble(audio, shape, container, content, modifier = touch)
+                carried != null && carriedAt != null ->
+                    AttachmentBubble(carried, carriedAt, message.body, shape, container, content, modifier = touch)
                 else -> Column(
                     Modifier
                         .widthIn(max = 300.dp)
@@ -1028,6 +1035,102 @@ private fun PhotoBubble(
                 style = MaterialTheme.typography.bodyLarge,
                 color = content,
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            )
+        }
+    }
+}
+
+/** The same thing as [carried], without the little picture, for a bubble that draws its own. */
+private fun plainly(contentType: String): Int = when {
+    contentType.startsWith("video/") -> R.string.attach_media
+    contentType.endsWith("vcard") -> R.string.attach_contact
+    else -> R.string.attach_file
+}
+
+/**
+ * Something attached that is not a picture or a sound: a contact card, or a file.
+ *
+ * A card is read far enough to put the person's name on the bubble, because "Contact" on its
+ * own tells the owner nothing — a message saying only what kind of thing arrived is barely
+ * better than one that arrived blank. Touching it hands the whole card to the contacts app,
+ * which reads every field of it; touching any other file offers it to whatever can open it.
+ */
+@Composable
+private fun AttachmentBubble(
+    type: String,
+    at: String,
+    caption: String,
+    shape: RoundedCornerShape,
+    container: Color,
+    content: Color,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val card = type.endsWith("vcard")
+    val face by produceState<CardFace?>(initialValue = null, at, card) {
+        if (!card) return@produceState
+        value = withContext(Dispatchers.IO) {
+            SharedPart.bytes(context, at)?.let { VCardPeek.read(String(it, Charsets.UTF_8)) }
+        }
+    }
+    // A file says what it is called. "File" above a paperclip tells nobody anything.
+    val filed by produceState<String?>(initialValue = null, at, card) {
+        if (card) return@produceState
+        value = SharedPart.nameOf(context, at)
+    }
+    val cannotOpen = stringResource(R.string.nothing_opens_this)
+    // The bubble already draws an icon, so its words do not carry one as well.
+    val fallback = stringResource(plainly(type))
+    Column(
+        Modifier
+            .widthIn(min = 200.dp, max = 300.dp)
+            .clip(shape)
+            .background(container)
+            .then(modifier)
+            .clickable(onClickLabel = fallback) {
+                scope.launch {
+                    val name = when {
+                        card -> face?.name?.takeIf { it.isNotBlank() }?.plus(".vcf") ?: "contact.vcf"
+                        else -> filed ?: at.substringAfterLast('/')
+                    }
+                    if (!SharedPart.open(context, at, name, type)) {
+                        Toast.makeText(context, cannotOpen, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = if (card) SecaIcons.PersonOutline else SecaIcons.Subject,
+                contentDescription = null,
+                tint = content,
+                modifier = Modifier.size(32.dp),
+            )
+            Column(Modifier.padding(start = 12.dp)) {
+                Text(
+                    text = face?.name?.takeIf { it.isNotBlank() } ?: filed ?: fallback,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = content,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = face?.detail?.takeIf { it.isNotBlank() } ?: stringResource(R.string.open_attachment),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = content.copy(alpha = UNDER),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        if (caption.isNotBlank()) {
+            Text(
+                text = linkedMessage(caption),
+                style = MaterialTheme.typography.bodyLarge,
+                color = content,
+                modifier = Modifier.padding(top = 8.dp),
             )
         }
     }
@@ -1881,3 +1984,6 @@ private val FROM_THE_BUTTON = TransformOrigin(0f, 1f)
 
 private const val MENU_CLOSING_MILLIS = 90
 private const val GREYED = 0.38f
+
+/** The second line of an attachment reads under the first rather than beside it. */
+private const val UNDER = 0.75f

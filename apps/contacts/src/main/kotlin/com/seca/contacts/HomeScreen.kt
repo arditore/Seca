@@ -73,6 +73,8 @@ internal fun HomeScreen(
     viewModel: ContactsViewModel,
     listState: LazyListState,
     onOpenSibling: (SecaAppIdentity) -> Unit,
+    /** Another app asked for one contact: touching a row answers it rather than opening it. */
+    onPick: ((Long) -> Unit)? = null,
 ) {
     var addingProfile by remember { mutableStateOf(false) }
     // The button carries its label at the top of the list and shrinks to an icon once scrolled.
@@ -88,18 +90,27 @@ internal fun HomeScreen(
                 onAddProfile = { addingProfile = true },
             )
         },
-        bottomBar = { SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = onOpenSibling) },
+        // Answering another app is one question with one answer: the ways out of it — the other
+        // Seca apps, and writing a new contact — would leave that app waiting on nothing.
+        bottomBar = {
+            if (onPick == null) SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = onOpenSibling)
+        },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                text = { Text(stringResource(R.string.new_contact)) },
-                icon = {
-                    Icon(SecaIcons.PersonAdd, contentDescription = if (fabExpanded) null else stringResource(R.string.new_contact))
-                },
-                onClick = { viewModel.open(Screen.Edit(null)) },
-                expanded = fabExpanded,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
+            if (onPick == null) {
+                ExtendedFloatingActionButton(
+                    text = { Text(stringResource(R.string.new_contact)) },
+                    icon = {
+                        Icon(
+                            imageVector = SecaIcons.PersonAdd,
+                            contentDescription = if (fabExpanded) null else stringResource(R.string.new_contact),
+                        )
+                    },
+                    onClick = { viewModel.open(Screen.Edit(null)) },
+                    expanded = fabExpanded,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
         },
     ) { padding ->
         Box(
@@ -110,7 +121,7 @@ internal fun HomeScreen(
             HomeContent(
                 ui,
                 listState,
-                onOpen = { viewModel.open(Screen.Detail(it.id)) },
+                onOpen = { onPick?.invoke(it.id) ?: viewModel.open(Screen.Detail(it.id)) },
                 onOpenMyCard = { viewModel.open(Screen.MyCard) },
             )
         }

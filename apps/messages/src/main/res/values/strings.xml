@@ -23,6 +23,8 @@
     <string name="attachment_not_sent">The phone would not send it.</string>
     <string name="attachment_too_large">%1$s is %2$d KB, too large for a multimedia message.</string>
     <string name="attachment_unreadable">That file could not be read.</string>
+    <string name="nothing_opens_this">Nothing on this phone opens that.</string>
+    <string name="open_attachment">Touch to open</string>
     <string name="contact_not_read">That contact could not be read.</string>
     <string name="slide_to_cancel">Slide away to cancel</string>
     <string name="back">Back</string>

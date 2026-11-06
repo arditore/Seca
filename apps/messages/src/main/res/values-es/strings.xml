@@ -23,6 +23,8 @@
     <string name="attachment_not_sent">El teléfono no ha querido enviarlo.</string>
     <string name="attachment_too_large">%1$s ocupa %2$d KB, demasiado para un MMS.</string>
     <string name="attachment_unreadable">No se ha podido leer ese archivo.</string>
+    <string name="nothing_opens_this">Nada en este teléfono puede abrir eso.</string>
+    <string name="open_attachment">Toca para abrir</string>
     <string name="contact_not_read">No se ha podido leer ese contacto.</string>
     <string name="slide_to_cancel">Desliza para cancelar</string>
     <string name="back">Atrás</string>

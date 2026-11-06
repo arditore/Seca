@@ -41,6 +41,8 @@ fun ContactsApp(
     permissionGranted: Boolean,
     onPermissionResult: (Boolean) -> Unit,
     viewModel: ContactsViewModel = viewModel(),
+    /** Set when another app asked this one for a contact: the list answers instead of browsing. */
+    onPick: ((Long) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val ui by viewModel.ui.collectAsState()
@@ -74,6 +76,15 @@ fun ContactsApp(
 
     LaunchedEffect(permissionGranted) {
         if (permissionGranted) viewModel.start()
+    }
+    // A card opened from another app: taken once the list is readable, so a contact that is
+    // already here is recognised rather than added a second time.
+    val offered = viewModel.offered
+    LaunchedEffect(offered, permissionGranted) {
+        if (offered != null && permissionGranted) {
+            viewModel.offerTaken()
+            withWrite { viewModel.importContacts(offered) }
+        }
     }
     BackHandler(enabled = viewModel.backStack.size > 1) { viewModel.back() }
 
@@ -116,7 +127,13 @@ fun ContactsApp(
                 label = "screens",
             ) { (screen, _) ->
                 when (screen) {
-                    Screen.Home -> HomeScreen(ui, viewModel, homeListState, onOpenSibling = { openSibling(context, it) })
+                    Screen.Home -> HomeScreen(
+                        ui = ui,
+                        viewModel = viewModel,
+                        listState = homeListState,
+                        onOpenSibling = { openSibling(context, it) },
+                        onPick = onPick,
+                    )
                     is Screen.Detail -> DetailScreen(screen.id, ui, viewModel, withWrite)
                     is Screen.Edit -> EditScreen(screen.id, ui, viewModel, withWrite, prefillPhone = screen.prefillPhone)
                     Screen.Settings -> SettingsScreen(ui, viewModel, withWrite)

@@ -53,6 +53,8 @@ data class Message(
     val audio: String? = null,
     /** The type of something attached that is neither a picture nor a sound: a card, a document. */
     val attachment: String? = null,
+    /** Where that attachment is kept, so it can be read and opened. */
+    val attachmentAt: String? = null,
     /** The Seca Link id of the message this one answers. */
     val replyTo: String? = null,
     val myReaction: String? = null,
