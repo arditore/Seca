@@ -272,7 +272,7 @@
     <string name="photo_saved">Photo saved to the gallery</string>
     <string name="decimal">%1$d.%2$d</string>
     <string name="listen_faster">Listen faster</string>
-    <string name="save_sound">Save to music</string>
+    <string name="save_sound">Download</string>
     <string name="sound_saved">Saved to Music/Seca.</string>
     <string name="pick_date_time">Choose the date and time</string>
     <string name="pick_future_time">Choose a moment still to come</string>
@@ -324,7 +324,7 @@
     <string name="safety_number_pending">Safety number on its way</string>
     <string name="safety_number_pending_hint">It shows as soon as %1$s\'s key is read.</string>
     <string name="save_failed">Could not save</string>
-    <string name="save_to_gallery">Save to gallery</string>
+    <string name="save_to_gallery">Download</string>
     <string name="scan_again">Scan again</string>
     <string name="scan_link_off">Turn Seca Link on to connect</string>
     <string name="scan_not_a_number">This number cannot use Seca Link</string>

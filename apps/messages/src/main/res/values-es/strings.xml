@@ -282,7 +282,7 @@
     <string name="photo_saved">Foto guardada en la galería</string>
     <string name="decimal">%1$d,%2$d</string>
     <string name="listen_faster">Escuchar más rápido</string>
-    <string name="save_sound">Guardar en la música</string>
+    <string name="save_sound">Descargar</string>
     <string name="sound_saved">Guardado en Music/Seca.</string>
     <string name="pick_date_time">Elige la fecha y la hora</string>
     <string name="pick_future_time">Elige un momento que esté por llegar</string>
@@ -335,7 +335,7 @@
     <string name="safety_number_pending">Número de seguridad en camino</string>
     <string name="safety_number_pending_hint">Aparece en cuanto se lee la clave de %1$s.</string>
     <string name="save_failed">No se pudo guardar</string>
-    <string name="save_to_gallery">Guardar en la galería</string>
+    <string name="save_to_gallery">Descargar</string>
     <string name="scan_again">Escanear de nuevo</string>
     <string name="scan_link_off">Activa Seca Link para conectar</string>
     <string name="scan_not_a_number">Este número no puede usar Seca Link</string>

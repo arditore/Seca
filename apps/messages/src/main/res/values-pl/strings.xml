@@ -280,7 +280,7 @@
     <string name="photo_saved">Zdjęcie zapisano w galerii</string>
     <string name="decimal">%1$d,%2$d</string>
     <string name="listen_faster">Słuchaj szybciej</string>
-    <string name="save_sound">Zapisz w muzyce</string>
+    <string name="save_sound">Pobierz</string>
     <string name="sound_saved">Zapisano w Music/Seca.</string>
     <string name="pick_date_time">Wybierz datę i godzinę</string>
     <string name="pick_future_time">Wybierz moment, który dopiero nastąpi</string>
@@ -333,7 +333,7 @@
     <string name="safety_number_pending">Oczekiwanie na numer bezpieczeństwa</string>
     <string name="safety_number_pending_hint">Pojawi się, gdy tylko klucz użytkownika %1$s zostanie odczytany.</string>
     <string name="save_failed">Nie udało się zapisać</string>
-    <string name="save_to_gallery">Zapisz w galerii</string>
+    <string name="save_to_gallery">Pobierz</string>
     <string name="scan_again">Zeskanuj ponownie</string>
     <string name="scan_link_off">Włącz Seca Link, aby się połączyć</string>
     <string name="scan_not_a_number">Ten numer nie może korzystać z Seca Link</string>

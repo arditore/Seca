@@ -624,54 +624,72 @@ private fun ConversationTopBar(
             .padding(horizontal = 4.dp),
     ) {
         IconButton(onClick = onBack) { Icon(SecaIcons.Back, contentDescription = stringResource(R.string.back)) }
-        PersonAvatar(contact, ui, size = 40.dp)
-        Column(
-            Modifier
+        // The face and the name open the person, which is where everybody reaches for it. It
+        // stays in the menu as well: that is the one with a word on it, for anyone who cannot
+        // see that a picture is a button.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
                 .weight(1f)
-                .padding(start = 12.dp),
+                .clip(RoundedCornerShape(28.dp))
+                .clickable(
+                    onClickLabel = stringResource(
+                        if (contact != null) R.string.view_contact else R.string.add_to_contacts,
+                    ),
+                ) {
+                    if (contact != null) openContact(context, contact.id, contact.lookupKey) else addContact(context, address)
+                }
+                .padding(end = 8.dp),
         ) {
-            Text(
-                text = ui.nameOf(address),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            when {
-                typing -> Text(
-                    text = stringResource(R.string.typing),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
+            PersonAvatar(contact, ui, size = 40.dp)
+            Column(
+                Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp),
+            ) {
+                Text(
+                    text = ui.nameOf(address),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                linked -> Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        if (timerSeconds > 0) SecaIcons.Timer else SecaIcons.Lock,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Text(
-                        text = when {
-                            timerSeconds > 0 -> stringResource(R.string.encrypted_disappearing, LinkTimers.label(context, timerSeconds))
-                            verified -> stringResource(R.string.encrypted_verified)
-                            else -> stringResource(R.string.encrypted_by_link)
-                        },
+                when {
+                    typing -> Text(
+                        text = stringResource(R.string.typing),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 4.dp),
                     )
-                }
-                else -> subtitle?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    linked -> Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (timerSeconds > 0) SecaIcons.Timer else SecaIcons.Lock,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            text = when {
+                                timerSeconds > 0 -> stringResource(R.string.encrypted_disappearing, LinkTimers.label(context, timerSeconds))
+                                verified -> stringResource(R.string.encrypted_verified)
+                                else -> stringResource(R.string.encrypted_by_link)
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
+                    }
+                    else -> subtitle?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
         }
