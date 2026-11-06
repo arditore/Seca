@@ -40,6 +40,8 @@
         <item quantity="other">%d fichas combinadas</item>
     </plurals>
     <string name="change_photo">Cambiar la foto</string>
+    <string name="frame_photo">Encuadrar la foto</string>
+    <string name="frame_photo_hint">Arrastra y pellizca hasta que la cara quede en el círculo.</string>
     <string name="change_profile">Cambiar de perfil</string>
     <string name="change_type">Cambiar el tipo</string>
     <string name="close">Cerrar</string>

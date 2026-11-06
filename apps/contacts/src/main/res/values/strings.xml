@@ -37,6 +37,8 @@
         <item quantity="other">%d cards merged</item>
     </plurals>
     <string name="change_photo">Change photo</string>
+    <string name="frame_photo">Frame the photo</string>
+    <string name="frame_photo_hint">Drag and pinch until the face is in the circle.</string>
     <string name="change_profile">Change profile</string>
     <string name="change_type">Change type</string>
     <string name="close">Close</string>

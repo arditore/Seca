@@ -348,6 +348,11 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { if (myCards.setPhoto(uri)) loadMyCard() }
     }
 
+    /** The square the owner framed, rather than whatever happened to be in the middle. */
+    fun setMyPhoto(jpeg: ByteArray) {
+        viewModelScope.launch { if (myCards.setPhoto(jpeg)) loadMyCard() }
+    }
+
     fun removeMyPhoto() {
         myCards.removePhoto()
         loadMyCard()

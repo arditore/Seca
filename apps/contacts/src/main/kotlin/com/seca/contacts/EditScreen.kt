@@ -59,6 +59,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.draw.clip
 import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -119,16 +120,21 @@ internal fun EditScreen(
     var picture by remember(id) { mutableStateOf<ContactsViewModel.Picture>(ContactsViewModel.Picture.Unchanged) }
     var preview by remember(id) { mutableStateOf<ImageBitmap?>(null) }
     val scope = rememberCoroutineScope()
+    // Picked, then framed. A photograph is rarely a portrait, and the middle of one is a chin.
+    var framing by remember(id) { mutableStateOf<Uri?>(null) }
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { picked ->
-        if (picked != null) {
-            scope.launch {
-                val chosen = viewModel.pictureFrom(picked)
-                if (chosen != null) {
-                    picture = chosen
-                    preview = BitmapFactory.decodeByteArray(chosen.jpeg, 0, chosen.jpeg.size)?.asImageBitmap()
-                }
-            }
-        }
+        if (picked != null) framing = picked
+    }
+    framing?.let { picked ->
+        PhotoCropDialog(
+            uri = picked,
+            onCancel = { framing = null },
+            onCropped = { jpeg ->
+                framing = null
+                picture = ContactsViewModel.Picture.Chosen(jpeg)
+                preview = BitmapFactory.decodeByteArray(jpeg, 0, jpeg.size)?.asImageBitmap()
+            },
+        )
     }
     // "All" is a way of looking at the list, not a profile: a new contact starts in Principal.
     var profileId by remember(id) {

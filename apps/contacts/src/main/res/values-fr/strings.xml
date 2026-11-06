@@ -40,6 +40,8 @@
         <item quantity="other">%d fiches réunies</item>
     </plurals>
     <string name="change_photo">Changer la photo</string>
+    <string name="frame_photo">Cadrer la photo</string>
+    <string name="frame_photo_hint">Faites glisser et pincez jusqu\'à ce que le visage soit dans le cercle.</string>
     <string name="change_profile">Changer de profil</string>
     <string name="change_type">Changer le type</string>
     <string name="close">Fermer</string>

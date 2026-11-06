@@ -40,6 +40,8 @@
         <item quantity="many">%d kart zostało scalonych</item>
     </plurals>
     <string name="change_photo">Zmień zdjęcie</string>
+    <string name="frame_photo">Wykadruj zdjęcie</string>
+    <string name="frame_photo_hint">Przeciągaj i szczypnij, aż twarz znajdzie się w kołku.</string>
     <string name="change_profile">Zmień profil</string>
     <string name="change_type">Zmień typ</string>
     <string name="close">Zamknij</string>

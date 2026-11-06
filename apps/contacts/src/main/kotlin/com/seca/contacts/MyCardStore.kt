@@ -51,6 +51,11 @@ class MyCardStore(private val context: Context) {
         if (photoFile.exists()) BitmapFactory.decodeFile(photoFile.path) else null
     }
 
+    /** Keeps the square the owner framed. Nothing is decoded here: it arrives already cut. */
+    suspend fun setPhoto(jpeg: ByteArray): Boolean = withContext(Dispatchers.IO) {
+        runCatching { photoFile.outputStream().use { it.write(jpeg) } }.isSuccess
+    }
+
     /**
      * Keeps a square, shrunk copy of the picked image. The photo picker hands
      * over this one image only, and the original stays in the gallery.

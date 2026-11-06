@@ -4,6 +4,7 @@ import android.content.pm.PackageManager
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import android.net.Uri
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -81,8 +82,20 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
         viewModel.back()
     }
     BackHandler(onBack = leave)
+    // Framed first, like anybody else's: one's own card is the one people see most.
+    var framing by remember { mutableStateOf<Uri?>(null) }
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri?.let(viewModel::setMyPhoto)
+        if (uri != null) framing = uri
+    }
+    framing?.let { picked ->
+        PhotoCropDialog(
+            uri = picked,
+            onCancel = { framing = null },
+            onCropped = { jpeg ->
+                framing = null
+                viewModel.setMyPhoto(jpeg)
+            },
+        )
     }
     val simAccess = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         viewModel.refreshSimLines()
