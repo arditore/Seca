@@ -91,6 +91,61 @@ class MmsComposerTest {
     }
 
     @Test
+    fun `the words say which character set they are written in`() {
+        // Without this the receiving phone guesses, and every accent arrives broken — which
+        // cannot be seen from the sending side, where the words were always correct.
+        val headers = readHeaders(
+            MmsComposer.body(listOf(MmsPdu.Part("text/plain", "text.txt", "<text>", "Ça va ?".toByteArray()))),
+        ).single()
+
+        assertTrue(
+            headers.joinToString(" ") { (it.toInt() and 0xFF).toString(16) },
+            // The charset parameter, then UTF-8 as the number the specification gives it.
+            headers.toList().windowed(2).any { it[0].toInt() and 0xFF == 0x81 && it[1].toInt() and 0xFF == 0xEA },
+        )
+    }
+
+    @Test
+    fun `a picture that is not named in the presentation is a picture nobody sees`() {
+        // A phone that follows the standard shows the root part of a related message and
+        // nothing else. Leave the presentation out and the message arrives empty.
+        val written = String(
+            MmsComposer.compose(
+                Outgoing(
+                    to = listOf("+33612345678"),
+                    from = null,
+                    text = "Regarde",
+                    attachments = listOf(MmsPdu.Part("image/jpeg", "photo.jpg", "<photo>", ByteArray(10))),
+                ),
+                transactionId = "T1",
+            ),
+            Charsets.ISO_8859_1,
+        )
+
+        assertTrue(written, MmsComposer.SMIL in written)
+        assertTrue(written, """<img src="photo.jpg" region="Image"/>""" in written)
+        assertTrue(written, """<text src="text.txt" region="Text"/>""" in written)
+    }
+
+    @Test
+    fun `a name with a quotation mark in it does not break the presentation`() {
+        val written = String(
+            MmsComposer.compose(
+                Outgoing(
+                    to = listOf("+33612345678"),
+                    from = null,
+                    text = "",
+                    attachments = listOf(MmsPdu.Part("text/x-vcard", """A "friend".vcf""", "<c>", ByteArray(4))),
+                ),
+                transactionId = "T1",
+            ),
+            Charsets.ISO_8859_1,
+        )
+
+        assertTrue(written, """<ref src="A &quot;friend&quot;.vcf"/>""" in written)
+    }
+
+    @Test
     fun `a message says it is one being sent`() {
         val pdu = MmsComposer.compose(
             Outgoing(listOf("+33612345678"), null, "hello", emptyList()),
@@ -109,7 +164,12 @@ class MmsComposerTest {
  * The point of the test is that the writer agrees with the specification, and a test that used
  * the app's own reader would only prove the two agree with each other.
  */
-private fun readParts(body: ByteArray): List<ByteArray> {
+private fun readParts(body: ByteArray): List<ByteArray> = read(body).map { it.second }
+
+/** The headers of each part, for checking what is said about it rather than what it holds. */
+private fun readHeaders(body: ByteArray): List<ByteArray> = read(body).map { it.first }
+
+private fun read(body: ByteArray): List<Pair<ByteArray, ByteArray>> {
     var at = 0
 
     fun uintvar(): Int {
@@ -125,7 +185,7 @@ private fun readParts(body: ByteArray): List<ByteArray> {
     return (0 until count).map {
         val headers = uintvar()
         val data = uintvar()
-        at += headers
-        body.copyOfRange(at, at + data).also { at += data }
+        val said = body.copyOfRange(at, at + headers).also { at += headers }
+        said to body.copyOfRange(at, at + data).also { at += data }
     }
 }
