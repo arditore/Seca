@@ -78,6 +78,44 @@ internal object MmsStore {
     }
 
     /**
+     * Writes a message on its way out, before the carrier has taken it.
+     *
+     * Stored first so the conversation shows it at once, and so that a send which never comes
+     * back leaves something behind rather than a message that was typed and then vanished. It
+     * sits in the outbox until the carrier answers.
+     */
+    fun saveOutgoing(context: Context, outgoing: Outgoing, transactionId: String): Uri? {
+        val to = outgoing.to.firstOrNull() ?: return null
+        val values = ContentValues().apply {
+            put(Mms.THREAD_ID, threadOf(context, to))
+            put(Mms.DATE, System.currentTimeMillis() / MILLIS_PER_SECOND)
+            put(Mms.MESSAGE_BOX, Mms.MESSAGE_BOX_OUTBOX)
+            put(Mms.MESSAGE_TYPE, MmsComposer.TYPE_SEND_REQ)
+            put(Mms.READ, 1)
+            put(Mms.SEEN, 1)
+            put(Mms.TRANSACTION_ID, transactionId)
+        }
+        val message = insert(context, Mms.CONTENT_URI, values) ?: return null
+        val id = ContentUris.parseId(message)
+        var index = 0
+        outgoing.text.takeIf { it.isNotBlank() }?.let { words ->
+            savePart(context, id, index++, MmsPdu.Part("text/plain", "text.txt", "<text>", words.toByteArray()))
+        }
+        outgoing.attachments.forEach { savePart(context, id, index++, it) }
+        outgoing.to.forEach { saveAddress(context, id, it, ADDRESS_TO) }
+        return message
+    }
+
+    /** Moves a sent message out of the outbox, into sent or failed. */
+    fun markSent(context: Context, message: Uri, sent: Boolean) {
+        val values = ContentValues().apply {
+            put(Mms.MESSAGE_BOX, if (sent) Mms.MESSAGE_BOX_SENT else Mms.MESSAGE_BOX_FAILED)
+        }
+        runCatching { context.contentResolver.update(message, values, null, null) }
+            .onFailure { Log.w(LOG_TAG, "box not changed", it) }
+    }
+
+    /**
      * One piece of a message. Text goes in a column, because that is where every reader looks
      * for it; anything else is written as a file the provider hands back by URI.
      */

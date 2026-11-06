@@ -29,6 +29,8 @@ import com.seca.messages.sms.MessageNotifications
 import com.seca.messages.sms.MessagesRepository
 import com.seca.messages.sms.ScheduledMessage
 import com.seca.messages.sms.ScheduledMessages
+import com.seca.messages.mms.MmsAttachment
+import com.seca.messages.mms.MmsSender
 import com.seca.messages.sms.SendingSim
 import com.seca.messages.sms.sendingSims
 import com.seca.messages.sms.SmsSender
@@ -440,6 +442,33 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * Sends what the owner attached, as a multimedia message, with the words they typed.
+     *
+     * By carrier rather than by Seca Link, so it reaches any phone. Pictures are shrunk to what
+     * a network will carry; anything too big to send is named rather than dropped, because a
+     * file that silently does not arrive is the worst way to learn about a size limit.
+     */
+    fun sendAttachment(address: String, uri: Uri, text: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val read = MmsAttachment.read(getApplication(), uri)
+            val part = read.part
+            if (part == null) {
+                val refused = read.refused
+                val said = if (refused == null || refused.bytes == 0) {
+                    text(R.string.attachment_unreadable)
+                } else {
+                    text(R.string.attachment_too_large, refused.name, refused.bytes / BYTES_PER_KB)
+                }
+                withContext(Dispatchers.Main) { toast(said) }
+                return@launch
+            }
+            if (MmsSender.send(getApplication(), listOf(address), text, listOf(part)) == null) {
+                withContext(Dispatchers.Main) { toast(text(R.string.attachment_not_sent)) }
+            }
+        }
+    }
+
+    /**
      * The SIMs a text can be sent from, when there is more than one to choose between.
      *
      * Suspending because reading them is a call into the telephony service, and a conversation
@@ -694,3 +723,6 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         _ui.update { it.copy(profiles = profiles) }
     }
 }
+
+/** For saying a size in words someone reads rather than in bytes. */
+private const val BYTES_PER_KB = 1024

@@ -15,6 +15,13 @@
     <string name="archive">Archiwizuj</string>
     <string name="archived">Zarchiwizowane</string>
     <string name="archived_conversations">Zarchiwizowane konwersacje</string>
+    <string name="attach">Załącz</string>
+    <string name="attach_file">Plik</string>
+    <string name="attach_hint">Wysyłane jako MMS przez operatora, więc dotrze do każdego telefonu. Zdjęcia są pomniejszane, by zmieściły się w limicie sieci.</string>
+    <string name="attach_picture">Zdjęcie lub film</string>
+    <string name="attachment_not_sent">Telefon nie wysłał pliku.</string>
+    <string name="attachment_too_large">%1$s ma %2$d KB, za dużo na MMS.</string>
+    <string name="attachment_unreadable">Nie udało się odczytać tego pliku.</string>
     <string name="back">Wstecz</string>
     <string name="background_allowed_quiet">Dozwolone, bez powiadomienia</string>
     <string name="background_dialog_text">Aby Seca Link mogła odbierać zaszyfrowane wiadomości w tle bez wyświetlania stałego powiadomienia, wyłącz optymalizację baterii dla aplikacji Seca Messages. Połączenie z bramkami zużywa niewiele energii.</string>

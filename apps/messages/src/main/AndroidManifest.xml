@@ -128,6 +128,11 @@
             android:name=".mms.MmsDownloadReceiver"
             android:exported="false" />
 
+        <!-- And the answer to one we sent. From this app only, for the same reason. -->
+        <receiver
+            android:name=".mms.MmsSendReceiver"
+            android:exported="false" />
+
         <!-- Sent status, quick reply and mark as read, from this app only. -->
         <receiver
             android:name=".sms.MessageActionReceiver"

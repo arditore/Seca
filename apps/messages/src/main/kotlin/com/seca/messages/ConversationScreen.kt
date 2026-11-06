@@ -75,6 +75,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -229,6 +230,21 @@ internal fun ConversationContent(
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) viewModel.sendPhoto(screen.address, uri)
     }
+    // Attaching without Seca Link: a picture, a video or a file, sent as a multimedia message
+    // through the carrier, so it reaches a phone that has never heard of Seca.
+    var attaching by remember { mutableStateOf(false) }
+    val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            viewModel.sendAttachment(screen.address, uri, text)
+            text = ""
+        }
+    }
+    val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            viewModel.sendAttachment(screen.address, uri, text)
+            text = ""
+        }
+    }
 
     // Voice messages: the microphone is asked for the first time one is recorded.
     val recorder = remember { VoiceRecorder(context) }
@@ -259,6 +275,33 @@ internal fun ConversationContent(
     }
     val askMicrophone = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) startRecording()
+    }
+
+    if (attaching) {
+        AlertDialog(
+            onDismissRequest = { attaching = false },
+            icon = { Icon(SecaIcons.Add, contentDescription = null) },
+            title = { Text(stringResource(R.string.attach)) },
+            text = {
+                Column {
+                    AttachChoice(SecaIcons.Photo, stringResource(R.string.attach_picture)) {
+                        attaching = false
+                        pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                    }
+                    AttachChoice(SecaIcons.Subject, stringResource(R.string.attach_file)) {
+                        attaching = false
+                        pickFile.launch(arrayOf("*/*"))
+                    }
+                    Text(
+                        text = stringResource(R.string.attach_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            },
+            confirmButton = { TextButton(onClick = { attaching = false }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
 
     if (scheduling) {
@@ -350,10 +393,12 @@ internal fun ConversationContent(
                         replyingTo = null
                     },
                     onSchedule = { scheduling = true },
+                    // Encrypted where the conversation is, by carrier where it is not: the
+                    // button is there either way, which is the whole point of it.
                     onAttach = if (linked) {
                         { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
                     } else {
-                        null
+                        { attaching = true }
                     },
                     replyingTo = replyingTo,
                     replyName = name,
@@ -1364,7 +1409,14 @@ private fun Composer(
                     modifier = Modifier
                         .padding(end = 4.dp, bottom = 4.dp)
                         .size(48.dp),
-                ) { Icon(SecaIcons.Photo, contentDescription = stringResource(R.string.send_encrypted_photo)) }
+                ) {
+                    Icon(
+                        imageVector = if (encrypted) SecaIcons.Photo else SecaIcons.Add,
+                        contentDescription = stringResource(
+                            if (encrypted) R.string.send_encrypted_photo else R.string.attach,
+                        ),
+                    )
+                }
             }
             TextField(
                 value = text,
@@ -1489,4 +1541,25 @@ private fun SendingSimDialog(sims: List<SendingSim>, onDismiss: () -> Unit, onPi
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
+}
+
+/** One line of the attach chooser: an icon, a word, and the whole row to touch. */
+@Composable
+private fun AttachChoice(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .clickable(onClickLabel = label, onClick = onClick)
+            .padding(vertical = 12.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 16.dp),
+        )
+    }
 }
