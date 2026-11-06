@@ -278,6 +278,10 @@
     <string name="photo">Zdjęcie</string>
     <string name="photo_not_sent">Nie udało się wysłać zdjęcia</string>
     <string name="photo_saved">Zdjęcie zapisano w galerii</string>
+    <string name="decimal">%1$d,%2$d</string>
+    <string name="listen_faster">Słuchaj szybciej</string>
+    <string name="save_sound">Zapisz w muzyce</string>
+    <string name="sound_saved">Zapisano w Music/Seca.</string>
     <string name="pick_date_time">Wybierz datę i godzinę</string>
     <string name="pick_future_time">Wybierz moment, który dopiero nastąpi</string>
     <string name="pin">Przypnij</string>

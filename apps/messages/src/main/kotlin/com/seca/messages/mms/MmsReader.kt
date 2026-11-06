@@ -138,7 +138,7 @@ internal object MmsReader {
         if (messageIds.isEmpty()) return emptyMap()
         resolver.query(
             PART_URI,
-            arrayOf("_id", "ct", "text", "mid"),
+            arrayOf("_id", "ct", "text", "mid", "cl", "name"),
             "mid IN (${messageIds.joinToString(",")})",
             null,
             "seq ASC",
@@ -151,6 +151,7 @@ internal object MmsReader {
             while (c.moveToNext()) {
                 val owner = c.getLong(3)
                 val type = c.getString(1).orEmpty()
+                val called = c.getString(4) ?: c.getString(5)
                 val where = "$PART_URI/${c.getLong(0)}"
                 when {
                     // A contact card is written as text, and reading it into the bubble would
@@ -164,7 +165,7 @@ internal object MmsReader {
                     // The presentation part describes a slideshow; it is not something to show.
                     type == SMIL -> Unit
                     type.startsWith("image/") -> images.getOrPut(owner) { where }
-                    type.startsWith("audio/") -> sounds.getOrPut(owner) { where }
+                    SoundPart.matches(type, called) -> sounds.getOrPut(owner) { where }
                     else -> {
                         others.getOrPut(owner) { type }
                         othersAt.getOrPut(owner) { where }
@@ -216,6 +217,7 @@ internal object MmsReader {
     private val PART_URI: Uri = "content://mms/part".toUri()
     private const val ADDRESSES = "addr"
     private const val SMIL = "application/smil"
+
     private const val MILLIS_PER_SECOND = 1000L
     private const val ADDRESS_FROM = 137
     private const val ADDRESS_TO = 151

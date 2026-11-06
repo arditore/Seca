@@ -292,6 +292,7 @@ internal fun ConversationContent(
     val recorder = remember { VoiceRecorder(context) }
     val micUnavailable = stringResource(R.string.mic_unavailable)
     val photoSavedText = stringResource(R.string.photo_saved)
+    val soundSavedText = stringResource(R.string.sound_saved)
     val saveFailedText = stringResource(R.string.save_failed)
     var recording by remember { mutableStateOf(false) }
     var recordingMillis by remember { mutableLongStateOf(0L) }
@@ -518,6 +519,16 @@ internal fun ConversationContent(
                                     Toast.makeText(
                                         context,
                                         if (saved) photoSavedText else saveFailedText,
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            },
+                            onSaveAudio = { path ->
+                                scope.launch {
+                                    val saved = saveToMusic(context, path)
+                                    Toast.makeText(
+                                        context,
+                                        if (saved) soundSavedText else saveFailedText,
                                         Toast.LENGTH_SHORT,
                                     ).show()
                                 }
@@ -750,6 +761,7 @@ private fun Bubble(
     onDelete: () -> Unit,
     onOpenPhoto: (String) -> Unit,
     onSavePhoto: (String) -> Unit,
+    onSaveAudio: (String) -> Unit,
     onReply: () -> Unit,
     onReact: (String) -> Unit,
 ) {
@@ -887,7 +899,12 @@ private fun Bubble(
                         menuOpen = false
                         onSavePhoto(image)
                     }
-                    audio == null -> MenuEntry(stringResource(R.string.copy), SecaIcons.ContentCopy) {
+                    audio != null -> MenuEntry(stringResource(R.string.save_sound), SecaIcons.Download) {
+                        menuOpen = false
+                        onSaveAudio(audio)
+                    }
+                    // Nothing to copy out of a card or a document: it is opened, not read here.
+                    message.attachment == null -> MenuEntry(stringResource(R.string.copy), SecaIcons.ContentCopy) {
                         menuOpen = false
                         onCopy()
                     }
@@ -1136,7 +1153,7 @@ private fun AttachmentBubble(
     }
 }
 
-/** A voice message: play and pause, how far it has played, and how long it lasts. */
+/** A voice message: play and pause, how fast, how far it has played, and how long it lasts. */
 @Composable
 private fun VoiceBubble(path: String, shape: RoundedCornerShape, container: Color, content: Color, modifier: Modifier = Modifier) {
     // A recording over Seca Link is a file of ours; one in a multimedia message is a row in the
@@ -1146,6 +1163,9 @@ private fun VoiceBubble(path: String, shape: RoundedCornerShape, container: Colo
     var player by remember(path) { mutableStateOf<MediaPlayer?>(null) }
     var playing by remember(path) { mutableStateOf(false) }
     var progress by remember(path) { mutableFloatStateOf(0f) }
+    // Kept across recordings rather than per bubble: somebody who listens faster listens
+    // faster to the next one too, and resetting it every time is the annoying half of this.
+    var speed by rememberSaveable { mutableFloatStateOf(SPEEDS.first()) }
     val duration by produceState(initialValue = 0L, path) {
         value = withContext(Dispatchers.IO) {
             runCatching {
@@ -1166,6 +1186,14 @@ private fun VoiceBubble(path: String, shape: RoundedCornerShape, container: Colo
         while (playing) {
             player?.let { if (it.duration > 0) progress = it.currentPosition.toFloat() / it.duration }
             delay(TICK_MILLIS / 2)
+        }
+    }
+    // Changed mid-sentence, it takes effect mid-sentence. Setting it on a player that is not
+    // running would start it, so a paused one is left alone and told when it next starts.
+    LaunchedEffect(speed, playing) {
+        val current = player
+        if (current != null && playing) {
+            runCatching { current.playbackParams = current.playbackParams.setSpeed(speed) }
         }
     }
     Row(
@@ -1196,6 +1224,7 @@ private fun VoiceBubble(path: String, shape: RoundedCornerShape, container: Colo
                         playing = false
                     }
                     else -> {
+                        runCatching { current.playbackParams = current.playbackParams.setSpeed(speed) }
                         current.start()
                         playing = true
                     }
@@ -1217,8 +1246,33 @@ private fun VoiceBubble(path: String, shape: RoundedCornerShape, container: Colo
             color = content,
             modifier = Modifier.padding(start = 10.dp),
         )
+        Text(
+            text = speedText(speed),
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = content,
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .clip(CircleShape)
+                .background(content.copy(alpha = if (speed == SPEEDS.first()) 0.12f else 0.28f))
+                .clickable(onClickLabel = stringResource(R.string.listen_faster)) {
+                    speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.size]
+                }
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+        )
     }
 }
+
+/** "1×", "1,5×", "2×" — the comma because a speed is read, not computed. */
+@Composable
+private fun speedText(speed: Float): String {
+    val shown = if (speed % 1f == 0f) speed.toInt().toString() else {
+        stringResource(R.string.decimal, speed.toInt(), ((speed % 1f) * 10).roundToInt())
+    }
+    return "$shown×"
+}
+
+/** What a voice message can be listened to at. Back round to the start after the fastest. */
+private val SPEEDS = listOf(1f, 1.5f, 2f)
 
 /** "0:42", "3:05". */
 private fun durationText(millis: Long): String {
@@ -1378,6 +1432,39 @@ private suspend fun saveToGallery(context: Context, path: String): Boolean = wit
         resolver.update(uri, ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }, null, null)
         true
     }.getOrDefault(false)
+}
+
+/** Copies a recording into the phone's music, under Music/Seca, only when the owner asks. */
+private suspend fun saveToMusic(context: Context, path: String): Boolean = withContext(Dispatchers.IO) {
+    runCatching {
+        val resolver = context.contentResolver
+        val stored = path.startsWith(CONTENT_SCHEME)
+        // A message's recording brings its own kind with it; a Seca Link one is always Opus.
+        val type = (if (stored) resolver.getType(path.toUri()) else null) ?: "audio/ogg"
+        val values = ContentValues().apply {
+            put(MediaStore.Audio.Media.DISPLAY_NAME, "Seca-${System.currentTimeMillis()}.${soundSuffix(type)}")
+            put(MediaStore.Audio.Media.MIME_TYPE, type)
+            put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/Seca")
+            put(MediaStore.Audio.Media.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values) ?: return@runCatching false
+        resolver.openOutputStream(uri)?.use { out ->
+            val source = if (stored) resolver.openInputStream(path.toUri()) else File(path).inputStream()
+            source?.use { it.copyTo(out) }
+        }
+        resolver.update(uri, ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }, null, null)
+        true
+    }.getOrDefault(false)
+}
+
+/** What to call the file, so the phone's music player knows what it is holding. */
+private fun soundSuffix(type: String): String = when (val kind = type.substringAfterLast('/').lowercase()) {
+    "mpeg", "mpeg3", "x-mpeg" -> "mp3"
+    "mp4", "aac", "x-m4a", "mp4a-latm" -> "m4a"
+    "3gpp", "3gpp2" -> "3ga"
+    "x-wav", "wave", "vnd.wave" -> "wav"
+    "opus" -> "ogg"
+    else -> kind.takeIf { it.isNotBlank() && it.all(Char::isLetterOrDigit) } ?: "ogg"
 }
 
 /** A message waiting for its time: outlined rather than filled, with when it leaves. */
