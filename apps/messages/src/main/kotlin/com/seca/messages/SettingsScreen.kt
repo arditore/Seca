@@ -181,7 +181,7 @@ internal fun SettingsScreen(
             SuiteBackupSection()
             AutoBackupSection()
 
-            CodeAndSpamSettings()
+            CodeAndSpamSettings(onFile = { swept -> swept.forEach { viewModel.setSpam(it.threadId, spam = true) } })
 
             SecaSectionLabel("Seca Link")
             val link = ui.link

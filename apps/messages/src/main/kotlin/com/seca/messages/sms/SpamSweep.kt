@@ -20,6 +20,10 @@ data class SweptConversation(val threadId: Long, val address: String, val snippe
  * Nothing moves on its own. The sweep is asked for, it reports what it would do, and the owner
  * says yes: a month of messages quietly rearranging themselves after an update would be a worse
  * surprise than the advertising.
+ *
+ * This only ever looks. The filing goes through the same path as filing one conversation by
+ * hand, so the list, the counter and any notification all learn of it at once — written straight
+ * into the preferences here, they did not, and the button appeared to do nothing.
  */
 object SpamSweep {
 
@@ -44,13 +48,5 @@ object SpamSweep {
             .filterNot { SpamFilter.isContact(context, it.address) }
             .map { SweptConversation(it.threadId, it.address, it.snippet) }
             .toList()
-    }
-
-    /** Files the conversations the owner agreed to. */
-    suspend fun file(context: Context, conversations: List<SweptConversation>) {
-        withContext(Dispatchers.IO) {
-            val prefs = ConversationPrefs(context)
-            conversations.forEach { prefs.setSpam(it.threadId, spam = true) }
-        }
     }
 }

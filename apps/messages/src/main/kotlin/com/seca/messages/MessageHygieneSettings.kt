@@ -42,9 +42,16 @@ import com.seca.messages.sms.SpamFilter
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 
-/** Verification codes that erase themselves, and advertising filed away. */
+/**
+ * Verification codes that erase themselves, and advertising filed away.
+ *
+ * [onFile] does the filing rather than this screen, because filing has to be felt everywhere at
+ * once: the conversation list, the counter on the Spam row and any notification still showing.
+ * Writing the preference here left all three stale until the app was restarted, which read as
+ * the button doing nothing at all.
+ */
 @Composable
-internal fun CodeAndSpamSettings() {
+internal fun CodeAndSpamSettings(onFile: (List<SweptConversation>) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var lifetime by remember { mutableStateOf(CodeCleanup.lifetime(context)) }
@@ -168,9 +175,8 @@ internal fun CodeAndSpamSettings() {
                 } else {
                     TextButton(
                         onClick = {
-                            val filing = conversations
+                            onFile(conversations)
                             found = null
-                            scope.launch { SpamSweep.file(context, filing) }
                         },
                     ) { Text(stringResource(R.string.sweep_file)) }
                 }
