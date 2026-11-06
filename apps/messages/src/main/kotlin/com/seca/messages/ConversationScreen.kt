@@ -14,6 +14,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,6 +49,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,6 +77,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -86,6 +91,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -232,7 +238,6 @@ internal fun ConversationContent(
     }
     // Attaching without Seca Link: a picture, a video or a file, sent as a multimedia message
     // through the carrier, so it reaches a phone that has never heard of Seca.
-    var attaching by remember { mutableStateOf(false) }
     val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             viewModel.sendAttachment(screen.address, uri, text)
@@ -275,33 +280,6 @@ internal fun ConversationContent(
     }
     val askMicrophone = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) startRecording()
-    }
-
-    if (attaching) {
-        AlertDialog(
-            onDismissRequest = { attaching = false },
-            icon = { Icon(SecaIcons.Add, contentDescription = null) },
-            title = { Text(stringResource(R.string.attach)) },
-            text = {
-                Column {
-                    AttachChoice(SecaIcons.Photo, stringResource(R.string.attach_picture)) {
-                        attaching = false
-                        pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
-                    }
-                    AttachChoice(SecaIcons.Subject, stringResource(R.string.attach_file)) {
-                        attaching = false
-                        pickFile.launch(arrayOf("*/*"))
-                    }
-                    Text(
-                        text = stringResource(R.string.attach_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-            },
-            confirmButton = { TextButton(onClick = { attaching = false }) { Text(stringResource(R.string.cancel)) } },
-        )
     }
 
     if (scheduling) {
@@ -395,10 +373,19 @@ internal fun ConversationContent(
                     onSchedule = { scheduling = true },
                     // Encrypted where the conversation is, by carrier where it is not: the
                     // button is there either way, which is the whole point of it.
-                    onAttach = if (linked) {
-                        { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                    attach = if (linked) {
+                        Attaching.Encrypted {
+                            pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        }
                     } else {
-                        { attaching = true }
+                        Attaching.ByCarrier(
+                            media = {
+                                pickMedia.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo),
+                                )
+                            },
+                            file = { pickFile.launch(arrayOf("*/*")) },
+                        )
                     },
                     replyingTo = replyingTo,
                     replyName = name,
@@ -1305,7 +1292,7 @@ private fun Composer(
     encrypted: Boolean,
     onSend: () -> Unit,
     onSchedule: () -> Unit,
-    onAttach: (() -> Unit)?,
+    attach: Attaching?,
     replyingTo: Message?,
     replyName: String,
     onCancelReply: () -> Unit,
@@ -1403,21 +1390,7 @@ private fun Composer(
             return@Column
         }
         Row(verticalAlignment = Alignment.Bottom) {
-            if (onAttach != null) {
-                IconButton(
-                    onClick = onAttach,
-                    modifier = Modifier
-                        .padding(end = 4.dp, bottom = 4.dp)
-                        .size(48.dp),
-                ) {
-                    Icon(
-                        imageVector = if (encrypted) SecaIcons.Photo else SecaIcons.Add,
-                        contentDescription = stringResource(
-                            if (encrypted) R.string.send_encrypted_photo else R.string.attach,
-                        ),
-                    )
-                }
-            }
+            if (attach != null) AttachButton(attach)
             TextField(
                 value = text,
                 onValueChange = onText,
@@ -1543,23 +1516,98 @@ private fun SendingSimDialog(sims: List<SendingSim>, onDismiss: () -> Unit, onPi
     )
 }
 
-/** One line of the attach chooser: an icon, a word, and the whole row to touch. */
+/** What the button to the left of the text has to offer, which is not the same in both places. */
+private sealed interface Attaching {
+
+    /** An encrypted conversation: the picture goes over the link, and there is nothing to choose. */
+    class Encrypted(val pick: () -> Unit) : Attaching
+
+    /** By carrier: a picture or a video, or any file at all, so it reaches any phone. */
+    class ByCarrier(val media: () -> Unit, val file: () -> Unit) : Attaching
+}
+
+/**
+ * The button left of the text, and what it opens.
+ *
+ * Where there is a single thing to do it does it. Where there is a choice the plus turns a
+ * quarter turn into a cross — the same stroke, so the eye follows it rather than reading a new
+ * icon — and a short menu rises over the text field. A dialog in the middle of the screen was
+ * the wrong shape for two words: it covered the conversation to ask almost nothing.
+ */
 @Composable
-private fun AttachChoice(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .clickable(onClickLabel = label, onClick = onClick)
-            .padding(vertical = 12.dp),
+private fun AttachButton(attach: Attaching) {
+    var open by remember { mutableStateOf(false) }
+    val turn by animateFloatAsState(
+        targetValue = if (open) QUARTER_TURN else 0f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow),
+        label = "attach",
+    )
+    Box {
+        IconButton(
+            onClick = {
+                when (attach) {
+                    is Attaching.Encrypted -> attach.pick()
+                    is Attaching.ByCarrier -> open = true
+                }
+            },
+            modifier = Modifier
+                .padding(end = 4.dp, bottom = 4.dp)
+                .size(48.dp),
+        ) {
+            Icon(
+                imageVector = if (attach is Attaching.Encrypted) SecaIcons.Photo else SecaIcons.Add,
+                contentDescription = stringResource(
+                    when {
+                        attach is Attaching.Encrypted -> R.string.send_encrypted_photo
+                        open -> R.string.close_attach
+                        else -> R.string.attach
+                    },
+                ),
+                modifier = Modifier.rotate(turn),
+            )
+        }
+        if (attach is Attaching.ByCarrier) {
+            AttachMenu(
+                open = open,
+                onDismiss = { open = false },
+                onMedia = {
+                    open = false
+                    attach.media()
+                },
+                onFile = {
+                    open = false
+                    attach.file()
+                },
+            )
+        }
+    }
+}
+
+/** The two words the plus opens on, in a small card of their own over the text field. */
+@Composable
+private fun AttachMenu(open: Boolean, onDismiss: () -> Unit, onMedia: () -> Unit, onFile: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    DropdownMenu(
+        expanded = open,
+        onDismissRequest = onDismiss,
+        // Away from the button, so the menu reads as something the plus pushed out.
+        offset = DpOffset(0.dp, (-8).dp),
+        shape = RoundedCornerShape(24.dp),
+        containerColor = colors.surfaceContainerHigh,
+        shadowElevation = 6.dp,
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(start = 16.dp),
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.attach_media), style = MaterialTheme.typography.bodyLarge) },
+            leadingIcon = { Icon(SecaIcons.Photo, contentDescription = null, tint = colors.primary) },
+            onClick = onMedia,
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.attach_file), style = MaterialTheme.typography.bodyLarge) },
+            leadingIcon = { Icon(SecaIcons.Subject, contentDescription = null, tint = colors.primary) },
+            onClick = onFile,
         )
     }
 }
+
+/** A plus turned this far is a cross. */
+private const val QUARTER_TURN = 45f

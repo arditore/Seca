@@ -16,9 +16,9 @@
     <string name="archived">Archivées</string>
     <string name="archived_conversations">Conversations archivées</string>
     <string name="attach">Joindre</string>
+    <string name="close_attach">Fermer</string>
     <string name="attach_file">Fichier</string>
-    <string name="attach_hint">Envoyé en MMS par votre opérateur, donc vers n\'importe quel téléphone. Les photos sont réduites pour tenir dans ce que le réseau accepte.</string>
-    <string name="attach_picture">Photo ou vidéo</string>
+    <string name="attach_media">Média</string>
     <string name="attachment_not_sent">Le téléphone a refusé de l\'envoyer.</string>
     <string name="attachment_too_large">%1$s fait %2$d Ko, trop pour un MMS.</string>
     <string name="attachment_unreadable">Ce fichier n\'a pas pu être lu.</string>

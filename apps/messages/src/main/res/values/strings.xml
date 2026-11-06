@@ -16,9 +16,9 @@
     <string name="archived">Archived</string>
     <string name="archived_conversations">Archived conversations</string>
     <string name="attach">Attach</string>
+    <string name="close_attach">Close</string>
     <string name="attach_file">File</string>
-    <string name="attach_hint">Sent as a multimedia message through your carrier, so it reaches any phone. Pictures are made smaller to fit what a network will carry.</string>
-    <string name="attach_picture">Picture or video</string>
+    <string name="attach_media">Media</string>
     <string name="attachment_not_sent">The phone would not send it.</string>
     <string name="attachment_too_large">%1$s is %2$d KB, too large for a multimedia message.</string>
     <string name="attachment_unreadable">That file could not be read.</string>
