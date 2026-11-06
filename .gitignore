@@ -10,3 +10,7 @@ captures/
 .superpowers/
 .vscode/
 build-logic/bin/
+
+# JVM crash dumps, when a Gradle worker runs out of memory.
+hs_err_pid*.log
+replay_pid*.log
