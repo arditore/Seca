@@ -15,6 +15,33 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
@@ -37,7 +64,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -49,7 +78,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -91,7 +119,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -250,6 +277,13 @@ internal fun ConversationContent(
             text = ""
         }
     }
+    // The system's own contact picker: it hands back one row, and that is all that is read.
+    val pickContact = rememberLauncherForActivityResult(ActivityResultContracts.PickContact()) { uri ->
+        if (uri != null) {
+            viewModel.sendContact(screen.address, uri, text)
+            text = ""
+        }
+    }
 
     // Voice messages: the microphone is asked for the first time one is recorded.
     val recorder = remember { VoiceRecorder(context) }
@@ -258,20 +292,29 @@ internal fun ConversationContent(
     val saveFailedText = stringResource(R.string.save_failed)
     var recording by remember { mutableStateOf(false) }
     var recordingMillis by remember { mutableLongStateOf(0L) }
+    // Over the link where there is one, by carrier where there is not: the microphone is there
+    // either way, and only the format and the length allowed change underneath.
     val finishRecording: () -> Unit = {
         recording = false
-        recorder.stop()?.let { viewModel.sendVoice(screen.address, it.absolutePath) }
+        recorder.stop()?.let { recorded ->
+            if (linked) {
+                viewModel.sendVoice(screen.address, recorded.absolutePath)
+            } else {
+                viewModel.sendVoiceByCarrier(screen.address, recorded.absolutePath)
+            }
+        }
     }
-    LaunchedEffect(recording) {
+    LaunchedEffect(recording, linked) {
+        val longest = VoiceRecorder.maxMillis(carrier = !linked)
         while (recording) {
             recordingMillis = recorder.elapsedMillis
-            if (recordingMillis >= VoiceRecorder.MAX_MILLIS) finishRecording()
+            if (recordingMillis >= longest) finishRecording()
             delay(TICK_MILLIS)
         }
     }
     DisposableEffect(Unit) { onDispose { recorder.cancel() } }
     val startRecording = {
-        if (recorder.start()) {
+        if (recorder.start(carrier = !linked)) {
             recordingMillis = 0L
             recording = true
         } else {
@@ -279,7 +322,8 @@ internal fun ConversationContent(
         }
     }
     val askMicrophone = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) startRecording()
+        // Granted mid-press, so there is nothing being held any more: the next hold records.
+        if (!granted) Toast.makeText(context, micUnavailable, Toast.LENGTH_SHORT).show()
     }
 
     if (scheduling) {
@@ -370,7 +414,6 @@ internal fun ConversationContent(
                         text = ""
                         replyingTo = null
                     },
-                    onSchedule = { scheduling = true },
                     // Encrypted where the conversation is, by carrier where it is not: the
                     // button is there either way, which is the whole point of it.
                     attach = if (linked) {
@@ -385,6 +428,10 @@ internal fun ConversationContent(
                                 )
                             },
                             file = { pickFile.launch(arrayOf("*/*")) },
+                            contact = { pickContact.launch(null) },
+                            // Nothing written is nothing to send later, so the row says so by
+                            // being there and greyed rather than by coming and going.
+                            schedule = { scheduling = true }.takeIf { text.isNotBlank() },
                         )
                     },
                     replyingTo = replyingTo,
@@ -392,16 +439,12 @@ internal fun ConversationContent(
                     onCancelReply = { replyingTo = null },
                     recording = recording,
                     recordingMillis = recordingMillis,
-                    onStartVoice = if (linked) {
-                        {
-                            if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                                startRecording()
-                            } else {
-                                askMicrophone.launch(Manifest.permission.RECORD_AUDIO)
-                            }
+                    onStartVoice = {
+                        if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                            startRecording()
+                        } else {
+                            askMicrophone.launch(Manifest.permission.RECORD_AUDIO)
                         }
-                    } else {
-                        null
                     },
                     onCancelVoice = {
                         recording = false
@@ -510,13 +553,26 @@ internal fun ConversationContent(
 private fun joined(first: Message, second: Message): Boolean =
     first.outgoing == second.outgoing && abs(second.date - first.date) < JOIN_MILLIS && sameDay(first.date, second.date)
 
-/** A message as a quote or a notice reads it: a photo and a voice message by what they are. */
+/** A message as a quote or a notice reads it: whatever it carries, named for what it is. */
 @Composable
 private fun previewOf(message: Message): String = when {
     message.audio != null -> stringResource(R.string.preview_voice)
-    // A photo with words quotes the words; a photo on its own says that it is one.
+    // Something attached, with words: the words. On its own, it says what it is.
     message.image != null -> message.body.ifBlank { stringResource(R.string.preview_photo) }
+    message.attachment != null -> message.body.ifBlank { stringResource(carried(message.attachment)) }
     else -> message.body.ifEmpty { stringResource(R.string.preview_photo) }
+}
+
+/**
+ * What to call a part that is neither words, a picture nor a sound.
+ *
+ * Everything used to be called a photograph, which was true until it was not: a voice message
+ * and a contact card both arrived announcing themselves as pictures.
+ */
+private fun carried(contentType: String): Int = when {
+    contentType.startsWith("video/") -> R.string.preview_video
+    contentType.endsWith("vcard") -> R.string.preview_contact
+    else -> R.string.preview_file
 }
 
 /** Back, who the conversation is with and their profile, a call button and the rest in a menu. */
@@ -787,10 +843,10 @@ private fun Bubble(
                 ) {
                     if (message.replyTo != null) QuoteBox(quoted, contactName, content)
                     Text(
-                        text = if (message.body.isEmpty()) {
-                            AnnotatedString(stringResource(R.string.preview_photo))
-                        } else {
-                            linkedMessage(message.body)
+                        text = when {
+                            message.body.isNotEmpty() -> linkedMessage(message.body)
+                            message.attachment != null -> AnnotatedString(stringResource(carried(message.attachment)))
+                            else -> AnnotatedString(stringResource(R.string.preview_photo))
                         },
                         style = MaterialTheme.typography.bodyLarge,
                         color = content,
@@ -980,6 +1036,10 @@ private fun PhotoBubble(
 /** A voice message: play and pause, how far it has played, and how long it lasts. */
 @Composable
 private fun VoiceBubble(path: String, shape: RoundedCornerShape, container: Color, content: Color, modifier: Modifier = Modifier) {
+    // A recording over Seca Link is a file of ours; one in a multimedia message is a row in the
+    // store, and the two are opened differently.
+    val context = LocalContext.current
+    val stored = path.startsWith("content:")
     var player by remember(path) { mutableStateOf<MediaPlayer?>(null) }
     var playing by remember(path) { mutableStateOf(false) }
     var progress by remember(path) { mutableFloatStateOf(0f) }
@@ -987,7 +1047,7 @@ private fun VoiceBubble(path: String, shape: RoundedCornerShape, container: Colo
         value = withContext(Dispatchers.IO) {
             runCatching {
                 MediaMetadataRetriever().use { retriever ->
-                    retriever.setDataSource(path)
+                    if (stored) retriever.setDataSource(context, path.toUri()) else retriever.setDataSource(path)
                     retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
                 }
             }.getOrNull() ?: 0L
@@ -1018,7 +1078,7 @@ private fun VoiceBubble(path: String, shape: RoundedCornerShape, container: Colo
             onClick = {
                 val current = player ?: runCatching {
                     MediaPlayer().apply {
-                        setDataSource(path)
+                        if (stored) setDataSource(context, path.toUri()) else setDataSource(path)
                         setOnCompletionListener {
                             playing = false
                             progress = 0f
@@ -1291,14 +1351,13 @@ private fun Composer(
     enabled: Boolean,
     encrypted: Boolean,
     onSend: () -> Unit,
-    onSchedule: () -> Unit,
     attach: Attaching?,
     replyingTo: Message?,
     replyName: String,
     onCancelReply: () -> Unit,
     recording: Boolean,
     recordingMillis: Long,
-    onStartVoice: (() -> Unit)?,
+    onStartVoice: () -> Unit,
     onCancelVoice: () -> Unit,
     onSendVoice: () -> Unit,
     /** Holding Send down: which SIM to send this one from. Empty where there is no choice. */
@@ -1358,79 +1417,46 @@ private fun Composer(
                 IconButton(onClick = onCancelReply) { Icon(SecaIcons.Close, contentDescription = stringResource(R.string.cancel_reply)) }
             }
         }
-        if (recording) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-            ) {
-                IconButton(onClick = onCancelVoice) {
-                    Icon(SecaIcons.Delete, contentDescription = stringResource(R.string.cancel_recording), tint = colors.error)
-                }
-                Box(
-                    Modifier
-                        .padding(start = 4.dp)
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(colors.error),
-                )
-                Text(
-                    text = stringResource(R.string.recording, durationText(recordingMillis)),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = colors.onSurface,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 12.dp),
-                )
-                FilledIconButton(onClick = onSendVoice, modifier = Modifier.size(56.dp)) {
-                    Icon(SecaIcons.Send, contentDescription = stringResource(R.string.send_voice))
-                }
-            }
-            return@Column
-        }
+        // One row, whatever is happening in it. The microphone has to be the same button from
+        // one frame to the next or the finger holding it loses its grip halfway through: a
+        // gesture belongs to a composable, and a composable that is swapped out never hears
+        // the finger lift. So what changes is everything to its left, and never the button.
         Row(verticalAlignment = Alignment.Bottom) {
-            if (attach != null) AttachButton(attach)
-            TextField(
-                value = text,
-                onValueChange = onText,
-                placeholder = { Text(stringResource(if (encrypted) R.string.encrypted_message else R.string.message)) },
-                leadingIcon = if (encrypted) {
-                    { Icon(SecaIcons.Lock, contentDescription = stringResource(R.string.encrypted_by_link), modifier = Modifier.size(18.dp)) }
-                } else {
-                    null
-                },
-                // Once there is something to send, an SMS can also leave later.
-                trailingIcon = if (enabled && !encrypted && text.isNotBlank()) {
-                    {
-                        IconButton(onClick = onSchedule) {
-                            Icon(SecaIcons.Schedule, contentDescription = stringResource(R.string.schedule_send))
-                        }
-                    }
-                } else {
-                    null
-                },
-                supportingText = if (parts > 1) {
-                    { Text(pluralStringResource(R.plurals.sms_count, parts, parts)) }
-                } else {
-                    null
-                },
-                shape = RoundedCornerShape(28.dp),
-                maxLines = 6,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = colors.surfaceContainerHigh,
-                    unfocusedContainerColor = colors.surfaceContainerHigh,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent,
-                ),
-                modifier = Modifier.weight(1f),
-            )
-            val startVoice = onStartVoice.takeIf { text.isBlank() }
+            if (recording) {
+                RecordingStrip(recordingMillis, Modifier.weight(1f))
+            } else {
+                if (attach != null) AttachButton(attach)
+                TextField(
+                    value = text,
+                    onValueChange = onText,
+                    placeholder = { Text(stringResource(if (encrypted) R.string.encrypted_message else R.string.message)) },
+                    leadingIcon = if (encrypted) {
+                        { Icon(SecaIcons.Lock, contentDescription = stringResource(R.string.encrypted_by_link), modifier = Modifier.size(18.dp)) }
+                    } else {
+                        null
+                    },
+                    supportingText = if (parts > 1) {
+                        { Text(pluralStringResource(R.plurals.sms_count, parts, parts)) }
+                    } else {
+                        null
+                    },
+                    shape = RoundedCornerShape(28.dp),
+                    maxLines = 6,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = colors.surfaceContainerHigh,
+                        unfocusedContainerColor = colors.surfaceContainerHigh,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                    ),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            val speaking = text.isBlank()
             // Only an ordinary SMS has a SIM to choose: an encrypted message goes over the
             // Internet, and a voice note is not a text at all.
-            val chooseSim = sims.isNotEmpty() && !encrypted && startVoice == null && enabled && text.isNotBlank()
+            val chooseSim = sims.isNotEmpty() && !encrypted && !speaking && enabled
             var choosingSim by remember { mutableStateOf(false) }
             if (choosingSim) {
                 SendingSimDialog(
@@ -1442,35 +1468,40 @@ private fun Composer(
                     },
                 )
             }
-            FilledIconButton(
-                onClick = startVoice ?: onSend,
-                enabled = startVoice != null || (enabled && text.isNotBlank()),
-                modifier = Modifier
-                    .padding(start = 8.dp, bottom = if (parts > 1) 24.dp else 0.dp)
-                    .size(56.dp)
-                    .then(
-                        if (!chooseSim) {
-                            Modifier
-                        } else {
-                            Modifier.combinedClickable(
-                                role = Role.Button,
-                                onClick = onSend,
-                                onLongClickLabel = stringResource(R.string.send_from_other_sim),
-                                onLongClick = { choosingSim = true },
-                            )
-                        },
-                    ),
-            ) {
-                Icon(
-                    if (startVoice != null) SecaIcons.Mic else SecaIcons.Send,
-                    contentDescription = stringResource(
-                        when {
-                            startVoice != null -> R.string.record_voice
-                            encrypted -> R.string.send_encrypted
-                            else -> R.string.send
-                        },
-                    ),
+            val buttonPadding = Modifier.padding(start = 8.dp, bottom = if (parts > 1) 24.dp else 0.dp)
+            if (speaking) {
+                VoiceButton(
+                    recording = recording,
+                    enabled = enabled,
+                    onStart = onStartVoice,
+                    onFinish = onSendVoice,
+                    onCancel = onCancelVoice,
+                    modifier = buttonPadding,
                 )
+            } else {
+                FilledIconButton(
+                    onClick = onSend,
+                    enabled = enabled,
+                    modifier = buttonPadding
+                        .size(56.dp)
+                        .then(
+                            if (!chooseSim) {
+                                Modifier
+                            } else {
+                                Modifier.combinedClickable(
+                                    role = Role.Button,
+                                    onClick = onSend,
+                                    onLongClickLabel = stringResource(R.string.send_from_other_sim),
+                                    onLongClick = { choosingSim = true },
+                                )
+                            },
+                        ),
+                ) {
+                    Icon(
+                        SecaIcons.Send,
+                        contentDescription = stringResource(if (encrypted) R.string.send_encrypted else R.string.send),
+                    )
+                }
             }
         }
     }
@@ -1522,37 +1553,60 @@ private sealed interface Attaching {
     /** An encrypted conversation: the picture goes over the link, and there is nothing to choose. */
     class Encrypted(val pick: () -> Unit) : Attaching
 
-    /** By carrier: a picture or a video, or any file at all, so it reaches any phone. */
-    class ByCarrier(val media: () -> Unit, val file: () -> Unit) : Attaching
+    /** By carrier, so it reaches any phone at all. Scheduling is null with nothing written yet. */
+    class ByCarrier(
+        val media: () -> Unit,
+        val file: () -> Unit,
+        val contact: () -> Unit,
+        val schedule: (() -> Unit)?,
+    ) : Attaching
 }
+
+/** One line of the card the plus opens: an icon, a word, and the whole row to touch. */
+private class AttachChoice(
+    val icon: ImageVector,
+    val label: String,
+    val enabled: Boolean,
+    val onClick: () -> Unit,
+)
 
 /**
  * The button left of the text, and what it opens.
  *
  * Where there is a single thing to do it does it. Where there is a choice the plus turns a
- * quarter turn into a cross — the same stroke, so the eye follows it rather than reading a new
- * icon — and a short menu rises over the text field. A dialog in the middle of the screen was
- * the wrong shape for two words: it covered the conversation to ask almost nothing.
+ * quarter turn into a cross — the same stroke, so the eye follows the mark rather than reading
+ * a new icon — and a card rises just over it. It wears the same colour as the text field beside
+ * it and the card above it, so the three read as one piece of furniture rather than three.
  */
 @Composable
 private fun AttachButton(attach: Attaching) {
     var open by remember { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
     val turn by animateFloatAsState(
         targetValue = if (open) QUARTER_TURN else 0f,
         animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow),
-        label = "attach",
+        label = "attach-turn",
+    )
+    val container by animateColorAsState(
+        targetValue = if (open) colors.secondaryContainer else colors.surfaceContainerHigh,
+        label = "attach-container",
+    )
+    val ink by animateColorAsState(
+        targetValue = if (open) colors.onSecondaryContainer else colors.onSurfaceVariant,
+        label = "attach-ink",
     )
     Box {
-        IconButton(
+        FilledIconButton(
             onClick = {
                 when (attach) {
                     is Attaching.Encrypted -> attach.pick()
                     is Attaching.ByCarrier -> open = true
                 }
             },
+            colors = IconButtonDefaults.filledIconButtonColors(containerColor = container, contentColor = ink),
             modifier = Modifier
-                .padding(end = 4.dp, bottom = 4.dp)
-                .size(48.dp),
+                .padding(end = 6.dp, bottom = 2.dp)
+                .size(52.dp),
         ) {
             Icon(
                 imageVector = if (attach is Attaching.Encrypted) SecaIcons.Photo else SecaIcons.Add,
@@ -1567,47 +1621,263 @@ private fun AttachButton(attach: Attaching) {
             )
         }
         if (attach is Attaching.ByCarrier) {
+            val shut = { open = false }
             AttachMenu(
                 open = open,
-                onDismiss = { open = false },
-                onMedia = {
-                    open = false
-                    attach.media()
-                },
-                onFile = {
-                    open = false
-                    attach.file()
-                },
+                onDismiss = shut,
+                choices = listOf(
+                    AttachChoice(SecaIcons.Photo, stringResource(R.string.attach_media), true) {
+                        shut()
+                        attach.media()
+                    },
+                    AttachChoice(SecaIcons.Subject, stringResource(R.string.attach_file), true) {
+                        shut()
+                        attach.file()
+                    },
+                    AttachChoice(SecaIcons.PersonOutline, stringResource(R.string.attach_contact), true) {
+                        shut()
+                        attach.contact()
+                    },
+                    AttachChoice(
+                        icon = SecaIcons.Schedule,
+                        label = stringResource(R.string.schedule_send),
+                        enabled = attach.schedule != null,
+                    ) {
+                        shut()
+                        attach.schedule?.invoke()
+                    },
+                ),
             )
         }
     }
 }
 
-/** The two words the plus opens on, in a small card of their own over the text field. */
+/**
+ * The card the plus opens on, placed by hand rather than by the menu's own rules.
+ *
+ * A dropdown asked to flip above its anchor lands a long way off it, because it measures from
+ * the top of a button that is itself as tall as the text field. Here the card's bottom edge is
+ * put a hair above the plus and lined up with its left side, and it grows out of that corner,
+ * so what the eye sees is the button opening rather than a panel arriving.
+ */
 @Composable
-private fun AttachMenu(open: Boolean, onDismiss: () -> Unit, onMedia: () -> Unit, onFile: () -> Unit) {
+private fun AttachMenu(open: Boolean, onDismiss: () -> Unit, choices: List<AttachChoice>) {
     val colors = MaterialTheme.colorScheme
-    DropdownMenu(
-        expanded = open,
+    val showing = remember { MutableTransitionState(false) }
+    showing.targetState = open
+    if (!showing.currentState && !showing.targetState) return
+    val gap = with(LocalDensity.current) { MENU_GAP.roundToPx() }
+    Popup(
+        popupPositionProvider = remember(gap) { JustAbove(gap) },
         onDismissRequest = onDismiss,
-        // Away from the button, so the menu reads as something the plus pushed out.
-        offset = DpOffset(0.dp, (-8).dp),
-        shape = RoundedCornerShape(24.dp),
-        containerColor = colors.surfaceContainerHigh,
-        shadowElevation = 6.dp,
+        properties = PopupProperties(focusable = true),
     ) {
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.attach_media), style = MaterialTheme.typography.bodyLarge) },
-            leadingIcon = { Icon(SecaIcons.Photo, contentDescription = null, tint = colors.primary) },
-            onClick = onMedia,
+        AnimatedVisibility(
+            visibleState = showing,
+            enter = fadeIn(spring(stiffness = Spring.StiffnessMedium)) +
+                scaleIn(
+                    animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMediumLow),
+                    initialScale = 0.75f,
+                    transformOrigin = FROM_THE_BUTTON,
+                ),
+            exit = fadeOut(tween(MENU_CLOSING_MILLIS)) +
+                scaleOut(tween(MENU_CLOSING_MILLIS), targetScale = 0.9f, transformOrigin = FROM_THE_BUTTON),
+        ) {
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = colors.surfaceContainerHigh,
+                shadowElevation = 6.dp,
+            ) {
+                // As wide as its longest word and no wider. A popup is handed the whole window
+                // to measure against, so rows told to fill their width would fill the screen.
+                Column(
+                    Modifier
+                        .width(IntrinsicSize.Max)
+                        .widthIn(min = 184.dp)
+                        .padding(vertical = 8.dp),
+                ) {
+                    choices.forEach { choice -> AttachRow(choice) }
+                }
+            }
+        }
+    }
+}
+
+/** One row of the card: the icon, the word, and the whole width to touch. */
+@Composable
+private fun AttachRow(choice: AttachChoice) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = choice.enabled, onClickLabel = choice.label, onClick = choice.onClick)
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+    ) {
+        Icon(
+            imageVector = choice.icon,
+            contentDescription = null,
+            tint = if (choice.enabled) colors.primary else colors.onSurfaceVariant.copy(alpha = GREYED),
         )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.attach_file), style = MaterialTheme.typography.bodyLarge) },
-            leadingIcon = { Icon(SecaIcons.Subject, contentDescription = null, tint = colors.primary) },
-            onClick = onFile,
+        Text(
+            text = choice.label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (choice.enabled) colors.onSurface else colors.onSurface.copy(alpha = GREYED),
+            modifier = Modifier.padding(start = 16.dp),
+        )
+    }
+}
+
+/** Puts a popup's bottom edge [gap] pixels above its anchor, lined up with the anchor's start. */
+private class JustAbove(private val gap: Int) : PopupPositionProvider {
+
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize,
+    ): IntOffset {
+        val x = if (layoutDirection == LayoutDirection.Ltr) {
+            anchorBounds.left
+        } else {
+            anchorBounds.right - popupContentSize.width
+        }
+        val y = anchorBounds.top - popupContentSize.height - gap
+        return IntOffset(
+            x = x.coerceIn(0, max(0, windowSize.width - popupContentSize.width)),
+            y = y.coerceAtLeast(0),
+        )
+    }
+}
+
+/** What is going on while the microphone is held down, where the text field usually is. */
+@Composable
+private fun RecordingStrip(millis: Long, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .height(56.dp)
+            .padding(start = 12.dp),
+    ) {
+        Box(
+            Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(colors.error),
+        )
+        Text(
+            text = durationText(millis),
+            style = MaterialTheme.typography.titleMedium,
+            color = colors.onSurface,
+            modifier = Modifier.padding(start = 12.dp),
+        )
+        Text(
+            text = stringResource(R.string.slide_to_cancel),
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 12.dp, end = 8.dp),
+        )
+    }
+}
+
+/**
+ * The microphone, which is held down rather than pressed.
+ *
+ * Press and it starts; let go and it leaves; slide a thumb's width off the button and it is
+ * thrown away instead. Recording on one tap and sending on a second is two decisions where
+ * there is only one, and it leaves a phone quietly recording in a pocket when the second tap
+ * never comes.
+ *
+ * A press too short to be speech is discarded by the recorder itself, so a fumbled tap costs
+ * nothing and sends nothing.
+ */
+@Composable
+private fun VoiceButton(
+    recording: Boolean,
+    enabled: Boolean,
+    onStart: () -> Unit,
+    onFinish: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val swell by animateFloatAsState(
+        targetValue = if (recording) 1.15f else 1f,
+        animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow),
+        label = "mic-swell",
+    )
+    val container by animateColorAsState(
+        targetValue = if (recording) colors.error else colors.primary,
+        label = "mic-container",
+    )
+    val held by rememberUpdatedState(Triple(onStart, onFinish, onCancel))
+    val label = stringResource(R.string.record_voice)
+    val escape = with(LocalDensity.current) { ESCAPE.toPx() }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(56.dp)
+            .scale(swell)
+            .clip(CircleShape)
+            .background(if (enabled) container else colors.surfaceContainerHighest)
+            .semantics {
+                role = Role.Button
+                contentDescription = label
+            }
+            .then(
+                if (!enabled) {
+                    Modifier
+                } else {
+                    Modifier.pointerInput(Unit) {
+                        awaitEachGesture {
+                            val (start, finish, cancel) = held
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            down.consume()
+                            start()
+                            var gone = false
+                            while (true) {
+                                val moved = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                                gone = (moved.position - down.position).getDistance() > escape
+                                if (!moved.pressed) {
+                                    moved.consume()
+                                    break
+                                }
+                            }
+                            if (gone) cancel() else finish()
+                        }
+                    }
+                },
+            ),
+    ) {
+        Icon(
+            imageVector = SecaIcons.Mic,
+            contentDescription = null,
+            tint = when {
+                !enabled -> colors.onSurfaceVariant.copy(alpha = GREYED)
+                recording -> colors.onError
+                else -> colors.onPrimary
+            },
         )
     }
 }
 
 /** A plus turned this far is a cross. */
 private const val QUARTER_TURN = 45f
+
+/** How far the card sits above the plus: close enough to belong to it. */
+private val MENU_GAP = 6.dp
+
+/** A thumb's width off the button, and the recording is thrown away rather than sent. */
+private val ESCAPE = 72.dp
+
+/** The card grows out of its own bottom-left corner, which is where the plus is. */
+private val FROM_THE_BUTTON = TransformOrigin(0f, 1f)
+
+private const val MENU_CLOSING_MILLIS = 90
+private const val GREYED = 0.38f

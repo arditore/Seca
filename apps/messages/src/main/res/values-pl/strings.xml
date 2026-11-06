@@ -18,10 +18,13 @@
     <string name="attach">Załącz</string>
     <string name="close_attach">Zamknij</string>
     <string name="attach_file">Plik</string>
+    <string name="attach_contact">Kontakt</string>
     <string name="attach_media">Multimedia</string>
     <string name="attachment_not_sent">Telefon nie wysłał pliku.</string>
     <string name="attachment_too_large">%1$s ma %2$d KB, za dużo na MMS.</string>
     <string name="attachment_unreadable">Nie udało się odczytać tego pliku.</string>
+    <string name="contact_not_read">Nie udało się odczytać tego kontaktu.</string>
+    <string name="slide_to_cancel">Przesuń, aby anulować</string>
     <string name="back">Wstecz</string>
     <string name="background_allowed_quiet">Dozwolone, bez powiadomienia</string>
     <string name="background_dialog_text">Aby Seca Link mogła odbierać zaszyfrowane wiadomości w tle bez wyświetlania stałego powiadomienia, wyłącz optymalizację baterii dla aplikacji Seca Messages. Połączenie z bramkami zużywa niewiele energii.</string>
@@ -42,7 +45,6 @@
     <string name="camera_access">Dostęp do aparatu</string>
     <string name="camera_access_hint">Aby odczytać kod wyświetlony na telefonie użytkownika %1$s. Żadne zdjęcia nie są zapisywane.</string>
     <string name="cancel">Anuluj</string>
-    <string name="cancel_recording">Anuluj nagrywanie</string>
     <string name="cancel_reply">Anuluj odpowiedź</string>
     <string name="cancel_send">Anuluj wysyłanie</string>
     <string name="channel_alerts">Alerty</string>
@@ -280,6 +282,9 @@
     <string name="pinned">Przypięte</string>
     <string name="pinned_one">Przypięty</string>
     <string name="preview_photo">📷 Zdjęcie</string>
+    <string name="preview_video">🎬 Film</string>
+    <string name="preview_contact">👤 Kontakt</string>
+    <string name="preview_file">📎 Plik</string>
     <string name="preview_voice">🎤 Wiadomość głosowa</string>
     <string name="privacy">Prywatność</string>
     <string name="privacy_text">Wiadomości tekstowe pozostają tam, gdzie przechowuje je system Android – nic nie jest kopiowane w inne miejsca. Dostęp do internetu jest używany wyłącznie przez funkcję Seca Link (po jej włączeniu) i przesyłane są przez niego jedynie klucze publiczne oraz zaszyfrowane dane.</string>
@@ -295,7 +300,6 @@
     <string name="receive_without_notification">Odbieraj bez powiadomienia</string>
     <string name="reception_relays">Bramki odbiorcze</string>
     <string name="record_voice">Nagraj wiadomość głosową</string>
-    <string name="recording">Nagrywanie · %1$s</string>
     <string name="refused">Odrzucono przez bramkę</string>
     <string name="refused_named">Odrzucono: %1$s</string>
     <string name="relay_placeholder">bramka.example.org</string>
@@ -346,7 +350,6 @@
     <string name="send_failed_retry">Wysyłanie nie powiodło się · Dotknij, aby ponowić</string>
     <string name="send_from_other_sim">Wyślij z innej karty SIM</string>
     <string name="send_now">Wyślij teraz</string>
-    <string name="send_voice">Wyślij wiadomość głosową</string>
     <string name="sending">Wysyłanie…</string>
     <string name="sent_at">Wysłano · %1$s</string>
     <string name="settings">Ustawienia</string>

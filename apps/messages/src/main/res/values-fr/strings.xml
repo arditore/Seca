@@ -18,10 +18,13 @@
     <string name="attach">Joindre</string>
     <string name="close_attach">Fermer</string>
     <string name="attach_file">Fichier</string>
+    <string name="attach_contact">Contact</string>
     <string name="attach_media">Média</string>
     <string name="attachment_not_sent">Le téléphone a refusé de l\'envoyer.</string>
     <string name="attachment_too_large">%1$s fait %2$d Ko, trop pour un MMS.</string>
     <string name="attachment_unreadable">Ce fichier n\'a pas pu être lu.</string>
+    <string name="contact_not_read">Ce contact n\'a pas pu être lu.</string>
+    <string name="slide_to_cancel">Glissez pour annuler</string>
     <string name="back">Retour</string>
     <string name="background_allowed_quiet">Autorisée, sans notification</string>
     <string name="background_dialog_text">Pour que Seca Link reçoive vos messages chiffrés en arrière-plan sans garder de notification, laissez Seca Messages ignorer l\'optimisation de la batterie. La connexion aux relais reste légère.</string>
@@ -42,7 +45,6 @@
     <string name="camera_access">Accès à l\'appareil photo</string>
     <string name="camera_access_hint">Pour lire le code affiché sur le téléphone de %1$s. Aucune image n\'est gardée.</string>
     <string name="cancel">Annuler</string>
-    <string name="cancel_recording">Annuler l\'enregistrement</string>
     <string name="cancel_reply">Annuler la réponse</string>
     <string name="cancel_send">Annuler l\'envoi</string>
     <string name="channel_alerts">Alertes</string>
@@ -282,6 +284,9 @@
     <string name="pinned">Épinglées</string>
     <string name="pinned_one">Épinglée</string>
     <string name="preview_photo">📷 Photo</string>
+    <string name="preview_video">🎬 Vidéo</string>
+    <string name="preview_contact">👤 Contact</string>
+    <string name="preview_file">📎 Fichier</string>
     <string name="preview_voice">🎤 Message vocal</string>
     <string name="privacy">Confidentialité</string>
     <string name="privacy_text">Les SMS restent là où Android les garde : rien n\'est copié ailleurs. Internet ne sert qu\'à Seca Link, quand vous l\'activez, et n\'y passent que des clés publiques et du chiffré.</string>
@@ -297,7 +302,6 @@
     <string name="receive_without_notification">Recevoir sans notification</string>
     <string name="reception_relays">Relais de réception</string>
     <string name="record_voice">Enregistrer un message vocal</string>
-    <string name="recording">Enregistrement · %1$s</string>
     <string name="refused">Refusé par le relais</string>
     <string name="refused_named">Refusé : %1$s</string>
     <string name="relay_placeholder">relais.exemple.org</string>
@@ -348,7 +352,6 @@
     <string name="send_failed_retry">Échec de l\'envoi · Toucher pour réessayer</string>
     <string name="send_from_other_sim">Envoyer depuis une autre SIM</string>
     <string name="send_now">Envoyer maintenant</string>
-    <string name="send_voice">Envoyer le message vocal</string>
     <string name="sending">Envoi…</string>
     <string name="sent_at">Envoyé · %1$s</string>
     <string name="settings">Paramètres</string>

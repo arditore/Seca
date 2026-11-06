@@ -49,8 +49,10 @@ data class Message(
     val linkId: String? = null,
     /** The photo a Seca Link message carries, as a file on this phone; null for text. */
     val image: String? = null,
-    /** The voice message a Seca Link message carries, as a file on this phone. */
+    /** The voice message a message carries: a file for Seca Link, a part for a multimedia one. */
     val audio: String? = null,
+    /** The type of something attached that is neither a picture nor a sound: a card, a document. */
+    val attachment: String? = null,
     /** The Seca Link id of the message this one answers. */
     val replyTo: String? = null,
     val myReaction: String? = null,

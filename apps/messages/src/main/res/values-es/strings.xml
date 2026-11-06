@@ -18,10 +18,13 @@
     <string name="attach">Adjuntar</string>
     <string name="close_attach">Cerrar</string>
     <string name="attach_file">Archivo</string>
+    <string name="attach_contact">Contacto</string>
     <string name="attach_media">Multimedia</string>
     <string name="attachment_not_sent">El teléfono no ha querido enviarlo.</string>
     <string name="attachment_too_large">%1$s ocupa %2$d KB, demasiado para un MMS.</string>
     <string name="attachment_unreadable">No se ha podido leer ese archivo.</string>
+    <string name="contact_not_read">No se ha podido leer ese contacto.</string>
+    <string name="slide_to_cancel">Desliza para cancelar</string>
     <string name="back">Atrás</string>
     <string name="background_allowed_quiet">Permitido, sin notificación</string>
     <string name="background_dialog_text">Para que Seca Link reciba tus mensajes cifrados en segundo plano sin mantener una notificación, deja que Seca Messages ignore la optimización de batería. La conexión con los relés sigue siendo ligera.</string>
@@ -42,7 +45,6 @@
     <string name="camera_access">Acceso a la cámara</string>
     <string name="camera_access_hint">Para leer el código que aparece en el teléfono de %1$s. No se guarda ninguna imagen.</string>
     <string name="cancel">Cancelar</string>
-    <string name="cancel_recording">Cancelar la grabación</string>
     <string name="cancel_reply">Cancelar la respuesta</string>
     <string name="cancel_send">Cancelar el envío</string>
     <string name="channel_alerts">Avisos</string>
@@ -282,6 +284,9 @@
     <string name="pinned">Fijadas</string>
     <string name="pinned_one">Fijada</string>
     <string name="preview_photo">📷 Foto</string>
+    <string name="preview_video">🎬 Vídeo</string>
+    <string name="preview_contact">👤 Contacto</string>
+    <string name="preview_file">📎 Archivo</string>
     <string name="preview_voice">🎤 Mensaje de voz</string>
     <string name="privacy">Privacidad</string>
     <string name="privacy_text">Los mensajes se quedan donde Android los guarda: nada se copia a otro sitio. Internet solo sirve para Seca Link, cuando lo activas, y por ahí solo pasan claves públicas y datos cifrados.</string>
@@ -297,7 +302,6 @@
     <string name="receive_without_notification">Recibir sin notificación</string>
     <string name="reception_relays">Relés de recepción</string>
     <string name="record_voice">Grabar un mensaje de voz</string>
-    <string name="recording">Grabando · %1$s</string>
     <string name="refused">Rechazado por el relé</string>
     <string name="refused_named">Rechazado: %1$s</string>
     <string name="relay_placeholder">rele.ejemplo.org</string>
@@ -348,7 +352,6 @@
     <string name="send_failed_retry">El envío falló · Toca para reintentar</string>
     <string name="send_from_other_sim">Enviar desde otra SIM</string>
     <string name="send_now">Enviar ahora</string>
-    <string name="send_voice">Enviar el mensaje de voz</string>
     <string name="sending">Enviando…</string>
     <string name="sent_at">Enviado · %1$s</string>
     <string name="settings">Ajustes</string>

@@ -82,6 +82,8 @@ internal object MmsReader {
                 date = date * MILLIS_PER_SECOND,
                 status = statusOf(box),
                 image = parts.image,
+                audio = parts.audio,
+                attachment = parts.other,
             )
     }
 
@@ -109,7 +111,19 @@ internal object MmsReader {
         }
     }.getOrNull().orEmpty()
 
-    private class Parts(val text: String, val image: String?)
+    /**
+     * What one message carries, once its rows have been read.
+     *
+     * [other] is the type of anything that is neither words, a picture nor a sound — a contact
+     * card, a document — kept as its type rather than thrown away, so the conversation can say
+     * what arrived instead of calling everything a photograph.
+     */
+    private class Parts(
+        val text: String,
+        val image: String?,
+        val audio: String? = null,
+        val other: String? = null,
+    )
 
     /**
      * The parts of several messages at once, by the message they belong to.
@@ -129,21 +143,31 @@ internal object MmsReader {
         )?.use { c ->
             val words = HashMap<Long, StringBuilder>()
             val images = HashMap<Long, String>()
+            val sounds = HashMap<Long, String>()
+            val others = HashMap<Long, String>()
             while (c.moveToNext()) {
                 val owner = c.getLong(3)
                 val type = c.getString(1).orEmpty()
+                val where = "$PART_URI/${c.getLong(0)}"
                 when {
-                    type.startsWith("text/") -> c.getString(2)?.takeIf { it.isNotBlank() }?.let { said ->
-                        val sentence = words.getOrPut(owner) { StringBuilder() }
-                        if (sentence.isNotEmpty()) sentence.append('\n')
-                        sentence.append(said)
-                    }
+                    // A contact card is written as text, and reading it into the bubble would
+                    // put somebody's whole address book entry where a sentence belongs.
+                    type.startsWith("text/") && !type.endsWith("vcard") ->
+                        c.getString(2)?.takeIf { it.isNotBlank() }?.let { said ->
+                            val sentence = words.getOrPut(owner) { StringBuilder() }
+                            if (sentence.isNotEmpty()) sentence.append('\n')
+                            sentence.append(said)
+                        }
                     // The presentation part describes a slideshow; it is not something to show.
                     type == SMIL -> Unit
-                    type.startsWith("image/") -> images.getOrPut(owner) { "$PART_URI/${c.getLong(0)}" }
+                    type.startsWith("image/") -> images.getOrPut(owner) { where }
+                    type.startsWith("audio/") -> sounds.getOrPut(owner) { where }
+                    else -> others.getOrPut(owner) { type }
                 }
             }
-            (words.keys + images.keys).associateWith { Parts(words[it]?.toString().orEmpty(), images[it]) }
+            (words.keys + images.keys + sounds.keys + others.keys).associateWith {
+                Parts(words[it]?.toString().orEmpty(), images[it], sounds[it], others[it])
+            }
         }
     }.getOrNull().orEmpty()
 

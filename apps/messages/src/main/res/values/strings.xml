@@ -18,10 +18,13 @@
     <string name="attach">Attach</string>
     <string name="close_attach">Close</string>
     <string name="attach_file">File</string>
+    <string name="attach_contact">Contact</string>
     <string name="attach_media">Media</string>
     <string name="attachment_not_sent">The phone would not send it.</string>
     <string name="attachment_too_large">%1$s is %2$d KB, too large for a multimedia message.</string>
     <string name="attachment_unreadable">That file could not be read.</string>
+    <string name="contact_not_read">That contact could not be read.</string>
+    <string name="slide_to_cancel">Slide away to cancel</string>
     <string name="back">Back</string>
     <string name="background_allowed_quiet">Allowed, without a notification</string>
     <string name="background_dialog_text">For Seca Link to receive your encrypted messages in the background without keeping a notification, let Seca Messages ignore battery optimization. The connection to the relays stays light.</string>
@@ -42,7 +45,6 @@
     <string name="camera_access">Camera access</string>
     <string name="camera_access_hint">To read the code shown on %1$s\'s phone. No image is kept.</string>
     <string name="cancel">Cancel</string>
-    <string name="cancel_recording">Cancel recording</string>
     <string name="cancel_reply">Cancel reply</string>
     <string name="cancel_send">Cancel sending</string>
     <string name="channel_alerts">Alerts</string>
@@ -272,6 +274,9 @@
     <string name="pinned">Pinned</string>
     <string name="pinned_one">Pinned</string>
     <string name="preview_photo">📷 Photo</string>
+    <string name="preview_video">🎬 Video</string>
+    <string name="preview_contact">👤 Contact</string>
+    <string name="preview_file">📎 File</string>
     <string name="preview_voice">🎤 Voice message</string>
     <string name="privacy">Privacy</string>
     <string name="privacy_text">Texts stay where Android keeps them: nothing is copied elsewhere. The Internet is only for Seca Link, when you turn it on, and only public keys and encrypted data go through it.</string>
@@ -287,7 +292,6 @@
     <string name="receive_without_notification">Receive without a notification</string>
     <string name="reception_relays">Receiving relays</string>
     <string name="record_voice">Record a voice message</string>
-    <string name="recording">Recording · %1$s</string>
     <string name="refused">Refused by the relay</string>
     <string name="refused_named">Refused: %1$s</string>
     <string name="relay_placeholder">relay.example.org</string>
@@ -336,7 +340,6 @@
     <string name="send_failed_retry">Sending failed · Tap to retry</string>
     <string name="send_from_other_sim">Send from another SIM</string>
     <string name="send_now">Send now</string>
-    <string name="send_voice">Send voice message</string>
     <string name="sending">Sending…</string>
     <string name="sent_at">Sent · %1$s</string>
     <string name="settings">Settings</string>
