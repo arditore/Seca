@@ -75,6 +75,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -754,7 +755,11 @@ private fun Bubble(
                 ) {
                     if (message.replyTo != null) QuoteBox(quoted, contactName, content)
                     Text(
-                        text = message.body.ifEmpty { stringResource(R.string.preview_photo) },
+                        text = if (message.body.isEmpty()) {
+                            AnnotatedString(stringResource(R.string.preview_photo))
+                        } else {
+                            linkedMessage(message.body)
+                        },
                         style = MaterialTheme.typography.bodyLarge,
                         color = content,
                     )
@@ -931,7 +936,7 @@ private fun PhotoBubble(
         }
         if (caption.isNotBlank()) {
             Text(
-                text = caption,
+                text = linkedMessage(caption),
                 style = MaterialTheme.typography.bodyLarge,
                 color = content,
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
