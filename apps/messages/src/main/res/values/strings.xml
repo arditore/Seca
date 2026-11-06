@@ -348,6 +348,13 @@
         <item quantity="one">%d advertising conversation</item>
         <item quantity="other">%d advertising conversations</item>
     </plurals>
+    <string name="sweep_file">File them</string>
+    <string name="sweep_looking">Looking through your messages</string>
+    <string name="sweep_looking_hint">Nothing is moved until you say so.</string>
+    <string name="sweep_none">Nothing to file</string>
+    <string name="sweep_none_hint">No advertising found among the messages already on this phone.</string>
+    <string name="sweep_old">Sort the messages already here</string>
+    <string name="sweep_old_hint">The filter only runs on arriving messages; this looks through the older ones</string>
     <string name="text_messages">Text messages</string>
     <string name="this_evening">This evening</string>
     <string name="this_month">This month</string>
@@ -405,4 +412,8 @@
     <string name="you_prefix">You: %1$s</string>
     <string name="your_link_code">Your Seca Link code</string>
     <string name="your_reply">Your reply</string>
+    <plurals name="sweep_found">
+        <item quantity="one">%1$d conversation to file</item>
+        <item quantity="other">%1$d conversations to file</item>
+    </plurals>
 </resources>

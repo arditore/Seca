@@ -27,6 +27,17 @@ import com.seca.core.design.component.SecaSettingRow
 import com.seca.messages.sms.CodeCleanup
 import com.seca.messages.sms.DeliveryReports
 import com.seca.messages.sms.CodeLifetime
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.pluralStringResource
+import com.seca.messages.sms.SpamSweep
+import com.seca.messages.sms.SweptConversation
 import com.seca.messages.sms.SpamFilter
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
@@ -39,6 +50,8 @@ internal fun CodeAndSpamSettings() {
     var lifetime by remember { mutableStateOf(CodeCleanup.lifetime(context)) }
     var filterSpam by remember { mutableStateOf(SpamFilter.enabled(context)) }
     var deliveryReports by remember { mutableStateOf(DeliveryReports.enabled(context)) }
+    var sweeping by remember { mutableStateOf(false) }
+    var found by remember { mutableStateOf<List<SweptConversation>?>(null) }
 
     SecaSectionLabel(stringResource(R.string.verification_codes))
     SecaGroupItem(index = 0, count = 1) {
@@ -66,7 +79,7 @@ internal fun CodeAndSpamSettings() {
     SecaHint(stringResource(R.string.codes_hint))
 
     SecaSectionLabel(stringResource(R.string.advertising_texts))
-    SecaGroupItem(index = 0, count = 1) {
+    SecaGroupItem(index = 0, count = 2) {
         SecaSettingRow(
             icon = SecaIcons.Block,
             title = stringResource(R.string.file_advertising),
@@ -82,7 +95,93 @@ internal fun CodeAndSpamSettings() {
             trailing = { Switch(checked = filterSpam, onCheckedChange = null) },
         )
     }
+    // The filter only ever ran on arriving messages, so anything older than Seca being the
+    // messaging app was never looked at. This looks, and asks before moving anything.
+    SecaGroupItem(
+        index = 1,
+        count = 2,
+        onClick = {
+            sweeping = true
+            scope.launch {
+                found = SpamSweep.look(context)
+                sweeping = false
+            }
+        },
+    ) {
+        SecaSettingRow(
+            icon = SecaIcons.Search,
+            title = stringResource(R.string.sweep_old),
+            subtitle = stringResource(R.string.sweep_old_hint),
+        )
+    }
     SecaHint(stringResource(R.string.advertising_hint))
+
+    if (sweeping) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(stringResource(R.string.sweep_looking)) },
+            text = { Text(stringResource(R.string.sweep_looking_hint), style = MaterialTheme.typography.bodyMedium) },
+            confirmButton = {},
+        )
+    }
+
+    found?.let { conversations ->
+        AlertDialog(
+            onDismissRequest = { found = null },
+            icon = { Icon(SecaIcons.Block, contentDescription = null) },
+            title = {
+                Text(
+                    if (conversations.isEmpty()) {
+                        stringResource(R.string.sweep_none)
+                    } else {
+                        pluralStringResource(R.plurals.sweep_found, conversations.size, conversations.size)
+                    },
+                )
+            },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    if (conversations.isEmpty()) {
+                        Text(stringResource(R.string.sweep_none_hint), style = MaterialTheme.typography.bodyMedium)
+                    } else {
+                        // Named rather than counted: the owner decides on what they can see.
+                        conversations.forEach { swept ->
+                            Text(
+                                text = swept.address,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Text(
+                                text = swept.snippet,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(bottom = 10.dp),
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                if (conversations.isEmpty()) {
+                    TextButton(onClick = { found = null }) { Text(stringResource(android.R.string.ok)) }
+                } else {
+                    TextButton(
+                        onClick = {
+                            val filing = conversations
+                            found = null
+                            scope.launch { SpamSweep.file(context, filing) }
+                        },
+                    ) { Text(stringResource(R.string.sweep_file)) }
+                }
+            },
+            dismissButton = {
+                if (conversations.isNotEmpty()) {
+                    TextButton(onClick = { found = null }) { Text(stringResource(android.R.string.cancel)) }
+                }
+            },
+        )
+    }
 
     SecaSectionLabel(stringResource(R.string.text_messages))
     SecaGroupItem(index = 0, count = 1) {

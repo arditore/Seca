@@ -145,13 +145,4 @@ class PhoneNumbers(val homeRegion: String) {
 }
 
 /** The country a number belongs to, its name in the phone's language, and whether it is the SIM's own. */
-data class NumberCountry(val region: String, val displayName: String, val isHome: Boolean) {
-    /** The flag emoji, made of the region's two regional-indicator letters. */
-    val flag: String
-        get() = region.uppercase(Locale.ROOT).map { Character.toChars(REGIONAL_A + (it - 'A')).concatToString() }
-            .joinToString("")
-
-    private companion object {
-        const val REGIONAL_A = 0x1F1E6
-    }
-}
+data class NumberCountry(val region: String, val displayName: String, val isHome: Boolean)

@@ -353,7 +353,7 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
         if (contact != null) {
             ui.profileOf(contact).takeIf { it.id != Profile.Principal.id }?.let { add(it.name) }
         } else if (call.callable) {
-            ui.numbers.countryOf(call.number)?.takeIf { !it.isHome }?.let { add("${it.flag} ${it.displayName}") }
+            ui.numbers.countryOf(call.number)?.takeIf { !it.isHome }?.let { add(it.displayName) }
         }
     }.joinToString(" · ")
     Box {

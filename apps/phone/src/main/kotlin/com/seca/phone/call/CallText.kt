@@ -40,7 +40,7 @@ internal fun CallView.subtitle(numbers: PhoneNumbers): String? = when {
         caller.numberLabel,
     ).joinToString(" · ").ifEmpty { null }
     number.isNotBlank() && presentation == TelecomManager.PRESENTATION_ALLOWED && networkName != null -> numbers.display(number)
-    else -> numbers.countryOf(number)?.takeIf { !it.isHome }?.let { "${it.flag} ${it.displayName}" }
+    else -> numbers.countryOf(number)?.takeIf { !it.isHome }?.displayName
 }
 
 /** "02:31", or "1:02:31" past an hour. */

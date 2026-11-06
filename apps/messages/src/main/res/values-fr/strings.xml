@@ -363,6 +363,13 @@
         <item quantity="many">%d conversations publicitaires</item>
         <item quantity="other">%d conversations publicitaires</item>
     </plurals>
+    <string name="sweep_file">Les ranger</string>
+    <string name="sweep_looking">Lecture de vos SMS</string>
+    <string name="sweep_looking_hint">Rien ne bouge tant que vous ne le dites pas.</string>
+    <string name="sweep_none">Rien à ranger</string>
+    <string name="sweep_none_hint">Aucune publicité trouvée parmi les SMS déjà sur ce téléphone.</string>
+    <string name="sweep_old">Trier les SMS déjà reçus</string>
+    <string name="sweep_old_hint">Le filtre ne s\'applique qu\'aux SMS qui arrivent ; ceci relit les anciens</string>
     <string name="text_messages">SMS</string>
     <string name="this_evening">Ce soir</string>
     <string name="this_month">Ce mois-ci</string>
@@ -424,4 +431,9 @@
     <string name="you_prefix">Vous : %1$s</string>
     <string name="your_link_code">Votre code Seca Link</string>
     <string name="your_reply">Votre réponse</string>
+    <plurals name="sweep_found">
+        <item quantity="one">%1$d conversation à ranger</item>
+        <item quantity="other">%1$d conversations à ranger</item>
+        <item quantity="many">%1$d conversations à ranger</item>
+    </plurals>
 </resources>

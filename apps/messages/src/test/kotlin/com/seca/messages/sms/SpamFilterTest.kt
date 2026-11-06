@@ -1,6 +1,7 @@
 package com.seca.messages.sms
 
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -36,5 +37,36 @@ class SpamFilterTest {
     @Test
     fun `an ordinary person is never advertising`() {
         assertFalse(SpamFilter.isCommercial("+33612345678", "On se voit à 18h ? Je ne veux plus recevoir de pluie."))
+    }
+
+    @Test
+    fun `a brand offering a link to unsubscribe, with no STOP number, is advertising`() {
+        // Seen on a real phone: a clothing brand whose way out is a link rather than the 36xxx
+        // number French law is usually read as requiring. The sender is a name, not a number,
+        // and it offers to unsubscribe — which together is enough.
+        assertTrue(
+            SpamFilter.isCommercial(
+                "COS",
+                "Un cachemire emblematiquement COS. Decouvrir : https://s.cos.com/lnGuyhG" +
+                    "Cliquez ici pour vous desabonner: https://s.cos.com/FhByf0y",
+            ),
+        )
+    }
+
+    @Test
+    fun `the same wording with its accents is advertising too`() {
+        assertTrue(SpamFilter.isCommercial("COS", "Cliquez ici pour vous désabonner: https://s.cos.com/FhByf0y"))
+    }
+
+    @Test
+    fun `a one-time code that also offers a way out is not advertising to the sweep`() {
+        // Caught on a phone: the sweep over older messages offered to file an Uber verification
+        // code, because the code arrives with the same "STOP to 38696" footer every commercial
+        // text carries. Burying a code someone is waiting for is worse than leaving an
+        // advertisement in the inbox, so the code is found first and wins.
+        val body = "[Uber] Votre code : 0894. Ne le divulguez jamais. STOP ALL au 38696 pour vous desabonner."
+
+        assertTrue("the wording alone does read as commercial", SpamFilter.isCommercial("Uber", body))
+        assertNotNull("so the code has to be what saves it", OneTimeCode.find(body))
     }
 }

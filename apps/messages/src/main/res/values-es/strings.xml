@@ -363,6 +363,13 @@
         <item quantity="many">%d de conversaciones publicitarias</item>
         <item quantity="other">%d conversaciones publicitarias</item>
     </plurals>
+    <string name="sweep_file">Archivarlos</string>
+    <string name="sweep_looking">Revisando sus SMS</string>
+    <string name="sweep_looking_hint">No se mueve nada hasta que usted lo diga.</string>
+    <string name="sweep_none">Nada que archivar</string>
+    <string name="sweep_none_hint">No se ha encontrado publicidad entre los SMS que ya están en este teléfono.</string>
+    <string name="sweep_old">Ordenar los SMS ya recibidos</string>
+    <string name="sweep_old_hint">El filtro solo actúa sobre los SMS que llegan; esto revisa los antiguos</string>
     <string name="text_messages">SMS</string>
     <string name="this_evening">Esta tarde</string>
     <string name="this_month">Este mes</string>
@@ -424,4 +431,9 @@
     <string name="you_prefix">Tú: %1$s</string>
     <string name="your_link_code">Tu código de Seca Link</string>
     <string name="your_reply">Tu respuesta</string>
+    <plurals name="sweep_found">
+        <item quantity="one">%1$d conversación para archivar</item>
+        <item quantity="other">%1$d conversaciones para archivar</item>
+        <item quantity="many">%1$d de conversaciones para archivar</item>
+    </plurals>
 </resources>
