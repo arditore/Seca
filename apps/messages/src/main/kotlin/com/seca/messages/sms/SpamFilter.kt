@@ -19,6 +19,18 @@ internal object SpamFilter {
     private const val KEY_ENABLED = "enabled"
 
     private val StopNumber = Regex("(?i)\\bstop(?:\\s+(?:sms|pub))?\\s*(?:au|:|->|=)?\\s*3\\d{4}\\b")
+    /**
+     * "STOP" and then a link, which is where the way out has moved.
+     *
+     * The law asks for a free way out, not for a particular shape of one, and brands have gone
+     * from "STOP au 36180" to "STOP https://mrnd.fr/8YwIwWb". It is the same sentence, and the
+     * old rule saw none of it because it was looking for five digits beginning with a three.
+     *
+     * Counted only from a brand or a short code. Somebody writing "stop" and pasting a link is
+     * having a conversation, and their number is far too long to be either of those.
+     */
+    private val StopLink = Regex("(?i)\\bstop\\b[\\s:.>=-]*(?:https?://|www\\.)\\S+")
+
     private val OptOut = Regex("(?i)(d[ée]sinscri|d[ée]sabonn|ne plus recevoir|unsubscribe)")
     private const val SHORT_CODE_MIN = 4
     private const val SHORT_CODE_MAX = 6
@@ -53,7 +65,8 @@ internal object SpamFilter {
         if (StopNumber.containsMatchIn(body)) return true
         val digits = address.count(Char::isDigit)
         val brandOrShortCode = address.any(Char::isLetter) || digits in SHORT_CODE_MIN..SHORT_CODE_MAX
-        return brandOrShortCode && OptOut.containsMatchIn(body)
+        if (!brandOrShortCode) return false
+        return OptOut.containsMatchIn(body) || StopLink.containsMatchIn(body)
     }
 
     fun isContact(context: Context, address: String): Boolean = runCatching {

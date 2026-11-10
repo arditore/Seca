@@ -69,4 +69,37 @@ class SpamFilterTest {
         assertTrue("the wording alone does read as commercial", SpamFilter.isCommercial("Uber", body))
         assertNotNull("so the code has to be what saves it", OneTimeCode.find(body))
     }
+
+    @Test
+    fun `a brand whose way out is a link, not a short code`() {
+        // Marionnaud, seen on a real phone: the law wants a free way out and says nothing
+        // about its shape, so the short code has quietly become a tracking link.
+        assertTrue(
+            SpamFilter.isCommercial(
+                "MARIONNAUD",
+                "Les Single Days se terminent demain ! -34% dès 49€* en ligne ou en boutique " +
+                    "avec ce SMS. https://mrnd.fr/8YwIwWe *Voir cond" +
+                    System.lineSeparator() +
+                    "STOP https://mrnd.fr/8YwIwWb",
+            ),
+        )
+    }
+
+    @Test
+    fun `a person who writes stop and pastes a link is not advertising`() {
+        // The rule only runs for a brand or a short code; a real number is far too long.
+        assertFalse(
+            SpamFilter.isCommercial(
+                "+33612345678",
+                "stop https://example.org/this-thing you sent me, it will not load",
+            ),
+        )
+    }
+
+    @Test
+    fun `a brand that merely links to something is left alone`() {
+        // A delivery notice or a bank alert carries links and no way out, because it is not
+        // advertising and has none to offer.
+        assertFalse(SpamFilter.isCommercial("CHRONOPOST", "Votre colis arrive demain : https://chrono.fr/x8s2"))
+    }
 }
