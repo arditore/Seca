@@ -24,14 +24,16 @@ class NumberIndex(contacts: List<SecaContact>, private val numbers: PhoneNumbers
         contacts.forEach { contact ->
             contact.phoneNumbers.forEach { number ->
                 val match = NumberMatch(contact, number)
-                byKey.putIfAbsent(numbers.key(number.raw), match)
+                // An empty key would answer for every address nothing else could key, so a
+                // contact whose number is blank is left out rather than made to stand for them.
+                numbers.key(number.raw).takeIf { it.isNotEmpty() }?.let { byKey.putIfAbsent(it, match) }
                 suffixOf(number.raw)?.let { bySuffix.getOrPut(it) { mutableListOf() } += match }
             }
         }
     }
 
     fun find(raw: String): NumberMatch? {
-        byKey[numbers.key(raw)]?.let { return it }
+        numbers.key(raw).takeIf { it.isNotEmpty() }?.let { key -> byKey[key]?.let { return it } }
         val candidates = suffixOf(raw)?.let { bySuffix[it] }.orEmpty()
         return candidates.distinctBy { it.contact.id }.singleOrNull()
     }

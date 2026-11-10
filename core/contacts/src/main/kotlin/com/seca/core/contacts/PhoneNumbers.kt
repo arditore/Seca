@@ -54,10 +54,28 @@ class PhoneNumbers(val homeRegion: String) {
         util.format(number, if (international) PhoneNumberFormat.INTERNATIONAL else PhoneNumberFormat.NATIONAL)
     }
 
-    /** Equal for every way of writing the same line: E.164 when the number is understood, else its digits. */
+    /** Equal for every way of writing the same line: E.164 when the number is understood, else [otherwise]. */
     fun key(raw: String): String = keys.getOrPut(raw) {
-        val number = parse(raw)?.takeIf(util::isPossibleNumber) ?: return@getOrPut raw.filter(Char::isDigit)
+        val number = parse(raw)?.takeIf(util::isPossibleNumber) ?: return@getOrPut otherwise(raw)
         util.format(number, PhoneNumberFormat.E164)
+    }
+
+    /**
+     * A key for an address that is not a number anybody can parse.
+     *
+     * Its digits, as before — except where it has none. A great many senders are written in
+     * letters: a shop, a bank, a carrier. Keyed by their digits they all key to the empty
+     * string, and the first contact in the address book whose number also had no digits then
+     * answered for every one of them. Somebody with a contact called "Globaltel SMS" saw their
+     * bank, their shops and their carrier all arrive under that one name (issue #40).
+     *
+     * So a sender with no digits is keyed by its own letters instead. They no longer collide
+     * with each other, and a sender somebody has deliberately saved as a contact still finds
+     * it.
+     */
+    private fun otherwise(raw: String): String {
+        val digits = raw.filter(Char::isDigit)
+        return digits.ifEmpty { raw.filter(Char::isLetterOrDigit).lowercase() }
     }
 
     /** E.164, the form the contacts provider matches callers on, or null when the number is not understood. */
