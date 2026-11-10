@@ -204,4 +204,10 @@
     <string name="your_name">Votre nom</string>
     <string name="show_my_card">Afficher Ma fiche</string>
     <string name="show_my_card_hint">Votre propre fiche en haut de la liste. Masquée, elle reste dans les paramètres.</string>
+    <string name="birthday_with_age">%1$s (%2$s)</string>
+    <plurals name="years_old">
+        <item quantity="one">%d an</item>
+        <item quantity="other">%d ans</item>
+        <item quantity="many">%d d’années</item>
+    </plurals>
 </resources>

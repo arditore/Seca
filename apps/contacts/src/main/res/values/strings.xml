@@ -195,4 +195,9 @@
     <string name="your_name">Your name</string>
     <string name="show_my_card">Show My card</string>
     <string name="show_my_card_hint">Your own card at the top of the list. Hidden, it is still in the settings.</string>
+    <string name="birthday_with_age">%1$s (%2$s)</string>
+    <plurals name="years_old">
+        <item quantity="one">%d year old</item>
+        <item quantity="other">%d years old</item>
+    </plurals>
 </resources>

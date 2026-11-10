@@ -204,4 +204,11 @@
     <string name="contacts_imported_some_refused">Dodano: %1$d. Odrzucone przez telefon: %2$d.</string>
     <string name="show_my_card">Pokaż Moją wizytówkę</string>
     <string name="show_my_card_hint">Twoja własna wizytówka na górze listy. Ukryta, pozostaje w ustawieniach.</string>
+    <string name="birthday_with_age">%1$s (%2$s)</string>
+    <plurals name="years_old">
+        <item quantity="one">%d rok</item>
+        <item quantity="few">%d lata</item>
+        <item quantity="many">%d lat</item>
+        <item quantity="other">%d lat</item>
+    </plurals>
 </resources>

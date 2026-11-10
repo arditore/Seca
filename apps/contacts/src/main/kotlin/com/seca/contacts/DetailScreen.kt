@@ -61,6 +61,7 @@ import com.seca.core.model.Profile
 import com.seca.core.model.initialsOf
 import kotlinx.coroutines.launch
 import com.seca.core.design.label
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 
 @Composable
@@ -332,7 +333,16 @@ private fun About(detail: ContactDetail) {
     val notesLabel = stringResource(R.string.notes)
     val rows = buildList {
         if (company.isNotBlank()) add(Triple(SecaIcons.Work, company, companyLabel))
-        detail.birthday?.let { add(Triple(SecaIcons.Cake, formatBirthday(it.value), birthdayLabel)) }
+        // The date, and how old that makes them today: a birthday is read to work that out.
+        detail.birthday?.let { field ->
+            val age = ageFrom(field.value)
+            val written = if (age == null) {
+                formatBirthday(field.value)
+            } else {
+                stringResource(R.string.birthday_with_age, formatBirthday(field.value), pluralStringResource(R.plurals.years_old, age, age))
+            }
+            add(Triple(SecaIcons.Cake, written, birthdayLabel))
+        }
         detail.anniversary?.let { add(Triple(SecaIcons.Event, formatBirthday(it.value), anniversaryLabel)) }
         detail.note?.let { add(Triple(SecaIcons.Subject, it.value, notesLabel)) }
     }
