@@ -432,4 +432,5 @@
         <item quantity="one">%1$d conversation to file</item>
         <item quantity="other">%1$d conversations to file</item>
     </plurals>
+    <string name="caption_on_sim">%1$s · %2$s</string>
 </resources>

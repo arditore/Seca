@@ -453,4 +453,5 @@
         <item quantity="other">%1$d rozmowy do zarchiwizowania</item>
         <item quantity="many">%1$d rozmów do zarchiwizowania</item>
     </plurals>
+    <string name="caption_on_sim">%1$s · %2$s</string>
 </resources>

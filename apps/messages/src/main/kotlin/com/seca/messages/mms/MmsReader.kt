@@ -68,7 +68,14 @@ internal object MmsReader {
     fun uriOf(id: Long): Uri = Uri.withAppendedPath(Mms.CONTENT_URI, (id - ID_OFFSET).toString())
 
     /** One row of the table, before its parts and its addresses have been looked up. */
-    private class Row(val id: Long, val threadId: Long, val date: Long, val box: Int, val subject: String) {
+    private class Row(
+        val id: Long,
+        val threadId: Long,
+        val date: Long,
+        val box: Int,
+        val subject: String,
+        val subscriptionId: Int,
+    ) {
 
         fun message(resolver: ContentResolver, parts: Parts): Message =
             Message(
@@ -81,6 +88,7 @@ internal object MmsReader {
                 // Dates are in seconds here and in milliseconds everywhere else.
                 date = date * MILLIS_PER_SECOND,
                 status = statusOf(box),
+                subscriptionId = subscriptionId,
                 image = parts.image,
                 audio = parts.audio,
                 attachment = parts.other,
@@ -96,7 +104,7 @@ internal object MmsReader {
     ): List<Row> = runCatching {
         resolver.query(
             Mms.CONTENT_URI,
-            arrayOf(Mms._ID, Mms.THREAD_ID, Mms.DATE, Mms.MESSAGE_BOX, Mms.SUBJECT, Mms.MESSAGE_TYPE),
+            arrayOf(Mms._ID, Mms.THREAD_ID, Mms.DATE, Mms.MESSAGE_BOX, Mms.SUBJECT, Mms.MESSAGE_TYPE, Mms.SUBSCRIPTION_ID),
             selection,
             args,
             order,
@@ -106,7 +114,7 @@ internal object MmsReader {
                     // The row that merely announced a message is not a message: it is shown only
                     // once it has been fetched, and until then the conversation says nothing.
                     if (c.getInt(5) == TYPE_NOTIFICATION_IND) continue
-                    add(Row(c.getLong(0), c.getLong(1), c.getLong(2), c.getInt(3), c.getString(4).orEmpty()))
+                    add(Row(c.getLong(0), c.getLong(1), c.getLong(2), c.getInt(3), c.getString(4).orEmpty(), c.getInt(6)))
                 }
             }
         }

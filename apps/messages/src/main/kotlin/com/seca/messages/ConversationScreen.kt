@@ -325,6 +325,10 @@ internal fun ConversationContent(
             Toast.makeText(context, micUnavailable, Toast.LENGTH_SHORT).show()
         }
     }
+    // Asked once per conversation, off the main thread: the SIMs do not change while it is
+    // open, and the screen draws without them until they arrive. Held here rather than in the
+    // composer, because the messages name their card too.
+    val sims by produceState(initialValue = emptyList<SendingSim>()) { value = viewModel.sims() }
     val askMicrophone = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Granted mid-press, so there is nothing being held any more: the next hold records.
         if (!granted) Toast.makeText(context, micUnavailable, Toast.LENGTH_SHORT).show()
@@ -396,9 +400,6 @@ internal fun ConversationContent(
                 }
             },
             bottomBar = {
-                // Asked once per conversation, off the main thread: the SIMs do not change
-                // while it is open, and the composer draws without them until they arrive.
-                val sims by produceState(initialValue = emptyList<SendingSim>()) { value = viewModel.sims() }
                 Composer(
                     text = text,
                     onText = {
@@ -533,6 +534,7 @@ internal fun ConversationContent(
                                     ).show()
                                 }
                             },
+                            simName = { id -> sims.firstOrNull { it.subscriptionId == id }?.let { "SIM ${it.slot + 1}" } },
                             onReply = { replyingTo = message },
                             onReact = { emoji -> viewModel.react(message, emoji) },
                         )
@@ -780,6 +782,8 @@ private fun Bubble(
     onOpenPhoto: (String) -> Unit,
     onSavePhoto: (String) -> Unit,
     onSaveAudio: (String) -> Unit,
+    /** "SIM 1" for the card this one came in or went out on; null where there is only one. */
+    simName: (Int) -> String?,
     onReply: () -> Unit,
     onReact: (String) -> Unit,
 ) {
@@ -843,6 +847,9 @@ private fun Bubble(
         !joinedBelow -> time
         else -> null
     }
+    // Which card carried it, where there is a choice. Said next to the time rather than on the
+    // bubble: it answers "which number was this?", which is a question asked after the fact.
+    val sim = simName(message.subscriptionId)
     val image = message.image
     val audio = message.audio
 
@@ -993,7 +1000,7 @@ private fun Bubble(
                     )
                 }
                 Text(
-                    text = it,
+                    text = if (sim == null) it else stringResource(R.string.caption_on_sim, it, sim),
                     style = MaterialTheme.typography.labelMedium,
                     color = if (failed) colors.error else colors.onSurfaceVariant,
                 )

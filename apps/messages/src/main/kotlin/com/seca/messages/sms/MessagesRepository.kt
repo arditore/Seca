@@ -33,6 +33,9 @@ data class Conversation(
 
 enum class MessageStatus { Received, Sending, Sent, Delivered, Read, Failed }
 
+/** No SIM was recorded against a message: an old one, or a phone with only ever one. */
+const val NO_SIM: Int = -1
+
 /** What a conversation says of itself, in place of a message: it became a Seca Link one, or stopped being one. */
 enum class ConversationNotice { LinkStarted, LinkStopped }
 
@@ -51,6 +54,8 @@ data class Message(
     val image: String? = null,
     /** The voice message a message carries: a file for Seca Link, a part for a multimedia one. */
     val audio: String? = null,
+    /** Which SIM carried it, where the phone has more than one; -1 when nothing was recorded. */
+    val subscriptionId: Int = NO_SIM,
     /** The type of something attached that is neither a picture nor a sound: a card, a document. */
     val attachment: String? = null,
     /** Where that attachment is kept, so it can be read and opened. */
@@ -164,7 +169,7 @@ class MessagesRepository(private val context: Context) {
     private fun readMessages(selection: String, args: Array<String>, order: String): List<Message> =
         resolver.query(
             Sms.CONTENT_URI,
-            arrayOf(Sms._ID, Sms.THREAD_ID, Sms.ADDRESS, Sms.BODY, Sms.DATE, Sms.TYPE, Sms.STATUS),
+            arrayOf(Sms._ID, Sms.THREAD_ID, Sms.ADDRESS, Sms.BODY, Sms.DATE, Sms.TYPE, Sms.STATUS, Sms.SUBSCRIPTION_ID),
             selection,
             args,
             order,
@@ -179,6 +184,7 @@ class MessagesRepository(private val context: Context) {
                             body = c.getString(3).orEmpty(),
                             date = c.getLong(4),
                             status = statusOf(c.getInt(5), c.getInt(6)),
+                            subscriptionId = c.getInt(7),
                         ),
                     )
                 }

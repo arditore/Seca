@@ -452,4 +452,5 @@
         <item quantity="other">%1$d conversaciones para archivar</item>
         <item quantity="many">%1$d de conversaciones para archivar</item>
     </plurals>
+    <string name="caption_on_sim">%1$s · %2$s</string>
 </resources>
