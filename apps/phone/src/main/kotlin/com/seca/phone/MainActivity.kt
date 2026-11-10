@@ -15,6 +15,11 @@ import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.privacy.SecaAppLock
 import com.seca.core.design.privacy.SecaLockGate
 import com.seca.core.design.switchWithoutAnimation
+import android.content.ContentValues
+import android.provider.CallLog.Calls
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /** A request to open the keypad, from a tel: link or another app's "dial". */
 data class DialRequest(val number: String, val nonce: Long = System.nanoTime())
@@ -85,10 +90,32 @@ class MainActivity : ComponentActivity() {
         defaultDialer.value = getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_DIALER) == true
     }
 
-    /** Opening the history counts as having seen the missed calls; Android then takes their notification away. */
+    /**
+     * Opening the history counts as having seen the missed calls.
+     *
+     * Two things, because the first one alone was not enough. Telecom is asked to take the
+     * notification away, and the calls themselves are marked as read in the log — which is
+     * what Telecom counts when the phone starts up. Without the second, every restart found
+     * the same calls still flagged new and announced them again, for as long as they stayed
+     * in the log. Reported as #42.
+     */
     @SuppressLint("MissingPermission") // The default phone app may do it without MODIFY_PHONE_STATE.
     private fun clearMissedCalls() {
         runCatching { getSystemService(TelecomManager::class.java)?.cancelMissedCallsNotification() }
+        if (checkSelfPermission(Manifest.permission.WRITE_CALL_LOG) != PackageManager.PERMISSION_GRANTED) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            runCatching {
+                contentResolver.update(
+                    Calls.CONTENT_URI,
+                    ContentValues().apply {
+                        put(Calls.NEW, 0)
+                        put(Calls.IS_READ, 1)
+                    },
+                    "${Calls.TYPE} = ? AND ${Calls.NEW} = 1",
+                    arrayOf(Calls.MISSED_TYPE.toString()),
+                )
+            }
+        }
     }
 
     private fun granted(permission: String) = checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
