@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.core.net.toUri
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.ContactDetail
+import com.seca.core.contacts.PostalAddress
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaEmptyState
@@ -296,13 +297,16 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 )
             }
         }
-        detail.addresses.forEachIndexed { index, field ->
+        detail.addresses.forEachIndexed { index, address ->
+            // Read as one line, kept as its parts: the line is assembled from them, so it can
+            // never say something the parts do not.
+            val written = address.formatted
             SecaGroupItem(index = detail.phones.size + detail.emails.size + index, count = count) {
                 FieldRow(
                     icon = SecaIcons.Place,
-                    value = field.value,
-                    label = StructuredPostal.getTypeLabel(resources, field.type, field.customLabel.orEmpty()).toString(),
-                    onClick = { openMap(context, field.value) },
+                    value = written,
+                    label = StructuredPostal.getTypeLabel(resources, address.type, address.customLabel.orEmpty()).toString(),
+                    onClick = { openMap(context, written) },
                 )
             }
         }

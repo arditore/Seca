@@ -8,6 +8,11 @@
     <string name="add_photo">Add a photo</string>
     <string name="add_profile">Add a profile</string>
     <string name="address">Address</string>
+    <string name="city">Town</string>
+    <string name="country">Country</string>
+    <string name="postcode">Postcode</string>
+    <string name="region">Region</string>
+    <string name="street">Street</string>
     <string name="all">All</string>
     <string name="allow_access">Allow access</string>
     <string name="anniversary">Anniversary</string>

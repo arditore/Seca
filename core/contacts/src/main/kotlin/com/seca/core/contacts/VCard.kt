@@ -13,7 +13,7 @@ data class VCardContact(
     val displayName: String,
     val phones: List<ContactField>,
     val emails: List<ContactField>,
-    val addresses: List<ContactField> = emptyList(),
+    val addresses: List<PostalAddress> = emptyList(),
     val organization: String = "",
     val jobTitle: String = "",
     val website: String = "",
@@ -94,15 +94,32 @@ object VCard {
                     line("${prefix}X-ABLabel:${escape(name)}")
                 }
             }
+            // The same, for a kind of field that is not one value: an address.
+            fun labelledAs(type: Int, custom: String?, body: () -> String) {
+                if (custom == null) {
+                    line(body())
+                } else {
+                    val prefix = "item${++group}."
+                    line(prefix + body())
+                    line("${prefix}X-ABLabel:${escape(custom)}")
+                }
+            }
             contact.phones.forEach { field ->
                 labelled(field) { "TEL;TYPE=${phoneTypeName(field.type)}:${escape(field.value)}" }
             }
             contact.emails.forEach { field ->
                 labelled(field) { "EMAIL;TYPE=${emailTypeName(field.type)}:${escape(field.value)}" }
             }
-            // An address is written whole, in the street field: Seca keeps it as one line.
-            contact.addresses.forEach { field ->
-                labelled(field) { "ADR;TYPE=${addressTypeName(field.type)}:;;${escape(field.value)};;;;" }
+            // An address is written in its own components, in the order the format fixes:
+            // post-office box, extended address, street, town, region, postcode, country.
+            // Writing the whole thing into the street, as this did, is what made every other
+            // client show a postcode and a town crammed into a street line.
+            contact.addresses.filterNot(PostalAddress::isBlank).forEach { address ->
+                labelledAs(address.type, address.customLabel) {
+                    "ADR;TYPE=${addressTypeName(address.type)}:;;" +
+                        listOf(address.street, address.city, address.region, address.postcode, address.country)
+                            .joinToString(";") { escape(it) }
+                }
             }
             if (contact.organization.isNotBlank()) line("ORG:${escape(contact.organization)}")
             if (contact.jobTitle.isNotBlank()) line("TITLE:${escape(contact.jobTitle)}")
@@ -158,10 +175,20 @@ object VCard {
                 "FN" -> card?.display = unescape(value)
                 "TEL" -> card?.addPhone(group, unescape(value).removePrefix("tel:").trim(), types, written)
                 "EMAIL" -> card?.addEmail(group, unescape(value).trim(), types, written)
-                // The parts of an address, minus the post-office box, joined back into one line.
-                "ADR" -> splitUnescaped(value).drop(2).filter { it.isNotBlank() }.joinToString(", ")
-                    .takeIf { it.isNotBlank() }
-                    ?.let { card?.addAddress(group, it, types, written) }
+                // The components as the format orders them, kept apart rather than joined:
+                // box, extended, street, town, region, postcode, country.
+                "ADR" -> splitUnescaped(value).let { parts ->
+                    val address = PostalAddress(
+                        street = listOf(parts.getOrElse(1) { "" }, parts.getOrElse(2) { "" })
+                            .filter { it.isNotBlank() }
+                            .joinToString(", "),
+                        city = parts.getOrElse(3) { "" },
+                        region = parts.getOrElse(4) { "" },
+                        postcode = parts.getOrElse(5) { "" },
+                        country = parts.getOrElse(6) { "" },
+                    )
+                    if (!address.isBlank) card?.addAddress(group, address, types, written)
+                }
                 "ORG" -> card?.let { current ->
                     val parts = splitUnescaped(value)
                     current.organization = parts.firstOrNull().orEmpty()
@@ -197,10 +224,13 @@ object VCard {
         var photo: ByteArray? = null
         val phones = mutableListOf<ContactField>()
         val emails = mutableListOf<ContactField>()
-        val addresses = mutableListOf<ContactField>()
+        val addresses = mutableListOf<PostalAddress>()
 
         /** Which list each group's field went into, so its label can be put back on it later. */
         private val grouped = mutableMapOf<String, Pair<MutableList<ContactField>, Int>>()
+
+        /** The same for addresses, which are not one value and so not in those lists. */
+        private val addressGrouped = mutableMapOf<String, Int>()
 
         /**
          * Adds a field, remembering its group, and taking an unrecognised type as its name.
@@ -215,8 +245,15 @@ object VCard {
         fun addEmail(group: String?, value: String, types: Set<String>, written: List<String>) =
             add(emails, group, value, emailTypeOf(types), written)
 
-        fun addAddress(group: String?, value: String, types: Set<String>, written: List<String>) =
-            add(addresses, group, value, addressTypeOf(types), written)
+        fun addAddress(group: String?, address: PostalAddress, types: Set<String>, written: List<String>) {
+            val named = written.firstOrNull { it.length > 2 && it.startsWith("X-", ignoreCase = true) }?.drop(2)
+            addresses += if (named == null) {
+                address.copy(type = addressTypeOf(types))
+            } else {
+                address.copy(type = CUSTOM_TYPE, label = named)
+            }
+            if (group != null) addressGrouped[group] = addresses.lastIndex
+        }
 
         private fun add(into: MutableList<ContactField>, group: String?, value: String, type: Int, written: List<String>) {
             val named = written.firstOrNull { it.length > 2 && it.startsWith("X-", ignoreCase = true) }?.drop(2)
@@ -231,6 +268,10 @@ object VCard {
         /** Gives the field written in [group] the name that followed it. */
         fun name(group: String, label: String) {
             if (label.isEmpty()) return
+            addressGrouped[group]?.let { index ->
+                addresses[index] = addresses[index].copy(type = CUSTOM_TYPE, label = label)
+                return
+            }
             val (into, index) = grouped[group] ?: return
             into[index] = into[index].copy(type = CUSTOM_TYPE, label = label)
         }
@@ -244,7 +285,7 @@ object VCard {
                 displayName = shown,
                 phones = phones.filter { it.value.isNotBlank() },
                 emails = emails.filter { it.value.isNotBlank() },
-                addresses = addresses,
+                addresses = addresses.filterNot(PostalAddress::isBlank),
                 organization = organization,
                 jobTitle = jobTitle,
                 website = website,

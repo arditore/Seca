@@ -8,6 +8,11 @@
     <string name="add_photo">Ajouter une photo</string>
     <string name="add_profile">Ajouter un profil</string>
     <string name="address">Adresse</string>
+    <string name="city">Ville</string>
+    <string name="country">Pays</string>
+    <string name="postcode">Code postal</string>
+    <string name="region">Région</string>
+    <string name="street">Rue</string>
     <string name="all">Tous</string>
     <string name="allow_access">Autoriser l\'accès</string>
     <string name="anniversary">Date anniversaire</string>

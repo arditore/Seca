@@ -74,6 +74,7 @@ import com.seca.core.design.component.rememberContactPhoto
 import kotlinx.coroutines.launch
 import com.seca.core.contacts.ContactField
 import com.seca.core.contacts.ContactInput
+import com.seca.core.contacts.PostalAddress
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaProfileBadge
@@ -105,7 +106,7 @@ internal fun EditScreen(
     var familyName by remember(id) { mutableStateOf("") }
     val phones = remember(id) { mutableStateListOf<ContactField>() }
     val emails = remember(id) { mutableStateListOf<ContactField>() }
-    val addresses = remember(id) { mutableStateListOf<ContactField>() }
+    val addresses = remember(id) { mutableStateListOf<PostalAddress>() }
     var organization by remember(id) { mutableStateOf("") }
     var jobTitle by remember(id) { mutableStateOf("") }
     var website by remember(id) { mutableStateOf("") }
@@ -295,17 +296,20 @@ internal fun EditScreen(
                 }
 
                 FormCard(SecaIcons.Place, stringResource(R.string.address)) {
-                    FieldList(
-                        addresses,
-                        label = stringResource(R.string.address),
-                        keyboard = KeyboardType.Text,
-                        removeLabel = stringResource(R.string.remove_address),
-                        types = AddressTypes,
-                        typeLabel = { StructuredPostal.getTypeLabel(resources, it, "").toString() },
-                    )
-                    AddFieldButton(stringResource(R.string.add_address)) {
-                        addresses.add(ContactField(null, "", StructuredPostal.TYPE_HOME))
+                    addresses.forEachIndexed { index, address ->
+                        AddressFields(
+                            address = address,
+                            typeLabel = { StructuredPostal.getTypeLabel(resources, it, "").toString() },
+                            removeLabel = stringResource(R.string.remove_address),
+                            onChange = { addresses[index] = it },
+                            // The last one left is emptied rather than removed, as a number is,
+                            // so the section never loses the fields that let one be typed.
+                            onRemove = {
+                                if (addresses.size > 1) addresses.removeAt(index) else addresses[index] = PostalAddress()
+                            },
+                        )
                     }
+                    AddFieldButton(stringResource(R.string.add_address)) { addresses.add(PostalAddress()) }
                 }
 
                 // Six cards of one field each used to stand here, one under another, each with
@@ -471,6 +475,57 @@ private fun NameField(value: String, label: String, onChange: (String) -> Unit) 
 }
 
 /**
+ * One address, in the parts an address has.
+ *
+ * It was one box, and one box is why an address typed into Seca arrived in every other client
+ * as a town and a postcode crammed into the street line: there was nowhere else to put them.
+ * Five boxes is more to look at, and it is the only way the parts survive leaving the phone.
+ *
+ * The postcode and the town share a line, because they are read together and because a
+ * postcode on a line of its own wastes the width of a screen.
+ */
+@Composable
+private fun AddressFields(
+    address: PostalAddress,
+    typeLabel: (Int) -> String,
+    removeLabel: String,
+    onChange: (PostalAddress) -> Unit,
+    onRemove: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            PlainField(address.street, stringResource(R.string.street), modifier = Modifier.weight(1f)) {
+                onChange(address.copy(street = it))
+            }
+            IconButton(onClick = onRemove) {
+                Icon(SecaIcons.Close, contentDescription = removeLabel)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PlainField(address.postcode, stringResource(R.string.postcode), modifier = Modifier.weight(POSTCODE_SHARE)) {
+                onChange(address.copy(postcode = it))
+            }
+            PlainField(address.city, stringResource(R.string.city), modifier = Modifier.weight(CITY_SHARE)) {
+                onChange(address.copy(city = it))
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PlainField(address.region, stringResource(R.string.region), modifier = Modifier.weight(1f)) {
+                onChange(address.copy(region = it))
+            }
+            PlainField(address.country, stringResource(R.string.country), modifier = Modifier.weight(1f)) {
+                onChange(address.copy(country = it))
+            }
+        }
+        TypeSelector(address.type, AddressTypes, typeLabel) { onChange(address.copy(type = it)) }
+    }
+}
+
+/** A postcode is short and a town is not, so they do not take the same half of the row. */
+private const val POSTCODE_SHARE = 0.4f
+private const val CITY_SHARE = 0.6f
+
+/**
  * The editable numbers or addresses. The last one left is cleared rather than
  * removed, so the section never loses its field.
  */
@@ -571,6 +626,7 @@ private fun FieldEditor(
 private fun PlainField(
     value: String,
     label: String,
+    modifier: Modifier = Modifier,
     keyboard: KeyboardType = KeyboardType.Text,
     singleLine: Boolean = true,
     onChange: (String) -> Unit,
@@ -587,7 +643,7 @@ private fun PlainField(
             capitalization = if (keyboard == KeyboardType.Text) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
             imeAction = if (singleLine) ImeAction.Next else ImeAction.Default,
         ),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     )
 }
 

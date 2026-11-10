@@ -62,7 +62,7 @@ data class ContactDetail(
     val starred: Boolean,
     val phones: List<ContactField>,
     val emails: List<ContactField>,
-    val addresses: List<ContactField>,
+    val addresses: List<PostalAddress>,
     /** The company; the job title lives in the same row. */
     val organization: ContactField?,
     val jobTitle: String,
@@ -87,7 +87,7 @@ data class ContactInput(
     val familyName: String,
     val phones: List<ContactField>,
     val emails: List<ContactField>,
-    val addresses: List<ContactField> = emptyList(),
+    val addresses: List<PostalAddress> = emptyList(),
     val organization: String = "",
     val jobTitle: String = "",
     val website: String = "",
@@ -166,10 +166,15 @@ class ContactsRepository(
         var note: ContactField? = null
         val phones = mutableListOf<ContactField>()
         val emails = mutableListOf<ContactField>()
-        val addresses = mutableListOf<ContactField>()
+        val addresses = mutableListOf<PostalAddress>()
         resolver.query(
             Data.CONTENT_URI,
-            arrayOf(Data._ID, Data.MIMETYPE, Data.DATA1, Data.DATA2, Data.DATA3, Data.DATA4),
+            // DATA5 to DATA10 are only ever an address's parts; every other kind of row leaves
+            // them empty, so one projection serves all of them.
+            arrayOf(
+                Data._ID, Data.MIMETYPE, Data.DATA1, Data.DATA2, Data.DATA3, Data.DATA4,
+                Data.DATA5, Data.DATA6, Data.DATA7, Data.DATA8, Data.DATA9, Data.DATA10,
+            ),
             "${Data.CONTACT_ID} = ?",
             arrayOf(id.toString()),
             null,
@@ -191,9 +196,10 @@ class ContactsRepository(
                     Email.CONTENT_ITEM_TYPE -> cursor.getString(2)?.let {
                         emails += ContactField(dataId, it, cursor.getInt(3), cursor.getString(4))
                     }
-                    StructuredPostal.CONTENT_ITEM_TYPE -> cursor.getString(2)?.let {
-                        addresses += ContactField(dataId, it, cursor.getInt(3), cursor.getString(4))
-                    }
+                    // An address is read from its parts, and only guessed at from the one line
+                    // when there are no parts to read — which is every address Seca itself
+                    // wrote before it knew how to keep them.
+                    StructuredPostal.CONTENT_ITEM_TYPE -> addresses += postalFrom(cursor, dataId)
                     // The company sits in DATA1 and the job title in DATA4, in one row.
                     Organization.CONTENT_ITEM_TYPE -> if (organization == null) {
                         organization = ContactField(dataId, cursor.getString(2).orEmpty(), cursor.getInt(3))
@@ -272,8 +278,8 @@ class ContactsRepository(
             input.emails.filter { it.value.isNotBlank() }.forEach { field ->
                 ops += fieldRow(Email.CONTENT_ITEM_TYPE, field).withValueBackReference(Data.RAW_CONTACT_ID, 0).build()
             }
-            input.addresses.filter { it.value.isNotBlank() }.forEach { field ->
-                ops += fieldRow(StructuredPostal.CONTENT_ITEM_TYPE, field).withValueBackReference(Data.RAW_CONTACT_ID, 0).build()
+            input.addresses.map(PostalAddress::trimmed).filterNot(PostalAddress::isBlank).forEach { address ->
+                ops += postalRow(address).withValueBackReference(Data.RAW_CONTACT_ID, 0).build()
             }
             singleRows(input).forEach { row -> ops += row.withValueBackReference(Data.RAW_CONTACT_ID, 0).build() }
             val rawContactId = try {
@@ -373,7 +379,7 @@ class ContactsRepository(
             }
             syncFields(ops, detail.rawContactId, Phone.CONTENT_ITEM_TYPE, detail.phones, input.phones)
             syncFields(ops, detail.rawContactId, Email.CONTENT_ITEM_TYPE, detail.emails, input.emails)
-            syncFields(ops, detail.rawContactId, StructuredPostal.CONTENT_ITEM_TYPE, detail.addresses, input.addresses)
+            syncAddresses(ops, detail.rawContactId, detail.addresses, input.addresses)
             syncSingle(
                 ops = ops,
                 rawContactId = detail.rawContactId,
@@ -541,6 +547,13 @@ class ContactsRepository(
                 Data.DATA3,
                 Data.DATA4,
                 Data.LOOKUP_KEY,
+                // An address's parts, so a backup carries a town rather than one long line.
+                Data.DATA5,
+                Data.DATA6,
+                Data.DATA7,
+                Data.DATA8,
+                Data.DATA9,
+                Data.DATA10,
             ),
             "${Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?)",
             arrayOf(
@@ -569,9 +582,7 @@ class ContactsRepository(
                     Email.CONTENT_ITEM_TYPE -> c.getString(3)?.let {
                         card.emails += ContactField(null, it, c.getInt(4), c.getString(5))
                     }
-                    StructuredPostal.CONTENT_ITEM_TYPE -> c.getString(3)?.let {
-                        card.addresses += ContactField(null, it, c.getInt(4), c.getString(5))
-                    }
+                    StructuredPostal.CONTENT_ITEM_TYPE -> card.addresses += exportedPostal(c)
                     Organization.CONTENT_ITEM_TYPE -> if (card.organization.isEmpty() && card.jobTitle.isEmpty()) {
                         card.organization = c.getString(3).orEmpty()
                         card.jobTitle = c.getString(6).orEmpty()
@@ -629,7 +640,7 @@ class ContactsRepository(
                     displayName = card.display,
                     phones = card.phones.distinctBy(ContactField::value),
                     emails = card.emails.distinctBy(ContactField::value),
-                    addresses = card.addresses.distinctBy(ContactField::value),
+                    addresses = card.addresses.distinctBy(PostalAddress::formatted),
                     organization = card.organization,
                     jobTitle = card.jobTitle,
                     website = card.website,
@@ -654,7 +665,7 @@ class ContactsRepository(
         var photo: ByteArray? = null
         val phones = mutableListOf<ContactField>()
         val emails = mutableListOf<ContactField>()
-        val addresses = mutableListOf<ContactField>()
+        val addresses = mutableListOf<PostalAddress>()
     }
 
     /** The contact behind a contacts link handed over by another app, or null. */
@@ -757,6 +768,99 @@ class ContactsRepository(
             .withValue(Data.DATA2, field.type)
             .withValue(Data.DATA3, field.customLabel)
             .apply { normalizedNumber(mimeType, field.value)?.let { withValue(Phone.NORMALIZED_NUMBER, it) } }
+
+    /**
+     * An address as the provider keeps it: the parts where there are parts, and the one line
+     * read apart where there are not.
+     *
+     * Every address Seca wrote before this had a formatted line and nothing else, so reading
+     * only the parts would have emptied them. Reading only the line would throw away what
+     * another app wrote properly. Both, in that order.
+     */
+    private fun postalFrom(cursor: android.database.Cursor, dataId: Long): PostalAddress {
+        val saved = PostalAddress(
+            id = dataId,
+            street = cursor.getString(POSTAL_STREET).orEmpty(),
+            postcode = cursor.getString(POSTAL_POSTCODE).orEmpty(),
+            city = cursor.getString(POSTAL_CITY).orEmpty(),
+            region = cursor.getString(POSTAL_REGION).orEmpty(),
+            country = cursor.getString(POSTAL_COUNTRY).orEmpty(),
+            type = cursor.getInt(3),
+            label = cursor.getString(4),
+        )
+        if (!saved.isBlank) return saved
+        return PostalAddress.from(cursor.getString(2).orEmpty())
+            .copy(id = dataId, type = cursor.getInt(3), label = cursor.getString(4))
+    }
+
+    /** The same, from the wider query the export uses, where the columns sit elsewhere. */
+    private fun exportedPostal(c: android.database.Cursor): PostalAddress {
+        val saved = PostalAddress(
+            street = c.getString(EXPORT_STREET).orEmpty(),
+            postcode = c.getString(EXPORT_POSTCODE).orEmpty(),
+            city = c.getString(EXPORT_CITY).orEmpty(),
+            region = c.getString(EXPORT_REGION).orEmpty(),
+            country = c.getString(EXPORT_COUNTRY).orEmpty(),
+            type = c.getInt(4),
+            label = c.getString(5),
+        )
+        if (!saved.isBlank) return saved
+        return PostalAddress.from(c.getString(3).orEmpty()).copy(type = c.getInt(4), label = c.getString(5))
+    }
+
+    /**
+     * An address written as its parts, with the line people read alongside them.
+     *
+     * The line is assembled rather than typed, so it can never disagree with the parts; the
+     * provider and every app that syncs reads the parts.
+     */
+    private fun postalRow(address: PostalAddress): ContentProviderOperation.Builder =
+        ContentProviderOperation.newInsert(Data.CONTENT_URI)
+            .withValue(Data.MIMETYPE, StructuredPostal.CONTENT_ITEM_TYPE)
+            .withPostal(address)
+
+    private fun ContentProviderOperation.Builder.withPostal(address: PostalAddress): ContentProviderOperation.Builder =
+        withValue(StructuredPostal.FORMATTED_ADDRESS, address.formatted)
+            .withValue(StructuredPostal.TYPE, address.type)
+            .withValue(StructuredPostal.LABEL, address.customLabel)
+            .withValue(StructuredPostal.STREET, address.street)
+            .withValue(StructuredPostal.POSTCODE, address.postcode)
+            .withValue(StructuredPostal.CITY, address.city)
+            .withValue(StructuredPostal.REGION, address.region)
+            .withValue(StructuredPostal.COUNTRY, address.country)
+
+    /**
+     * Turns the editor's addresses into deletes, updates and inserts.
+     *
+     * Apart from [syncFields] because an address is not one value: an update has to write every
+     * part, including the ones that are now empty. Writing only what was filled in would leave
+     * a town behind from a previous address under a street that no longer has one.
+     */
+    private fun syncAddresses(
+        ops: MutableList<ContentProviderOperation>,
+        rawContactId: Long,
+        before: List<PostalAddress>,
+        after: List<PostalAddress>,
+    ) {
+        val kept = after.map(PostalAddress::trimmed).filterNot(PostalAddress::isBlank)
+        val keptIds = kept.mapNotNull { it.id }.toSet()
+        before.mapNotNull { it.id }.filterNot { it in keptIds }.forEach { removedId ->
+            ops += ContentProviderOperation.newDelete(Data.CONTENT_URI)
+                .withSelection("${Data._ID} = ?", arrayOf(removedId.toString()))
+                .build()
+        }
+        kept.forEach { address ->
+            val savedId = address.id
+            if (savedId == null) {
+                ops += postalRow(address).withValue(Data.RAW_CONTACT_ID, rawContactId).build()
+            } else if (before.firstOrNull { it.id == savedId } != address) {
+                ops += ContentProviderOperation.newUpdate(Data.CONTENT_URI)
+                    .withSelection("${Data._ID} = ?", arrayOf(savedId.toString()))
+                    .withPostal(address)
+                    .build()
+            }
+        }
+    }
 
     /**
      * The E.164 form of a phone number, read with the SIM's country. Left out
@@ -868,6 +972,26 @@ class ContactsRepository(
         val sendToVoicemail: Boolean,
     )
 }
+
+/**
+ * Where an address's parts sit in the two queries that read them.
+ *
+ * Android numbers them DATA4 to DATA10 in the order street, post-office box, neighbourhood,
+ * city, region, postcode, country. Seca keeps five of those seven; the two it does not model
+ * are left alone rather than cleared, so an app that writes them keeps them.
+ */
+private const val POSTAL_STREET = 5
+private const val POSTAL_CITY = 8
+private const val POSTAL_REGION = 9
+private const val POSTAL_POSTCODE = 10
+private const val POSTAL_COUNTRY = 11
+
+/** The export's own query has the lookup key wedged between DATA4 and DATA5, hence the jump. */
+private const val EXPORT_STREET = 6
+private const val EXPORT_CITY = 10
+private const val EXPORT_REGION = 11
+private const val EXPORT_POSTCODE = 12
+private const val EXPORT_COUNTRY = 13
 
 private fun displayNameOf(input: ContactInput): String =
     listOf(input.givenName.trim(), input.familyName.trim()).filter { it.isNotEmpty() }.joinToString(" ")
