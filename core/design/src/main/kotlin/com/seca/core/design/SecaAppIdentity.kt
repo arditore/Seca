@@ -7,8 +7,8 @@ package com.seca.core.design
  * differs, so the family reads as one system while each app stays
  * recognisable at a glance.
  */
-enum class SecaAppIdentity {
-    Contacts,
-    Phone,
-    Messages,
+enum class SecaAppIdentity(val packageName: String) {
+    Contacts("com.seca.contacts"),
+    Phone("com.seca.phone"),
+    Messages("com.seca.messages"),
 }

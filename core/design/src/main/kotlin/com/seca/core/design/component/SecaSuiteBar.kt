@@ -14,6 +14,9 @@ import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaIcons
 import androidx.compose.ui.res.stringResource
 import com.seca.core.design.R
+import android.content.Context
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 
 /**
  * The bar that ties the three Seca apps together.
@@ -32,6 +35,14 @@ fun SecaSuiteBar(
 ) {
     // This bar is what shows behind the phone's own navigation bar, so under the black theme it
     // has to be black as well: Material would otherwise leave a grey strip across the bottom.
+    // Only the apps that are actually here. Somebody who installed one of the three was being
+    // offered two tabs that led to a shop, which is an advertisement rather than navigation.
+    val context = LocalContext.current
+    val shown = remember(current) {
+        SecaAppIdentity.entries.filter { it == current || installed(context, it) }
+    }
+    // One app on its own needs no bar to tell it apart from itself.
+    if (shown.size < 2) return
     NavigationBar(
         modifier = modifier,
         containerColor = if (LocalBlackTheme.current) {
@@ -40,7 +51,7 @@ fun SecaSuiteBar(
             NavigationBarDefaults.containerColor
         },
     ) {
-        SecaAppIdentity.entries.forEach { identity ->
+        shown.forEach { identity ->
             NavigationBarItem(
                 selected = identity == current,
                 onClick = { onSelect(identity) },
@@ -72,3 +83,8 @@ internal val SecaAppIdentity.label: Int
         SecaAppIdentity.Phone -> R.string.design_app_phone
         SecaAppIdentity.Messages -> R.string.design_app_messages
     }
+
+/** Whether a sibling app is on the phone. The manifests name all three, so this may be asked. */
+private fun installed(context: Context, identity: SecaAppIdentity): Boolean =
+    runCatching { context.packageManager.getLaunchIntentForPackage(identity.packageName) != null }
+        .getOrDefault(false)
