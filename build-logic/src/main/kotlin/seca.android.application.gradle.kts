@@ -32,7 +32,7 @@ extensions.configure<ApplicationExtension> {
         // English by default, and the languages Seca is translated into. Only these ship,
         // including the translations the libraries bring, so no screen ever mixes in a
         // language nobody asked for. A language joins this list once its strings are complete.
-        localeFilters += listOf("en", "fr", "es", "pl")
+        localeFilters += listOf("en", "fr", "es", "pl", "de")
         // Lists them for Android 13's per-app language setting.
         generateLocaleConfig = true
     }

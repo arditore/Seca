@@ -8,6 +8,11 @@
     <string name="add_photo">Foto hinzufügen</string>
     <string name="add_profile">Profil hinzufügen</string>
     <string name="address">Adresse</string>
+    <string name="city">Stadt</string>
+    <string name="country">Land</string>
+    <string name="postcode">PLZ</string>
+    <string name="region">Region</string>
+    <string name="street">Straße</string>
     <string name="all">Alle</string>
     <string name="allow_access">Zugriff erlauben</string>
     <string name="anniversary">Jahrestag</string>
@@ -195,4 +200,9 @@
     <string name="your_name">Dein Name</string>
     <string name="show_my_card">Meine Karte anzeigen</string>
     <string name="show_my_card_hint">Deine eigene Karte oben in der Liste. Ausgeblendet findest du sie weiterhin in den Einstellungen.</string>
+    <string name="birthday_with_age">%1$s (%2$s)</string>
+    <plurals name="years_old">
+        <item quantity="one">%d Jahr alt</item>
+        <item quantity="other">%d Jahre alt</item>
+    </plurals>
 </resources>
