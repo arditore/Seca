@@ -1,4 +1,8 @@
-Seca Messages es la aplicación de mensajes de la suite Seca: Contactos, Teléfono y Mensajes, tres aplicaciones con un mismo diseño Material 3 Expressive, pensadas para la privacidad. Funcionan en cualquier teléfono con Android 12 o posterior, con o sin Google, y dan lo mejor de sí en GrapheneOS. En español, inglés, francés y polaco.
+Mensajes de texto corrientes, y mensajes cifrados de extremo a extremo entre teléfonos Seca.
+
+Con Seca Link apagado, la aplicación no usa Internet en absoluto. Encendido, los mensajes entre dos teléfonos Seca viajan cifrados con el protocolo Signal, por relevos públicos que no ven ni quién escribe ni lo que se escribe. Sin cuenta, sin servidor nuestro.
+
+Una de las tres aplicaciones — Contactos, Teléfono y Mensajes — con un mismo diseño Material 3 Expressive. Android 12 o posterior, con o sin Google, en su mejor forma en GrapheneOS. En español, inglés, alemán, francés y polaco.
 
 <b>Seca Link: cifrado de extremo a extremo</b>
 <ul>
@@ -14,7 +18,7 @@ Seca Messages es la aplicación de mensajes de la suite Seca: Contactos, Teléfo
 
 <b>SMS</b>
 <ul>
-<li><b>MMS: una foto que le envían llega y se muestra en la conversación, junto con el texto enviado con ella. Enviar uno todavía no es posible</b>, ni tampoco las conversaciones de grupo que pasan por MMS; ambas cosas están en curso. Las fotos enviadas por Seca Link no se ven afectadas.</li>
+<li><b>MMS, en ambos sentidos.</b> Una foto que le envían llega y se muestra en la conversación. Enviar uno también funciona, a través de su operadora, así que llega a cualquier teléfono: una foto, un vídeo, un archivo, una ficha de contacto o un mensaje de voz, sin cuenta en ninguno de los dos lados. Las fotos se reducen a lo que acepta la red. Las conversaciones de grupo por MMS siguen en curso.</li>
 <li>Conversaciones con la foto y el perfil de tus contactos, búsqueda en todos los mensajes.</li>
 <li>Responder desde la notificación, mensajes programados.</li>
 <li>Códigos de verificación copiados con un toque y borrados automáticamente al rato.</li>

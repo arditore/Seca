@@ -1,4 +1,8 @@
-Seca Messages is the messaging app of the Seca suite: Contacts, Phone and Messages, three apps sharing one Material 3 Expressive design, built for privacy. They run on any phone with Android 12 or newer, with or without Google, and are at their best on GrapheneOS. In English, French, Spanish and Polish.
+Ordinary texts, and end-to-end encrypted messages between Seca phones.
+
+With Seca Link off, the app does not use the Internet at all. Turn it on and messages between two Seca phones travel encrypted with the Signal protocol, through public relays that see neither who writes nor what is written. No account, no server of ours.
+
+One of three apps — Contacts, Phone and Messages — sharing one Material 3 Expressive design. Android 12 or newer, with or without Google, at its best on GrapheneOS. In English, French, German, Spanish and Polish.
 
 <b>Seca Link: end-to-end encrypted</b>
 <ul>
@@ -14,7 +18,7 @@ Seca Messages is the messaging app of the Seca suite: Contacts, Phone and Messag
 
 <b>SMS</b>
 <ul>
-<li><b>MMS: a picture message sent to you arrives and is shown in the conversation, with the words sent alongside it. Sending one is not possible yet</b>, nor are group conversations carried over MMS; both are being worked on. Photos sent through Seca Link are not affected.</li>
+<li><b>MMS, both ways.</b> A picture message sent to you arrives and is shown in the conversation. Sending one works too, through your carrier, so it reaches any phone: a picture, a video, a file, a contact card or a voice message, with no account at either end. Pictures are shrunk to what a network will carry. Group conversations over MMS are still being worked on.</li>
 <li>Conversations with your contacts' photos and profiles, search across every message.</li>
 <li>Reply from the notification, scheduled messages.</li>
 <li>Verification codes copied in one tap and erased automatically after a while.</li>

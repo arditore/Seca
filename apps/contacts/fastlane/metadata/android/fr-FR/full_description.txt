@@ -1,4 +1,8 @@
-Seca Contacts est le répertoire de la suite Seca : Contacts, Téléphone et Messages, trois applications au même design Material 3 Expressive, pensées pour la vie privée. Elles fonctionnent sur tout téléphone sous Android 12 ou plus récent, avec ou sans Google, et donnent le meilleur d'elles-mêmes sur GrapheneOS. En français, anglais, espagnol et polonais.
+Un répertoire qui ne peut rien envoyer nulle part.
+
+Seca Contacts n’a aucune permission Internet : vos contacts ne peuvent pas quitter ce téléphone par cette application. Ils restent dans le répertoire d’Android, où DAVx⁵ ou la synchronisation de votre choix les atteint toujours.
+
+Une des trois applications — Contacts, Téléphone et Messages — au même design Material 3 Expressive. Android 12 ou plus récent, avec ou sans Google, au mieux sur GrapheneOS. En français, anglais, allemand, espagnol et polonais.
 
 <b>Vos contacts restent sur votre téléphone</b>
 <ul>

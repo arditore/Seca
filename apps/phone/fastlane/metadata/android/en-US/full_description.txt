@@ -1,4 +1,8 @@
-Seca Phone is the dialer of the Seca suite: Contacts, Phone and Messages, three apps sharing one Material 3 Expressive design, built for privacy. They run on any phone with Android 12 or newer, with or without Google, and are at their best on GrapheneOS. In English, French, Spanish and Polish.
+A dialer that refuses telemarketers before your phone rings.
+
+Seca Phone has no Internet permission at all, so your call history cannot leave this phone through it. Every call is screened on the device, against no list anybody else can see.
+
+One of three apps — Contacts, Phone and Messages — sharing one Material 3 Expressive design. Android 12 or newer, with or without Google, at its best on GrapheneOS. In English, French, German, Spanish and Polish.
 
 <b>Your calls stay on your phone</b>
 <ul>
