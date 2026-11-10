@@ -15,7 +15,7 @@
     <string name="street">Rue</string>
     <string name="all">Tous</string>
     <string name="allow_access">Autoriser l\'accès</string>
-    <string name="anniversary">Date anniversaire</string>
+    <string name="anniversary">Anniversaire</string>
     <string name="app_name">Seca Contacts</string>
     <string name="backup">Sauvegarde</string>
     <plurals name="backup_contacts_filed">
@@ -35,7 +35,7 @@
     <string name="backup_profiles_restored">profils remis</string>
     <string name="backup_profiles_restored_no_access">profils remis ; autorisez les contacts dans Seca Contacts, puis restaurez à nouveau pour ranger les fiches</string>
     <string name="backup_restored">Sauvegarde restaurée : %1$s</string>
-    <string name="birthday">Anniversaire</string>
+    <string name="birthday">Date de naissance</string>
     <string name="call">Appeler</string>
     <string name="calls_to_voicemail">Appels vers la messagerie</string>
     <string name="cancel">Annuler</string>

@@ -22,6 +22,7 @@ import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.contacts.VCard
 import com.seca.core.contacts.VCardContact
 import com.seca.core.design.SecaPalette
+import com.seca.core.design.component.forgetContactPhoto
 import com.seca.core.model.backup.BackupCipher
 import org.json.JSONObject
 import com.seca.core.model.Profile
@@ -431,6 +432,9 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                 Picture.Removed -> repository.setPhoto(id, null)
                 Picture.Unchanged -> Unit
             }
+            // Decoded photographs are cached for as long as the app runs, so a changed one has
+            // to be forgotten or the old face stays on screen until the app is killed.
+            if (picture != Picture.Unchanged) forgetContactPhoto(id)
             // The provider rebuilds a contact's key when its name changes, so the profile is
             // filed again under the key the contact has now, and the old one is let go.
             val currentKey = repository.lookupKeyOf(id)
