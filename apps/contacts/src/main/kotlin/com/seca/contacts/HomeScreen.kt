@@ -66,6 +66,9 @@ import kotlinx.coroutines.launch
 import com.seca.core.design.label
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 
 @Composable
 internal fun HomeScreen(
@@ -295,7 +298,7 @@ private fun HomeContent(
             modifier = Modifier.fillMaxSize(),
             // Room at the bottom so the last contact clears the floating button, and on
             // the right for the letter strip when there is one.
-            contentPadding = PaddingValues(end = if (showScroller) 20.dp else 0.dp, bottom = 112.dp),
+            contentPadding = PaddingValues(end = if (showScroller) SCROLLER_WIDTH else 0.dp, bottom = 112.dp),
         ) {
             if (!searching) {
                 if (ui.showMyCard) item(key = "my-card", contentType = "my-card") { MyCardRow(ui, onOpenMyCard) }
@@ -314,7 +317,9 @@ private fun HomeContent(
             } else {
                 if (favorites.isNotEmpty()) {
                     item(key = "favorites-label", contentType = "label") { SecaSectionLabel(stringResource(R.string.favorites)) }
-                    item(key = "favorites", contentType = "favorites") { FavoritesRow(favorites, ui, onOpen) }
+                    item(key = "favorites", contentType = "favorites") {
+                        FavoritesRow(favorites, ui, onOpen, beside = if (showScroller) SCROLLER_WIDTH else 0.dp)
+                    }
                 }
                 sections.forEach { (letter, group) ->
                     item(key = "letter-$letter", contentType = "label") { SecaSectionLabel(letter) }
@@ -375,10 +380,25 @@ private fun LazyListScope.contactGroup(
 
 /** Favourites as a row of large avatars, the way a dialer shows speed dials. */
 @Composable
-private fun FavoritesRow(favorites: List<SecaContact>, ui: ContactsUi, onOpen: (SecaContact) -> Unit) {
+private fun FavoritesRow(
+    favorites: List<SecaContact>,
+    ui: ContactsUi,
+    onOpen: (SecaContact) -> Unit,
+    /** The strip of letters down the side, which the rest of the list stands clear of. */
+    beside: Dp,
+) {
+    // The row takes back the width the letters reserved, and gives it away again as padding
+    // inside itself. Nothing lands under the letters, and a favourite that does not fit is cut
+    // off by the edge of the screen instead of ending a clean twenty points early — which is
+    // the difference between a row that looks scrollable and one that looks finished.
+    val extra = with(LocalDensity.current) { beside.roundToPx() }
     LazyRow(
-        contentPadding = PaddingValues(horizontal = 12.dp),
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp + beside),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.layout { measurable, constraints ->
+            val placeable = measurable.measure(constraints.copy(maxWidth = constraints.maxWidth + extra))
+            layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+        },
     ) {
         items(favorites, key = { it.id }) { contact ->
             Column(
@@ -417,6 +437,9 @@ private fun FavoritesRow(favorites: List<SecaContact>, ui: ContactsUi, onOpen: (
         }
     }
 }
+
+/** How much room the strip of letters down the side needs. */
+private val SCROLLER_WIDTH = 20.dp
 
 @Composable
 private fun EmptyHome(ui: ContactsUi, searching: Boolean, modifier: Modifier = Modifier) {
