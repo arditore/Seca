@@ -188,7 +188,12 @@ fun PhoneApp(
         viewModel.refreshScreening()
         onPauseOrDispose { }
     }
-    BackHandler(enabled = viewModel.backStack.size > 1) { viewModel.back() }
+    // Back undoes the search before it leaves the app. A search is the thing the eye is on,
+    // and a gesture that closed the whole app instead of emptying a text box was answering a
+    // question nobody had asked.
+    BackHandler(enabled = viewModel.backStack.size > 1 || ui.query.isNotEmpty()) {
+        if (viewModel.backStack.size > 1) viewModel.back() else viewModel.setQuery("")
+    }
 
     SecaTheme(identity = SecaAppIdentity.Phone, palette = ui.palette, black = ui.black) {
         simChoice?.let { ask ->
