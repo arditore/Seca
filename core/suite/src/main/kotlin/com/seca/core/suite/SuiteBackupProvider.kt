@@ -41,6 +41,9 @@ abstract class SuiteBackupProvider : ContentProvider() {
     @Volatile
     private var lastImport: String? = null
 
+    /** A caller Android could not name. Said as it is rather than hidden behind a friendlier word. */
+    private val UNKNOWN_CALLER get() = requireContext().getString(R.string.door_unknown_caller)
+
     override fun onCreate(): Boolean = true
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
@@ -48,6 +51,9 @@ abstract class SuiteBackupProvider : ContentProvider() {
         val portable = uri.lastPathSegment == SuiteBackup.PATH_PORTABLE
         return when {
             mode == "r" -> {
+                // Who is asking, read from the caller rather than taken on trust from an
+                // extra: an app asking for the address book is not the authority on who it is.
+                val caller = callingPackage ?: UNKNOWN_CALLER
                 thread(name = "seca-backup-export") {
                     ParcelFileDescriptor.AutoCloseOutputStream(write).use { out ->
                         // A part that could not be read leaves the pipe empty: the backup says so for this app.
@@ -56,6 +62,8 @@ abstract class SuiteBackupProvider : ContentProvider() {
                         }.getOrNull() ?: return@use
                         out.write(text.toByteArray(Charsets.UTF_8))
                     }
+                    // Said after the fact, so nothing is announced that was not handed over.
+                    runCatching { BackupDoorNotice.served(requireContext(), caller, portable) }
                 }
                 read
             }

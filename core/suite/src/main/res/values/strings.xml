@@ -61,4 +61,9 @@
     <string name="suite_working_hint">Each app prepares its part. This can take a while with many messages.</string>
     <string name="suite_write_failed">The file could not be written</string>
     <string name="suite_wrong_password">Wrong password, or damaged file</string>
+    <string name="door_channel">Data handed to another Seca app</string>
+    <string name="door_handed">%1$s asked %2$s for everything it holds, for a backup. If you did not just make one, nothing on this phone asked for this.</string>
+    <string name="door_handed_portable">%1$s asked %2$s to export its data in a portable format. If you did not just ask for an export, nothing on this phone asked for this.</string>
+    <string name="door_title">A Seca app read your data</string>
+    <string name="door_unknown_caller">An app Android could not name</string>
 </resources>

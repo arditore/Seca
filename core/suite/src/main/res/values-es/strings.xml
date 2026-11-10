@@ -61,4 +61,9 @@
     <string name="suite_working_hint">Cada aplicación prepara su parte. Con muchos mensajes puede tardar un rato.</string>
     <string name="suite_write_failed">No se pudo escribir el archivo</string>
     <string name="suite_wrong_password">Contraseña incorrecta, o archivo dañado</string>
+    <string name="door_channel">Datos entregados a otra app de Seca</string>
+    <string name="door_handed">%1$s ha pedido a %2$s todo lo que guarda, para una copia de seguridad. Si no acabas de hacer una, nada en este teléfono lo ha pedido.</string>
+    <string name="door_handed_portable">%1$s ha pedido a %2$s exportar sus datos en un formato portátil. Si no acabas de pedir una exportación, nada en este teléfono lo ha pedido.</string>
+    <string name="door_title">Una app de Seca ha leído tus datos</string>
+    <string name="door_unknown_caller">Una app que Android no ha sabido nombrar</string>
 </resources>

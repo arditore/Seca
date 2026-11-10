@@ -61,4 +61,9 @@
     <string name="suite_working_hint">Każda aplikacja przygotowuje swoją część. Przy wielu wiadomościach może to chwilę potrwać.</string>
     <string name="suite_write_failed">Nie udało się zapisać pliku</string>
     <string name="suite_wrong_password">Błędne hasło lub uszkodzony plik</string>
+    <string name="door_channel">Dane przekazane innej aplikacji Seca</string>
+    <string name="door_handed">%1$s poprosiła %2$s o wszystko, co przechowuje, na potrzeby kopii zapasowej. Jeśli właśnie jej nie tworzysz, nic w tym telefonie o to nie prosiło.</string>
+    <string name="door_handed_portable">%1$s poprosiła %2$s o eksport danych w przenośnym formacie. Jeśli właśnie go nie zlecałeś, nic w tym telefonie o to nie prosiło.</string>
+    <string name="door_title">Aplikacja Seca odczytała Twoje dane</string>
+    <string name="door_unknown_caller">Aplikacja, której Android nie potrafił nazwać</string>
 </resources>
