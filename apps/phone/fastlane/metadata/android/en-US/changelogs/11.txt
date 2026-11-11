@@ -1,0 +1,1 @@
+Several calls can be chosen at once and deleted together, by holding one down. A missed call seen once stays seen: its notification no longer comes back after every restart. Going back leaves a search rather than closing the app. The bar at the bottom shows only the Seca apps that are actually installed. In German, thanks to Natty-Narwhal.

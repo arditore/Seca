@@ -1,0 +1,1 @@
+Se pueden elegir varias llamadas a la vez y borrarlas juntas, manteniendo pulsada una. Una llamada perdida vista una vez sigue vista: su notificación ya no vuelve tras cada reinicio. Volver atrás sale de una búsqueda en lugar de cerrar la aplicación. La barra inferior solo muestra las apps de Seca instaladas. En alemán, gracias a Natty-Narwhal.

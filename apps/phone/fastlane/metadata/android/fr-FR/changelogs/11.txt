@@ -1,0 +1,1 @@
+Plusieurs appels se choisissent d’un coup et se suppriment ensemble, en maintenant une ligne. Un appel manqué vu une fois reste vu : sa notification ne revient plus à chaque redémarrage. Le retour quitte une recherche au lieu de fermer l’application. La barre du bas n’affiche que les apps Seca réellement installées. En allemand, grâce à Natty-Narwhal.
