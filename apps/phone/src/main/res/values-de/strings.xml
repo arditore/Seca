@@ -215,4 +215,6 @@
     <string name="wifi_calling_hint">Über WLAN telefonieren, wenn das Mobilfunknetz schwach ist</string>
     <string name="yesterday">Gestern</string>
     <string name="choose">Auswählen</string>
+    <string name="choose_all">Alle auswählen</string>
+    <string name="choose_none">Auswahl aufheben</string>
 </resources>

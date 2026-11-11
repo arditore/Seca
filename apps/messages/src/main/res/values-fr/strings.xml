@@ -460,4 +460,6 @@
         <item quantity="other">Supprimer %d conversations ?</item>
         <item quantity="many">Supprimer %d conversations ?</item>
     </plurals>
+    <string name="choose_all">Tout sélectionner</string>
+    <string name="choose_none">Tout désélectionner</string>
 </resources>

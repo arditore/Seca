@@ -215,4 +215,6 @@
     <string name="wifi_calling_hint">Call over Wi-Fi when the mobile network is weak</string>
     <string name="yesterday">Yesterday</string>
     <string name="choose">Choose</string>
+    <string name="choose_all">Select all</string>
+    <string name="choose_none">Select none</string>
 </resources>

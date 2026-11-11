@@ -462,4 +462,6 @@
         <item quantity="many">Usunąć %d rozmów?</item>
         <item quantity="other">Usunąć %d rozmów?</item>
     </plurals>
+    <string name="choose_all">Zaznacz wszystko</string>
+    <string name="choose_none">Odznacz wszystko</string>
 </resources>

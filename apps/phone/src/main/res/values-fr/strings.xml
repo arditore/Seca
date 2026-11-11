@@ -220,4 +220,6 @@
     <string name="wifi_calling_hint">Appeler par le Wi-Fi quand le réseau mobile est faible</string>
     <string name="yesterday">Hier</string>
     <string name="choose">Sélectionner</string>
+    <string name="choose_all">Tout sélectionner</string>
+    <string name="choose_none">Tout désélectionner</string>
 </resources>

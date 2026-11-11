@@ -97,6 +97,13 @@ internal fun ConversationsScreen(
                     viewModel = viewModel,
                     chosen = chosen,
                     onClear = { chosen = emptySet() },
+                    // Everything the list is showing, which is not always everything there is:
+                    // a search narrows it, and so do the archive and the advertising.
+                    onChooseAll = { chosen = shownThreads(ui) },
+                    allChosen = chosen == shownThreads(ui),
+                    // A search has narrowed the list to something this function cannot see,
+                    // so "all" could not be told the truth and is not offered.
+                    canChooseAll = ui.query.isBlank(),
                     onDelete = { deletingChosen = true },
                 )
                 return@Scaffold
@@ -191,6 +198,18 @@ internal fun ConversationsScreen(
 }
 
 /**
+ * The conversations the list is showing, which is what "all" can honestly mean.
+ *
+ * Not every conversation on the phone: the archive and the advertising are put away on purpose,
+ * and a search has narrowed it to what was asked for. Choosing all of something the owner
+ * cannot see would be the one mistake this button must not make.
+ */
+private fun shownThreads(ui: MessagesUi): Set<Long> = ui.conversations
+    .filter { it.threadId !in ui.archived && it.threadId !in ui.spam }
+    .map { it.threadId }
+    .toSet()
+
+/**
  * The bar that stands in for the search field while conversations are chosen.
  *
  * It carries the count and the things that make sense done to several at once. A toggle acts
@@ -205,6 +224,9 @@ private fun ChoiceBar(
     viewModel: MessagesViewModel,
     chosen: Set<Long>,
     onClear: () -> Unit,
+    onChooseAll: () -> Unit,
+    allChosen: Boolean,
+    canChooseAll: Boolean,
     onDelete: () -> Unit,
 ) {
     val picked = ui.conversations.filter { it.threadId in chosen }
@@ -230,6 +252,16 @@ private fun ChoiceBar(
                 .weight(1f)
                 .padding(start = 8.dp),
         )
+        // "Delete every message" was being asked for by e-mail, marked urgent, because there
+        // was no way to do it short of opening each conversation in turn.
+        if (canChooseAll) {
+            IconButton(onClick = if (allChosen) onClear else onChooseAll) {
+                Icon(
+                    imageVector = if (allChosen) SecaIcons.Close else SecaIcons.SelectAll,
+                    contentDescription = stringResource(if (allChosen) R.string.choose_none else R.string.choose_all),
+                )
+            }
+        }
         IconButton(onClick = { picked.forEach { viewModel.markRead(it.threadId) } }) {
             Icon(SecaIcons.Check, contentDescription = stringResource(R.string.mark_read))
         }

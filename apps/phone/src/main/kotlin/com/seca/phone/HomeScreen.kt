@@ -123,6 +123,11 @@ internal fun HomeScreen(
                 ChosenCallsBar(
                     count = chosen.size,
                     onClear = { chosen = emptySet() },
+                    onChooseAll = { chosen = ui.groups.map { it.latest.id }.toSet() },
+                    allChosen = chosen.size == ui.groups.size,
+                    // A search narrows the list to something this bar cannot see, so "all"
+                    // could not be told the truth and is not offered.
+                    canChooseAll = ui.query.isBlank(),
                     onDelete = {
                         // A row stands for a group of calls with the same person, so choosing
                         // one chooses all of them: deleting half a run would be a lie.
@@ -212,7 +217,14 @@ private class RowActions(
 
 /** The bar that stands in for the search field while calls are chosen. */
 @Composable
-private fun ChosenCallsBar(count: Int, onClear: () -> Unit, onDelete: () -> Unit) {
+private fun ChosenCallsBar(
+    count: Int,
+    onClear: () -> Unit,
+    onChooseAll: () -> Unit,
+    allChosen: Boolean,
+    canChooseAll: Boolean,
+    onDelete: () -> Unit,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -232,6 +244,14 @@ private fun ChosenCallsBar(count: Int, onClear: () -> Unit, onDelete: () -> Unit
                 .weight(1f)
                 .padding(start = 8.dp),
         )
+        if (canChooseAll) {
+            IconButton(onClick = if (allChosen) onClear else onChooseAll) {
+                Icon(
+                    imageVector = if (allChosen) SecaIcons.Close else SecaIcons.SelectAll,
+                    contentDescription = stringResource(if (allChosen) R.string.choose_none else R.string.choose_all),
+                )
+            }
+        }
         IconButton(onClick = onDelete) {
             Icon(SecaIcons.Delete, contentDescription = stringResource(R.string.delete_from_history))
         }
