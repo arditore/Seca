@@ -79,6 +79,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.LaunchedEffect
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.CircleShape
 
 @Composable
 internal fun HomeScreen(
@@ -434,7 +435,23 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
                 )
                 .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
         ) {
-            if (contact != null) {
+            // A tick where the face was, the same as a chosen conversation in the messages:
+            // the same gesture should say the same thing in both apps.
+            if (call.id in actions.chosen) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                ) {
+                    Icon(
+                        imageVector = SecaIcons.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+            } else if (contact != null) {
                 SecaAvatar(
                     initials = contact.initials,
                     photoUri = contact.photoUri,
