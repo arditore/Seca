@@ -31,4 +31,7 @@
     <string name="design_profile_principal">Principal</string>
     <string name="design_unlock">Déverrouiller</string>
     <string name="design_unlock_app">Déverrouiller %1$s</string>
+    <string name="seca_palette">Palette Seca</string>
+    <string name="seca_palette_hint_dynamic">Pour remplacer les couleurs du fond d\'écran</string>
+    <string name="seca_palette_hint_on">Chaque application Seca en prend sa propre nuance</string>
 </resources>

@@ -739,9 +739,13 @@ private fun ConversationTopBar(
                         addContact(context, address)
                     }
                 }
-                MenuEntry(stringResource(R.string.copy_number), SecaIcons.ContentCopy) {
-                    menuOpen = false
-                    copyText(context, "Number", address)
+                // "Copy number" on a sender called McDonalds copies a word and calls it a
+                // number. There is nothing to do with it afterwards.
+                if (dialable(address)) {
+                    MenuEntry(stringResource(R.string.copy_number), SecaIcons.ContentCopy) {
+                        menuOpen = false
+                        copyText(context, "Number", address)
+                    }
                 }
                 MenuEntry(stringResource(R.string.delete_conversation), SecaIcons.Delete) {
                     menuOpen = false
@@ -925,17 +929,23 @@ private fun Bubble(
                         onReply()
                     }
                 }
-                when {
-                    image != null -> MenuEntry(stringResource(R.string.save_to_gallery), SecaIcons.Download) {
+                // Keeping and copying are not alternatives. A picture with words under it had
+                // only "Download", so the words could not be copied at all; a message with no
+                // words at all offered "Copy", which put nothing on the clipboard.
+                if (image != null) {
+                    MenuEntry(stringResource(R.string.save_to_gallery), SecaIcons.Download) {
                         menuOpen = false
                         onSavePhoto(image)
                     }
-                    audio != null -> MenuEntry(stringResource(R.string.save_sound), SecaIcons.Download) {
+                }
+                if (audio != null) {
+                    MenuEntry(stringResource(R.string.save_sound), SecaIcons.Download) {
                         menuOpen = false
                         onSaveAudio(audio)
                     }
-                    // Nothing to copy out of a card or a document: it is opened, not read here.
-                    message.attachment == null -> MenuEntry(stringResource(R.string.copy), SecaIcons.ContentCopy) {
+                }
+                if (message.body.isNotBlank()) {
+                    MenuEntry(stringResource(R.string.copy), SecaIcons.ContentCopy) {
                         menuOpen = false
                         onCopy()
                     }

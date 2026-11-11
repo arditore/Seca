@@ -181,9 +181,6 @@
     <string name="saved_in_account_hint">Dieses Konto synchronisiert ihn überallhin, wohin das Konto reicht</string>
     <string name="saved_on_phone_hint">Nur hier gespeichert und nirgendwo sonst; er wird mit nichts synchronisiert</string>
     <string name="search_contacts">Kontakte suchen</string>
-    <string name="seca_palette">Seca-Palette</string>
-    <string name="seca_palette_hint_dynamic">Um die Farben des Hintergrundbilds zu ersetzen</string>
-    <string name="seca_palette_hint_on">Jede Seca-App erhält ihren eigenen Farbton</string>
     <string name="send_message">Nachricht senden</string>
     <string name="settings">Einstellungen</string>
     <string name="share">Teilen</string>

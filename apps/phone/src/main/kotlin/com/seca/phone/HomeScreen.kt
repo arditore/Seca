@@ -246,8 +246,11 @@ private fun ChosenCallsBar(
         )
         if (canChooseAll) {
             IconButton(onClick = if (allChosen) onClear else onChooseAll) {
+                // The same mark in both states, never the cross: a second cross next to the
+                // one that leaves the choosing is two different meanings drawn identically.
+                // What says everything is chosen is that every row is ticked.
                 Icon(
-                    imageVector = if (allChosen) SecaIcons.Close else SecaIcons.SelectAll,
+                    imageVector = SecaIcons.SelectAll,
                     contentDescription = stringResource(if (allChosen) R.string.choose_none else R.string.choose_all),
                 )
             }

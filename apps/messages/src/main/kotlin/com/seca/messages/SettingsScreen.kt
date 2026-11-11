@@ -32,6 +32,7 @@ import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaHint
+import com.seca.core.design.component.SecaPaletteSection
 import com.seca.core.design.component.SecaPaletteSwatch
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
@@ -131,20 +132,7 @@ internal fun SettingsScreen(
                     )
                 }
                 SecaGroupItem(index = 2, count = 3) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    ) {
-                        SecaPalette.entries.forEach { palette ->
-                            SecaPaletteSwatch(
-                                palette = palette,
-                                selected = ui.palette == palette,
-                                onClick = { viewModel.setPalette(palette) },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                    }
+                    SecaPaletteSection(ui.palette, dynamic, viewModel::setPalette)
                 }
                 SecaHint(stringResource(R.string.colors_shared_hint))
             } else {

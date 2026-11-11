@@ -32,4 +32,7 @@
     <string name="design_profile_principal">Główny</string>
     <string name="design_unlock">Odblokuj</string>
     <string name="design_unlock_app">Odblokuj %1$s</string>
+    <string name="seca_palette">Paleta Seca</string>
+    <string name="seca_palette_hint_dynamic">Aby zastąpić kolory tapety</string>
+    <string name="seca_palette_hint_on">Każda aplikacja Seca przyjmuje własny odcień</string>
 </resources>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="design_app_contacts">Kontakte</string>
+    <string name="design_app_locked">%1$s ist gesperrt</string>
+    <string name="design_app_locked_hint">Der Inhalt bleibt verborgen, bis entsperrt wird.</string>
+    <string name="design_app_messages">Nachrichten</string>
+    <string name="design_app_phone">Telefon</string>
+    <string name="design_back">Zurück</string>
+    <string name="design_cancel">Abbrechen</string>
+    <string name="design_clear_search">Suche löschen</string>
+    <string name="design_close">Schließen</string>
+    <string name="design_lock_app">%1$s sperren</string>
+    <string name="design_lock_app_on">Fingerabdruck oder Gerätecode beim Öffnen</string>
+    <string name="design_lock_app_unavailable">Richten Sie zuerst eine Displaysperre in Android ein</string>
+    <string name="design_palette_dusk">Dämmerung</string>
+    <string name="design_palette_forest">Wald</string>
+    <string name="design_palette_ocean">Ozean</string>
+    <string name="design_palette_slate">Schiefer</string>
+    <string name="design_palette_wallpaper">Hintergrundbild</string>
+    <string name="design_passphrase">Passwort</string>
+    <string name="design_passphrase_confirm">Passwort bestätigen</string>
+    <string name="design_passphrase_creating_hint">Ohne dieses Passwort lässt sich die Sicherung nie wieder öffnen: niemand kann sie wiederherstellen.</string>
+    <string name="design_passphrase_opening_hint">Das Passwort, das beim Erstellen der Sicherung gewählt wurde.</string>
+    <plurals name="design_passphrase_too_short">
+        <item quantity="one">Mindestens %d Zeichen</item>
+        <item quantity="other">Mindestens %d Zeichen</item>
+    </plurals>
+    <string name="design_private_screen">Privater Bildschirm</string>
+    <string name="design_private_screen_hint">Verhindert Screenshots und verbirgt die Vorschau in den letzten Apps</string>
+    <string name="design_profile_principal">Haupt</string>
+    <string name="design_unlock">Entsperren</string>
+    <string name="design_unlock_app">%1$s entsperren</string>
+    <string name="seca_palette">Seca-Palette</string>
+    <string name="seca_palette_hint_dynamic">Um die Farben des Hintergrundbilds zu ersetzen</string>
+    <string name="seca_palette_hint_on">Jede Seca-App erhält ihren eigenen Farbton</string>
+</resources>

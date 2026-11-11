@@ -113,9 +113,13 @@ of which are done here:
 1. **The licence had to agree with itself.** The metadata said AGPL-3.0-or-later, because the app
    links libsignal, while the repository said GPL. Seca Messages now carries its own
    `apps/messages/LICENSE`, the AGPL, and the README says which app is under which.
-2. **Incoming MMS are not supported, and the listing has to say so.** As the default SMS app,
-   Seca Messages is the only app the phone hands them to, so adopting it cost a user their
-   picture messages without a word. `full_description.txt` now says it first, in both languages.
+2. **Picture messages are supported, both ways, as of beta 11.** This was the reviewer's
+   sharpest point and it no longer stands: as the default SMS app, Seca Messages is the only
+   app the phone hands a WAP push to, so for a while adopting it cost a user their picture
+   messages without a word. They arrive and are shown since beta 10, and can be sent since
+   beta 11 — a picture, a video, a file, a contact card or a voice message, through the
+   carrier. Group conversations over MMS are still to come, and the listing says so rather
+   than claiming otherwise.
 3. **secp256k1 was a prebuilt binary, and is not any more.**
    `fr.acinq.secp256k1:secp256k1-kmp-jni-android` ships `libsecp256k1-jni.so`, which F-Droid does
    not accept any more than libsignal's. The recipe builds it from the `Secp256k1Kmp` srclib, the

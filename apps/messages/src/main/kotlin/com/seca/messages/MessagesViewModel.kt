@@ -365,19 +365,33 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /**
+     * Keeps a conversation in front of the owner.
+     *
+     * Pinning takes it out of the archive and out of the advertising, because those say "put
+     * this away" and pinning says the opposite. A conversation that was both appeared in two
+     * places at once: at the top of the list and inside the archive.
+     */
     fun setPinned(threadId: Long, pinned: Boolean) {
         conversationPrefs.setPinned(threadId, pinned)
+        if (pinned) {
+            conversationPrefs.setArchived(threadId, false)
+            conversationPrefs.setSpam(threadId, false)
+        }
         refreshConversationPrefs()
     }
 
+    /** Puts a conversation away, which means it is no longer kept in front of anybody. */
     fun setArchived(threadId: Long, archived: Boolean) {
         conversationPrefs.setArchived(threadId, archived)
+        if (archived) conversationPrefs.setPinned(threadId, false)
         refreshConversationPrefs()
     }
 
     /** Files a conversation as advertising, or takes it back out, which trusts it from then on. */
     fun setSpam(threadId: Long, spam: Boolean) {
         conversationPrefs.setSpam(threadId, spam)
+        if (spam) conversationPrefs.setPinned(threadId, false)
         refreshConversationPrefs()
         if (spam) MessageNotifications.cancel(getApplication(), threadId)
     }

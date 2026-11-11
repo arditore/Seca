@@ -31,4 +31,7 @@
     <string name="design_profile_principal">Principal</string>
     <string name="design_unlock">Desbloquear</string>
     <string name="design_unlock_app">Desbloquear %1$s</string>
+    <string name="seca_palette">Paleta Seca</string>
+    <string name="seca_palette_hint_dynamic">Para sustituir los colores del fondo de pantalla</string>
+    <string name="seca_palette_hint_on">Cada aplicación Seca toma su propio tono</string>
 </resources>

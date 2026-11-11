@@ -38,6 +38,7 @@ import com.seca.core.design.SecaPalette
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaHint
 import android.net.Uri
+import com.seca.core.design.component.SecaPaletteSection
 import com.seca.core.design.component.SecaPaletteSwatch
 import com.seca.core.design.component.SecaPassphraseDialog
 import com.seca.core.design.component.SecaProfileBadge
@@ -151,41 +152,7 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                 )
             }
             SecaGroupItem(index = 2, count = 3) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconBadge(SecaIcons.Palette)
-                        Column(
-                            Modifier
-                                .weight(1f)
-                                .padding(start = 16.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.seca_palette),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = stringResource(if (dynamic) R.string.seca_palette_hint_dynamic else R.string.seca_palette_hint_on),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                    ) {
-                        SecaPalette.entries.forEach { palette ->
-                            SecaPaletteSwatch(
-                                palette = palette,
-                                selected = ui.palette == palette,
-                                onClick = { viewModel.setPalette(palette) },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                    }
-                }
+                SecaPaletteSection(ui.palette, dynamic, viewModel::setPalette)
             }
             SecaHint(stringResource(R.string.dark_mode_hint))
 

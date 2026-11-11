@@ -233,6 +233,13 @@ private fun ChoiceBar(
     val allPinned = picked.isNotEmpty() && picked.all { it.threadId in ui.pinned }
     val allArchived = picked.isNotEmpty() && picked.all { it.threadId in ui.archived }
     val allSpam = picked.isNotEmpty() && picked.all { it.threadId in ui.spam }
+    // Marking read what is already read writes to the store once per conversation and changes
+    // nothing anybody can see. An action that cannot do anything is not offered.
+    val anyUnread = picked.any { it.unread > 0 }
+    // Pinning is singling something out. Pin everything and the pinned list is the list, the
+    // dates that grouped it are gone, and nothing has been singled out from anything — which
+    // is why the button disappears once the whole list is chosen rather than quietly doing it.
+    val pinnable = !allChosen || allPinned
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -256,20 +263,27 @@ private fun ChoiceBar(
         // was no way to do it short of opening each conversation in turn.
         if (canChooseAll) {
             IconButton(onClick = if (allChosen) onClear else onChooseAll) {
+                // The same mark in both states, never the cross: a second cross next to the
+                // one that leaves the choosing is two different meanings drawn identically.
+                // What says everything is chosen is that every row is ticked.
                 Icon(
-                    imageVector = if (allChosen) SecaIcons.Close else SecaIcons.SelectAll,
+                    imageVector = SecaIcons.SelectAll,
                     contentDescription = stringResource(if (allChosen) R.string.choose_none else R.string.choose_all),
                 )
             }
         }
-        IconButton(onClick = { picked.forEach { viewModel.markRead(it.threadId) } }) {
-            Icon(SecaIcons.Check, contentDescription = stringResource(R.string.mark_read))
+        if (anyUnread) {
+            IconButton(onClick = { picked.forEach { viewModel.markRead(it.threadId) } }) {
+                Icon(SecaIcons.Check, contentDescription = stringResource(R.string.mark_read))
+            }
         }
-        IconButton(onClick = { picked.forEach { viewModel.setPinned(it.threadId, !allPinned) } }) {
-            Icon(
-                imageVector = SecaIcons.PushPin,
-                contentDescription = stringResource(if (allPinned) R.string.unpin else R.string.pin),
-            )
+        if (pinnable) {
+            IconButton(onClick = { picked.forEach { viewModel.setPinned(it.threadId, !allPinned) } }) {
+                Icon(
+                    imageVector = SecaIcons.PushPin,
+                    contentDescription = stringResource(if (allPinned) R.string.unpin else R.string.pin),
+                )
+            }
         }
         IconButton(onClick = { picked.forEach { viewModel.setArchived(it.threadId, !allArchived) } }) {
             Icon(

@@ -30,4 +30,7 @@
     <string name="design_profile_principal">Main</string>
     <string name="design_unlock">Unlock</string>
     <string name="design_unlock_app">Unlock %1$s</string>
+    <string name="seca_palette">Seca palette</string>
+    <string name="seca_palette_hint_dynamic">To replace the wallpaper colors</string>
+    <string name="seca_palette_hint_on">Each Seca app takes its own shade</string>
 </resources>
