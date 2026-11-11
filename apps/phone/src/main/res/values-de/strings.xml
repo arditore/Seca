@@ -214,4 +214,5 @@
     <string name="wifi_calling">WLAN-Telefonie</string>
     <string name="wifi_calling_hint">Über WLAN telefonieren, wenn das Mobilfunknetz schwach ist</string>
     <string name="yesterday">Gestern</string>
+    <string name="choose">Auswählen</string>
 </resources>

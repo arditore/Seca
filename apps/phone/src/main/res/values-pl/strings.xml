@@ -219,4 +219,5 @@
     <string name="channel_incoming_quiet_desc">To samo powiadomienie, zostawione w panelu: ekran połączenia jest już widoczny.</string>
     <string name="screen_off_near_ear">Wygaszenie ekranu przy uchu</string>
     <string name="screen_off_near_ear_hint">Czujnik zbliżeniowy wyłącza ekran w trakcie rozmowy, żeby zapobiec przypadkowym dotknięciem twarzą. Wyłącz, jeśli etui zasłania czujnik.</string>
+    <string name="choose">Wybierz</string>
 </resources>

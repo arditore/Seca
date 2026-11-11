@@ -219,4 +219,5 @@
     <string name="wifi_calling">Appels Wi-Fi</string>
     <string name="wifi_calling_hint">Appeler par le Wi-Fi quand le réseau mobile est faible</string>
     <string name="yesterday">Hier</string>
+    <string name="choose">Sélectionner</string>
 </resources>

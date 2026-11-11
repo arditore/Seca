@@ -77,6 +77,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.LaunchedEffect
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.graphics.Color
 
 @Composable
 internal fun HomeScreen(
@@ -95,11 +97,19 @@ internal fun HomeScreen(
     if (managingBlocked) BlockedProfilesDialog(ui, viewModel, onDismiss = { managingBlocked = false })
     // The button carries its label at the top of the list and shrinks to an icon once scrolled.
     val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
+    // Chosen calls, by the group they belong to. A group is what the list shows: several calls
+    // with the same person, one after another, so choosing one chooses all of them.
+    var chosen by remember { mutableStateOf(emptySet<Long>()) }
+    val choosing = chosen.isNotEmpty()
+    BackHandler(enabled = choosing) { chosen = emptySet() }
     val actions = RowActions(
         onCall = onCall,
         onCallWithSim = onCallWithSim,
         onOpen = { viewModel.open(PhoneScreen.CallDetail(it)) },
         onDelete = onDeleteCalls,
+        chosen = chosen,
+        choosing = choosing,
+        onChoose = { id -> chosen = if (id in chosen) chosen - id else chosen + id },
     )
     // One list, read by the pills and by the swipe, so a swipe always lands on the pill next to
     // the one lit up. Built here rather than inside the row: two lists would drift apart.
@@ -108,6 +118,19 @@ internal fun HomeScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
+            if (choosing) {
+                ChosenCallsBar(
+                    count = chosen.size,
+                    onClear = { chosen = emptySet() },
+                    onDelete = {
+                        // A row stands for a group of calls with the same person, so choosing
+                        // one chooses all of them: deleting half a run would be a lie.
+                        onDeleteCalls(ui.groups.filter { it.latest.id in chosen }.flatMap { it.ids })
+                        chosen = emptySet()
+                    },
+                )
+                return@Scaffold
+            }
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -141,6 +164,7 @@ internal fun HomeScreen(
         },
         bottomBar = { SecaSuiteBar(current = SecaAppIdentity.Phone, onSelect = { openSibling(context, it) }) },
         floatingActionButton = {
+            if (choosing) return@Scaffold
             ExtendedFloatingActionButton(
                 text = { Text(stringResource(R.string.keypad)) },
                 icon = { Icon(SecaIcons.Dialpad, contentDescription = if (fabExpanded) null else stringResource(R.string.keypad)) },
@@ -179,7 +203,39 @@ private class RowActions(
     val onCallWithSim: (String) -> Unit,
     val onOpen: (String) -> Unit,
     val onDelete: (List<Long>) -> Unit,
+    /** The groups chosen, by the call that stands for each of them. */
+    val chosen: Set<Long> = emptySet(),
+    val choosing: Boolean = false,
+    val onChoose: (Long) -> Unit = {},
 )
+
+/** The bar that stands in for the search field while calls are chosen. */
+@Composable
+private fun ChosenCallsBar(count: Int, onClear: () -> Unit, onDelete: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .statusBarsPadding()
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+    ) {
+        IconButton(onClick = onClear) {
+            Icon(SecaIcons.Close, contentDescription = stringResource(R.string.cancel))
+        }
+        Text(
+            text = count.toString(),
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 8.dp),
+        )
+        IconButton(onClick = onDelete) {
+            Icon(SecaIcons.Delete, contentDescription = stringResource(R.string.delete_from_history))
+        }
+    }
+}
 
 /** The history's filters, in the order they are offered: how calls went, then the profiles. */
 private fun filtersOf(ui: PhoneUi): List<CallFilter> =
@@ -361,10 +417,20 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
+                .background(
+                    if (call.id in actions.chosen) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+                )
                 .combinedClickable(
-                    onClick = { if (call.callable) actions.onOpen(call.number) },
-                    onLongClickLabel = stringResource(R.string.more_actions),
-                    onLongClick = { menuOpen = true },
+                    onClick = {
+                        when {
+                            actions.choosing -> actions.onChoose(call.id)
+                            call.callable -> actions.onOpen(call.number)
+                        }
+                    },
+                    onLongClickLabel = stringResource(if (actions.choosing) R.string.more_actions else R.string.choose),
+                    // Holding a row down chooses it, as it does in the messages. What the menu
+                    // used to offer for one call is still there once one is chosen.
+                    onLongClick = { if (actions.choosing) menuOpen = true else actions.onChoose(call.id) },
                 )
                 .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
         ) {

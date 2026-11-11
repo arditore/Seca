@@ -16,6 +16,9 @@ import com.seca.core.model.uiLocale
 /** Consecutive calls with the same number on the same day, shown as one row. */
 data class CallGroup(val calls: List<CallRecord>, val match: NumberMatch?) {
     val latest: CallRecord get() = calls.first()
+
+    /** Every call the row stands for, for deleting the run rather than the line that showed it. */
+    val ids: List<Long> get() = calls.map { it.id }
 }
 
 /**

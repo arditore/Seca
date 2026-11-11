@@ -219,4 +219,5 @@
     <string name="wifi_calling">Llamadas por Wi-Fi</string>
     <string name="wifi_calling_hint">Llamar por Wi-Fi cuando la red móvil es débil</string>
     <string name="yesterday">Ayer</string>
+    <string name="choose">Seleccionar</string>
 </resources>

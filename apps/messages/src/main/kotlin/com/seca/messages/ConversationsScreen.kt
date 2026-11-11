@@ -542,7 +542,7 @@ private fun ConversationRow(
                 .background(if (chosen) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
                 .combinedClickable(
                     onClick = { if (choosing) onChoose() else onOpen() },
-                    onLongClickLabel = stringResource(R.string.choose),
+                    onLongClickLabel = stringResource(if (choosing) R.string.more_actions else R.string.choose),
                     // Holding a row down chooses it, which is where every hand reaches for
                     // this. What the menu used to offer is on the bar above instead.
                     onLongClick = { if (choosing) menuOpen = true else onChoose() },
