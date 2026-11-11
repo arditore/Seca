@@ -34,17 +34,24 @@ internal object MmsAttachment {
         withContext(Dispatchers.IO) {
             val type = context.contentResolver.getType(uri) ?: "application/octet-stream"
             val name = nameOf(context, uri)
+            val bytes = runCatching {
+                context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            }.getOrNull()
+            // A picture that moves and already fits is sent exactly as it is. Through the
+            // shrinker it would come out as a JPEG of its first frame — the animation thrown
+            // away on the way out, as it used to be on the way in.
+            if (bytes != null && moving(type) && bytes.size <= budget) {
+                return@withContext Attached(MmsPdu.Part(type, name, "<$name>", bytes), null)
+            }
             if (type.startsWith("image/")) {
                 val shrunk = shrink(context, uri, budget)
-                    ?: return@withContext Attached(null, TooLarge(name, 0))
+                    ?: return@withContext Attached(null, TooLarge(name, bytes?.size ?: 0))
                 return@withContext Attached(
                     MmsPdu.Part("image/jpeg", name.withExtension("jpg"), "<$name>", shrunk),
                     null,
                 )
             }
-            val bytes = runCatching {
-                context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            }.getOrNull() ?: return@withContext Attached(null, TooLarge(name, 0))
+            if (bytes == null) return@withContext Attached(null, TooLarge(name, 0))
             if (bytes.size > budget) {
                 Attached(null, TooLarge(name, bytes.size))
             } else {
@@ -88,6 +95,14 @@ internal object MmsAttachment {
             out.toByteArray()
         }
     }.getOrNull()
+
+    /**
+     * Whether a picture is one that moves.
+     *
+     * A WebP may be either and nothing but its bytes says which, so it is asked rather than
+     * assumed: a still WebP is better off through the shrinker, where it will fit.
+     */
+    private fun moving(type: String): Boolean = type == "image/gif"
 
     /** What the file is called, for the part's name and for saying which one was refused. */
     private fun nameOf(context: Context, uri: Uri): String = runCatching {

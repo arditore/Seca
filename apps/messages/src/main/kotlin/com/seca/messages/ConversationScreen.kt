@@ -153,6 +153,12 @@ import com.seca.core.contacts.describe
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.core.net.toUri
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
 
 /** Two messages closer than this, from the same side, read as one block. */
 private const val JOIN_MILLIS = 2 * 60 * 1000L
@@ -166,6 +172,18 @@ private const val TYPING_SHOWN_MILLIS = 6_000L
 /** A photo in a bubble is decoded no larger than this; the viewer takes a larger one. */
 private const val PREVIEW_EDGE_PX = 900
 private const val VIEWER_EDGE_PX = 2400
+
+/**
+ * How many pictures one message may carry.
+ *
+ * The room is shared out between them, so past a handful each one is smaller than it is worth
+ * sending. Four still look like photographs.
+ */
+private const val MAX_ATTACHMENTS = 4
+
+/** As far in as a photo goes, and where a double tap lands. */
+private const val MAX_ZOOM = 5f
+private const val DOUBLE_TAP_ZOOM = 2.5f
 
 /** What a content address begins with, as a picture message's photo is named. */
 private const val CONTENT_SCHEME = "content:"
@@ -268,9 +286,13 @@ internal fun ConversationContent(
     }
     // Attaching without Seca Link: a picture, a video or a file, sent as a multimedia message
     // through the carrier, so it reaches a phone that has never heard of Seca.
-    val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) {
-            viewModel.sendAttachment(screen.address, uri, text)
+    // Several at a time: a message carries as many as fit, and picking one photo out of a
+    // holiday was the one thing people kept going back to another app to do.
+    val pickMedia = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(MAX_ATTACHMENTS),
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            viewModel.sendAttachments(screen.address, uris, text)
             text = ""
         }
     }
@@ -545,7 +567,22 @@ internal fun ConversationContent(
         }
     }
 
-    viewing?.let { path -> PhotoViewer(path, onDismiss = { viewing = null }) }
+    viewing?.let { path ->
+        PhotoViewer(
+            path = path,
+            onSave = {
+                scope.launch {
+                    val saved = saveToGallery(context, path)
+                    Toast.makeText(
+                        context,
+                        if (saved) photoSavedText else saveFailedText,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            },
+            onDismiss = { viewing = null },
+        )
+    }
 
     if (confirmDelete) {
         AlertDialog(
@@ -1068,7 +1105,7 @@ private fun PhotoBubble(
     caption: String,
     modifier: Modifier = Modifier,
 ) {
-    val photo = rememberPhoto(path, PREVIEW_EDGE_PX)
+    val photo = rememberMessagePicture(path, PREVIEW_EDGE_PX)
     val frame = Modifier
         .widthIn(max = 260.dp)
         .clip(shape)
@@ -1077,16 +1114,19 @@ private fun PhotoBubble(
     // A picture message usually carries words with the photo, and they belong to it: one bubble,
     // the photo above and what was written below, rather than the words thrown away.
     Column(frame) {
-        if (photo == null) {
+        if (photo == null || photo.width <= 0 || photo.height <= 0) {
             Box(Modifier.size(width = 220.dp, height = 160.dp))
         } else {
-            Image(
-                bitmap = photo,
-                contentDescription = stringResource(R.string.photo),
+            MessagePictureImage(
+                picture = photo,
+                description = stringResource(R.string.photo),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .heightIn(max = 360.dp)
-                    .aspectRatio(photo.width.toFloat() / photo.height, matchHeightConstraintsFirst = photo.height > photo.width),
+                    .aspectRatio(
+                        ratio = photo.width.toFloat() / photo.height,
+                        matchHeightConstraintsFirst = photo.height > photo.width,
+                    ),
             )
         }
         if (caption.isNotBlank()) {
@@ -1402,57 +1442,92 @@ private fun TimerDialog(current: Int, onDismiss: () -> Unit, onChoose: (Int) -> 
     )
 }
 
-/** A photo opened on its own, on black, the whole screen; a touch closes it. */
+/**
+ * A photo opened on its own, on black, the whole screen.
+ *
+ * Pinch to zoom, drag to move about, double tap to go in and out again. A single tap closes
+ * the photo while it is whole and puts it back as it was once it has been zoomed, because a
+ * tap that closed the screen while somebody was reading the small print off a photo would be
+ * the only gesture they ever made here by mistake.
+ *
+ * Saving is on this screen, which is where somebody looking at a photo is when they decide
+ * they want to keep it. It is still on the bubble as well, for a photo not worth opening.
+ */
 @Composable
-private fun PhotoViewer(path: String, onDismiss: () -> Unit) {
-    val photo = rememberPhoto(path, VIEWER_EDGE_PX)
+private fun PhotoViewer(path: String, onSave: () -> Unit, onDismiss: () -> Unit) {
+    val photo = rememberMessagePicture(path, VIEWER_EDGE_PX)
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    var frame by remember { mutableStateOf(IntSize.Zero) }
+    // How far a zoomed photo can be pushed: only as much of it as is hidden past each edge.
+    // Without this it can be flicked away into the black and there is no way of knowing where.
+    fun held(wanted: Offset, at: Float): Offset {
+        val x = (frame.width * (at - 1f) / 2f).coerceAtLeast(0f)
+        val y = (frame.height * (at - 1f) / 2f).coerceAtLeast(0f)
+        return Offset(wanted.x.coerceIn(-x, x), wanted.y.coerceIn(-y, y))
+    }
+    fun whole() {
+        scale = 1f
+        offset = Offset.Zero
+    }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
-                .clickable(onClickLabel = stringResource(R.string.close), onClick = onDismiss),
+                .onSizeChanged { frame = it },
         ) {
-            photo?.let { Image(bitmap = it, contentDescription = stringResource(R.string.photo), contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize()) }
-            IconButton(
-                onClick = onDismiss,
+            photo?.let {
+                MessagePictureImage(
+                    picture = it,
+                    description = stringResource(R.string.photo),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                val next = (scale * zoom).coerceIn(1f, MAX_ZOOM)
+                                offset = held(offset + pan, next)
+                                scale = next
+                            }
+                        }
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = { if (scale > 1f) whole() else onDismiss() },
+                                onDoubleTap = { if (scale > 1f) whole() else scale = DOUBLE_TAP_ZOOM },
+                            )
+                        }
+                        .graphicsLayer(
+                            scaleX = scale,
+                            scaleY = scale,
+                            translationX = offset.x,
+                            translationY = offset.y,
+                        ),
+                )
+            }
+            Row(
                 modifier = Modifier
                     .align(Alignment.TopStart)
+                    .fillMaxWidth()
                     .statusBarsPadding()
                     .padding(8.dp),
-            ) { Icon(SecaIcons.Close, contentDescription = stringResource(R.string.close), tint = Color.White) }
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(SecaIcons.Close, contentDescription = stringResource(R.string.close), tint = Color.White)
+                }
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = onSave) {
+                    Icon(
+                        imageVector = SecaIcons.Download,
+                        contentDescription = stringResource(R.string.save_to_gallery),
+                        tint = Color.White,
+                    )
+                }
+            }
         }
     }
 }
-
-/** The photo at [path], decoded off the main thread no larger than [maxEdge] pixels; null until it is ready. */
-@Composable
-private fun rememberPhoto(path: String, maxEdge: Int): ImageBitmap? {
-    val resolver = LocalContext.current.contentResolver
-    val photo by produceState<ImageBitmap?>(initialValue = null, path, maxEdge) {
-        value = withContext(Dispatchers.IO) {
-            runCatching {
-                ImageDecoder.decodeBitmap(photoSource(resolver, path)) { decoder, info, _ ->
-                    val scale = min(1f, maxEdge.toFloat() / max(info.size.width, info.size.height))
-                    if (scale < 1f) decoder.setTargetSize((info.size.width * scale).roundToInt(), (info.size.height * scale).roundToInt())
-                }.asImageBitmap()
-            }.getOrNull()
-        }
-    }
-    return photo
-}
-
-/**
- * Where a photo is to be read from.
- *
- * A Seca Link photo is a file this app wrote itself; a picture message's photo stays in the
- * phone's own store, where every messaging app can see it, and is named by a content address.
- * Both are shown the same way, so this is the one place that tells them apart.
- */
-private fun photoSource(resolver: ContentResolver, path: String): ImageDecoder.Source =
-    if (path.startsWith(CONTENT_SCHEME)) ImageDecoder.createSource(resolver, path.toUri())
-    else ImageDecoder.createSource(File(path))
 
 /** Copies a photo into the phone's gallery, under Pictures/Seca, only when the owner asks. */
 private suspend fun saveToGallery(context: Context, path: String): Boolean = withContext(Dispatchers.IO) {

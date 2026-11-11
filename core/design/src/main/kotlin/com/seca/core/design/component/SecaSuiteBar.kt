@@ -8,15 +8,15 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import com.seca.core.design.LocalBlackTheme
 import com.seca.core.design.SecaAppIdentity
-import com.seca.core.design.SecaIcons
 import androidx.compose.ui.res.stringResource
-import com.seca.core.design.R
-import android.content.Context
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import com.seca.core.design.SuiteOrder
+import com.seca.core.design.icon
+import com.seca.core.design.isInstalled
+import com.seca.core.design.label
 
 /**
  * The bar that ties the three Seca apps together.
@@ -33,18 +33,21 @@ fun SecaSuiteBar(
     onSelect: (SecaAppIdentity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // This bar is what shows behind the phone's own navigation bar, so under the black theme it
-    // has to be black as well: Material would otherwise leave a grey strip across the bottom.
-    // Only the apps that are actually here. Somebody who installed one of the three was being
-    // offered two tabs that led to a shop, which is an advertisement rather than navigation.
     val context = LocalContext.current
-    val shown = remember(current) {
-        SecaAppIdentity.entries.filter { it == current || installed(context, it) }
+    // Whatever order the owner put them in, and only the apps that are actually on the phone:
+    // somebody who installed one of the three was being offered two entries that led to a
+    // shop, which is an advertisement rather than navigation.
+    val order = SuiteOrder.current()
+    val shown = remember(current, order) {
+        order.filter { it == current || it.isInstalled(context) }
     }
     // One app on its own needs no bar to tell it apart from itself.
     if (shown.size < 2) return
     NavigationBar(
         modifier = modifier,
+        // This bar is what shows behind the phone's own navigation bar, so under the black
+        // theme it has to be black too: Material would otherwise leave a grey strip across
+        // the bottom of the screen.
         containerColor = if (LocalBlackTheme.current) {
             MaterialTheme.colorScheme.surface
         } else {
@@ -68,23 +71,3 @@ fun SecaSuiteBar(
         }
     }
 }
-
-private val SecaAppIdentity.icon: ImageVector
-    get() = when (this) {
-        SecaAppIdentity.Contacts -> SecaIcons.Contacts
-        SecaAppIdentity.Phone -> SecaIcons.Phone
-        SecaAppIdentity.Messages -> SecaIcons.Messages
-    }
-
-/** The name shown under each entry, in the phone's language; identifiers stay English. */
-internal val SecaAppIdentity.label: Int
-    get() = when (this) {
-        SecaAppIdentity.Contacts -> R.string.design_app_contacts
-        SecaAppIdentity.Phone -> R.string.design_app_phone
-        SecaAppIdentity.Messages -> R.string.design_app_messages
-    }
-
-/** Whether a sibling app is on the phone. The manifests name all three, so this may be asked. */
-private fun installed(context: Context, identity: SecaAppIdentity): Boolean =
-    runCatching { context.packageManager.getLaunchIntentForPackage(identity.packageName) != null }
-        .getOrDefault(false)

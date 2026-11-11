@@ -29,19 +29,7 @@ internal object MmsComposer {
         header(MmsField.MMS_VERSION) { shortInteger(MMS_VERSION_1_2) }
         // The sender's own number, when the SIM knows it. Carriers fill it in regardless, and
         // several refuse a message that tries to name someone else, so an absent one says so.
-        outgoing.from?.takeIf { it.isNotBlank() }?.let { from ->
-            header(MmsField.FROM) {
-                val body = PduWriter().apply {
-                    byte(FROM_ADDRESS_PRESENT)
-                    address(from)
-                }.bytes()
-                valueLength(body.size)
-                raw(body)
-            }
-        } ?: header(MmsField.FROM) {
-            valueLength(1)
-            byte(FROM_INSERT_ADDRESS)
-        }
+        header(MmsField.FROM) { fromAddress(outgoing.from) }
         outgoing.to.forEach { recipient -> header(MmsField.TO) { address(recipient) } }
         header(MmsField.DATE) { longInteger(System.currentTimeMillis() / MILLIS_PER_SECOND) }
         header(MmsField.MESSAGE_CLASS) { byte(CLASS_PERSONAL) }
@@ -187,8 +175,6 @@ internal object MmsComposer {
     private const val MILLIS_PER_SECOND = 1000L
 
     /** "Insert-address-token": let the carrier write the sender's own number in. */
-    private const val FROM_INSERT_ADDRESS = 0x81
-    private const val FROM_ADDRESS_PRESENT = 0x80
 
     private const val CLASS_PERSONAL = 0x80
     private const val PRIORITY_NORMAL = 0x81

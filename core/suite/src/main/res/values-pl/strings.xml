@@ -66,4 +66,8 @@
     <string name="door_handed_portable">%1$s poprosiła %2$s o eksport danych w przenośnym formacie. Jeśli właśnie go nie zlecałeś, nic w tym telefonie o to nie prosiło.</string>
     <string name="door_title">Aplikacja Seca odczytała Twoje dane</string>
     <string name="door_unknown_caller">Aplikacja, której Android nie potrafił nazwać</string>
+    <string name="suite_order_section">Kolejność aplikacji</string>
+    <string name="suite_order_hint">Kolejność, w jakiej stoją na pasku na dole wszystkich trzech</string>
+    <string name="suite_order_up">Przenieś %1$s w górę</string>
+    <string name="suite_order_down">Przenieś %1$s w dół</string>
 </resources>

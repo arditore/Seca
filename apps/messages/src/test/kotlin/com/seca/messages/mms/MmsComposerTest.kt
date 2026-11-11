@@ -76,18 +76,58 @@ class MmsComposerTest {
     }
 
     @Test
-    fun `a number is written the way a carrier expects to read it`() {
-        val written = String(PduWriter().apply { address("+33612345678") }.bytes(), Charsets.ISO_8859_1)
+    fun `a recipient is read back as the number that was written`() {
+        // Read back the way the standard reads a To field, which is the way the carrier's
+        // server reads it — not by looking for the digits somewhere in the bytes. They were
+        // there all along while the address around them was unreadable, so the server took
+        // every message and had nowhere to send any of them.
+        val written = PduWriter().apply { address("+33612345678") }.bytes()
 
-        assertTrue(written, "+33612345678/TYPE=PLMN" in written)
+        assertEquals("+33612345678/TYPE=PLMN", PduReader(written).encodedString())
+    }
+
+    @Test
+    fun `the spaces a number is written with do not travel to the carrier`() {
+        val written = PduWriter().apply { address("+33 6 12 34 56 78") }.bytes()
+
+        assertEquals("+33612345678/TYPE=PLMN", PduReader(written).encodedString())
     }
 
     @Test
     fun `an e-mail address is left alone`() {
-        val written = String(PduWriter().apply { address("someone@example.org") }.bytes(), Charsets.ISO_8859_1)
+        val written = PduWriter().apply { address("someone@example.org") }.bytes()
 
-        assertTrue(written, "someone@example.org" in written)
-        assertTrue(written, "TYPE=PLMN" !in written)
+        assertEquals("someone@example.org", PduReader(written).encodedString())
+    }
+
+    @Test
+    fun `a sender asks the carrier to write its own number in`() {
+        val written = PduWriter().apply { fromAddress(null) }.bytes()
+
+        // A length of one and the token that asks: nothing else fits in a single byte.
+        assertEquals(listOf(1, 0x81), written.map { it.toInt() and 0xFF })
+    }
+
+    @Test
+    fun `a sender that is named is read back as itself`() {
+        val written = PduWriter().apply { fromAddress("+33612345678") }.bytes()
+
+        assertEquals("+33612345678", PduReader(written).address())
+    }
+
+    @Test
+    fun `every recipient of a message reaches the headers`() {
+        val pdu = MmsComposer.compose(
+            Outgoing(
+                to = listOf("+33612345678", "+33698765432"),
+                from = null,
+                text = "ensemble",
+                attachments = emptyList(),
+            ),
+            "T0123456789abcdef",
+        )
+
+        assertEquals(listOf("+33612345678/TYPE=PLMN", "+33698765432/TYPE=PLMN"), recipientsOf(pdu))
     }
 
     @Test
@@ -188,4 +228,24 @@ private fun read(body: ByteArray): List<Pair<ByteArray, ByteArray>> {
         val said = body.copyOfRange(at, at + headers).also { at += headers }
         said to body.copyOfRange(at, at + data).also { at += data }
     }
+}
+
+/** Every To field in a composed message, read the way the standard spells one. */
+private fun recipientsOf(pdu: ByteArray): List<String> {
+    val reader = PduReader(pdu)
+    val found = mutableListOf<String>()
+    while (true) {
+        val field = reader.byte() ?: break
+        if (field == MmsField.CONTENT_TYPE) break
+        when (field) {
+            MmsField.TO -> reader.encodedString()?.let(found::add)
+            MmsField.MESSAGE_TYPE, MmsField.MESSAGE_CLASS, MmsField.PRIORITY,
+            MmsField.DELIVERY_REPORT, MmsField.READ_REPLY, MmsField.MMS_VERSION -> reader.byte()
+            MmsField.TRANSACTION_ID -> reader.textString()
+            MmsField.FROM -> reader.address()
+            MmsField.DATE -> reader.longInteger()
+            else -> reader.byte()
+        }
+    }
+    return found
 }

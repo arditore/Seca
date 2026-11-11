@@ -14,6 +14,19 @@
          a backup that stops in silence is discovered on the day it was needed. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <application>
+        <!-- One Seca app telling the others which order the bar stands in. Guarded by the
+             signing key in both directions: only the Seca apps may send it or hear it. -->
+        <receiver
+            android:name="com.seca.core.suite.SuiteOrderSync$Receiver"
+            android:exported="true"
+            android:permission="com.seca.permission.BACKUP">
+            <intent-filter>
+                <action android:name="com.seca.suite.action.ORDER" />
+            </intent-filter>
+        </receiver>
+    </application>
+
     <queries>
         <package android:name="com.seca.contacts" />
         <package android:name="com.seca.phone" />

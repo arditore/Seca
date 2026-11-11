@@ -464,22 +464,41 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
      * a network will carry; anything too big to send is named rather than dropped, because a
      * file that silently does not arrive is the worst way to learn about a size limit.
      */
-    fun sendAttachment(address: String, uri: Uri, text: String) {
+    fun sendAttachment(address: String, uri: Uri, text: String) = sendAttachments(address, listOf(uri), text)
+
+    /**
+     * Sends everything picked, as one message.
+     *
+     * The carrier's cap is for the message and not for each picture in it, so the room is
+     * shared out: four photos each get a quarter. Anything that still will not fit is named
+     * rather than dropped, and whatever did fit goes.
+     */
+    fun sendAttachments(address: String, uris: List<Uri>, text: String) {
+        if (uris.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
-            val read = MmsAttachment.read(getApplication(), uri)
-            val part = read.part
-            if (part == null) {
-                val refused = read.refused
-                val said = if (refused == null || refused.bytes == 0) {
+            val budget = MmsAttachment.BUDGET / uris.size
+            val read = uris.map { MmsAttachment.read(getApplication(), it, budget) }
+            val parts = read.mapNotNull { it.part }
+            val refused = read.mapNotNull { it.refused }
+            if (parts.isEmpty()) {
+                val first = refused.firstOrNull()
+                val said = if (first == null || first.bytes == 0) {
                     text(R.string.attachment_unreadable)
                 } else {
-                    text(R.string.attachment_too_large, refused.name, refused.bytes / BYTES_PER_KB)
+                    text(R.string.attachment_too_large, first.name, first.bytes / BYTES_PER_KB)
                 }
                 withContext(Dispatchers.Main) { toast(said) }
                 return@launch
             }
-            if (MmsSender.send(getApplication(), listOf(address), text, listOf(part)) == null) {
+            if (MmsSender.send(getApplication(), listOf(address), text, parts) == null) {
                 withContext(Dispatchers.Main) { toast(text(R.string.attachment_not_sent)) }
+                return@launch
+            }
+            // Sent, but not all of it: said afterwards, so the message still goes.
+            refused.firstOrNull()?.let { left ->
+                withContext(Dispatchers.Main) {
+                    toast(text(R.string.attachment_too_large, left.name, left.bytes / BYTES_PER_KB))
+                }
             }
         }
     }

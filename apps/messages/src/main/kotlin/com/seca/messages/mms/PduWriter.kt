@@ -87,17 +87,53 @@ internal class PduWriter {
         raw(body)
     }
 
-    /** An address: a length, the token saying it is there, and the address itself. */
+    /**
+     * A recipient, which is an address and nothing more.
+     *
+     * To, Cc and Bcc each hold one plain encoded string. This used to write them the way From
+     * is written, with a length and a token in front, and the carrier read that token where it
+     * expected the character set: the address came out as rubbish, the server took the message
+     * and had nowhere to send it. It left the sending phone looking like it had worked.
+     */
     fun address(value: String) {
-        // Written the way the standard spells a phone number, which is what a carrier expects.
-        val written = if (value.any(Char::isDigit) && '@' !in value) "$value/TYPE=PLMN" else value
+        encodedString(dialled(value))
+    }
+
+    /**
+     * The sender: the one address field with a shape of its own — a length, then either the
+     * token saying an address follows, or the token asking the carrier to fill its own in.
+     *
+     * Carriers write the sender regardless and several refuse a message that names anyone
+     * else, so a blank [value] asks rather than guesses.
+     */
+    fun fromAddress(value: String?) {
+        if (value.isNullOrBlank()) {
+            valueLength(1)
+            byte(INSERT_ADDRESS)
+            return
+        }
         val body = PduWriter().apply {
             byte(PduReader.ADDRESS_PRESENT)
-            integer(UTF_8_CHARSET)
-            textString(written)
+            encodedString(dialled(value))
         }.bytes()
         valueLength(body.size)
         raw(body)
+    }
+
+    /**
+     * A phone number as the standard spells one: the digits, and the note that says it is one.
+     *
+     * The spaces a number is written with for reading are not part of it. Left in, they travel
+     * to the carrier's server inside the address and nothing routes.
+     */
+    private fun dialled(value: String): String {
+        if ('@' in value || value.none(Char::isDigit)) return value
+        val number = buildString {
+            value.forEachIndexed { index, character ->
+                if (character.isDigit() || (character == '+' && index == 0)) append(character)
+            }
+        }
+        return "${number.ifEmpty { value }}/TYPE=PLMN"
     }
 
     /** One header: which field, then its value, written by [value]. */
@@ -124,5 +160,6 @@ internal class PduWriter {
         const val UINTVAR_MASK = 0x7FL
         const val SHORT_INTEGER_LIMIT = 128L
         const val UTF_8_CHARSET = 0x6AL
+        const val INSERT_ADDRESS = 0x81
     }
 }

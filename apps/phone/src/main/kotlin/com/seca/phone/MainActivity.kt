@@ -20,6 +20,7 @@ import android.provider.CallLog.Calls
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.seca.phone.call.MissedCalls
 
 /** A request to open the keypad, from a tel: link or another app's "dial". */
 data class DialRequest(val number: String, val nonce: Long = System.nanoTime())
@@ -93,15 +94,20 @@ class MainActivity : ComponentActivity() {
     /**
      * Opening the history counts as having seen the missed calls.
      *
-     * Two things, because the first one alone was not enough. Telecom is asked to take the
-     * notification away, and the calls themselves are marked as read in the log — which is
-     * what Telecom counts when the phone starts up. Without the second, every restart found
-     * the same calls still flagged new and announced them again, for as long as they stayed
-     * in the log. Reported as #42.
+     * Three things, because the first two were not enough. Telecom is asked to take the
+     * notification away; the app writes its own note of the moment, which needs nobody's
+     * permission and is what it counts against afterwards; and the calls are marked read in
+     * the log as well, where that is allowed, because other apps count that too.
+     *
+     * The note is the one that does the work. The log is what Telecom counts when the phone
+     * starts up, and marking it read needs leave to write the call log — which this app only
+     * asks for when somebody deletes a call, so on most phones it was never granted and every
+     * restart announced the same missed call again. Reported as #42 and again after it.
      */
     @SuppressLint("MissingPermission") // The default phone app may do it without MODIFY_PHONE_STATE.
     private fun clearMissedCalls() {
         runCatching { getSystemService(TelecomManager::class.java)?.cancelMissedCallsNotification() }
+        MissedCalls.markSeen(this)
         if (checkSelfPermission(Manifest.permission.WRITE_CALL_LOG) != PackageManager.PERMISSION_GRANTED) return
         lifecycleScope.launch(Dispatchers.IO) {
             runCatching {

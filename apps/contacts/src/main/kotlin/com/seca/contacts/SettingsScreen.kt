@@ -51,6 +51,7 @@ import android.Manifest
 import com.seca.core.model.Profile
 import com.seca.core.suite.AutoBackupSection
 import com.seca.core.suite.SuiteBackupSection
+import com.seca.core.suite.SuiteOrderSection
 import java.time.LocalDate
 import com.seca.core.design.label
 import androidx.compose.ui.res.stringResource
@@ -214,6 +215,7 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
             }
             SecaHint(stringResource(R.string.backup_hint))
 
+            SuiteOrderSection()
             SuiteBackupSection(beforeRestore = askWriteThen)
             AutoBackupSection()
 

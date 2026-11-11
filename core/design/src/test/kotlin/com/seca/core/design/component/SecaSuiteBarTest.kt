@@ -8,11 +8,15 @@ import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.SecaTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import androidx.test.core.app.ApplicationProvider
+import com.seca.core.design.SuiteOrder
+import androidx.compose.ui.test.getBoundsInRoot
 
 @RunWith(RobolectricTestRunner::class)
 class SecaSuiteBarTest {
@@ -69,6 +73,42 @@ class SecaSuiteBarTest {
         composeRule.onNodeWithText("Contacts").assertIsDisplayed()
         composeRule.onNodeWithText("Messages").assertIsDisplayed()
         composeRule.onNodeWithText("Phone").assertDoesNotExist()
+    }
+
+    @Test
+    fun `stands in the order the owner chose`() {
+        installSiblings(SecaAppIdentity.Phone, SecaAppIdentity.Messages)
+        SuiteOrder.store(
+            ApplicationProvider.getApplicationContext(),
+            listOf(SecaAppIdentity.Phone, SecaAppIdentity.Messages, SecaAppIdentity.Contacts),
+        )
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
+                SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = {})
+            }
+        }
+        // Read off the bar left to right: where each entry actually sits on the screen, not
+        // what the list said, because the list is what is being tested.
+        val phone = composeRule.onNodeWithText("Phone").getBoundsInRoot().left
+        val messages = composeRule.onNodeWithText("Messages").getBoundsInRoot().left
+        val contacts = composeRule.onNodeWithText("Contacts").getBoundsInRoot().left
+        assertTrue("$phone < $messages < $contacts", phone < messages && messages < contacts)
+    }
+
+    @Test
+    fun `an order missing an app still shows all three`() {
+        // A stored order written by another version, or half written, would otherwise leave an
+        // app out of the bar altogether.
+        installSiblings(SecaAppIdentity.Phone, SecaAppIdentity.Messages)
+        SuiteOrder.store(ApplicationProvider.getApplicationContext(), listOf(SecaAppIdentity.Messages))
+        composeRule.setContent {
+            SecaTheme(SecaAppIdentity.Contacts, SecaPalette.Ocean, darkTheme = false) {
+                SecaSuiteBar(current = SecaAppIdentity.Contacts, onSelect = {})
+            }
+        }
+        composeRule.onNodeWithText("Contacts").assertIsDisplayed()
+        composeRule.onNodeWithText("Phone").assertIsDisplayed()
+        composeRule.onNodeWithText("Messages").assertIsDisplayed()
     }
 
     @Test

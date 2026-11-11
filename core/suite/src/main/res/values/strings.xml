@@ -66,4 +66,8 @@
     <string name="door_handed_portable">%1$s asked %2$s to export its data in a portable format. If you did not just ask for an export, nothing on this phone asked for this.</string>
     <string name="door_title">A Seca app read your data</string>
     <string name="door_unknown_caller">An app Android could not name</string>
+    <string name="suite_order_section">Order of the apps</string>
+    <string name="suite_order_hint">The order they stand in, in the bar at the bottom of all three</string>
+    <string name="suite_order_up">Move %1$s up</string>
+    <string name="suite_order_down">Move %1$s down</string>
 </resources>

@@ -7,6 +7,7 @@ import android.provider.Telephony
 import android.telephony.SubscriptionManager
 import android.util.Log
 import com.seca.messages.mms.MmsDownloader
+import com.seca.messages.mms.away
 import com.seca.messages.mms.MmsParser
 import com.seca.messages.mms.MmsPdu
 import com.seca.messages.mms.MmsStore
@@ -28,14 +29,19 @@ class MmsDeliverReceiver : BroadcastReceiver() {
         // Only the system may send this action; anything else is ignored.
         if (intent.action != Telephony.Sms.Intents.WAP_PUSH_DELIVER_ACTION) return
         val bytes = intent.getByteArrayExtra(EXTRA_DATA) ?: return
-        val notification = MmsParser.parse(bytes) as? MmsPdu.Notification ?: run {
-            Log.w(LOG_TAG, "a push arrived that is not a message anyone can read")
-            return
+        val subscription = subscriptionOf(intent)
+        // Read and stored away from the main thread: these bytes came from outside the phone,
+        // and the thread that draws is not the place to find out what is in them.
+        away {
+            val notification = MmsParser.parse(bytes) as? MmsPdu.Notification ?: run {
+                Log.w(LOG_TAG, "a push arrived that is not a message anyone can read")
+                return@away
+            }
+            // Stored first, fetched second: a fetch that fails then leaves something behind
+            // that remembers a message is owed, rather than nothing at all.
+            MmsStore.saveNotification(context, notification)
+            MmsDownloader.download(context, notification, subscription)
         }
-        // Stored first, fetched second: a fetch that fails then leaves something behind that
-        // remembers a message is owed, rather than nothing at all.
-        MmsStore.saveNotification(context, notification)
-        MmsDownloader.download(context, notification, subscriptionOf(intent))
     }
 
     private fun subscriptionOf(intent: Intent): Int =

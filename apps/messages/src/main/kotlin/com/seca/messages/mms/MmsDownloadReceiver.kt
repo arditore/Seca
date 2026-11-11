@@ -27,9 +27,15 @@ class MmsDownloadReceiver : BroadcastReceiver() {
             file.delete()
             return
         }
-        val retrieved = MmsDownloader.finish(context, file) ?: return
-        val from = retrieved.from ?: return
-        MessageNotifications.notifyIncoming(context, from, MessageNotifications.previewOf(context, retrieved))
+        away {
+            val retrieved = MmsDownloader.finish(context, file) ?: return@away
+            val from = retrieved.from ?: return@away
+            MessageNotifications.notifyIncoming(
+                context,
+                from,
+                MessageNotifications.previewOf(context, retrieved),
+            )
+        }
     }
 
     private companion object {

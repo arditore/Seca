@@ -66,4 +66,8 @@
     <string name="door_handed_portable">%1$s ha pedido a %2$s exportar sus datos en un formato portátil. Si no acabas de pedir una exportación, nada en este teléfono lo ha pedido.</string>
     <string name="door_title">Una app de Seca ha leído tus datos</string>
     <string name="door_unknown_caller">Una app que Android no ha sabido nombrar</string>
+    <string name="suite_order_section">Orden de las aplicaciones</string>
+    <string name="suite_order_hint">El orden en que aparecen, en la barra inferior de las tres</string>
+    <string name="suite_order_up">Subir %1$s</string>
+    <string name="suite_order_down">Bajar %1$s</string>
 </resources>

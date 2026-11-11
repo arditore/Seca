@@ -24,8 +24,13 @@ internal class PduReader(private val bytes: ByteArray, private var at: Int = 0) 
 
     fun byte(): Int? = peek()?.also { at++ }
 
+    /**
+     * Forward, never back. A length read out of a malformed message can be anything, including
+     * one that would put the cursor behind where it started, and a reader that can go backwards
+     * is a reader that can be made to read the same bytes for ever.
+     */
     fun skip(count: Int) {
-        at = (at + count).coerceAtMost(bytes.size)
+        at = (at.toLong() + count).coerceIn(at.toLong(), bytes.size.toLong()).toInt()
     }
 
     /**

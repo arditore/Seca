@@ -41,6 +41,7 @@ import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 import com.seca.core.suite.AutoBackupSection
 import com.seca.core.suite.SuiteBackupSection
+import com.seca.core.suite.SuiteOrderSection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 
@@ -166,6 +167,7 @@ internal fun SettingsScreen(
             }
             SecaHint(stringResource(R.string.backup_hint))
 
+            SuiteOrderSection()
             SuiteBackupSection()
             AutoBackupSection()
 
