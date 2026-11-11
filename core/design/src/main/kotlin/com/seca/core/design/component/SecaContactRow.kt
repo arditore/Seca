@@ -1,6 +1,6 @@
 package com.seca.core.design.component
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,15 +24,28 @@ import com.seca.core.model.SecaContact
 fun SecaContactRow(
     contact: SecaContact,
     onClick: () -> Unit,
+    /**
+     * The second line. No default: a number belongs on the screen spaced out for reading, and
+     * which spacing that is depends on the region, which this row cannot know. It used to
+     * default to the number as the address book stores it, and the one screen that let it
+     * showed +33612345678 where every other screen showed 06 12 34 56 78.
+     */
+    supportingText: String?,
     modifier: Modifier = Modifier,
-    supportingText: String? = contact.phoneNumbers.firstOrNull()?.raw,
     tone: Int = 0,
     photo: ImageBitmap? = null,
+    /** What holding the row down does, where there is no set of rows to be choosing from. */
+    onLongClick: (() -> Unit)? = null,
+    longClickLabel: String? = null,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClickLabel = longClickLabel,
+                onLongClick = onLongClick,
+            )
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

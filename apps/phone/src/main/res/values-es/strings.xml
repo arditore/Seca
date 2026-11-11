@@ -2,7 +2,6 @@
 <resources>
     <string name="add">Añadir</string>
     <string name="add_call">Añadir llamada</string>
-    <string name="add_to_contacts">Añadir a los contactos</string>
     <string name="allow_access">Permitir el acceso</string>
     <string name="allow_calls">Permite las llamadas para llamar desde Seca Phone</string>
     <string name="always_use_sim">Usar siempre esta SIM para %1$s</string>
@@ -119,7 +118,6 @@
         <item quantity="many">Eliminar estas %d de llamadas</item>
         <item quantity="other">Eliminar estas %d llamadas</item>
     </plurals>
-    <string name="delete_from_history">Eliminar del historial</string>
     <string name="delete_this_history">Eliminar este historial</string>
     <string name="dynamic_colors">Colores dinámicos</string>
     <string name="dynamic_colors_hint">A juego con el fondo de pantalla</string>
@@ -159,7 +157,6 @@
         <item quantity="other">%d llamadas perdidas</item>
     </plurals>
     <string name="missed_open_history">Abre el historial para ver quién llamó</string>
-    <string name="more_actions">Más acciones</string>
     <string name="more_options">Más opciones</string>
     <string name="mute">Silenciar</string>
     <string name="no_contacts">Sin contactos</string>
@@ -190,7 +187,6 @@
     <string name="quick_reply_text_me">Escríbeme mejor.</string>
     <string name="reply_with_message">Responder con un mensaje</string>
     <string name="search_hint">Busca contactos o números</string>
-    <string name="send_message">Enviar un mensaje</string>
     <string name="settings">Ajustes</string>
     <string name="silence_unknown">Silenciar a quien no conoces</string>
     <string name="silence_unknown_hint">Los números que no están en tus contactos aparecen sin sonar</string>
@@ -209,7 +205,6 @@
     <string name="unavailable">No disponible en este teléfono</string>
     <string name="unblock">Desbloquear</string>
     <string name="unknown_number">Número desconocido</string>
-    <string name="view_contact">Ver el contacto</string>
     <string name="voicemail">Buzón de voz</string>
     <string name="voicemail_settings_hint">Número y ajustes del buzón de voz</string>
     <string name="when_they_call">Cuando llaman</string>
@@ -220,6 +215,4 @@
     <string name="wifi_calling_hint">Llamar por Wi-Fi cuando la red móvil es débil</string>
     <string name="yesterday">Ayer</string>
     <string name="choose">Seleccionar</string>
-    <string name="choose_all">Seleccionar todo</string>
-    <string name="choose_none">No seleccionar nada</string>
 </resources>

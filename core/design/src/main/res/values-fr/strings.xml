@@ -34,4 +34,9 @@
     <string name="seca_palette">Palette Seca</string>
     <string name="seca_palette_hint_dynamic">Pour remplacer les couleurs du fond d\'écran</string>
     <string name="seca_palette_hint_on">Chaque application Seca en prend sa propre nuance</string>
+    <string name="design_copied">Copié</string>
+    <string name="design_copy">Copier</string>
+    <string name="design_choose_all">Tout sélectionner</string>
+    <string name="design_choose_none">Tout désélectionner</string>
+    <string name="design_more_options">Plus d\'options</string>
 </resources>

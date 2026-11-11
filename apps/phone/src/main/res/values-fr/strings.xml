@@ -2,7 +2,6 @@
 <resources>
     <string name="add">Ajouter</string>
     <string name="add_call">Ajouter un appel</string>
-    <string name="add_to_contacts">Ajouter aux contacts</string>
     <string name="allow_access">Autoriser l\'accès</string>
     <string name="allow_calls">Autorisez les appels pour appeler depuis Seca Téléphone</string>
     <string name="always_use_sim">Toujours utiliser cette SIM pour %1$s</string>
@@ -119,7 +118,6 @@
         <item quantity="many">Supprimer ces %d appels</item>
         <item quantity="other">Supprimer ces %d appels</item>
     </plurals>
-    <string name="delete_from_history">Supprimer de l\'historique</string>
     <string name="delete_this_history">Supprimer cet historique</string>
     <string name="dynamic_colors">Couleurs dynamiques</string>
     <string name="dynamic_colors_hint">Assorties au fond d\'écran du téléphone</string>
@@ -159,7 +157,6 @@
         <item quantity="other">%d appels manqués</item>
     </plurals>
     <string name="missed_open_history">Ouvrez l\'historique pour voir qui a appelé</string>
-    <string name="more_actions">Plus d\'actions</string>
     <string name="more_options">Plus d\'options</string>
     <string name="mute">Muet</string>
     <string name="no_contacts">Aucun contact</string>
@@ -190,7 +187,6 @@
     <string name="quick_reply_text_me">Écrivez-moi plutôt.</string>
     <string name="reply_with_message">Répondre par message</string>
     <string name="search_hint">Rechercher un contact ou un numéro</string>
-    <string name="send_message">Envoyer un message</string>
     <string name="settings">Paramètres</string>
     <string name="silence_unknown">Inconnus en silencieux</string>
     <string name="silence_unknown_hint">Les numéros absents de vos contacts s\'affichent sans sonner</string>
@@ -209,7 +205,6 @@
     <string name="unavailable">Indisponible sur ce téléphone</string>
     <string name="unblock">Réactiver</string>
     <string name="unknown_number">Numéro inconnu</string>
-    <string name="view_contact">Voir la fiche</string>
     <string name="voicemail">Messagerie vocale</string>
     <string name="voicemail_settings_hint">Numéro et réglages de la messagerie</string>
     <string name="when_they_call">Quand ils appellent</string>
@@ -220,6 +215,4 @@
     <string name="wifi_calling_hint">Appeler par le Wi-Fi quand le réseau mobile est faible</string>
     <string name="yesterday">Hier</string>
     <string name="choose">Sélectionner</string>
-    <string name="choose_all">Tout sélectionner</string>
-    <string name="choose_none">Tout désélectionner</string>
 </resources>

@@ -33,4 +33,9 @@
     <string name="seca_palette">Seca palette</string>
     <string name="seca_palette_hint_dynamic">To replace the wallpaper colors</string>
     <string name="seca_palette_hint_on">Each Seca app takes its own shade</string>
+    <string name="design_copied">Copied</string>
+    <string name="design_copy">Copy</string>
+    <string name="design_choose_all">Select all</string>
+    <string name="design_choose_none">Select none</string>
+    <string name="design_more_options">More options</string>
 </resources>

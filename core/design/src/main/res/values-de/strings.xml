@@ -33,4 +33,9 @@
     <string name="seca_palette">Seca-Palette</string>
     <string name="seca_palette_hint_dynamic">Um die Farben des Hintergrundbilds zu ersetzen</string>
     <string name="seca_palette_hint_on">Jede Seca-App erhält ihren eigenen Farbton</string>
+    <string name="design_copied">Kopiert</string>
+    <string name="design_copy">Kopieren</string>
+    <string name="design_choose_all">Alle auswählen</string>
+    <string name="design_choose_none">Auswahl aufheben</string>
+    <string name="design_more_options">Weitere Optionen</string>
 </resources>

@@ -44,6 +44,9 @@ import com.seca.core.design.label
 import androidx.compose.ui.platform.LocalResources
 import com.seca.core.contacts.describe
 import androidx.compose.ui.res.stringResource
+import android.provider.BlockedNumberContract
+import android.widget.Toast
+import androidx.compose.foundation.combinedClickable
 
 /** Who a number belongs to, what can be done with it, and every call with them. */
 @Composable
@@ -62,6 +65,9 @@ internal fun CallDetailScreen(
     // A contact with several numbers: each call says which one it was.
     val showNumbers = (contact?.phoneNumbers?.size ?: 0) > 1
     var menuOpen by remember { mutableStateOf(false) }
+    val blockedText = stringResource(R.string.number_blocked)
+    val blockFailedText = stringResource(R.string.block_failed)
+    val blockable = remember(number) { BlockedNumberContract.canCurrentUserBlockNumbers(context) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
@@ -80,6 +86,24 @@ internal fun CallDetailScreen(
                                 copyNumber(context, match?.number?.raw ?: number)
                             },
                         )
+                        // Blocking is Android's own list, which only the default phone app may
+                        // change. It used to be on the history row's menu; this is the page
+                        // that page's menu became.
+                        if (blockable) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.block_number)) },
+                                leadingIcon = { Icon(SecaIcons.Block, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    val blocked = blockNumber(context, match?.number?.raw ?: number)
+                                    Toast.makeText(
+                                        context,
+                                        if (blocked) blockedText else blockFailedText,
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                },
+                            )
+                        }
                         if (history.isNotEmpty()) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.delete_this_history)) },
@@ -156,6 +180,8 @@ internal fun CallDetailScreen(
 
 @Composable
 private fun Header(number: String, match: NumberMatch?, ui: PhoneUi) {
+    val context = LocalContext.current
+    val copyLabel = stringResource(R.string.copy_number)
     val contact = match?.contact
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         if (contact != null) {
@@ -202,7 +228,16 @@ private fun Header(number: String, match: NumberMatch?, ui: PhoneUi) {
                 text = ui.numbers.display(match.number.raw),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 12.dp),
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .combinedClickable(
+                        onClick = { copyNumber(context, match.number.raw) },
+                        onClickLabel = copyLabel,
+                        onLongClickLabel = copyLabel,
+                        onLongClick = { copyNumber(context, match.number.raw) },
+                    )
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
             )
         } else {
             ui.numbers.describe(number, LocalResources.current)?.let {

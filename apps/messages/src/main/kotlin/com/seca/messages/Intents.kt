@@ -12,6 +12,7 @@ import android.os.PersistableBundle
 import android.provider.ContactsContract
 import android.provider.Settings
 import com.seca.core.design.SecaAppIdentity
+import com.seca.core.design.component.secaCopy
 
 private const val SECA_CONTACTS = "com.seca.contacts"
 private const val SECA_PHONE = "com.seca.phone"
@@ -84,9 +85,14 @@ internal fun copySensitive(context: Context, text: String) {
 }
 
 /** Copies [text]; Android confirms it on screen by itself. */
-internal fun copyText(context: Context, label: String, text: String) {
-    context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText(label, text))
-}
+/**
+ * Copying, said out loud on the versions of Android that do not say it themselves.
+ *
+ * This wrote to the clipboard and returned in silence. On Android 13 and newer the system
+ * shows its own confirmation, so that looked fine on a new phone; on Android 12, which this
+ * app still supports, tapping "Copy" appeared to do nothing at all.
+ */
+internal fun copyText(context: Context, label: String, text: String) = secaCopy(context, label, text)
 
 internal fun openAppSettings(context: Context) = startSafely(
     context,

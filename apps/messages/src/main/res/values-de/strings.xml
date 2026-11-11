@@ -439,6 +439,4 @@
         <item quantity="one">%d Unterhaltung löschen?</item>
         <item quantity="other">%d Unterhaltungen löschen?</item>
     </plurals>
-    <string name="choose_all">Alle auswählen</string>
-    <string name="choose_none">Auswahl aufheben</string>
 </resources>

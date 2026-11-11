@@ -57,6 +57,8 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
+import com.seca.core.design.component.SecaChoiceAction
+import com.seca.core.design.component.SecaChoiceBar
 
 /** How many characters of a message to keep before the searched words in a result. */
 private const val EXCERPT_LEAD = 24
@@ -92,15 +94,21 @@ internal fun ConversationsScreen(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             if (choosing) {
+                // Worked out once rather than twice on every frame, and only when the list it
+                // is drawn from has actually changed.
+                val shown = remember(ui.conversations, ui.archived, ui.spam) { shownThreads(ui) }
                 ChoiceBar(
                     ui = ui,
                     viewModel = viewModel,
                     chosen = chosen,
+                    // Archiving and filing take the rows off the list. Keeping them chosen
+                    // afterwards leaves a count above a list with nothing ticked in it.
+                    onDone = { chosen = emptySet() },
                     onClear = { chosen = emptySet() },
                     // Everything the list is showing, which is not always everything there is:
                     // a search narrows it, and so do the archive and the advertising.
-                    onChooseAll = { chosen = shownThreads(ui) },
-                    allChosen = chosen == shownThreads(ui),
+                    onChooseAll = { chosen = shown },
+                    allChosen = chosen == shown,
                     // A search has narrowed the list to something this function cannot see,
                     // so "all" could not be told the truth and is not offered.
                     canChooseAll = ui.query.isBlank(),
@@ -165,22 +173,13 @@ internal fun ConversationsScreen(
 
     if (deletingChosen) {
         val going = ui.conversations.filter { it.threadId in chosen }
-        AlertDialog(
-            onDismissRequest = { deletingChosen = false },
-            icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-            title = { Text(pluralStringResource(R.plurals.delete_conversations, going.size, going.size)) },
-            text = { Text(stringResource(R.string.delete_conversations_text)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        going.forEach { viewModel.deleteConversation(it.threadId, it.address) }
-                        chosen = emptySet()
-                        deletingChosen = false
-                    },
-                ) { Text(stringResource(R.string.delete)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { deletingChosen = false }) { Text(stringResource(R.string.cancel)) }
+        DeleteChosenDialog(
+            count = going.size,
+            onDismiss = { deletingChosen = false },
+            onConfirm = {
+                going.forEach { viewModel.deleteConversation(it.threadId, it.address) }
+                chosen = emptySet()
+                deletingChosen = false
             },
         )
     }
@@ -223,6 +222,7 @@ private fun ChoiceBar(
     ui: MessagesUi,
     viewModel: MessagesViewModel,
     chosen: Set<Long>,
+    onDone: () -> Unit,
     onClear: () -> Unit,
     onChooseAll: () -> Unit,
     allChosen: Boolean,
@@ -240,67 +240,53 @@ private fun ChoiceBar(
     // dates that grouped it are gone, and nothing has been singled out from anything — which
     // is why the button disappears once the whole list is chosen rather than quietly doing it.
     val pinnable = !allChosen || allPinned
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .statusBarsPadding()
-            .padding(horizontal = 4.dp, vertical = 8.dp),
-    ) {
-        IconButton(onClick = onClear) {
-            Icon(SecaIcons.Close, contentDescription = stringResource(R.string.cancel))
-        }
-        Text(
-            text = chosen.size.toString(),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 8.dp),
-        )
+    SecaChoiceBar(
+        count = chosen.size,
+        onClear = onClear,
         // "Delete every message" was being asked for by e-mail, marked urgent, because there
-        // was no way to do it short of opening each conversation in turn.
-        if (canChooseAll) {
-            IconButton(onClick = if (allChosen) onClear else onChooseAll) {
-                // The same mark in both states, never the cross: a second cross next to the
-                // one that leaves the choosing is two different meanings drawn identically.
-                // What says everything is chosen is that every row is ticked.
-                Icon(
-                    imageVector = SecaIcons.SelectAll,
-                    contentDescription = stringResource(if (allChosen) R.string.choose_none else R.string.choose_all),
+        // was no way to do it short of opening each conversation in turn. A search has
+        // narrowed the list to something this bar cannot see, so there "all" is not offered.
+        onChooseAll = onChooseAll.takeIf { canChooseAll },
+        allChosen = allChosen,
+        // Putting away and deleting come first and stay put, whatever else is on the list:
+        // buttons that move as the chosen set changes are buttons pressed by mistake.
+        actions = buildList {
+            add(
+                SecaChoiceAction(
+                    icon = if (allArchived) SecaIcons.Unarchive else SecaIcons.Archive,
+                    label = stringResource(if (allArchived) R.string.unarchive else R.string.archive),
+                ) {
+                    picked.forEach { viewModel.setArchived(it.threadId, !allArchived) }
+                    onDone()
+                },
+            )
+            add(SecaChoiceAction(SecaIcons.Delete, stringResource(R.string.delete), onDelete))
+            if (pinnable) {
+                add(
+                    SecaChoiceAction(
+                        icon = SecaIcons.PushPin,
+                        label = stringResource(if (allPinned) R.string.unpin else R.string.pin),
+                    ) {
+                        picked.forEach { viewModel.setPinned(it.threadId, !allPinned) }
+                    },
                 )
             }
-        }
-        if (anyUnread) {
-            IconButton(onClick = { picked.forEach { viewModel.markRead(it.threadId) } }) {
-                Icon(SecaIcons.Check, contentDescription = stringResource(R.string.mark_read))
-            }
-        }
-        if (pinnable) {
-            IconButton(onClick = { picked.forEach { viewModel.setPinned(it.threadId, !allPinned) } }) {
-                Icon(
-                    imageVector = SecaIcons.PushPin,
-                    contentDescription = stringResource(if (allPinned) R.string.unpin else R.string.pin),
-                )
-            }
-        }
-        IconButton(onClick = { picked.forEach { viewModel.setArchived(it.threadId, !allArchived) } }) {
-            Icon(
-                imageVector = SecaIcons.Archive,
-                contentDescription = stringResource(if (allArchived) R.string.unarchive else R.string.archive),
+            add(
+                SecaChoiceAction(
+                    icon = SecaIcons.Block,
+                    label = stringResource(if (allSpam) R.string.not_spam else R.string.mark_spam),
+                ) {
+                    picked.forEach { viewModel.setSpam(it.threadId, !allSpam) }
+                    onDone()
+                },
             )
-        }
-        IconButton(onClick = { picked.forEach { viewModel.setSpam(it.threadId, !allSpam) } }) {
-            Icon(
-                imageVector = SecaIcons.Block,
-                contentDescription = stringResource(if (allSpam) R.string.not_spam else R.string.mark_spam),
-            )
-        }
-        IconButton(onClick = onDelete) {
-            Icon(SecaIcons.Delete, contentDescription = stringResource(R.string.delete))
-        }
-    }
+            if (anyUnread) {
+                add(SecaChoiceAction(SecaIcons.Check, stringResource(R.string.mark_read)) {
+                    picked.forEach { viewModel.markRead(it.threadId) }
+                })
+            }
+        },
+    )
 }
 
 /**
@@ -358,19 +344,12 @@ private fun ConversationList(
             conversation = conversation,
             ui = ui,
             pinned = conversation.threadId in ui.pinned,
-            archived = conversation.threadId in ui.archived,
-            spam = conversation.threadId in ui.spam,
             // While some are chosen, touching a row chooses it too: nobody expects a list
             // half in one mode and half in another.
             chosen = conversation.threadId in chosen,
             choosing = chosen.isNotEmpty(),
             onChoose = { onChoose(conversation.threadId) },
             onOpen = { viewModel.openConversation(conversation.address) },
-            onMarkRead = { viewModel.markRead(conversation.threadId) },
-            onPin = { viewModel.setPinned(conversation.threadId, conversation.threadId !in ui.pinned) },
-            onArchive = { viewModel.setArchived(conversation.threadId, conversation.threadId !in ui.archived) },
-            onSpam = { viewModel.setSpam(conversation.threadId, conversation.threadId !in ui.spam) },
-            onDelete = { onDelete(conversation) },
         )
     }
 
@@ -464,6 +443,8 @@ internal fun ArchivedScreen(ui: MessagesUi, viewModel: MessagesViewModel) = Fold
     icon = SecaIcons.Archive,
     emptyTitle = stringResource(R.string.no_archived),
     emptyDescription = stringResource(R.string.no_archived_hint),
+    takeOut = SecaIcons.Unarchive to stringResource(R.string.unarchive),
+    onTakeOut = { viewModel.setArchived(it.threadId, false) },
 )
 
 /** Advertising, kept out of the way and silent until the owner takes a conversation back out. */
@@ -476,8 +457,17 @@ internal fun SpamScreen(ui: MessagesUi, viewModel: MessagesViewModel) = FolderSc
     icon = SecaIcons.Block,
     emptyTitle = stringResource(R.string.no_spam),
     emptyDescription = stringResource(R.string.no_spam_hint),
+    takeOut = SecaIcons.Check to stringResource(R.string.not_spam),
+    onTakeOut = { viewModel.setSpam(it.threadId, false) },
 )
 
+/**
+ * The archive and the advertising: one list, one way back out.
+ *
+ * [takeOut] is the icon and the words for taking a conversation out of this folder, which is
+ * the whole point of being able to open it. Without it the folder was a one-way door, and
+ * archiving a conversation lost it as surely as deleting it.
+ */
 @Composable
 private fun FolderScreen(
     ui: MessagesUi,
@@ -487,13 +477,44 @@ private fun FolderScreen(
     icon: ImageVector,
     emptyTitle: String,
     emptyDescription: String,
+    takeOut: Pair<ImageVector, String>,
+    onTakeOut: (Conversation) -> Unit,
 ) {
     val shown = remember(ui.conversations, ids) { ui.conversations.filter { it.threadId in ids } }
     var deleting by remember { mutableStateOf<Conversation?>(null) }
+    var deletingChosen by remember { mutableStateOf(false) }
+    var chosen by remember { mutableStateOf(emptySet<Long>()) }
+    // Taking a conversation out of the folder takes its row off this list, so a tick kept for
+    // a row that has gone would be a count above nothing.
+    val picked = shown.filter { it.threadId in chosen }
+    val choosing = picked.isNotEmpty()
+    LaunchedEffect(shown) { chosen = chosen intersect shown.map { it.threadId }.toSet() }
+    BackHandler(enabled = choosing) { chosen = emptySet() }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = title, onBack = { viewModel.back() }) },
+        topBar = {
+            if (choosing) {
+                val all = shown.map { it.threadId }.toSet()
+                SecaChoiceBar(
+                    count = picked.size,
+                    onClear = { chosen = emptySet() },
+                    onChooseAll = { chosen = all },
+                    allChosen = chosen == all,
+                    actions = listOf(
+                        SecaChoiceAction(takeOut.first, takeOut.second) {
+                            picked.forEach(onTakeOut)
+                            chosen = emptySet()
+                        },
+                        SecaChoiceAction(SecaIcons.Delete, stringResource(R.string.delete)) {
+                            deletingChosen = true
+                        },
+                    ),
+                )
+            } else {
+                SecaTopBar(title = title, onBack = { viewModel.back() })
+            }
+        },
     ) { padding ->
         if (shown.isEmpty()) {
             SecaEmptyState(
@@ -514,24 +535,36 @@ private fun FolderScreen(
                         ConversationRow(
                             conversation = conversation,
                             ui = ui,
+                            // Pinning puts a conversation at the top of the main list, which
+                            // is the opposite of being in a folder: nothing here is pinned.
                             pinned = false,
-                            archived = conversation.threadId in ui.archived,
-                            spam = conversation.threadId in ui.spam,
-                            // The archive and the advertising are already a chosen set.
-                            chosen = false,
-                            choosing = false,
-                            onChoose = {},
+                            chosen = conversation.threadId in chosen,
+                            choosing = choosing,
+                            onChoose = {
+                                chosen = if (conversation.threadId in chosen) {
+                                    chosen - conversation.threadId
+                                } else {
+                                    chosen + conversation.threadId
+                                }
+                            },
                             onOpen = { viewModel.openConversation(conversation.address) },
-                            onMarkRead = { viewModel.markRead(conversation.threadId) },
-                            onPin = { viewModel.setPinned(conversation.threadId, true) },
-                            onArchive = { viewModel.setArchived(conversation.threadId, conversation.threadId !in ui.archived) },
-                            onSpam = { viewModel.setSpam(conversation.threadId, conversation.threadId !in ui.spam) },
-                            onDelete = { deleting = conversation },
                         )
                     }
                 }
             }
         }
+    }
+
+    if (deletingChosen) {
+        DeleteChosenDialog(
+            count = picked.size,
+            onDismiss = { deletingChosen = false },
+            onConfirm = {
+                picked.forEach { viewModel.deleteConversation(it.threadId, it.address) }
+                chosen = emptySet()
+                deletingChosen = false
+            },
+        )
     }
 
     deleting?.let { conversation ->
@@ -544,6 +577,19 @@ private fun FolderScreen(
             },
         )
     }
+}
+
+/** Deleting a chosen set, which cannot be undone and so is asked about once, for all of them. */
+@Composable
+private fun DeleteChosenDialog(count: Int, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(SecaIcons.Delete, contentDescription = null) },
+        title = { Text(pluralStringResource(R.plurals.delete_conversations, count, count)) },
+        text = { Text(stringResource(R.string.delete_conversations_text)) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.delete)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 @Composable
@@ -564,20 +610,12 @@ private fun ConversationRow(
     conversation: Conversation,
     ui: MessagesUi,
     pinned: Boolean,
-    archived: Boolean,
-    spam: Boolean,
     chosen: Boolean,
     choosing: Boolean,
     onChoose: () -> Unit,
     onOpen: () -> Unit,
-    onMarkRead: () -> Unit,
-    onPin: () -> Unit,
-    onArchive: () -> Unit,
-    onSpam: () -> Unit,
-    onDelete: () -> Unit,
 ) {
     val context = LocalContext.current
-    var menuOpen by remember { mutableStateOf(false) }
     val contact = ui.contactOf(conversation.address)
     val unread = conversation.unread > 0
     Box {
@@ -588,10 +626,12 @@ private fun ConversationRow(
                 .background(if (chosen) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
                 .combinedClickable(
                     onClick = { if (choosing) onChoose() else onOpen() },
-                    onLongClickLabel = stringResource(if (choosing) R.string.more_actions else R.string.choose),
+                    onLongClickLabel = stringResource(R.string.choose),
                     // Holding a row down chooses it, which is where every hand reaches for
-                    // this. What the menu used to offer is on the bar above instead.
-                    onLongClick = { if (choosing) menuOpen = true else onChoose() },
+                    // this, and it says the same thing whether or not rows are chosen
+                    // already. Everything a single conversation can be put through is on the
+                    // bar above once it is chosen, or inside the conversation itself.
+                    onLongClick = onChoose,
                 )
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
@@ -682,54 +722,6 @@ private fun ConversationRow(
                         }
                     }
                 }
-            }
-        }
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            if (unread) {
-                MenuEntry(stringResource(R.string.mark_read), SecaIcons.Check) {
-                    menuOpen = false
-                    onMarkRead()
-                }
-            }
-            if (spam) {
-                MenuEntry(stringResource(R.string.not_spam), SecaIcons.Check) {
-                    menuOpen = false
-                    onSpam()
-                }
-            } else {
-                MenuEntry(stringResource(if (pinned) R.string.unpin else R.string.pin), SecaIcons.PushPin) {
-                    menuOpen = false
-                    onPin()
-                }
-                MenuEntry(stringResource(if (archived) R.string.unarchive else R.string.archive), SecaIcons.Archive) {
-                    menuOpen = false
-                    onArchive()
-                }
-                MenuEntry(stringResource(R.string.mark_spam), SecaIcons.Block) {
-                    menuOpen = false
-                    onSpam()
-                }
-            }
-            if (dialable(conversation.address)) {
-                MenuEntry(stringResource(R.string.call), SecaIcons.Phone) {
-                    menuOpen = false
-                    call(context, conversation.address)
-                }
-            }
-            if (contact != null) {
-                MenuEntry(stringResource(R.string.view_contact), SecaIcons.Contacts) {
-                    menuOpen = false
-                    openContact(context, contact.id, contact.lookupKey)
-                }
-            } else {
-                MenuEntry(stringResource(R.string.add_to_contacts), SecaIcons.PersonAdd) {
-                    menuOpen = false
-                    addContact(context, conversation.address)
-                }
-            }
-            MenuEntry(stringResource(R.string.delete_conversation), SecaIcons.Delete) {
-                menuOpen = false
-                onDelete()
             }
         }
     }

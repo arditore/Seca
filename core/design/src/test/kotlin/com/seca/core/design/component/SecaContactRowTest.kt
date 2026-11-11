@@ -32,7 +32,7 @@ class SecaContactRowTest {
     fun `shows the display name and first number`() {
         composeRule.setContent {
             SecaTheme(SecaAppIdentity.Contacts) {
-                SecaContactRow(contact = camille, onClick = {})
+                SecaContactRow(contact = camille, onClick = {}, supportingText = "06 12 34 56 78")
             }
         }
         composeRule.onNodeWithText("Camille Durand").assertIsDisplayed()
@@ -46,7 +46,7 @@ class SecaContactRowTest {
         val numberless = camille.copy(phoneNumbers = emptyList())
         composeRule.setContent {
             SecaTheme(SecaAppIdentity.Contacts) {
-                SecaContactRow(contact = numberless, onClick = {})
+                SecaContactRow(contact = numberless, onClick = {}, supportingText = null)
             }
         }
         composeRule.onNodeWithText("Camille Durand").assertIsDisplayed()
@@ -58,7 +58,7 @@ class SecaContactRowTest {
         var clicked = false
         composeRule.setContent {
             SecaTheme(SecaAppIdentity.Contacts) {
-                SecaContactRow(contact = camille, onClick = { clicked = true })
+                SecaContactRow(contact = camille, onClick = { clicked = true }, supportingText = null)
             }
         }
         composeRule.onNodeWithText("Camille Durand").performClick()

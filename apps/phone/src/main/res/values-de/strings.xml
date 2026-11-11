@@ -2,7 +2,6 @@
 <resources>
     <string name="add">Hinzufügen</string>
     <string name="add_call">Anruf hinzufügen</string>
-    <string name="add_to_contacts">Zu Kontakten hinzufügen</string>
     <string name="allow_access">Zugriff erlauben</string>
     <string name="allow_calls">Erlauben, Anrufe aus Seca Phone zu tätigen</string>
     <string name="always_use_sim">Für %1$s immer diese SIM verwenden</string>
@@ -115,7 +114,6 @@
         <item quantity="one">%d Anruf löschen</item>
         <item quantity="other">Diese %d Anrufe löschen</item>
     </plurals>
-    <string name="delete_from_history">Aus dem Verlauf löschen</string>
     <string name="delete_this_history">Diesen Verlauf löschen</string>
     <string name="dynamic_colors">Dynamische Farben</string>
     <string name="dynamic_colors_hint">Passend zum Hintergrundbild des Geräts</string>
@@ -154,7 +152,6 @@
         <item quantity="other">%d verpasste Anrufe</item>
     </plurals>
     <string name="missed_open_history">Öffne den Verlauf, um zu sehen, wer angerufen hat</string>
-    <string name="more_actions">Weitere Aktionen</string>
     <string name="more_options">Weitere Optionen</string>
     <string name="mute">Stumm</string>
     <string name="no_contacts">Keine Kontakte</string>
@@ -185,7 +182,6 @@
     <string name="quick_reply_text_me">Schreib mir stattdessen eine Nachricht.</string>
     <string name="reply_with_message">Mit Nachricht antworten</string>
     <string name="search_hint">Kontakte oder Nummern suchen</string>
-    <string name="send_message">Nachricht senden</string>
     <string name="settings">Einstellungen</string>
     <string name="silence_unknown">Unbekannte Anrufer stummschalten</string>
     <string name="silence_unknown_hint">Nummern, die nicht in deinen Kontakten sind, werden ohne Klingeln angezeigt</string>
@@ -204,7 +200,6 @@
     <string name="unavailable">Auf diesem Gerät nicht verfügbar</string>
     <string name="unblock">Entsperren</string>
     <string name="unknown_number">Unbekannte Nummer</string>
-    <string name="view_contact">Kontakt anzeigen</string>
     <string name="voicemail">Mailbox</string>
     <string name="voicemail_settings_hint">Mailbox-Nummer und Einstellungen</string>
     <string name="when_they_call">Wenn sie anrufen</string>
@@ -215,6 +210,4 @@
     <string name="wifi_calling_hint">Über WLAN telefonieren, wenn das Mobilfunknetz schwach ist</string>
     <string name="yesterday">Gestern</string>
     <string name="choose">Auswählen</string>
-    <string name="choose_all">Alle auswählen</string>
-    <string name="choose_none">Auswahl aufheben</string>
 </resources>

@@ -64,6 +64,9 @@ import kotlinx.coroutines.launch
 import com.seca.core.design.label
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.combinedClickable
+import com.seca.core.design.R as DesignR
+import com.seca.core.design.component.secaCopy
 
 @Composable
 internal fun DetailScreen(
@@ -280,6 +283,8 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                     value = ui.numbers.display(field.value),
                     label = Phone.getTypeLabel(resources, field.type, field.customLabel.orEmpty()).toString(),
                     onClick = { dial(context, field.value) },
+                    // The number as it was saved, not as it is spaced out for reading.
+                    copyable = field.value,
                 ) {
                     FilledTonalIconButton(onClick = { sms(context, field.value) }) {
                         Icon(SecaIcons.Messages, contentDescription = stringResource(R.string.send_message))
@@ -444,13 +449,29 @@ private fun FieldRow(
     value: String,
     label: String,
     onClick: (() -> Unit)?,
+    /** What holding the row down copies. Null where there is nothing worth putting on a clipboard. */
+    copyable: String? = value,
     trailing: (@Composable () -> Unit)? = null,
 ) {
+    val context = LocalContext.current
+    // The shared module's own string: this file's R is the app's.
+    val copyLabel = stringResource(DesignR.string.design_copy)
+    // Holding a number down copies it. Asked for in #24: the number is on the screen and the
+    // only way to get it anywhere else was to read it out and type it again.
+    val touch = when {
+        onClick == null && copyable == null -> Modifier
+        copyable == null -> Modifier.clickable(onClick = onClick!!)
+        else -> Modifier.combinedClickable(
+            onClick = onClick ?: { secaCopy(context, label, copyable) },
+            onLongClickLabel = copyLabel,
+            onLongClick = { secaCopy(context, label, copyable) },
+        )
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(touch)
             .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)

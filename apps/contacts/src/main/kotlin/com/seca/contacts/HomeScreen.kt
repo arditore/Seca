@@ -69,6 +69,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.LocalContext
+import com.seca.core.design.R as DesignR
+import com.seca.core.design.component.secaCopy
 
 @Composable
 internal fun HomeScreen(
@@ -367,12 +370,21 @@ private fun LazyListScope.contactGroup(
         contentType = { _, _ -> "contact" },
     ) { index, contact ->
         SecaGroupItem(index = index, count = group.size) {
+            val context = LocalContext.current
+            val copyLabel = stringResource(DesignR.string.design_copy)
+            val numberLabel = stringResource(R.string.number)
+            val number = contact.phoneNumbers.firstOrNull()?.raw
             SecaContactRow(
                 contact = contact,
                 onClick = { onOpen(contact) },
-                supportingText = contact.phoneNumbers.firstOrNull()?.raw?.let(ui.numbers::display),
+                supportingText = number?.let(ui.numbers::display),
                 tone = ui.toneOf(ui.profileOf(contact)),
                 photo = rememberContactThumbnail(contact.photoUri),
+                // The number is right there on the row and the only way to get it anywhere
+                // else was to read it out and type it again (#24). Nothing is chosen in this
+                // list, so holding a row down is free to mean this.
+                onLongClick = number?.let { { secaCopy(context, numberLabel, it) } },
+                longClickLabel = copyLabel,
             )
         }
     }

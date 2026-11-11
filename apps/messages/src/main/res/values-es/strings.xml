@@ -460,6 +460,4 @@
         <item quantity="other">¿Borrar %d conversaciones?</item>
         <item quantity="many">¿Borrar %d conversaciones?</item>
     </plurals>
-    <string name="choose_all">Seleccionar todo</string>
-    <string name="choose_none">No seleccionar nada</string>
 </resources>

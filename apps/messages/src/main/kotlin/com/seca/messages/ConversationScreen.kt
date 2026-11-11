@@ -496,6 +496,7 @@ internal fun ConversationContent(
                     )
                 }
                 itemsIndexed(newestFirst, key = { _, message -> message.id }, contentType = { _, _ -> "message" }) { index, message ->
+                    val messageLabel = stringResource(R.string.message)
                     val older = newestFirst.getOrNull(index + 1)
                     val newer = newestFirst.getOrNull(index - 1)
                     Column {
@@ -511,7 +512,7 @@ internal fun ConversationContent(
                                 message.status != MessageStatus.Failed && message.status != MessageStatus.Sending,
                             onRetry = { viewModel.retry(message) },
                             onSendAsSms = { viewModel.sendAsSms(message) },
-                            onCopy = { copyText(context, "Message", message.body) },
+                            onCopy = { copyText(context, messageLabel, message.body) },
                             onDelete = { viewModel.deleteMessage(message) },
                             onOpenPhoto = { viewing = it },
                             onSavePhoto = { path ->
@@ -607,6 +608,7 @@ private fun ConversationTopBar(
     onTimer: (() -> Unit)?,
 ) {
     val context = LocalContext.current
+    val numberLabel = stringResource(R.string.number)
     var menuOpen by remember { mutableStateOf(false) }
     val contact = ui.contactOf(address)
     val subtitle = if (contact != null) {
@@ -744,7 +746,7 @@ private fun ConversationTopBar(
                 if (dialable(address)) {
                     MenuEntry(stringResource(R.string.copy_number), SecaIcons.ContentCopy) {
                         menuOpen = false
-                        copyText(context, "Number", address)
+                        copyText(context, numberLabel, address)
                     }
                 }
                 MenuEntry(stringResource(R.string.delete_conversation), SecaIcons.Delete) {

@@ -2,7 +2,6 @@
 <resources>
     <string name="add">Dodaj</string>
     <string name="add_call">Dodaj połączenie</string>
-    <string name="add_to_contacts">Dodaj do kontaktów</string>
     <string name="allow_access">Zezwól na dostęp</string>
     <string name="allow_calls">Zezwól na wykonywanie połączeń z aplikacji Seca Phone</string>
     <string name="always_use_sim">Zawsze używaj tej karty SIM dla: %1$s</string>
@@ -108,7 +107,6 @@
         <item quantity="few">Usuń te %d połączenia</item>
         <item quantity="many">Usuń te %d połączeń</item>
     </plurals>
-    <string name="delete_from_history">Usuń z historii</string>
     <string name="delete_this_history">Usuń tę historię</string>
     <string name="dynamic_colors">Kolory dynamiczne</string>
     <string name="dynamic_colors_hint">Dopasowane do tapety telefonu</string>
@@ -148,7 +146,6 @@
         <item quantity="many">%d nieodebranych połączeń</item>
     </plurals>
     <string name="missed_open_history">Otwórz historię, aby zobaczyć, kto dzwonił</string>
-    <string name="more_actions">Więcej działań</string>
     <string name="more_options">Więcej opcji</string>
     <string name="mute">Wycisz</string>
     <string name="no_contacts">Brak kontaktów</string>
@@ -180,7 +177,6 @@
     <string name="reply_with_message">Odpowiedz wiadomością</string>
     <string name="save">Zapisz</string>
     <string name="search_hint">Szukaj kontaktów lub numerów</string>
-    <string name="send_message">Wyślij wiadomość</string>
     <string name="settings">Ustawienia</string>
     <string name="silence_unknown">Wyciszaj nieznanych rozmówców</string>
     <string name="silence_unknown_hint">Numery spoza Twoich kontaktów będą wyświetlane bez dzwonienia</string>
@@ -199,7 +195,6 @@
     <string name="unavailable">Niedostępne na tym telefonie</string>
     <string name="unblock">Odblokuj</string>
     <string name="unknown_number">Numer nieznany</string>
-    <string name="view_contact">Zobacz kontakt</string>
     <string name="voicemail">Poczta głosowa</string>
     <string name="voicemail_settings_hint">Numer i ustawienia poczty głosowej</string>
     <string name="when_they_call">Gdy dzwonią</string>
@@ -220,6 +215,4 @@
     <string name="screen_off_near_ear">Wygaszenie ekranu przy uchu</string>
     <string name="screen_off_near_ear_hint">Czujnik zbliżeniowy wyłącza ekran w trakcie rozmowy, żeby zapobiec przypadkowym dotknięciem twarzą. Wyłącz, jeśli etui zasłania czujnik.</string>
     <string name="choose">Wybierz</string>
-    <string name="choose_all">Zaznacz wszystko</string>
-    <string name="choose_none">Odznacz wszystko</string>
 </resources>

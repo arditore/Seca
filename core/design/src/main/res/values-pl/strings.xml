@@ -35,4 +35,9 @@
     <string name="seca_palette">Paleta Seca</string>
     <string name="seca_palette_hint_dynamic">Aby zastąpić kolory tapety</string>
     <string name="seca_palette_hint_on">Każda aplikacja Seca przyjmuje własny odcień</string>
+    <string name="design_copied">Skopiowano</string>
+    <string name="design_copy">Kopiuj</string>
+    <string name="design_choose_all">Zaznacz wszystko</string>
+    <string name="design_choose_none">Odznacz wszystko</string>
+    <string name="design_more_options">Więcej opcji</string>
 </resources>

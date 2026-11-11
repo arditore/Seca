@@ -8,6 +8,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import com.seca.core.design.SecaAppIdentity
 
 @RunWith(RobolectricTestRunner::class)
 class CatalogScreenTest {
@@ -29,6 +30,8 @@ class CatalogScreenTest {
 
     @Test
     fun `switching app from the suite bar re-themes the screen`() {
+        // The bar only offers an app that is on the phone, and a test phone has none.
+        installSiblings(SecaAppIdentity.Phone, SecaAppIdentity.Messages)
         composeRule.setContent { CatalogScreen() }
         composeRule.onNodeWithText("Phone").performClick()
         composeRule.onNodeWithText("Camille Durand").assertIsDisplayed()

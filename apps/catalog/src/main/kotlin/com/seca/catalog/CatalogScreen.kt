@@ -116,7 +116,11 @@ fun CatalogScreen() {
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(start = 20.dp, top = 32.dp, bottom = 12.dp),
                     )
-                    SecaContactRow(contact = sampleContact, onClick = {})
+                    SecaContactRow(
+                        contact = sampleContact,
+                        onClick = {},
+                        supportingText = sampleContact.phoneNumbers.firstOrNull()?.raw,
+                    )
 
                     Text(
                         text = "Empty state",

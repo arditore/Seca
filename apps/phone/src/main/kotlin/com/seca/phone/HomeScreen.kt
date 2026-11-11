@@ -80,6 +80,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
+import com.seca.core.design.component.SecaChoiceAction
+import com.seca.core.design.component.SecaChoiceBar
 
 @Composable
 internal fun HomeScreen(
@@ -120,8 +122,12 @@ internal fun HomeScreen(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             if (choosing) {
+                // A chosen row stands for every call in its group, so what the delete button
+                // announces is the number of calls going, not the number of rows ticked.
+                val going = ui.groups.filter { it.latest.id in chosen }.flatMap { it.ids }
                 ChosenCallsBar(
                     count = chosen.size,
+                    callCount = going.size,
                     onClear = { chosen = emptySet() },
                     onChooseAll = { chosen = ui.groups.map { it.latest.id }.toSet() },
                     allChosen = chosen.size == ui.groups.size,
@@ -131,7 +137,7 @@ internal fun HomeScreen(
                     onDelete = {
                         // A row stands for a group of calls with the same person, so choosing
                         // one chooses all of them: deleting half a run would be a lie.
-                        onDeleteCalls(ui.groups.filter { it.latest.id in chosen }.flatMap { it.ids })
+                        onDeleteCalls(going)
                         chosen = emptySet()
                     },
                 )
@@ -219,47 +225,25 @@ private class RowActions(
 @Composable
 private fun ChosenCallsBar(
     count: Int,
+    callCount: Int,
     onClear: () -> Unit,
     onChooseAll: () -> Unit,
     allChosen: Boolean,
     canChooseAll: Boolean,
     onDelete: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .statusBarsPadding()
-            .padding(horizontal = 4.dp, vertical = 8.dp),
-    ) {
-        IconButton(onClick = onClear) {
-            Icon(SecaIcons.Close, contentDescription = stringResource(R.string.cancel))
-        }
-        Text(
-            text = count.toString(),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 8.dp),
-        )
-        if (canChooseAll) {
-            IconButton(onClick = if (allChosen) onClear else onChooseAll) {
-                // The same mark in both states, never the cross: a second cross next to the
-                // one that leaves the choosing is two different meanings drawn identically.
-                // What says everything is chosen is that every row is ticked.
-                Icon(
-                    imageVector = SecaIcons.SelectAll,
-                    contentDescription = stringResource(if (allChosen) R.string.choose_none else R.string.choose_all),
-                )
-            }
-        }
-        IconButton(onClick = onDelete) {
-            Icon(SecaIcons.Delete, contentDescription = stringResource(R.string.delete_from_history))
-        }
-    }
-}
+) = SecaChoiceBar(
+    count = count,
+    onClear = onClear,
+    onChooseAll = onChooseAll.takeIf { canChooseAll },
+    allChosen = allChosen,
+    actions = listOf(
+        SecaChoiceAction(
+            icon = SecaIcons.Delete,
+            label = pluralStringResource(R.plurals.delete_calls, callCount, callCount),
+            onClick = onDelete,
+        ),
+    ),
+)
 
 /** The history's filters, in the order they are offered: how calls went, then the profiles. */
 private fun filtersOf(ui: PhoneUi): List<CallFilter> =
@@ -415,18 +399,15 @@ private fun EmptyHistory(filter: CallFilter) {
 
 /**
  * One row of the history: who, how many times, how and when. A contact's
- * profile other than Principal is named, so "Work" calls stand out. A long
- * press offers the rest: copy, message, the contact, deletion.
+ * profile other than Principal is named, so "Work" calls stand out. A tap opens the call's
+ * own page, which holds everything that can be done with it; holding the row down chooses it.
  */
 @Composable
 private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
     val context = LocalContext.current
-    var menuOpen by remember { mutableStateOf(false) }
     val call = group.latest
     val contact = group.match?.contact
     val title = contact?.displayName ?: callerLabel(context, call, ui.numbers)
-    val blockedText = stringResource(R.string.number_blocked)
-    val blockFailedText = stringResource(R.string.block_failed)
     val details = buildList {
         add(timeOf(context, call.date))
         ui.simLabels[call.accountId]?.let { add(it) }
@@ -451,10 +432,11 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
                             call.callable -> actions.onOpen(call.number)
                         }
                     },
-                    onLongClickLabel = stringResource(if (actions.choosing) R.string.more_actions else R.string.choose),
-                    // Holding a row down chooses it, as it does in the messages. What the menu
-                    // used to offer for one call is still there once one is chosen.
-                    onLongClick = { if (actions.choosing) menuOpen = true else actions.onChoose(call.id) },
+                    onLongClickLabel = stringResource(R.string.choose),
+                    // Holding a row down chooses it, as it does in the messages, and it says
+                    // the same thing whether or not rows are chosen already. Everything one
+                    // call can be put through is on its own page, which a tap opens.
+                    onLongClick = { actions.onChoose(call.id) },
                 )
                 .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
         ) {
@@ -511,63 +493,29 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
                 }
             }
             if (call.callable) {
-                FilledTonalIconButton(
-                    onClick = { actions.onCall(call.number) },
-                    modifier = Modifier.combinedClickable(
-                        role = Role.Button,
-                        onClick = { actions.onCall(call.number) },
-                        onLongClickLabel = stringResource(R.string.call_with_other_sim),
-                        onLongClick = { actions.onCallWithSim(call.number) },
-                    ),
+                // Two SIMs or one: with one, holding the button down can only place the same
+                // call it would place anyway, under a label that says otherwise.
+                val otherSim = ui.simLabels.isNotEmpty()
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .combinedClickable(
+                            role = Role.Button,
+                            onClick = { actions.onCall(call.number) },
+                            onClickLabel = stringResource(R.string.call),
+                            onLongClickLabel = stringResource(R.string.call_with_other_sim).takeIf { otherSim },
+                            onLongClick = { actions.onCallWithSim(call.number) }.takeIf { otherSim },
+                        ),
                 ) {
-                    Icon(SecaIcons.Phone, contentDescription = stringResource(R.string.call_named, title))
+                    Icon(
+                        imageVector = SecaIcons.Phone,
+                        contentDescription = stringResource(R.string.call_named, title),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
                 }
-            }
-        }
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            if (call.callable) {
-                MenuEntry(stringResource(R.string.copy_number), SecaIcons.ContentCopy) {
-                    menuOpen = false
-                    copyNumber(context, call.number)
-                }
-                MenuEntry(stringResource(R.string.send_message), SecaIcons.Messages) {
-                    menuOpen = false
-                    sms(context, call.number)
-                }
-                if (contact != null) {
-                    MenuEntry(stringResource(R.string.view_contact), SecaIcons.Contacts) {
-                        menuOpen = false
-                        openContact(context, contact.id, contact.lookupKey)
-                    }
-                } else {
-                    MenuEntry(stringResource(R.string.add_to_contacts), SecaIcons.PersonAdd) {
-                        menuOpen = false
-                        addContact(context, call.number)
-                    }
-                }
-            }
-            // Blocking is Android's own list, which only the default phone app may change.
-            if (call.callable && BlockedNumberContract.canCurrentUserBlockNumbers(context)) {
-                MenuEntry(stringResource(R.string.block_number), SecaIcons.Block) {
-                    menuOpen = false
-                    val blocked = blockNumber(context, call.number)
-                    Toast.makeText(
-                        context,
-                        if (blocked) blockedText else blockFailedText,
-                        Toast.LENGTH_SHORT,
-                    ).show()
-                }
-            }
-            MenuEntry(
-                if (group.calls.size > 1) {
-                    pluralStringResource(R.plurals.delete_calls, group.calls.size, group.calls.size)
-                } else {
-                    stringResource(R.string.delete_from_history)
-                },
-                SecaIcons.Delete,
-            ) {
-                menuOpen = false
-                actions.onDelete(group.calls.map { it.id })
             }
         }
     }

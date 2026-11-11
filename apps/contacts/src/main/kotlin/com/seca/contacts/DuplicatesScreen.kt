@@ -76,6 +76,7 @@ internal fun DuplicatesScreen(ui: ContactsUi, viewModel: ContactsViewModel, with
                         SecaContactRow(
                             contact = contact,
                             onClick = { viewModel.open(Screen.Detail(contact.id)) },
+                            supportingText = contact.phoneNumbers.firstOrNull()?.raw?.let(ui.numbers::display),
                             tone = ui.toneOf(ui.profileOf(contact)),
                             photo = rememberContactThumbnail(contact.photoUri),
                         )
