@@ -433,4 +433,10 @@
         <item quantity="other">%1$d Unterhaltungen abzulegen</item>
     </plurals>
     <string name="caption_on_sim">%1$s · %2$s</string>
+    <string name="choose">Auswählen</string>
+    <string name="delete_conversations_text">Löscht diese Unterhaltungen und alle ihre Nachrichten. Das lässt sich nicht rückgängig machen.</string>
+    <plurals name="delete_conversations">
+        <item quantity="one">%d Unterhaltung löschen?</item>
+        <item quantity="other">%d Unterhaltungen löschen?</item>
+    </plurals>
 </resources>

@@ -453,4 +453,11 @@
         <item quantity="many">%1$d de conversaciones para archivar</item>
     </plurals>
     <string name="caption_on_sim">%1$s · %2$s</string>
+    <string name="choose">Seleccionar</string>
+    <string name="delete_conversations_text">Borra estas conversaciones y todos sus mensajes. No se puede deshacer.</string>
+    <plurals name="delete_conversations">
+        <item quantity="one">¿Borrar %d conversación?</item>
+        <item quantity="other">¿Borrar %d conversaciones?</item>
+        <item quantity="many">¿Borrar %d conversaciones?</item>
+    </plurals>
 </resources>

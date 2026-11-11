@@ -695,7 +695,13 @@ private fun ConversationTopBar(
                 }
             }
         }
-        IconButton(onClick = { call(context, address) }) { Icon(SecaIcons.Phone, contentDescription = stringResource(R.string.call)) }
+        // Nothing to ring on a sender written in letters, and a button that cannot work is
+        // worse than no button: it reads as the app failing rather than as the thing it is.
+        if (dialable(address)) {
+            IconButton(onClick = { call(context, address) }) {
+                Icon(SecaIcons.Phone, contentDescription = stringResource(R.string.call))
+            }
+        }
         Box {
             IconButton(onClick = { menuOpen = true }) { Icon(SecaIcons.MoreVert, contentDescription = stringResource(R.string.more_options)) }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {

@@ -39,6 +39,15 @@ internal fun openSibling(context: Context, identity: SecaAppIdentity) {
 }
 
 /** Calls in one tap through Seca Phone when it is installed with the same key, else opens the dialer. */
+/**
+ * Whether an address is something a telephone could ring.
+ *
+ * A great many senders are written in letters — SIGNAL, UBER, COS, a bank, a shop. Offering
+ * to call them is offering something that cannot happen, in a menu where every other line
+ * works. Anything with no digits in it is a name, not a number.
+ */
+internal fun dialable(address: String): Boolean = address.any(Char::isDigit)
+
 internal fun call(context: Context, number: String) {
     val tel = Uri.fromParts("tel", number, null)
     val direct = Intent(SECA_PHONE_CALL, tel).setPackage(SECA_PHONE)

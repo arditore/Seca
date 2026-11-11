@@ -453,4 +453,11 @@
         <item quantity="many">%1$d conversations à ranger</item>
     </plurals>
     <string name="caption_on_sim">%1$s · %2$s</string>
+    <string name="choose">Sélectionner</string>
+    <string name="delete_conversations_text">Supprime ces conversations et tous leurs messages. C\'est définitif.</string>
+    <plurals name="delete_conversations">
+        <item quantity="one">Supprimer %d conversation ?</item>
+        <item quantity="other">Supprimer %d conversations ?</item>
+        <item quantity="many">Supprimer %d conversations ?</item>
+    </plurals>
 </resources>

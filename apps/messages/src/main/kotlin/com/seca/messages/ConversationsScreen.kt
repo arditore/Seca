@@ -54,6 +54,9 @@ import com.seca.messages.sms.Conversation
 import com.seca.messages.sms.Message
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.Color
 
 /** How many characters of a message to keep before the searched words in a result. */
 private const val EXCERPT_LEAD = 24
@@ -72,12 +75,32 @@ internal fun ConversationsScreen(
     val context = LocalContext.current
     var bannerDismissed by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<Conversation?>(null) }
+    // Chosen conversations, by the thread they are. Held here rather than in the view model:
+    // it is a state of the screen, and leaving the screen is the end of it.
+    var chosen by remember { mutableStateOf(emptySet<Long>()) }
+    var deletingChosen by remember { mutableStateOf(false) }
+    val choosing = chosen.isNotEmpty()
+    // Conversations still on the list, so one that has just gone does not stay chosen.
+    LaunchedEffect(ui.conversations) {
+        if (choosing) chosen = chosen intersect ui.conversations.map { it.threadId }.toSet()
+    }
+    BackHandler(enabled = choosing) { chosen = emptySet() }
     // The button carries its label at the top of the list and shrinks to an icon once scrolled.
     val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
+            if (choosing) {
+                ChoiceBar(
+                    ui = ui,
+                    viewModel = viewModel,
+                    chosen = chosen,
+                    onClear = { chosen = emptySet() },
+                    onDelete = { deletingChosen = true },
+                )
+                return@Scaffold
+            }
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -99,6 +122,7 @@ internal fun ConversationsScreen(
         },
         bottomBar = { SecaSuiteBar(current = SecaAppIdentity.Messages, onSelect = { openSibling(context, it) }) },
         floatingActionButton = {
+            if (choosing) return@Scaffold
             ExtendedFloatingActionButton(
                 text = { Text(stringResource(R.string.new_message)) },
                 icon = { Icon(SecaIcons.Edit, contentDescription = if (fabExpanded) null else stringResource(R.string.new_message)) },
@@ -119,13 +143,39 @@ internal fun ConversationsScreen(
                     ui = ui,
                     viewModel = viewModel,
                     listState = listState,
-                    showBanner = !isDefaultApp && !bannerDismissed,
+                    showBanner = !isDefaultApp && !bannerDismissed && !choosing,
                     onBecomeDefault = onBecomeDefault,
                     onDismissBanner = { bannerDismissed = true },
                     onDelete = { deleting = it },
+                    chosen = chosen,
+                    onChoose = { threadId ->
+                        chosen = if (threadId in chosen) chosen - threadId else chosen + threadId
+                    },
                 )
             }
         }
+    }
+
+    if (deletingChosen) {
+        val going = ui.conversations.filter { it.threadId in chosen }
+        AlertDialog(
+            onDismissRequest = { deletingChosen = false },
+            icon = { Icon(SecaIcons.Delete, contentDescription = null) },
+            title = { Text(pluralStringResource(R.plurals.delete_conversations, going.size, going.size)) },
+            text = { Text(stringResource(R.string.delete_conversations_text)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        going.forEach { viewModel.deleteConversation(it.threadId, it.address) }
+                        chosen = emptySet()
+                        deletingChosen = false
+                    },
+                ) { Text(stringResource(R.string.delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingChosen = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
     }
 
     deleting?.let { conversation ->
@@ -137,6 +187,73 @@ internal fun ConversationsScreen(
                 deleting = null
             },
         )
+    }
+}
+
+/**
+ * The bar that stands in for the search field while conversations are chosen.
+ *
+ * It carries the count and the things that make sense done to several at once. A toggle acts
+ * on the whole lot the way the lot leans: if any of them is not pinned, all of them are
+ * pinned, and only once every one is pinned does the button unpin them. Anything that is about
+ * one person rather than several — their card, calling them — stays where it was, behind the
+ * long press, and only while a single conversation is chosen.
+ */
+@Composable
+private fun ChoiceBar(
+    ui: MessagesUi,
+    viewModel: MessagesViewModel,
+    chosen: Set<Long>,
+    onClear: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val picked = ui.conversations.filter { it.threadId in chosen }
+    val allPinned = picked.isNotEmpty() && picked.all { it.threadId in ui.pinned }
+    val allArchived = picked.isNotEmpty() && picked.all { it.threadId in ui.archived }
+    val allSpam = picked.isNotEmpty() && picked.all { it.threadId in ui.spam }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .statusBarsPadding()
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+    ) {
+        IconButton(onClick = onClear) {
+            Icon(SecaIcons.Close, contentDescription = stringResource(R.string.cancel))
+        }
+        Text(
+            text = chosen.size.toString(),
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 8.dp),
+        )
+        IconButton(onClick = { picked.forEach { viewModel.markRead(it.threadId) } }) {
+            Icon(SecaIcons.Check, contentDescription = stringResource(R.string.mark_read))
+        }
+        IconButton(onClick = { picked.forEach { viewModel.setPinned(it.threadId, !allPinned) } }) {
+            Icon(
+                imageVector = SecaIcons.PushPin,
+                contentDescription = stringResource(if (allPinned) R.string.unpin else R.string.pin),
+            )
+        }
+        IconButton(onClick = { picked.forEach { viewModel.setArchived(it.threadId, !allArchived) } }) {
+            Icon(
+                imageVector = SecaIcons.Archive,
+                contentDescription = stringResource(if (allArchived) R.string.unarchive else R.string.archive),
+            )
+        }
+        IconButton(onClick = { picked.forEach { viewModel.setSpam(it.threadId, !allSpam) } }) {
+            Icon(
+                imageVector = SecaIcons.Block,
+                contentDescription = stringResource(if (allSpam) R.string.not_spam else R.string.mark_spam),
+            )
+        }
+        IconButton(onClick = onDelete) {
+            Icon(SecaIcons.Delete, contentDescription = stringResource(R.string.delete))
+        }
     }
 }
 
@@ -154,6 +271,8 @@ private fun ConversationList(
     onBecomeDefault: () -> Unit,
     onDismissBanner: () -> Unit,
     onDelete: (Conversation) -> Unit,
+    chosen: Set<Long>,
+    onChoose: (Long) -> Unit,
 ) {
     val context = LocalContext.current
     val conversationsLabel = stringResource(R.string.conversations)
@@ -195,6 +314,11 @@ private fun ConversationList(
             pinned = conversation.threadId in ui.pinned,
             archived = conversation.threadId in ui.archived,
             spam = conversation.threadId in ui.spam,
+            // While some are chosen, touching a row chooses it too: nobody expects a list
+            // half in one mode and half in another.
+            chosen = conversation.threadId in chosen,
+            choosing = chosen.isNotEmpty(),
+            onChoose = { onChoose(conversation.threadId) },
             onOpen = { viewModel.openConversation(conversation.address) },
             onMarkRead = { viewModel.markRead(conversation.threadId) },
             onPin = { viewModel.setPinned(conversation.threadId, conversation.threadId !in ui.pinned) },
@@ -347,6 +471,10 @@ private fun FolderScreen(
                             pinned = false,
                             archived = conversation.threadId in ui.archived,
                             spam = conversation.threadId in ui.spam,
+                            // The archive and the advertising are already a chosen set.
+                            chosen = false,
+                            choosing = false,
+                            onChoose = {},
                             onOpen = { viewModel.openConversation(conversation.address) },
                             onMarkRead = { viewModel.markRead(conversation.threadId) },
                             onPin = { viewModel.setPinned(conversation.threadId, true) },
@@ -392,6 +520,9 @@ private fun ConversationRow(
     pinned: Boolean,
     archived: Boolean,
     spam: Boolean,
+    chosen: Boolean,
+    choosing: Boolean,
+    onChoose: () -> Unit,
     onOpen: () -> Unit,
     onMarkRead: () -> Unit,
     onPin: () -> Unit,
@@ -408,12 +539,35 @@ private fun ConversationRow(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .combinedClickable(onClick = onOpen, onLongClickLabel = stringResource(R.string.more_actions), onLongClick = { menuOpen = true })
+                .background(if (chosen) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                .combinedClickable(
+                    onClick = { if (choosing) onChoose() else onOpen() },
+                    onLongClickLabel = stringResource(R.string.choose),
+                    // Holding a row down chooses it, which is where every hand reaches for
+                    // this. What the menu used to offer is on the bar above instead.
+                    onLongClick = { if (choosing) menuOpen = true else onChoose() },
+                )
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
             // A lock on the photo: this conversation travels through Seca Link, not as plain SMS.
             val peer = rememberLinkPeer(conversation.address)
-            PersonAvatarWithLink(contact, ui, size = 48.dp, linked = ui.link.enabled && peer?.active == true)
+            if (chosen) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                ) {
+                    Icon(
+                        imageVector = SecaIcons.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+            } else {
+                PersonAvatarWithLink(contact, ui, size = 48.dp, linked = ui.link.enabled && peer?.active == true)
+            }
             Column(
                 Modifier
                     .weight(1f)
@@ -510,9 +664,11 @@ private fun ConversationRow(
                     onSpam()
                 }
             }
-            MenuEntry(stringResource(R.string.call), SecaIcons.Phone) {
-                menuOpen = false
-                call(context, conversation.address)
+            if (dialable(conversation.address)) {
+                MenuEntry(stringResource(R.string.call), SecaIcons.Phone) {
+                    menuOpen = false
+                    call(context, conversation.address)
+                }
             }
             if (contact != null) {
                 MenuEntry(stringResource(R.string.view_contact), SecaIcons.Contacts) {
