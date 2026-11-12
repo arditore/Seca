@@ -73,8 +73,8 @@ profile, encrypted backup.
 
 A call screen showing the caller's profile, T9 search, the number ranges France
 reserves for telemarketing blocked, unknown callers silenced, a profile muted
-for a chosen time, a remembered SIM per contact, declining with a message,
-several calls deleted at once.
+for a chosen time, a whole contact blocked in one act, a remembered SIM per
+contact, declining with a message, several calls deleted at once.
 
 </td>
 <td valign="top">
@@ -233,9 +233,9 @@ explains them brand by brand.
   but the thread is named after whoever wrote last and a reply goes to them
   rather than to everyone. Being fixed:
   [issue #48](https://github.com/arditore/Seca/issues/48).
-- **No blocking a whole contact, yet.** A number can be blocked from a call's
-  page, which writes Android's own list; every number on one card in a single
-  act is [issue #50](https://github.com/arditore/Seca/issues/50).
+- **No profiles backed by address books, yet.** Profiles are assigned by hand;
+  deriving them from the DAVx⁵ account a contact syncs from is
+  [issue #44](https://github.com/arditore/Seca/issues/44).
 
 ## 🧱 Build
 
