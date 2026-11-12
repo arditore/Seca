@@ -85,10 +85,6 @@
             android:launchMode="singleTop"
             android:theme="@style/Theme.SecaMessages"
             android:windowSoftInputMode="adjustResize">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
             <!-- Write to a number, from any app or link. -->
             <intent-filter>
                 <action android:name="android.intent.action.SENDTO" />
@@ -101,6 +97,31 @@
                 <data android:scheme="mmsto" />
             </intent-filter>
         </activity>
+        <!-- The launcher entry, named either way (#33). Exactly one of these is enabled at
+             a time; MainActivity itself is never disabled, because notifications and the
+             other Seca apps start it by name and a disabled component cannot be started. -->
+        <activity-alias
+            android:name=".LauncherSeca"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_name"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherPlain"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_name_plain"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <!-- Only the default messaging app receives messages; it must also store them. -->
         <receiver

@@ -219,4 +219,5 @@
     <string name="arrange_later">Mover %1$s después</string>
     <string name="photo_shape">Forma de la foto</string>
     <string name="photo_shape_everyone">Como todos</string>
+    <string name="app_name_plain">Contactos</string>
 </resources>

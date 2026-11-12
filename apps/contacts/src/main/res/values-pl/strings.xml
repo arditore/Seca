@@ -220,4 +220,5 @@
     <string name="arrange_later">Przenieś %1$s później</string>
     <string name="photo_shape">Kształt zdjęcia</string>
     <string name="photo_shape_everyone">Jak u wszystkich</string>
+    <string name="app_name_plain">Kontakty</string>
 </resources>
