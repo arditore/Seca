@@ -68,6 +68,7 @@ import androidx.compose.foundation.combinedClickable
 import com.seca.core.design.R as DesignR
 import com.seca.core.design.component.secaCopy
 import android.content.Context
+import com.seca.core.design.component.SecaShapePicker
 
 @Composable
 internal fun DetailScreen(
@@ -97,6 +98,7 @@ internal fun DetailScreen(
         }
     }
     var confirmDelete by remember { mutableStateOf(false) }
+    var choosingShape by remember { mutableStateOf(false) }
     val current = detail
     val ringtoneTitle = stringResource(R.string.contact_ringtone)
 
@@ -159,6 +161,16 @@ internal fun DetailScreen(
                                     withWrite { viewModel.setSendToVoicemail(id, !current.sendToVoicemail) }
                                 },
                             )
+                            // A shape for this person alone, which outranks the one chosen
+                            // for everybody in the settings (#25).
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.photo_shape)) },
+                                leadingIcon = { Icon(SecaIcons.Contacts, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    choosingShape = true
+                                },
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.delete)) },
                                 leadingIcon = { Icon(SecaIcons.Delete, contentDescription = null) },
@@ -187,6 +199,30 @@ internal fun DetailScreen(
                 )
             }
         }
+    }
+
+    if (choosingShape && current != null) {
+        AlertDialog(
+            onDismissRequest = { choosingShape = false },
+            icon = { Icon(SecaIcons.Contacts, contentDescription = null) },
+            title = { Text(stringResource(R.string.photo_shape)) },
+            text = {
+                SecaShapePicker(
+                    chosen = ui.shapes[current.lookupKey],
+                    // "Everyone's" rather than "Playful" here: on one person's card, having no
+                    // shape of their own means taking whatever everybody else has, which may
+                    // itself be a single shape somebody chose in the settings.
+                    defaultLabel = stringResource(R.string.photo_shape_everyone),
+                    onPick = { shape ->
+                        viewModel.setShapeFor(current.lookupKey, shape)
+                        choosingShape = false
+                    },
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { choosingShape = false }) { Text(stringResource(R.string.close)) }
+            },
+        )
     }
 
     if (confirmDelete && current != null) {
@@ -231,6 +267,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 seed = detail.displayName,
                 photo = rememberContactPhoto(detail.id),
                 expressive = true,
+                avatarShape = ui.shapeOf(detail.lookupKey),
                 modifier = Modifier.padding(top = 8.dp),
             )
             Text(

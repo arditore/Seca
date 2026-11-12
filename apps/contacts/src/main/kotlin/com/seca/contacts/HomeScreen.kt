@@ -458,6 +458,7 @@ private fun FavoritesRow(
                     tone = ui.toneOf(ui.profileOf(contact)),
                     seed = contact.displayName,
                     expressive = true,
+                    avatarShape = ui.shapeOf(contact),
                     photo = rememberContactThumbnail(contact.photoUri),
                 )
                 Text(
@@ -527,6 +528,9 @@ private fun MyCardRow(ui: ContactsUi, onClick: () -> Unit) {
             size = 64.dp,
             seed = MY_CARD_SEED,
             expressive = true,
+            // The owner's own card is not a contact and has no shape of its own: it takes the
+            // one everybody else has, so the top of the list matches the rest of it.
+            avatarShape = ui.shapeOf(""),
             photo = ui.myPhoto,
         )
         Column(

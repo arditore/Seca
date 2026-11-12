@@ -38,4 +38,14 @@
     <string name="design_choose_all">Select all</string>
     <string name="design_choose_none">Select none</string>
     <string name="design_more_options">More options</string>
+    <string name="design_shape_playful">Playful</string>
+    <string name="design_shape_circle">Circle</string>
+    <string name="design_shape_squircle">Squircle</string>
+    <string name="design_shape_cookie">Cookie</string>
+    <string name="design_shape_clover">Clover</string>
+    <string name="design_shape_sunny">Sunny</string>
+    <string name="design_shape_flower">Flower</string>
+    <string name="design_shape_section">Shape of the faces</string>
+    <string name="design_shape_hint_playful">Each person gets a shape of their own</string>
+    <string name="design_shape_hint_one">The same shape for everyone</string>
 </resources>

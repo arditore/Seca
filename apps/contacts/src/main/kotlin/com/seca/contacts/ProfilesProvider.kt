@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
 import com.seca.core.contacts.SharedProfilesContract
+import com.seca.core.design.SecaAvatarShape
 import com.seca.core.design.SecaPalette
 
 /**
@@ -29,12 +30,29 @@ class ProfilesProvider : ContentProvider() {
         val cursor = when (uri.lastPathSegment) {
             "profiles" -> MatrixCursor(arrayOf(SharedProfilesContract.COLUMN_ID, SharedProfilesContract.COLUMN_NAME))
                 .apply { store.profiles().forEach { addRow(arrayOf(it.id, it.name)) } }
+            // One row per contact that has anything of its own: a profile, a shape, or both.
             "assignments" -> MatrixCursor(
-                arrayOf(SharedProfilesContract.COLUMN_LOOKUP_KEY, SharedProfilesContract.COLUMN_PROFILE_ID),
-            ).apply { store.assignments().forEach { (key, profileId) -> addRow(arrayOf(key, profileId)) } }
+                arrayOf(
+                    SharedProfilesContract.COLUMN_LOOKUP_KEY,
+                    SharedProfilesContract.COLUMN_PROFILE_ID,
+                    SharedProfilesContract.COLUMN_AVATAR_SHAPE,
+                ),
+            ).apply {
+                val assignments = store.assignments()
+                val shapes = store.shapes()
+                (assignments.keys + shapes.keys).forEach { key ->
+                    addRow(arrayOf<Any?>(key, assignments[key], shapes[key]))
+                }
+            }
             "settings" -> MatrixCursor(
-                arrayOf(SharedProfilesContract.COLUMN_PALETTE, SharedProfilesContract.COLUMN_BLACK),
-            ).apply { addRow(arrayOf<Any?>(store.palette()?.name, if (store.black()) 1 else 0)) }
+                arrayOf(
+                    SharedProfilesContract.COLUMN_PALETTE,
+                    SharedProfilesContract.COLUMN_BLACK,
+                    SharedProfilesContract.COLUMN_AVATAR_SHAPE,
+                ),
+            ).apply {
+                addRow(arrayOf<Any?>(store.palette()?.name, if (store.black()) 1 else 0, store.avatarShape()?.name))
+            }
             else -> return null
         }
         cursor.setNotificationUri(requireContext().contentResolver, SharedProfilesContract.BASE_URI)
@@ -46,8 +64,10 @@ class ProfilesProvider : ContentProvider() {
     override fun insert(uri: Uri, values: ContentValues?): Uri? = throw UnsupportedOperationException(READ_ONLY)
 
     /**
-     * The colours are what the suite shares: the palette and whether the dark theme goes down to
-     * black. Either can be set from any of the three apps, so one choice dresses all of them.
+     * The look is what the suite shares: the palette, whether the dark theme goes down to black,
+     * and the shape faces are cut to. Any of them can be set from any of the three apps, so one
+     * choice dresses all of them. A shape chosen for one contact is set on their card, which
+     * only Seca Contacts has, so that stays read-only here.
      */
     override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int {
         if (uri.lastPathSegment != "settings" || values == null) throw UnsupportedOperationException(READ_ONLY)
@@ -60,6 +80,11 @@ class ProfilesProvider : ContentProvider() {
         }
         if (values.containsKey(SharedProfilesContract.COLUMN_BLACK)) {
             store.setBlack(values.getAsInteger(SharedProfilesContract.COLUMN_BLACK) == 1)
+            changed++
+        }
+        if (values.containsKey(SharedProfilesContract.COLUMN_AVATAR_SHAPE)) {
+            val name = values.getAsString(SharedProfilesContract.COLUMN_AVATAR_SHAPE)
+            store.setAvatarShape(SecaAvatarShape.entries.firstOrNull { it.name == name })
             changed++
         }
         if (changed == 0) throw UnsupportedOperationException(READ_ONLY)

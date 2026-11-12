@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.seca.core.design.SecaAvatarShape
 
 /** The app's screens; the last entry of the back stack is the one shown. */
 sealed interface PhoneScreen {
@@ -87,6 +88,18 @@ data class PhoneUi(
     fun profileOf(contact: SecaContact): Profile = profiles.profileForKey(contact.lookupKey)
 
     fun toneOf(contact: SecaContact): Int = profiles.toneOf(profileOf(contact))
+
+    /**
+     * The shape a face is cut to, as Seca Contacts keeps it (#25).
+     *
+     * Theirs where one was chosen for them, else everybody's, else the playful default. A null
+     * contact is somebody not in the address book, who has no choice of their own.
+     */
+    /** The shape chosen for everybody, which the settings show and let the owner change. */
+    val avatarShape: SecaAvatarShape? get() = profiles.avatarShape?.let(SecaAvatarShape::of)
+
+    fun shapeOf(contact: SecaContact?): SecaAvatarShape =
+        SecaAvatarShape.of(contact?.lookupKey?.let { profiles.shapeNameFor(it) } ?: profiles.avatarShape)
 
     fun matchOf(call: CallRecord): NumberMatch? =
         if (call.presentation == Presentation.Allowed) index?.find(call.number) else null
@@ -190,6 +203,11 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
     /** Takes the dark theme down to black, in all three apps; Seca Contacts keeps the choice. */
     fun setBlack(black: Boolean) {
         viewModelScope.launch { sharedProfiles.setBlack(black) }
+    }
+
+    /** Cuts every face in all three apps to one shape, or back to one per person (#25). */
+    fun setAvatarShape(shape: SecaAvatarShape?) {
+        viewModelScope.launch { sharedProfiles.setAvatarShape(shape?.name) }
     }
 
     /** Stops or lets again the calls from every contact of [profileId], for as long as the owner chose. */

@@ -553,6 +553,7 @@ private fun FavoritesRow(favorites: List<SecaContact>, ui: PhoneUi, onCall: (Str
                     tone = ui.toneOf(contact),
                     seed = contact.displayName,
                     expressive = true,
+                    avatarShape = ui.shapeOf(contact),
                     photo = rememberContactThumbnail(contact.photoUri),
                 )
                 Text(

@@ -94,6 +94,21 @@ internal fun copySensitive(context: Context, text: String) {
  */
 internal fun copyText(context: Context, label: String, text: String) = secaCopy(context, label, text)
 
+/**
+ * Android's own page for one notification channel, where its sound is chosen.
+ *
+ * Asked for in #46: a sound of one's own for arriving messages, "from a personalisation
+ * angle". The app does not offer a list of sounds itself, because the page Android already
+ * has offers every sound on the phone, keeps whatever else the owner set on the channel, and
+ * is the only place a channel's sound can be changed once the channel exists.
+ */
+internal fun openNotificationChannel(context: Context, channel: String) = startSafely(
+    context,
+    Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        .putExtra(Settings.EXTRA_CHANNEL_ID, channel),
+)
+
 internal fun openAppSettings(context: Context) = startSafely(
     context,
     Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)),

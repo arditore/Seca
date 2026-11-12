@@ -39,4 +39,14 @@
     <string name="design_choose_all">Seleccionar todo</string>
     <string name="design_choose_none">No seleccionar nada</string>
     <string name="design_more_options">Más opciones</string>
+    <string name="design_shape_playful">Variadas</string>
+    <string name="design_shape_circle">Círculo</string>
+    <string name="design_shape_squircle">Cuadrado redondeado</string>
+    <string name="design_shape_cookie">Galleta</string>
+    <string name="design_shape_clover">Trébol</string>
+    <string name="design_shape_sunny">Sol</string>
+    <string name="design_shape_flower">Flor</string>
+    <string name="design_shape_section">Forma de las fotos</string>
+    <string name="design_shape_hint_playful">Cada persona tiene su propia forma</string>
+    <string name="design_shape_hint_one">La misma forma para todos</string>
 </resources>

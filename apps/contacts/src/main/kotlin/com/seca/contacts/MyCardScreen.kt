@@ -129,6 +129,7 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
                         size = 136.dp,
                         seed = MY_CARD_SEED,
                         expressive = true,
+                        avatarShape = ui.shapeOf(""),
                         photo = ui.myPhoto,
                         modifier = Modifier.clickable(onClickLabel = stringResource(R.string.change_photo)) {
                             pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))

@@ -442,4 +442,6 @@
     <string name="sent_sound_section">Ton</string>
     <string name="sent_sound">Ton beim Senden einer Nachricht</string>
     <string name="sent_sound_hint">Ein kurzer Ton, in der Lautstärke für Benachrichtigungen; nie bei stummem Telefon</string>
+    <string name="received_sound">Ton für eingehende Nachrichten</string>
+    <string name="received_sound_hint">Öffnet die Android-Seite für die Nachrichten-Benachrichtigungen dieser App, wo jeder Ton des Telefons gewählt werden kann</string>
 </resources>

@@ -463,4 +463,6 @@
     <string name="sent_sound_section">Son</string>
     <string name="sent_sound">Son à l\'envoi d\'un message</string>
     <string name="sent_sound_hint">Un son bref, au volume des notifications ; jamais quand le téléphone est en silencieux</string>
+    <string name="received_sound">Son des messages reçus</string>
+    <string name="received_sound_hint">Ouvre la page d\'Android pour les notifications de messages, où n\'importe quel son du téléphone peut être choisi</string>
 </resources>

@@ -74,6 +74,7 @@ internal fun PersonAvatar(
             tone = ui.toneOf(contact),
             seed = contact.displayName,
             expressive = expressive,
+            avatarShape = ui.shapeOf(contact),
             photo = rememberContactThumbnail(contact.photoUri),
         )
     } else {

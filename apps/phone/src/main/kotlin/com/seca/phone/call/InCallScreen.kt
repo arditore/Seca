@@ -70,6 +70,7 @@ import kotlinx.coroutines.delay
 import com.seca.core.design.label
 import androidx.compose.ui.res.stringResource
 import com.seca.phone.R
+import com.seca.core.design.SecaAvatarShape
 
 /** How long the screen stays to say how the call ended. */
 private const val ENDED_MILLIS = 1500L
@@ -159,6 +160,7 @@ private fun CallScreen(view: CallView, calls: List<CallView>, audio: AudioView, 
                 tone = view.caller?.tone ?: 0,
                 seed = title,
                 expressive = true,
+                avatarShape = view.caller?.shape ?: SecaAvatarShape.Playful,
                 photo = rememberContactThumbnail(view.caller?.photoUri),
                 modifier = Modifier.padding(top = 24.dp),
             )

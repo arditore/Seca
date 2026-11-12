@@ -40,4 +40,14 @@
     <string name="design_choose_all">Zaznacz wszystko</string>
     <string name="design_choose_none">Odznacz wszystko</string>
     <string name="design_more_options">Więcej opcji</string>
+    <string name="design_shape_playful">Różne</string>
+    <string name="design_shape_circle">Koło</string>
+    <string name="design_shape_squircle">Zaokrąglony kwadrat</string>
+    <string name="design_shape_cookie">Ciastko</string>
+    <string name="design_shape_clover">Koniczyna</string>
+    <string name="design_shape_sunny">Słońce</string>
+    <string name="design_shape_flower">Kwiat</string>
+    <string name="design_shape_section">Kształt zdjęć</string>
+    <string name="design_shape_hint_playful">Każda osoba ma własny kształt</string>
+    <string name="design_shape_hint_one">Ten sam kształt dla wszystkich</string>
 </resources>

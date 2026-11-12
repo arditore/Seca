@@ -42,6 +42,7 @@ import com.seca.messages.sms.SweptConversation
 import com.seca.messages.sms.SpamFilter
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
+import com.seca.messages.sms.MessageNotifications
 
 /**
  * Verification codes that erase themselves, and advertising filed away.
@@ -211,7 +212,14 @@ internal fun CodeAndSpamSettings(onFile: (List<SweptConversation>) -> Unit) {
     SecaHint(stringResource(R.string.delivery_reports_note))
 
     SecaSectionLabel(stringResource(R.string.sent_sound_section))
-    SecaGroupItem(index = 0, count = 1) {
+    SecaGroupItem(index = 0, count = 2, onClick = { openNotificationChannel(context, MessageNotifications.CHANNEL) }) {
+        SecaSettingRow(
+            icon = SecaIcons.Bell,
+            title = stringResource(R.string.received_sound),
+            subtitle = stringResource(R.string.received_sound_hint),
+        )
+    }
+    SecaGroupItem(index = 1, count = 2) {
         SecaSettingRow(
             icon = SecaIcons.Send,
             title = stringResource(R.string.sent_sound),

@@ -3,6 +3,7 @@ package com.seca.contacts
 import android.content.Context
 import androidx.core.content.edit
 import com.seca.core.contacts.SharedProfilesContract
+import com.seca.core.design.SecaAvatarShape
 import com.seca.core.design.SecaPalette
 import com.seca.core.model.Profile
 import org.json.JSONArray
@@ -87,6 +88,37 @@ class ProfileStore(context: Context) {
     }
 
     /**
+     * The shape every face is cut to, or null for a different one per person (#25).
+     *
+     * Null is the default and stays the default: the playful shapes are what the suite looks
+     * like. Somebody who wants one shape for all of them says so.
+     */
+    fun avatarShape(): SecaAvatarShape? {
+        val name = prefs.getString(KEY_AVATAR_SHAPE, null) ?: return null
+        return SecaAvatarShape.entries.firstOrNull { it.name == name }
+    }
+
+    fun setAvatarShape(shape: SecaAvatarShape?) {
+        prefs.edit {
+            if (shape == null) remove(KEY_AVATAR_SHAPE) else putString(KEY_AVATAR_SHAPE, shape.name)
+        }
+        announceChange()
+    }
+
+    /** A shape chosen for one contact, which outranks the one chosen for everybody. */
+    fun shapes(): Map<String, String> {
+        val json = prefs.getString(KEY_SHAPES, null)?.let { JSONObject(it) } ?: return emptyMap()
+        return json.keys().asSequence().associateWith { json.getString(it) }
+    }
+
+    fun setShapeFor(lookupKey: String, shape: SecaAvatarShape?) {
+        val kept = shapes().toMutableMap()
+        if (shape == null) kept.remove(lookupKey) else kept[lookupKey] = shape.name
+        prefs.edit { putString(KEY_SHAPES, JSONObject(kept.toMap<String, Any?>()).toString()) }
+        announceChange()
+    }
+
+    /**
      * The order the favourites stand in, as lookup keys.
      *
      * Empty until somebody arranges one, and alphabetical until then: a default nobody chose
@@ -152,7 +184,9 @@ class ProfileStore(context: Context) {
         private const val KEY_PROFILES = "profiles"
         private const val KEY_ASSIGNMENTS = "assignments"
         private const val KEY_CURRENT = "current_profile"
-        private const val KEY_FAVORITE_ORDER = "favorite_order"
+        private const val KEY_AVATAR_SHAPE = "avatar_shape"
+    private const val KEY_SHAPES = "avatar_shapes"
+    private const val KEY_FAVORITE_ORDER = "favorite_order"
     private const val KEY_PALETTE = "palette"
         private const val KEY_BLACK = "black_theme"
         private const val KEY_MY_CARD = "show_my_card"

@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.annotation.StringRes
 import com.seca.phone.R
+import com.seca.core.design.SecaAvatarShape
 
 /** Who is calling, when they are in the contacts: name, photo, number type and Seca profile. */
 data class Caller(
@@ -47,6 +48,8 @@ data class Caller(
     val numberLabel: String?,
     val profile: Profile,
     val tone: Int,
+    /** The shape their face is cut to, as Seca Contacts keeps it (#25). */
+    val shape: SecaAvatarShape = SecaAvatarShape.Playful,
 )
 
 /** A call as the screen shows it, rebuilt each time Telecom reports a change. */
@@ -451,6 +454,7 @@ object CallSession {
             numberLabel = found.label.takeIf { it.isNotBlank() },
             profile = profile,
             tone = profiles.toneOf(profile),
+            shape = SecaAvatarShape.of(profiles.shapeNameFor(found.lookupKey)),
         )
     }
 

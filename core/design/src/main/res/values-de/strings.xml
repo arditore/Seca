@@ -38,4 +38,14 @@
     <string name="design_choose_all">Alle auswählen</string>
     <string name="design_choose_none">Auswahl aufheben</string>
     <string name="design_more_options">Weitere Optionen</string>
+    <string name="design_shape_playful">Verschieden</string>
+    <string name="design_shape_circle">Kreis</string>
+    <string name="design_shape_squircle">Abgerundetes Quadrat</string>
+    <string name="design_shape_cookie">Keks</string>
+    <string name="design_shape_clover">Kleeblatt</string>
+    <string name="design_shape_sunny">Sonne</string>
+    <string name="design_shape_flower">Blume</string>
+    <string name="design_shape_section">Form der Bilder</string>
+    <string name="design_shape_hint_playful">Jede Person erhält ihre eigene Form</string>
+    <string name="design_shape_hint_one">Dieselbe Form für alle</string>
 </resources>

@@ -46,7 +46,15 @@ internal object MessageNotifications {
     const val EXTRA_THREAD = "thread_id"
     const val EXTRA_ADDRESS = "address"
     const val EXTRA_CODE = "code"
-    private const val CHANNEL = "messages"
+    /**
+     * The channel incoming messages arrive on.
+     *
+     * Not private: the settings screen opens Android's own page for this channel, which is
+     * where a notification sound is chosen. Android will not let an app set a channel's sound
+     * after the channel exists — short of deleting and rebuilding it, which throws away
+     * everything else the owner set on it — so the app sends them to the page that can.
+     */
+    const val CHANNEL = "messages"
     private const val ALERTS = "message_alerts"
     private const val LINK_SERVICE = "link_service"
     private const val MAX_LINES = 8

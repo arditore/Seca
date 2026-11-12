@@ -207,4 +207,6 @@
     <string name="arrange_favorites_hint">Der erste in dieser Liste ist der erste in der Reihe.</string>
     <string name="arrange_earlier">%1$s nach vorne</string>
     <string name="arrange_later">%1$s nach hinten</string>
+    <string name="photo_shape">Form des Bildes</string>
+    <string name="photo_shape_everyone">Wie bei allen</string>
 </resources>

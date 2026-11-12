@@ -465,4 +465,6 @@
     <string name="sent_sound_section">Dźwięk</string>
     <string name="sent_sound">Dźwięk przy wysyłaniu wiadomości</string>
     <string name="sent_sound_hint">Krótki dźwięk, na głośności powiadomień; nigdy, gdy telefon jest wyciszony</string>
+    <string name="received_sound">Dźwięk przychodzących wiadomości</string>
+    <string name="received_sound_hint">Otwiera stronę Androida dla powiadomień o wiadomościach, gdzie można wybrać dowolny dźwięk z telefonu</string>
 </resources>

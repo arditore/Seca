@@ -39,6 +39,7 @@ import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaHint
 import android.net.Uri
 import com.seca.core.design.component.SecaPaletteSection
+import com.seca.core.design.component.SecaShapeSection
 import com.seca.core.design.component.SecaPaletteSwatch
 import com.seca.core.design.component.SecaPassphraseDialog
 import com.seca.core.design.component.SecaProfileBadge
@@ -152,8 +153,11 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                     onCheckedChange = viewModel::setBlack,
                 )
             }
-            SecaGroupItem(index = 2, count = 3) {
+            SecaGroupItem(index = 2, count = 4) {
                 SecaPaletteSection(ui.palette, dynamic, viewModel::setPalette)
+            }
+            SecaGroupItem(index = 3, count = 4) {
+                SecaShapeSection(ui.avatarShape, viewModel::setAvatarShape)
             }
             SecaHint(stringResource(R.string.dark_mode_hint))
 

@@ -217,4 +217,6 @@
     <string name="arrange_favorites_hint">Le premier de cette liste est le premier de la rangée.</string>
     <string name="arrange_earlier">Placer %1$s avant</string>
     <string name="arrange_later">Placer %1$s après</string>
+    <string name="photo_shape">Forme de la photo</string>
+    <string name="photo_shape_everyone">Comme tout le monde</string>
 </resources>

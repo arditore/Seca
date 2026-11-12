@@ -36,6 +36,9 @@ object SharedProfilesContract {
     const val COLUMN_PROFILE_ID = "profile_id"
     const val COLUMN_PALETTE = "palette"
     const val COLUMN_BLACK = "black"
+
+    /** The shape faces are cut to: one name on the settings row, one per contact on the assignments. */
+    const val COLUMN_AVATAR_SHAPE = "avatar_shape"
 }
 
 /** What a Seca app needs from Seca Contacts' profiles. */
@@ -47,11 +50,18 @@ data class SharedProfiles(
     val palette: String? = null,
     /** Whether the dark theme goes down to black, as OLED screens are at their best. */
     val black: Boolean = false,
+    /** The shape faces are cut to, by name, or null for the playful default (#25). */
+    val avatarShape: String? = null,
+    /** A shape chosen for one contact, by lookup key, where one was. */
+    val shapes: Map<String, String> = emptyMap(),
     /** Whether Seca Contacts answered: without it there are no profiles to show nor colours to set. */
     val connected: Boolean = false,
 ) {
     fun profileForKey(lookupKey: String): Profile =
         profiles.firstOrNull { it.id == assignments[lookupKey] } ?: Profile.Principal
+
+    /** The shape one contact's face is cut to: their own where they have one, else everyone's. */
+    fun shapeNameFor(lookupKey: String): String? = shapes[lookupKey] ?: avatarShape
 
     /** A profile's position, which picks its colour in every Seca app. */
     fun toneOf(profile: Profile): Int = profiles.indexOfFirst { it.id == profile.id }.coerceAtLeast(0)
@@ -71,10 +81,20 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
                 val name = c.getColumnIndexOrThrow(SharedProfilesContract.COLUMN_NAME)
                 buildList { while (c.moveToNext()) add(Profile(c.getString(id), c.getString(name))) }
             }
+            // The assignments carry a second thing per contact now: the shape, where one was
+            // chosen for them. An older Seca Contacts has no such column, and then nobody has.
+            val shapes = mutableMapOf<String, String>()
             val assignments = resolver.query(SharedProfilesContract.ASSIGNMENTS_URI, null, null, null, null)?.use { c ->
                 val key = c.getColumnIndexOrThrow(SharedProfilesContract.COLUMN_LOOKUP_KEY)
                 val profile = c.getColumnIndexOrThrow(SharedProfilesContract.COLUMN_PROFILE_ID)
-                buildMap { while (c.moveToNext()) put(c.getString(key), c.getString(profile)) }
+                val shape = c.getColumnIndex(SharedProfilesContract.COLUMN_AVATAR_SHAPE).takeIf { it >= 0 }
+                buildMap {
+                    while (c.moveToNext()) {
+                        val lookupKey = c.getString(key)
+                        c.getString(profile)?.let { put(lookupKey, it) }
+                        shape?.let { column -> c.getString(column)?.let { shapes[lookupKey] = it } }
+                    }
+                }
             }
             val settings = resolver.query(SharedProfilesContract.SETTINGS_URI, null, null, null, null)?.use { c ->
                 if (!c.moveToFirst()) {
@@ -84,14 +104,18 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
                     // An older Seca Contacts has no such column: its dark theme is the usual one.
                     val black = c.getColumnIndex(SharedProfilesContract.COLUMN_BLACK)
                         .takeIf { it >= 0 }?.let { c.getInt(it) == 1 } == true
-                    palette to black
+                    val shape = c.getColumnIndex(SharedProfilesContract.COLUMN_AVATAR_SHAPE)
+                        .takeIf { it >= 0 }?.let { c.getString(it) }
+                    Settings(palette, black, shape)
                 }
             }
             SharedProfiles(
                 profiles = profiles?.takeIf { it.isNotEmpty() } ?: listOf(Profile.Principal),
                 assignments = assignments.orEmpty(),
-                palette = settings?.first,
-                black = settings?.second == true,
+                palette = settings?.palette,
+                black = settings?.black == true,
+                avatarShape = settings?.avatarShape,
+                shapes = shapes,
                 connected = profiles != null,
             )
         } catch (e: SecurityException) {
@@ -106,6 +130,13 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
     /** Takes the dark theme of every Seca app down to black, or back to Material's own. */
     suspend fun setBlack(black: Boolean): Boolean =
         write(ContentValues().apply { put(SharedProfilesContract.COLUMN_BLACK, if (black) 1 else 0) })
+
+    /** Cuts every face in every Seca app to one shape, or back to one per person (#25). */
+    suspend fun setAvatarShape(shape: String?): Boolean =
+        write(ContentValues().apply { put(SharedProfilesContract.COLUMN_AVATAR_SHAPE, shape) })
+
+    /** What came back from the settings row, which has grown past a pair. */
+    private class Settings(val palette: String?, val black: Boolean, val avatarShape: String?)
 
     private suspend fun write(values: ContentValues): Boolean = withContext(Dispatchers.IO) {
         try {

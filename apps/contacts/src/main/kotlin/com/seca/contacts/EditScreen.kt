@@ -85,6 +85,7 @@ import com.seca.core.design.label
 import androidx.compose.ui.res.stringResource
 import com.seca.core.contacts.describe
 import com.seca.core.design.component.SecaChoicePill
+import com.seca.core.design.SecaAvatarShape
 
 /** The kinds offered in the editor; any other kind a contact already has is kept and shown. */
 // Custom comes last in each list: it is the one that asks a question back.
@@ -241,6 +242,7 @@ internal fun EditScreen(
                     initials = initialsOf("$givenName $familyName"),
                     tone = ui.profiles.indexOfFirst { it.id == profileId }.coerceAtLeast(0),
                     seed = existing?.displayName ?: "new-contact",
+                    shape = ui.shapeOf(existing?.lookupKey.orEmpty()),
                     photo = shown,
                     onPick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                     onRemove = if (shown == null) {
@@ -357,6 +359,8 @@ private fun PhotoHeader(
     initials: String,
     tone: Int,
     seed: String,
+    /** The shape the card will show, so the editing looks like what it is editing. */
+    shape: SecaAvatarShape,
     photo: ImageBitmap?,
     onPick: () -> Unit,
     onRemove: (() -> Unit)?,
@@ -380,6 +384,7 @@ private fun PhotoHeader(
                 tone = tone,
                 seed = seed,
                 expressive = true,
+                avatarShape = shape,
                 photo = photo,
                 modifier = Modifier.clickable(onClickLabel = stringResource(R.string.change_photo), onClick = onPick),
             )

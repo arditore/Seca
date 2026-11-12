@@ -53,6 +53,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
+import com.seca.core.design.SecaAvatarShape
 
 /** Searching the text of every message waits for this pause in typing. */
 private const val SEARCH_PAUSE_MILLIS = 250L
@@ -109,6 +110,18 @@ data class MessagesUi(
     fun profileOf(contact: SecaContact): Profile = profiles.profileForKey(contact.lookupKey)
 
     fun toneOf(contact: SecaContact): Int = profiles.toneOf(profileOf(contact))
+
+    /**
+     * The shape a face is cut to, as Seca Contacts keeps it (#25).
+     *
+     * Theirs where one was chosen for them, else everybody's, else the playful default. A null
+     * contact is somebody not in the address book, who has no choice of their own.
+     */
+    /** The shape chosen for everybody, which the settings show and let the owner change. */
+    val avatarShape: SecaAvatarShape? get() = profiles.avatarShape?.let(SecaAvatarShape::of)
+
+    fun shapeOf(contact: SecaContact?): SecaAvatarShape =
+        SecaAvatarShape.of(contact?.lookupKey?.let { profiles.shapeNameFor(it) } ?: profiles.avatarShape)
 }
 
 class MessagesViewModel(application: Application) : AndroidViewModel(application) {
@@ -770,6 +783,11 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     /** Takes the dark theme down to black, in all three apps; Seca Contacts keeps the choice. */
     fun setBlack(black: Boolean) {
         viewModelScope.launch { sharedProfiles.setBlack(black) }
+    }
+
+    /** Cuts every face in all three apps to one shape, or back to one per person (#25). */
+    fun setAvatarShape(shape: SecaAvatarShape?) {
+        viewModelScope.launch { sharedProfiles.setAvatarShape(shape?.name) }
     }
 
     // Numbers are read here, off the main thread, before the screen sees them:

@@ -21,6 +21,7 @@ import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.contacts.VCard
 import com.seca.core.contacts.VCardContact
+import com.seca.core.design.SecaAvatarShape
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.component.forgetContactPhoto
 import com.seca.core.model.backup.BackupCipher
@@ -72,7 +73,22 @@ data class ContactsUi(
     val simLines: List<SimLine> = emptyList(),
     /** The order the favourites were arranged in, as lookup keys; empty means alphabetical. */
     val favoriteOrder: List<String> = emptyList(),
+    /** The shape every face is cut to, or null for a different one per person (#25). */
+    val avatarShape: SecaAvatarShape? = null,
+    /** A shape chosen for one contact, by lookup key, which outranks the one above. */
+    val shapes: Map<String, SecaAvatarShape> = emptyMap(),
 ) {
+    /**
+     * The shape one contact's face is cut to: their own where they have one, else everyone's.
+     *
+     * An empty [lookupKey] — the owner's own card, a contact being made — has nobody's choice
+     * of its own and takes everyone's.
+     */
+    fun shapeOf(lookupKey: String): SecaAvatarShape =
+        shapes[lookupKey] ?: avatarShape ?: SecaAvatarShape.Playful
+
+    fun shapeOf(contact: SecaContact): SecaAvatarShape = shapeOf(contact.lookupKey)
+
     /** The owner's numbers: those the SIMs carry, then those typed in, each once. */
     val myNumbers: List<String>
         get() = (simLines.mapNotNull { it.number } + myCard.numbers).distinctBy { numbers.key(it) }
@@ -184,6 +200,18 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     /** Null goes back to the wallpaper colours. */
     fun setPalette(palette: SecaPalette?) {
         store.setPalette(palette)
+        refreshPreferences()
+    }
+
+    /** Cuts every face in all three apps to one shape, or back to one per person (#25). */
+    fun setAvatarShape(shape: SecaAvatarShape?) {
+        store.setAvatarShape(shape)
+        refreshPreferences()
+    }
+
+    /** Cuts one contact's face to a shape of its own, or back to everybody's. */
+    fun setShapeFor(lookupKey: String, shape: SecaAvatarShape?) {
+        store.setShapeFor(lookupKey, shape)
         refreshPreferences()
     }
 
@@ -521,6 +549,8 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                 black = store.black(),
                 showMyCard = store.showMyCard(),
                 favoriteOrder = store.favoriteOrder(),
+                avatarShape = store.avatarShape(),
+                shapes = store.shapes().mapValues { (_, name) -> SecaAvatarShape.of(name) },
             )
         }
     }

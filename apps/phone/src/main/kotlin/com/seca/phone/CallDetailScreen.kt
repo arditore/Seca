@@ -193,6 +193,7 @@ private fun Header(number: String, match: NumberMatch?, ui: PhoneUi) {
                 seed = contact.displayName,
                 photo = rememberContactPhoto(contact.id),
                 expressive = true,
+                avatarShape = ui.shapeOf(contact),
                 modifier = Modifier.padding(top = 8.dp),
             )
         } else {

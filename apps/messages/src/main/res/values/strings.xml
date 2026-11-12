@@ -442,4 +442,6 @@
     <string name="sent_sound_section">Sound</string>
     <string name="sent_sound">Sound when a message is sent</string>
     <string name="sent_sound_hint">A short tone, at the volume set for notifications; never when the phone is silent</string>
+    <string name="received_sound">Sound for arriving messages</string>
+    <string name="received_sound_hint">Opens Android’s own page for this app’s message notifications, where any sound on the phone can be chosen</string>
 </resources>
