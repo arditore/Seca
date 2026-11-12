@@ -74,9 +74,14 @@ extensions.configure<ApplicationExtension> {
     }
 }
 
-kotlin {
-    // The bytecode targets Java 17, but any JDK from 17 up may compile it: a build server that
-    // brings its own JDK, F-Droid for one, has no reason to install another.
+// The bytecode targets Java 17, but any JDK from 17 up may compile it: a build server that
+// brings its own JDK, F-Droid for one, has no reason to install another.
+//
+// Set on the tasks rather than through the `kotlin { }` block. That block is an accessor Gradle
+// generates by applying the plugin to a throwaway project first, and on Windows that probe comes
+// back with almost nothing, so the block does not resolve and build-logic will not compile there.
+// The tasks are typed, need no accessor, and take the same value.
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
     compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
 }
 
