@@ -1,13 +1,1 @@
-Les notifications d'appel manqué ne reviennent plus à chaque redémarrage. Le correctif précédent passait par le journal d'appels, ce qui demande la permission de l'écrire — demandée seulement à la suppression d'un appel, donc jamais accordée sur la plupart des téléphones, et le correctif ne faisait rien. L'application tient sa propre note désormais, sans permission, et écarter la notification compte comme l'avoir vue.
-
-Rester appuyé sur le bouton d'appel pour utiliser l'autre SIM fonctionne. Le bouton portait deux gestionnaires de clic, l'un dans l'autre, et c'est l'intérieur qui prenait l'appui : l'appui long n'était jamais entendu. Il n'est plus proposé sur un téléphone à une seule SIM, où il ne pouvait que passer l'appel qu'il aurait passé de toute façon.
-
-Rester appuyé sur une ligne de l'historique la sélectionne, et le dit, qu'il y ait déjà des lignes sélectionnées ou non. Tout ce qu'on peut faire d'un appel — copier, écrire, la fiche, bloquer, supprimer — est sur la page de cet appel, qu'un appui ouvre.
-
-La forme des photos et la palette suivent ce qui est réglé dans Seca Contacts, y compris une palette que vous avez mélangée.
-
-Le lanceur peut dire « Téléphone » plutôt que « Seca Phone ». Un seul réglage renomme les trois applications.
-
-Les paramètres sont une page de pages, plus un long défilement.
-
-L'allemand partout, y compris dans les parties partagées avec les deux autres applications.
+Les notifications d'appel manqué ne reviennent plus à chaque redémarrage : l'application tient sa propre note, sans permission, et écarter la notification compte comme l'avoir vue. Rester appuyé sur le bouton d'appel pour l'autre SIM fonctionne enfin, et n'est plus proposé sur un téléphone à une SIM. Tout ce qu'on fait d'un appel est sur sa page. Forme des photos, palette à vous, lanceur qui dit « Téléphone ». Paramètres en pages. L'allemand partout.

@@ -1,13 +1,1 @@
-Missed call notifications no longer come back after every restart. The earlier fix went through the call log, which needs permission to write it — only ever asked for when you delete a call, so on most phones it had never been granted and the fix did nothing. The app keeps its own note now, which needs nobody's permission, and putting the notification away counts as having seen it.
-
-Holding the call button to use the other SIM works. The button carried two click handlers, one inside the other, and the inner one took the press, so the long press was never heard at all. It is no longer offered on a phone with one SIM, where it could only place the call it would have placed anyway.
-
-Holding a row in the history chooses it, and says so whether or not rows are chosen already. Everything one call can be put through — copy, message, the contact, blocking, deletion — is on that call's own page, which a tap opens.
-
-The shape faces are cut to, and the palette, follow what Seca Contacts is set to, including a palette you mixed yourself.
-
-The launcher can say "Phone" rather than "Seca Phone". One switch renames all three apps.
-
-The settings are a page of pages now rather than one long scroll.
-
-German throughout, including the parts shared with the other two apps.
+Missed call notifications no longer come back after every restart: the app keeps its own note, which needs nobody's permission, and putting the notification away counts as having seen it. Holding the call button to use the other SIM works at last, and is not offered on a phone with one SIM. Everything one call can be put through is on that call's own page. Choose the shape faces are cut to, mix your own palette, let the launcher say "Phone". Settings are a page of pages. German throughout.

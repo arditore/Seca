@@ -1,17 +1,1 @@
-Mantener pulsado un número, un correo o una dirección lo copia, tanto en la ficha como en la lista.
-
-El número y el correo predeterminados se eligen al editar un contacto. Android siempre ha tenido un indicador para esto y Seca no lo leía: un contacto con un número de trabajo y un móvil se llamaba por el que el sistema devolviera primero. El elegido pasa ahora primero en todas partes donde un contacto se reduce a un solo número.
-
-Un cumpleaños o un aniversario abre el calendario en el día en que cae.
-
-Los favoritos pueden ordenarse a mano. El orden alfabético sigue siendo el predeterminado.
-
-La forma de las fotos es tuya: variada por persona como antes, o una sola forma para todos, o una forma para un solo contacto desde su ficha.
-
-Una paleta propia, mezclada a partir de un tono y una intensidad.
-
-El lanzador puede decir «Contactos» en lugar de «Seca Contactos». Un solo ajuste renombra las tres aplicaciones.
-
-Los ajustes son ahora una página de páginas en lugar de un desplazamiento largo.
-
-Alemán en toda la aplicación, incluidas las partes compartidas con las otras dos.
+Mantén pulsado un número, un correo o una dirección para copiarlo. Elige el número y el correo predeterminados al editar una ficha: el elegido pasa ahora primero en todas partes. Un cumpleaños abre el calendario en su día. Ordena tus favoritos a mano. Elige la forma de las fotos, para todos o para una sola persona. Mezcla tu propia paleta. El lanzador puede decir «Contactos». Los ajustes son una página de páginas. Alemán en toda la aplicación.

@@ -1,17 +1,1 @@
-Holding a number, an e-mail or an address copies it, on the contact's page and in the list.
-
-The default number and e-mail can be chosen while editing a contact. Android has had a flag for this all along and Seca never read it, so a contact with a work number and a mobile was called on whichever the provider happened to return first. The chosen one now comes first everywhere a contact is shown by a single number.
-
-A birthday or an anniversary opens the calendar on the day it next falls.
-
-Favourites can be arranged by hand. Alphabetical stays the default.
-
-The shape faces are cut to is yours to choose: the playful one per person as before, or one shape for everybody, or one for a single contact from their own card.
-
-A palette of your own, mixed from a hue and an amount of colour.
-
-The launcher can say "Contacts" rather than "Seca Contacts". One switch renames all three apps.
-
-The settings are a page of pages now rather than one long scroll.
-
-German throughout, including the parts shared with the other two apps.
+Hold a number, an e-mail or an address to copy it. Choose the default number and e-mail while editing a contact: the chosen one now comes first everywhere a contact is shown by one number. A birthday opens the calendar on the day it falls. Arrange your favourites by hand. Choose the shape faces are cut to, for everyone or for one person. Mix a palette of your own. Let the launcher say "Contacts". The settings are a page of pages rather than one long scroll. German throughout.
