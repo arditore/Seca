@@ -1,0 +1,1 @@
+Bloquear a una persona bloquea todos los números de su ficha, de una vez, y la página de la llamada dice si está bloqueada. Seca Contactos también puede pedirlo. Deshazlo en los números bloqueados de Android, que abren los ajustes. Con las correcciones de la beta 12: se usa la SIM configurada en Android sin preguntar, y las llamadas perdidas fantasma ya no vuelven tras reiniciar.
