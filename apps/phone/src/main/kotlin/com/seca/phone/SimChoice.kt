@@ -46,6 +46,7 @@ import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.segmentShape
 import androidx.compose.ui.res.stringResource
+import android.telecom.PhoneAccount
 
 /** A SIM able to place calls. [slot] counts from 1, when Android tells it. */
 internal data class Sim(val handle: PhoneAccountHandle, val label: String, val slot: Int?) {
@@ -138,7 +139,35 @@ internal fun routeCall(context: Context, number: String): SimRoute {
     val contact = contactFor(context, number)
     val key = simKeyOf(contact?.first, number, PhoneNumbers(PhoneNumbers.detectRegion(context)))
     val preferred = SimPreferences(context)[key]?.takeIf { saved -> sims.any { it.handle == saved } }
-    return if (preferred != null) SimRoute.Direct(preferred) else SimRoute.Ask(number, sims, key, contact?.second?.ifEmpty { null })
+    return when {
+        // A SIM chosen for this person outranks everything: that is what choosing it meant.
+        preferred != null -> SimRoute.Direct(preferred)
+        // Then Android's own choice of which SIM calls go out on. Where the owner has made
+        // one, Seca uses it and says nothing — asking every time is how a SIM somebody keeps
+        // private ends up placing a call they did not make (#49). Passing no account at all
+        // leaves the routing to Telecom, which is the one place that choice actually lives.
+        systemDefaultSim(context) != null -> SimRoute.Direct(null)
+        // Only where Android itself would ask, because the owner never said.
+        else -> SimRoute.Ask(number, sims, key, contact?.second?.ifEmpty { null })
+    }
+}
+
+/**
+ * The SIM Android is set to call out on, or null where the owner never chose one.
+ *
+ * Null is what Telecom returns when it would ask the question itself, which is the only case
+ * where Seca has any business asking it.
+ */
+private fun systemDefaultSim(context: Context): PhoneAccountHandle? {
+    // Asked for by name rather than relied on: without leave to read the phone's state there
+    // is nothing to read, and this is only reached on a phone that already granted it.
+    if (context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+        return null
+    }
+    return runCatching {
+        context.getSystemService(TelecomManager::class.java)
+            ?.getDefaultOutgoingPhoneAccount(PhoneAccount.SCHEME_TEL)
+    }.getOrNull()
 }
 
 /**

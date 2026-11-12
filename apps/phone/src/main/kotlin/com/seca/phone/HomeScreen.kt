@@ -82,6 +82,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
 import com.seca.core.design.component.SecaChoiceAction
 import com.seca.core.design.component.SecaChoiceBar
+import com.seca.core.design.R as DesignR
+import com.seca.core.design.component.secaCopy
 
 @Composable
 internal fun HomeScreen(
@@ -573,6 +575,7 @@ private fun FavoritesRow(favorites: List<SecaContact>, ui: PhoneUi, onCall: (Str
 /** The typed number itself, contacts matching by name or number, and matching calls from the history. */
 @Composable
 private fun SearchResults(ui: PhoneUi, actions: RowActions) {
+    val context = LocalContext.current
     val query = ui.query.trim()
     val digits = query.count(Char::isDigit)
     val contacts = remember(ui.contacts, query) {
@@ -624,6 +627,8 @@ private fun SearchResults(ui: PhoneUi, actions: RowActions) {
             item(key = "contacts-label", contentType = "label") { SecaSectionLabel(stringResource(R.string.contacts)) }
             itemsIndexed(contacts, key = { _, contact -> "contact-${contact.id}" }, contentType = { _, _ -> "contact" }) { index, contact ->
                 val number = contact.phoneNumbers.first().raw
+                val copyLabel = stringResource(DesignR.string.design_copy)
+                val numberLabel = stringResource(R.string.number)
                 SecaGroupItem(index = index, count = contacts.size) {
                     SecaContactRow(
                         contact = contact,
@@ -631,6 +636,10 @@ private fun SearchResults(ui: PhoneUi, actions: RowActions) {
                         supportingText = ui.numbers.display(number),
                         tone = ui.toneOf(contact),
                         photo = rememberContactThumbnail(contact.photoUri),
+                        // Nothing is chosen in this list, so holding a row is free to copy the
+                        // number it shows, as it does in Seca Contacts (#24).
+                        onLongClick = { secaCopy(context, numberLabel, number) },
+                        longClickLabel = copyLabel,
                     )
                 }
             }
