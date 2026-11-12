@@ -1,0 +1,17 @@
+Rester appuyé sur un numéro, une adresse e-mail ou une adresse postale la copie, sur la fiche comme dans la liste.
+
+Le numéro et l'e-mail par défaut se choisissent pendant la modification d'un contact. Android a toujours eu un indicateur pour cela et Seca ne le lisait pas : un contact avec un numéro professionnel et un mobile était appelé sur celui que le système renvoyait en premier. Celui qui est choisi passe désormais en premier partout où un contact est réduit à un seul numéro.
+
+Un anniversaire ouvre le calendrier au jour où il tombe.
+
+Les favoris peuvent être rangés à la main. L'ordre alphabétique reste par défaut.
+
+La forme des photos vous appartient : variée par personne comme avant, ou une seule forme pour tout le monde, ou une forme pour un seul contact depuis sa fiche.
+
+Une palette à vous, mélangée depuis une teinte et une intensité.
+
+Le lanceur peut dire « Contacts » plutôt que « Seca Contacts ». Un seul réglage renomme les trois applications.
+
+Les paramètres sont une page de pages, plus un long défilement.
+
+L'allemand partout, y compris dans les parties partagées avec les deux autres applications.

@@ -1,0 +1,23 @@
+Les MMS arrivent sur l'autre téléphone. Le destinataire était écrit comme l'expéditeur : To, Cc et Bcc portent chacun une simple chaîne encodée, tandis que From est le seul champ d'adresse précédé d'une longueur et d'un jeton. Chaque message partait avec ce jeton là où l'opérateur attend le jeu de caractères : l'adresse ressortait illisible, le serveur acceptait le message et n'avait nulle part où l'envoyer — et le téléphone affichait « envoyé », parce que de son point de vue ça l'était. Les espaces du numéro partaient aussi dans l'adresse. Aucun MMS ne pouvait arriver où que ce soit jusqu'ici.
+
+L'application ne meurt plus sur un MMS qu'elle ne sait pas lire. Les trois récepteurs multimédia analysaient les octets de l'opérateur et écrivaient dans le magasin de messages sur le fil qui dessine, sans rien pour rattraper une erreur : un message mal formé tuait toute l'application, et une grosse photo la figeait.
+
+Une photo reçue se regarde correctement : pincer pour zoomer, glisser pour se déplacer, double appui pour entrer et sortir. L'enregistrement est sur cet écran, là où l'on est quand on décide de la garder.
+
+Les GIF bougent, dans la conversation comme ouverts. Un GIF décodé en bitmap, c'est sa première image et rien d'autre — c'est ainsi qu'ils arrivaient tous — et un GIF qui tient est désormais envoyé tel quel.
+
+Jusqu'à quatre photos dans un message.
+
+L'archive et la publicité peuvent de nouveau être vidées. Rien de ce qu'on y mettait ne pouvait en ressortir : rester appuyé sur une ligne n'y faisait rien, aucune barre n'apparaissait, et la conversation n'offre pas de sortie non plus — archiver perdait une conversation aussi sûrement que la supprimer.
+
+Un son au départ d'un message, désactivé par défaut, au volume des notifications et jamais quand le téléphone est en silencieux. Et un son à vous pour les messages reçus, choisi sur la page d'Android prévue pour cela.
+
+Rester appuyé sur une conversation la sélectionne, et le dit, qu'il y en ait déjà de sélectionnées ou non. Tout ce qu'on peut faire d'une conversation est sur la barre du haut une fois sélectionnée, ou dans la conversation.
+
+La forme des photos et la palette suivent ce qui est réglé dans Seca Contacts, y compris une palette que vous avez mélangée.
+
+Le lanceur peut dire « Messages » plutôt que « Seca Messages ». Un seul réglage renomme les trois applications.
+
+Les paramètres sont une page de pages, plus un long défilement.
+
+L'allemand partout, y compris Seca Link et les parties partagées avec les deux autres applications.

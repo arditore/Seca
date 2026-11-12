@@ -1,0 +1,13 @@
+Las notificaciones de llamada perdida ya no vuelven tras cada reinicio. La corrección anterior pasaba por el registro de llamadas, que necesita permiso de escritura — solo se pide al borrar una llamada, así que en la mayoría de los teléfonos nunca se había concedido y la corrección no hacía nada. Ahora la aplicación guarda su propia nota, que no necesita permiso de nadie, y descartar la notificación cuenta como haberla visto.
+
+Mantener pulsado el botón de llamada para usar la otra SIM funciona. El botón tenía dos gestores de pulsación, uno dentro del otro, y el interior se quedaba con la pulsación. Ya no se ofrece en un teléfono con una sola SIM, donde solo podía hacer la llamada que iba a hacer igualmente.
+
+Mantener pulsada una fila del historial la selecciona, y lo dice, haya o no filas ya seleccionadas. Todo lo que puede hacerse con una llamada — copiar, escribir, la ficha, bloquear, borrar — está en la página de esa llamada, que se abre con un toque.
+
+La forma de las fotos y la paleta siguen lo configurado en Seca Contactos, incluida una paleta propia.
+
+El lanzador puede decir «Teléfono» en lugar de «Seca Phone». Un solo ajuste renombra las tres aplicaciones.
+
+Los ajustes son ahora una página de páginas en lugar de un desplazamiento largo.
+
+Alemán en toda la aplicación, incluidas las partes compartidas con las otras dos.
