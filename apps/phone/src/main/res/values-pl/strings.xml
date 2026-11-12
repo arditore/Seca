@@ -222,4 +222,6 @@
     <string name="settings_filtering_hint">Które połączenia dzwonią</string>
     <string name="settings_backup_hint">Kopie, pakiet Seca</string>
     <string name="settings_privacy_hint">Blokada, prywatny ekran</string>
+    <string name="block_contact">Zablokuj ten kontakt</string>
+    <string name="number_unblocked">Znowu przepuszczany</string>
 </resources>

@@ -189,6 +189,18 @@
             android:exported="true"
             android:permission="com.seca.permission.BACKUP" />
 
+        <!-- Seca Contacts asking for somebody to be blocked. Only the default phone app may
+             write Android's blocked-number list, so the request comes here. Guarded by the
+             Seca signing key: no other app can ask. -->
+        <receiver
+            android:name=".call.BlockRequestReceiver"
+            android:exported="true"
+            android:permission="com.seca.permission.BACKUP">
+            <intent-filter>
+                <action android:name="com.seca.phone.action.BLOCK" />
+            </intent-filter>
+        </receiver>
+
         <!-- Missed calls: Android asks the default phone app to announce them. Only
              Telecom, which runs as the system, holds this permission. -->
         <receiver

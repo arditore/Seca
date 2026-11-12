@@ -451,4 +451,12 @@
     <string name="settings_backup_hint">Sicherungen, die Seca-Suite</string>
     <string name="settings_privacy_hint">Sperre, privater Bildschirm</string>
     <string name="settings_link">Seca Link</string>
+    <string name="send_failed_because">Nicht gesendet: %1$s</string>
+    <string name="mms_no_network">keine mobilen Daten</string>
+    <string name="mms_data_off">mobile Daten sind aus</string>
+    <string name="mms_off_at_carrier">Ihr Anbieter erlaubt keine MMS</string>
+    <string name="mms_sim_inactive">diese SIM ist nicht aktiv</string>
+    <string name="mms_apn">die Anbietereinstellungen fehlen</string>
+    <string name="mms_no_server">der Server des Anbieters antwortete nicht</string>
+    <string name="mms_retry">der Anbieter bat um einen neuen Versuch</string>
 </resources>

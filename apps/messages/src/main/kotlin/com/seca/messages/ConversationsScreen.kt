@@ -47,6 +47,7 @@ import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaSearchField
 import com.seca.core.design.component.SecaSectionLabel
+import com.seca.core.design.component.SecaSwipeAway
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaSuiteBar
 import com.seca.core.design.component.SecaTopBar
@@ -339,18 +340,29 @@ private fun ConversationList(
     val spamCount = if (searching) 0 else ui.conversations.count { it.threadId in ui.spam }
     val nothing = pinned.isEmpty() && sections.isEmpty() && hits.isEmpty() && archivedCount == 0 && spamCount == 0
 
+    val archiveLabel = stringResource(R.string.archive)
     val row: @Composable (Conversation) -> Unit = { conversation ->
-        ConversationRow(
-            conversation = conversation,
-            ui = ui,
-            pinned = conversation.threadId in ui.pinned,
-            // While some are chosen, touching a row chooses it too: nobody expects a list
-            // half in one mode and half in another.
-            chosen = conversation.threadId in chosen,
-            choosing = chosen.isNotEmpty(),
-            onChoose = { onChoose(conversation.threadId) },
-            onOpen = { viewModel.openConversation(conversation.address) },
-        )
+        // Swiping a conversation aside archives it (#51). Not deletes: a swipe is the gesture
+        // people make by accident, and the archive is a tap away while a deleted conversation
+        // is gone from Android's shared store for good. While rows are being chosen the swipe
+        // is off, because the finger is already doing something else.
+        SecaSwipeAway(
+            onAway = { viewModel.setArchived(conversation.threadId, true) },
+            icon = SecaIcons.Archive,
+            label = archiveLabel,
+        ) {
+            ConversationRow(
+                conversation = conversation,
+                ui = ui,
+                pinned = conversation.threadId in ui.pinned,
+                // While some are chosen, touching a row chooses it too: nobody expects a list
+                // half in one mode and half in another.
+                chosen = conversation.threadId in chosen,
+                choosing = chosen.isNotEmpty(),
+                onChoose = { onChoose(conversation.threadId) },
+                onOpen = { viewModel.openConversation(conversation.address) },
+            )
+        }
     }
 
     LazyColumn(

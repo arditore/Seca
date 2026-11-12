@@ -870,6 +870,8 @@ private fun Bubble(
     var menuOpen by remember { mutableStateOf(false) }
     val mine = message.outgoing
     val failed = message.status == MessageStatus.Failed
+    // Why, where the carrier said something worth repeating.
+    val why = message.failure.takeIf { failed && it != 0 }?.let(::mmsFailureReason)
     val round = 20.dp
     val tight = 6.dp
     val shape = if (mine) {
@@ -901,6 +903,9 @@ private fun Bubble(
     val time = timeOf(context, message.date)
     val caption = when {
         failed && message.encrypted -> stringResource(R.string.not_sent_retry)
+        // The carrier's own reason where it gave one, because half of them are something to
+        // put right rather than something to retry.
+        why != null -> stringResource(R.string.send_failed_because, stringResource(why))
         failed -> stringResource(R.string.send_failed_retry)
         message.status == MessageStatus.Sending -> stringResource(R.string.sending)
         isLatestOutgoing && message.status == MessageStatus.Read -> stringResource(R.string.read_at, time)

@@ -217,4 +217,6 @@
     <string name="settings_filtering_hint">Which calls ring</string>
     <string name="settings_backup_hint">Backups, the Seca suite</string>
     <string name="settings_privacy_hint">App lock, private screen</string>
+    <string name="block_contact">Block this contact</string>
+    <string name="number_unblocked">Let through again</string>
 </resources>

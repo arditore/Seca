@@ -451,4 +451,12 @@
     <string name="settings_backup_hint">Backups, the Seca suite</string>
     <string name="settings_privacy_hint">App lock, private screen</string>
     <string name="settings_link">Seca Link</string>
+    <string name="send_failed_because">Not sent: %1$s</string>
+    <string name="mms_no_network">no mobile data</string>
+    <string name="mms_data_off">mobile data is off</string>
+    <string name="mms_off_at_carrier">your carrier does not allow picture messages</string>
+    <string name="mms_sim_inactive">that SIM is not active</string>
+    <string name="mms_apn">the carrier settings are missing</string>
+    <string name="mms_no_server">the carrier’s server did not answer</string>
+    <string name="mms_retry">the carrier asked to try again</string>
 </resources>

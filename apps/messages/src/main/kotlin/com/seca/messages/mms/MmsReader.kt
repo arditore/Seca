@@ -75,6 +75,8 @@ internal object MmsReader {
         val box: Int,
         val subject: String,
         val subscriptionId: Int,
+        /** What the carrier said when it refused; zero where nothing was said. */
+        val failure: Int = 0,
     ) {
 
         fun message(resolver: ContentResolver, parts: Parts): Message =
@@ -90,6 +92,7 @@ internal object MmsReader {
                 status = statusOf(box),
                 subscriptionId = subscriptionId,
                 images = parts.images,
+                failure = failure,
                 audio = parts.audio,
                 attachment = parts.other,
                 attachmentAt = parts.otherAt,
@@ -104,7 +107,10 @@ internal object MmsReader {
     ): List<Row> = runCatching {
         resolver.query(
             Mms.CONTENT_URI,
-            arrayOf(Mms._ID, Mms.THREAD_ID, Mms.DATE, Mms.MESSAGE_BOX, Mms.SUBJECT, Mms.MESSAGE_TYPE, Mms.SUBSCRIPTION_ID),
+            arrayOf(
+                Mms._ID, Mms.THREAD_ID, Mms.DATE, Mms.MESSAGE_BOX, Mms.SUBJECT,
+                Mms.MESSAGE_TYPE, Mms.SUBSCRIPTION_ID, Mms.RESPONSE_STATUS,
+            ),
             selection,
             args,
             order,
@@ -114,7 +120,17 @@ internal object MmsReader {
                     // The row that merely announced a message is not a message: it is shown only
                     // once it has been fetched, and until then the conversation says nothing.
                     if (c.getInt(5) == TYPE_NOTIFICATION_IND) continue
-                    add(Row(c.getLong(0), c.getLong(1), c.getLong(2), c.getInt(3), c.getString(4).orEmpty(), c.getInt(6)))
+                    add(
+                        Row(
+                            id = c.getLong(0),
+                            threadId = c.getLong(1),
+                            date = c.getLong(2),
+                            box = c.getInt(3),
+                            subject = c.getString(4).orEmpty(),
+                            subscriptionId = c.getInt(6),
+                            failure = c.getInt(7),
+                        ),
+                    )
                 }
             }
         }

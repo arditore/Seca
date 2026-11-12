@@ -91,6 +91,38 @@ internal fun blockNumber(context: Context, number: String): Boolean =
         }.getOrDefault(false)
 
 /**
+ * Blocks every one of [numbers], as one act, and says how many it managed (#50).
+ *
+ * A person has a card, not a number: blocking the mobile and leaving the landline through is
+ * not what anybody meant by blocking them.
+ */
+internal fun blockNumbers(context: Context, numbers: List<String>): Int =
+    numbers.count { blockNumber(context, it) }
+
+/** Lets every one of [numbers] through again, which is how blocking a contact is undone. */
+internal fun unblockNumbers(context: Context, numbers: List<String>): Int =
+    numbers.count { number ->
+        runCatching {
+            context.contentResolver.delete(
+                BlockedNumberContract.BlockedNumbers.CONTENT_URI,
+                "${BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER} = ?",
+                arrayOf(number),
+            ) > 0
+        }.getOrDefault(false)
+    }
+
+/**
+ * Whether every one of [numbers] is blocked, so the card can say "blocked" rather than guess.
+ *
+ * Only the default phone app may ask, which this is; anywhere else the answer is no, and the
+ * question is not put on the screen.
+ */
+internal fun allBlocked(context: Context, numbers: List<String>): Boolean =
+    numbers.isNotEmpty() && runCatching {
+        numbers.all { BlockedNumberContract.isBlocked(context, it) }
+    }.getOrDefault(false)
+
+/**
  * Runs a hidden service code such as *#*#4636#*#* once it is fully typed.
  * Android only accepts them from the default phone app; elsewhere nothing happens.
  */

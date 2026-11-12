@@ -86,9 +86,9 @@ internal object MmsSender {
     }
 
     /** Called back once the carrier has answered; the file is ours to clean up either way. */
-    fun finish(context: Context, message: Uri, file: File?, sent: Boolean) {
+    fun finish(context: Context, message: Uri, file: File?, sent: Boolean, reason: Int = 0) {
         file?.delete()
-        MmsStore.markSent(context, message, sent)
+        MmsStore.markSent(context, message, sent, reason)
     }
 
     private fun manager(context: Context, subscriptionId: Int): SmsManager {

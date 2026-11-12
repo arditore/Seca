@@ -107,9 +107,12 @@ internal object MmsStore {
     }
 
     /** Moves a sent message out of the outbox, into sent or failed. */
-    fun markSent(context: Context, message: Uri, sent: Boolean) {
+    fun markSent(context: Context, message: Uri, sent: Boolean, reason: Int = 0) {
         val values = ContentValues().apply {
             put(Mms.MESSAGE_BOX, if (sent) Mms.MESSAGE_BOX_SENT else Mms.MESSAGE_BOX_FAILED)
+            // What the carrier said, kept in the column the store has for it, so the
+            // conversation can say why rather than only that.
+            if (!sent) put(Mms.RESPONSE_STATUS, reason)
         }
         runCatching { context.contentResolver.update(message, values, null, null) }
             .onFailure { Log.w(LOG_TAG, "box not changed", it) }

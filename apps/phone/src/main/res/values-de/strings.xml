@@ -217,4 +217,6 @@
     <string name="settings_filtering_hint">Welche Anrufe klingeln</string>
     <string name="settings_backup_hint">Sicherungen, die Seca-Suite</string>
     <string name="settings_privacy_hint">Sperre, privater Bildschirm</string>
+    <string name="block_contact">Diesen Kontakt sperren</string>
+    <string name="number_unblocked">Wieder durchgelassen</string>
 </resources>

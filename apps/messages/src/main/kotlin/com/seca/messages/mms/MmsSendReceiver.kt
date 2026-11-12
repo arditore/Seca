@@ -24,7 +24,8 @@ class MmsSendReceiver : BroadcastReceiver() {
         val file = intent.getStringExtra(MmsSender.EXTRA_FILE)?.let(::File)
         val sent = resultCode == Activity.RESULT_OK
         if (!sent) Log.w(LOG_TAG, "the carrier refused the message (code $resultCode)")
-        away { MmsSender.finish(context, message, file, sent) }
+        val reason = resultCode
+        away { MmsSender.finish(context, message, file, sent, reason) }
     }
 
     private companion object {

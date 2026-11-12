@@ -472,4 +472,12 @@
     <string name="settings_backup_hint">Sauvegardes, suite Seca</string>
     <string name="settings_privacy_hint">Verrouillage, écran privé</string>
     <string name="settings_link">Seca Link</string>
+    <string name="send_failed_because">Non envoyé : %1$s</string>
+    <string name="mms_no_network">pas de données mobiles</string>
+    <string name="mms_data_off">les données mobiles sont coupées</string>
+    <string name="mms_off_at_carrier">votre opérateur n’autorise pas les MMS</string>
+    <string name="mms_sim_inactive">cette SIM n’est pas active</string>
+    <string name="mms_apn">les réglages de l’opérateur manquent</string>
+    <string name="mms_no_server">le serveur de l’opérateur n’a pas répondu</string>
+    <string name="mms_retry">l’opérateur a demandé de réessayer</string>
 </resources>

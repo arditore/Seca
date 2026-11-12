@@ -224,4 +224,6 @@
     <string name="settings_tidy_hint">Votre fiche, doublons</string>
     <string name="settings_privacy_hint">Verrouillage, écran privé</string>
     <string name="settings_profiles_hint">Travail, Famille, et le reste</string>
+    <string name="block_contact">Bloquer ce contact</string>
+    <string name="block_asked">Bloqué dans Seca Phone. À annuler dans ses paramètres, sous Numéros bloqués.</string>
 </resources>

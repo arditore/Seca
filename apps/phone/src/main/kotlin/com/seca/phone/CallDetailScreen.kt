@@ -47,6 +47,14 @@ import androidx.compose.ui.res.stringResource
 import android.provider.BlockedNumberContract
 import android.widget.Toast
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import com.seca.phone.allBlocked
+import com.seca.phone.blockNumbers
+import com.seca.phone.unblockNumbers
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Who a number belongs to, what can be done with it, and every call with them. */
 @Composable
@@ -67,7 +75,18 @@ internal fun CallDetailScreen(
     var menuOpen by remember { mutableStateOf(false) }
     val blockedText = stringResource(R.string.number_blocked)
     val blockFailedText = stringResource(R.string.block_failed)
+    val unblockedText = stringResource(R.string.number_unblocked)
+    val scope = rememberCoroutineScope()
     val blockable = remember(number) { BlockedNumberContract.canCurrentUserBlockNumbers(context) }
+    // A person has a card, not a number. Blocking the mobile and leaving the landline through
+    // is not what anybody meant by blocking them (#50).
+    val numbers = remember(contact, number) {
+        contact?.phoneNumbers?.map { it.raw }?.takeIf { it.isNotEmpty() } ?: listOf(number)
+    }
+    var blocked by remember(numbers) { mutableStateOf(false) }
+    LaunchedEffect(numbers, blockable) {
+        blocked = blockable && withContext(Dispatchers.IO) { allBlocked(context, numbers) }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
@@ -91,16 +110,40 @@ internal fun CallDetailScreen(
                         // that page's menu became.
                         if (blockable) {
                             DropdownMenuItem(
-                                text = { Text(stringResource(R.string.block_number)) },
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            when {
+                                                blocked -> R.string.unblock
+                                                numbers.size > 1 -> R.string.block_contact
+                                                else -> R.string.block_number
+                                            },
+                                        ),
+                                    )
+                                },
                                 leadingIcon = { Icon(SecaIcons.Block, contentDescription = null) },
                                 onClick = {
                                     menuOpen = false
-                                    val blocked = blockNumber(context, match?.number?.raw ?: number)
-                                    Toast.makeText(
-                                        context,
-                                        if (blocked) blockedText else blockFailedText,
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    val wanted = !blocked
+                                    scope.launch {
+                                        val done = withContext(Dispatchers.IO) {
+                                            if (wanted) {
+                                                blockNumbers(context, numbers) > 0
+                                            } else {
+                                                unblockNumbers(context, numbers) > 0
+                                            }
+                                        }
+                                        if (done) blocked = wanted
+                                        Toast.makeText(
+                                            context,
+                                            when {
+                                                !done -> blockFailedText
+                                                wanted -> blockedText
+                                                else -> unblockedText
+                                            },
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
                                 },
                             )
                         }

@@ -214,4 +214,6 @@
     <string name="settings_tidy_hint">Ihre Karte, Duplikate</string>
     <string name="settings_privacy_hint">Sperre, privater Bildschirm</string>
     <string name="settings_profiles_hint">Arbeit, Familie und der Rest</string>
+    <string name="block_contact">Diesen Kontakt sperren</string>
+    <string name="block_asked">In Seca Phone gesperrt. Rückgängig in dessen Einstellungen, unter Gesperrte Nummern.</string>
 </resources>

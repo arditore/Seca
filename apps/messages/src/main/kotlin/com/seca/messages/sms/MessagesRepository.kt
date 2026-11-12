@@ -53,6 +53,8 @@ data class Message(
     /** The photo a Seca Link message carries, as a file on this phone; null for text. */
     /** Every picture the message carries, in the order they were attached. */
     val images: List<String> = emptyList(),
+    /** Why a picture message did not go, as the carrier put it. Zero where nothing was said. */
+    val failure: Int = 0,
     /** The voice message a message carries: a file for Seca Link, a part for a multimedia one. */
     val audio: String? = null,
     /** Which SIM carried it, where the phone has more than one; -1 when nothing was recorded. */

@@ -224,4 +224,6 @@
     <string name="settings_tidy_hint">Tu ficha, duplicados</string>
     <string name="settings_privacy_hint">Bloqueo, pantalla privada</string>
     <string name="settings_profiles_hint">Trabajo, Familia, y el resto</string>
+    <string name="block_contact">Bloquear este contacto</string>
+    <string name="block_asked">Bloqueado en Seca Phone. Deshágalo en sus ajustes, en Números bloqueados.</string>
 </resources>

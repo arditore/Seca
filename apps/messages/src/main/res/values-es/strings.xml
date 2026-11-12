@@ -472,4 +472,12 @@
     <string name="settings_backup_hint">Copias, la suite Seca</string>
     <string name="settings_privacy_hint">Bloqueo, pantalla privada</string>
     <string name="settings_link">Seca Link</string>
+    <string name="send_failed_because">No enviado: %1$s</string>
+    <string name="mms_no_network">sin datos móviles</string>
+    <string name="mms_data_off">los datos móviles están desactivados</string>
+    <string name="mms_off_at_carrier">tu operador no permite mensajes con foto</string>
+    <string name="mms_sim_inactive">esa SIM no está activa</string>
+    <string name="mms_apn">faltan los ajustes del operador</string>
+    <string name="mms_no_server">el servidor del operador no respondió</string>
+    <string name="mms_retry">el operador pidió reintentar</string>
 </resources>

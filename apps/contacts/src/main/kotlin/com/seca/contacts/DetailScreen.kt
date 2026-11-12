@@ -69,6 +69,8 @@ import com.seca.core.design.R as DesignR
 import com.seca.core.design.component.secaCopy
 import android.content.Context
 import com.seca.core.design.component.SecaShapePicker
+import android.widget.Toast
+import com.seca.core.suite.SecaBlocking
 
 @Composable
 internal fun DetailScreen(
@@ -99,7 +101,10 @@ internal fun DetailScreen(
     }
     var confirmDelete by remember { mutableStateOf(false) }
     var choosingShape by remember { mutableStateOf(false) }
+    val blockAskedText = stringResource(R.string.block_asked)
     val current = detail
+    val blockableNumbers = current?.phones?.map { it.value }?.filter { it.isNotBlank() }.orEmpty()
+    val blockable = blockableNumbers.isNotEmpty() && remember { SecaBlocking.available(context) }
     val ringtoneTitle = stringResource(R.string.contact_ringtone)
 
     Scaffold(
@@ -161,6 +166,21 @@ internal fun DetailScreen(
                                     withWrite { viewModel.setSendToVoicemail(id, !current.sendToVoicemail) }
                                 },
                             )
+                            // Blocking is Android's own list and only the default phone app
+                            // may write it, so Seca Contacts hands the numbers to Seca Phone
+                            // and says where to undo it (#50). Not offered without Seca Phone,
+                            // and not for a contact with no number to block.
+                            if (blockable) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.block_contact)) },
+                                    leadingIcon = { Icon(SecaIcons.Block, contentDescription = null) },
+                                    onClick = {
+                                        menuOpen = false
+                                        SecaBlocking.request(context, blockableNumbers, block = true)
+                                        Toast.makeText(context, blockAskedText, Toast.LENGTH_LONG).show()
+                                    },
+                                )
+                            }
                             // A shape for this person alone, which outranks the one chosen
                             // for everybody in the settings (#25).
                             DropdownMenuItem(

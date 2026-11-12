@@ -222,4 +222,6 @@
     <string name="settings_filtering_hint">Qué llamadas suenan</string>
     <string name="settings_backup_hint">Copias, la suite Seca</string>
     <string name="settings_privacy_hint">Bloqueo, pantalla privada</string>
+    <string name="block_contact">Bloquear este contacto</string>
+    <string name="number_unblocked">Permitido de nuevo</string>
 </resources>

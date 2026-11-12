@@ -222,4 +222,6 @@
     <string name="settings_filtering_hint">Quels appels sonnent</string>
     <string name="settings_backup_hint">Sauvegardes, suite Seca</string>
     <string name="settings_privacy_hint">Verrouillage, écran privé</string>
+    <string name="block_contact">Bloquer ce contact</string>
+    <string name="number_unblocked">De nouveau autorisé</string>
 </resources>

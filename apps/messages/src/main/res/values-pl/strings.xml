@@ -474,4 +474,12 @@
     <string name="settings_backup_hint">Kopie, pakiet Seca</string>
     <string name="settings_privacy_hint">Blokada, prywatny ekran</string>
     <string name="settings_link">Seca Link</string>
+    <string name="send_failed_because">Nie wysłano: %1$s</string>
+    <string name="mms_no_network">brak danych komórkowych</string>
+    <string name="mms_data_off">dane komórkowe są wyłączone</string>
+    <string name="mms_off_at_carrier">operator nie zezwala na MMS-y</string>
+    <string name="mms_sim_inactive">ta karta SIM nie jest aktywna</string>
+    <string name="mms_apn">brakuje ustawień operatora</string>
+    <string name="mms_no_server">serwer operatora nie odpowiedział</string>
+    <string name="mms_retry">operator poprosił o ponowienie</string>
 </resources>

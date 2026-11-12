@@ -225,4 +225,6 @@
     <string name="settings_tidy_hint">Twoja wizytówka, duplikaty</string>
     <string name="settings_privacy_hint">Blokada, prywatny ekran</string>
     <string name="settings_profiles_hint">Praca, Rodzina i reszta</string>
+    <string name="block_contact">Zablokuj ten kontakt</string>
+    <string name="block_asked">Zablokowano w Seca Phone. Cofniesz to w jego ustawieniach, w Zablokowane numery.</string>
 </resources>
