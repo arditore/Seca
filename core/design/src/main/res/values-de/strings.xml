@@ -52,4 +52,6 @@
     <string name="design_palette_hue">Farbe</string>
     <string name="design_palette_chroma">Stärke</string>
     <string name="design_keep">Behalten</string>
+    <string name="design_colour_per_person">Eine Farbe je Person</string>
+    <string name="design_colour_per_person_hint">Statt der Farbe des Profils</string>
 </resources>

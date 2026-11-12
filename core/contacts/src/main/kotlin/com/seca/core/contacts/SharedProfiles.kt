@@ -39,6 +39,9 @@ object SharedProfilesContract {
 
     /** The shape faces are cut to: one name on the settings row, one per contact on the assignments. */
     const val COLUMN_AVATAR_SHAPE = "avatar_shape"
+
+    /** Whether a face takes a colour of its own rather than its profile's (#52). */
+    const val COLUMN_COLOUR_PER_PERSON = "colour_per_person"
 }
 
 /** What a Seca app needs from Seca Contacts' profiles. */
@@ -54,6 +57,8 @@ data class SharedProfiles(
     val avatarShape: String? = null,
     /** A shape chosen for one contact, by lookup key, where one was. */
     val shapes: Map<String, String> = emptyMap(),
+    /** Whether each person gets a colour of their own rather than their profile's (#52). */
+    val colourPerPerson: Boolean = false,
     /** Whether Seca Contacts answered: without it there are no profiles to show nor colours to set. */
     val connected: Boolean = false,
 ) {
@@ -65,7 +70,29 @@ data class SharedProfiles(
 
     /** A profile's position, which picks its colour in every Seca app. */
     fun toneOf(profile: Profile): Int = profiles.indexOfFirst { it.id == profile.id }.coerceAtLeast(0)
+
+    /**
+     * The colour a face takes: its profile's, or one of its own.
+     *
+     * By profile is the default and says where a contact is filed, which is worth keeping for
+     * anyone who files them. For everybody else there is one profile, so every face is the
+     * same colour and the colour says nothing. Asked for in #52.
+     *
+     * Taken from the lookup key rather than rolled, so a person keeps their colour, and the
+     * key rather than the name so it survives the address book re-aggregating them.
+     */
+    fun toneFor(lookupKey: String, profile: Profile): Int =
+        if (colourPerPerson) Math.floorMod(lookupKey.hashCode(), TONES) else toneOf(profile)
 }
+
+/**
+ * How many colours there are to go round.
+ *
+ * The scheme works them out from the palette and keeps them far enough apart to be told apart,
+ * which yields about this many. Past it they repeat, which is the honest ceiling: a list of
+ * thirty contacts shows each colour four or five times.
+ */
+private const val TONES = 7
 
 /**
  * Reads Seca Contacts' profiles. Falls back to the defaults — everyone in
@@ -106,7 +133,9 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
                         .takeIf { it >= 0 }?.let { c.getInt(it) == 1 } == true
                     val shape = c.getColumnIndex(SharedProfilesContract.COLUMN_AVATAR_SHAPE)
                         .takeIf { it >= 0 }?.let { c.getString(it) }
-                    Settings(palette, black, shape)
+                    val perPerson = c.getColumnIndex(SharedProfilesContract.COLUMN_COLOUR_PER_PERSON)
+                        .takeIf { it >= 0 }?.let { c.getInt(it) == 1 } == true
+                    Settings(palette, black, shape, perPerson)
                 }
             }
             SharedProfiles(
@@ -116,6 +145,7 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
                 black = settings?.black == true,
                 avatarShape = settings?.avatarShape,
                 shapes = shapes,
+                colourPerPerson = settings?.colourPerPerson == true,
                 connected = profiles != null,
             )
         } catch (e: SecurityException) {
@@ -135,8 +165,17 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
     suspend fun setAvatarShape(shape: String?): Boolean =
         write(ContentValues().apply { put(SharedProfilesContract.COLUMN_AVATAR_SHAPE, shape) })
 
+    /** Gives every person a colour of their own, or puts them back on their profile's (#52). */
+    suspend fun setColourPerPerson(on: Boolean): Boolean =
+        write(ContentValues().apply { put(SharedProfilesContract.COLUMN_COLOUR_PER_PERSON, if (on) 1 else 0) })
+
     /** What came back from the settings row, which has grown past a pair. */
-    private class Settings(val palette: String?, val black: Boolean, val avatarShape: String?)
+    private class Settings(
+        val palette: String?,
+        val black: Boolean,
+        val avatarShape: String?,
+        val colourPerPerson: Boolean,
+    )
 
     private suspend fun write(values: ContentValues): Boolean = withContext(Dispatchers.IO) {
         try {

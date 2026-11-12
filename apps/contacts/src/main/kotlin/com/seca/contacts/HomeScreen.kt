@@ -408,7 +408,7 @@ private fun LazyListScope.contactGroup(
                 contact = contact,
                 onClick = { onOpen(contact) },
                 supportingText = number?.let(ui.numbers::display),
-                tone = ui.toneOf(ui.profileOf(contact)),
+                tone = ui.toneOf(contact),
                 photo = rememberContactThumbnail(contact.photoUri),
                 // The number is right there on the row and the only way to get it anywhere
                 // else was to read it out and type it again (#24). Nothing is chosen in this
@@ -455,7 +455,7 @@ private fun FavoritesRow(
                     initials = contact.initials,
                     photoUri = contact.photoUri,
                     size = 64.dp,
-                    tone = ui.toneOf(ui.profileOf(contact)),
+                    tone = ui.toneOf(contact),
                     seed = contact.displayName,
                     expressive = true,
                     avatarShape = ui.shapeOf(contact),

@@ -32,6 +32,7 @@ import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaHint
+import com.seca.core.design.component.SecaColourPerPersonRow
 import com.seca.core.design.component.SecaPaletteSection
 import com.seca.core.design.component.SecaShapeSection
 import com.seca.core.design.component.SecaPaletteSwatch
@@ -157,10 +158,13 @@ internal fun SettingsScreen(
                                 onCheckedChange = viewModel::setBlack,
                             )
                         }
-                        SecaGroupItem(index = 2, count = 4) {
+                        SecaGroupItem(index = 2, count = 5) {
                             SecaPaletteSection(ui.palette, dynamic, viewModel::setPalette)
                         }
-                        SecaGroupItem(index = 3, count = 4) {
+                        SecaGroupItem(index = 3, count = 5) {
+                            SecaColourPerPersonRow(ui.colourPerPerson, viewModel::setColourPerPerson)
+                        }
+                        SecaGroupItem(index = 4, count = 5) {
                             SecaShapeSection(ui.avatarShape, viewModel::setAvatarShape)
                         }
                         SecaHint(stringResource(R.string.colors_shared_hint))

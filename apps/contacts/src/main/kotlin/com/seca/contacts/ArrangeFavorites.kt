@@ -95,7 +95,7 @@ internal fun ArrangeFavoritesDialog(
                                 initials = contact.initials,
                                 photoUri = contact.photoUri,
                                 size = 36.dp,
-                                tone = ui.toneOf(ui.profileOf(contact)),
+                                tone = ui.toneOf(contact),
                                 seed = contact.displayName,
                                 photo = rememberContactThumbnail(contact.photoUri),
                             )

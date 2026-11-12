@@ -263,7 +263,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 initials = initialsOf(detail.displayName),
                 photoUri = null,
                 size = 136.dp,
-                tone = ui.toneOf(profile),
+                tone = ui.toneFor(detail.lookupKey, profile),
                 seed = detail.displayName,
                 photo = rememberContactPhoto(detail.id),
                 expressive = true,

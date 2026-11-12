@@ -54,4 +54,6 @@
     <string name="design_palette_hue">Kolor</string>
     <string name="design_palette_chroma">Nasycenie</string>
     <string name="design_keep">Zachowaj</string>
+    <string name="design_colour_per_person">Kolor dla każdej osoby</string>
+    <string name="design_colour_per_person_hint">Zamiast koloru profilu</string>
 </resources>

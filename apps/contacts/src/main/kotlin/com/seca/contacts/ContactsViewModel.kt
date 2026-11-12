@@ -55,6 +55,14 @@ sealed interface Screen {
     data object MyCard : Screen
 }
 
+/**
+ * How many colours there are to go round when each person takes one of their own.
+ *
+ * The scheme keeps its hues far enough apart to be told apart, which yields about this many.
+ * Past it they repeat: thirty contacts show each colour four or five times.
+ */
+private const val TONES = 7
+
 data class ContactsUi(
     /** Reads numbers with the SIM's country. */
     val numbers: PhoneNumbers,
@@ -78,6 +86,8 @@ data class ContactsUi(
     val favoriteOrder: List<String> = emptyList(),
     /** The shape every face is cut to, or null for a different one per person (#25). */
     val avatarShape: SecaAvatarShape? = null,
+    /** Whether each person gets a colour of their own rather than their profile's (#52). */
+    val colourPerPerson: Boolean = false,
     /** A shape chosen for one contact, by lookup key, which outranks the one above. */
     val shapes: Map<String, SecaAvatarShape> = emptyMap(),
 ) {
@@ -113,6 +123,17 @@ data class ContactsUi(
 
     /** A profile's position in the list, which picks its badge colour. */
     fun toneOf(profile: Profile): Int = profiles.indexOfFirst { it.id == profile.id }.coerceAtLeast(0)
+
+    /**
+     * The colour one contact's face takes: their profile's, or one of their own (#52).
+     *
+     * Taken from the lookup key rather than rolled, so a person keeps their colour, and from
+     * the key rather than the name so it survives the address book re-aggregating them.
+     */
+    fun toneFor(lookupKey: String, profile: Profile): Int =
+        if (colourPerPerson) Math.floorMod(lookupKey.hashCode(), TONES) else toneOf(profile)
+
+    fun toneOf(contact: SecaContact): Int = toneFor(contact.lookupKey, profileOf(contact))
 }
 
 class ContactsViewModel(application: Application) : AndroidViewModel(application) {
@@ -203,6 +224,12 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     /** Null goes back to the wallpaper colours. */
     fun setPalette(palette: SecaPaletteSpec?) {
         store.setPalette(palette)
+        refreshPreferences()
+    }
+
+    /** Gives every person a colour of their own, or puts them back on their profile's (#52). */
+    fun setColourPerPerson(on: Boolean) {
+        store.setColourPerPerson(on)
         refreshPreferences()
     }
 
@@ -553,6 +580,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                 showMyCard = store.showMyCard(),
                 favoriteOrder = store.favoriteOrder(),
                 avatarShape = store.avatarShape(),
+                colourPerPerson = store.colourPerPerson(),
                 shapes = store.shapes().mapValues { (_, name) -> SecaAvatarShape.of(name) },
             )
         }

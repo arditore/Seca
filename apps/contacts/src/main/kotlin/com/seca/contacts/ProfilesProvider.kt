@@ -50,9 +50,17 @@ class ProfilesProvider : ContentProvider() {
                     SharedProfilesContract.COLUMN_PALETTE,
                     SharedProfilesContract.COLUMN_BLACK,
                     SharedProfilesContract.COLUMN_AVATAR_SHAPE,
+                    SharedProfilesContract.COLUMN_COLOUR_PER_PERSON,
                 ),
             ).apply {
-                addRow(arrayOf<Any?>(store.palette()?.stored(), if (store.black()) 1 else 0, store.avatarShape()?.name))
+                addRow(
+                    arrayOf<Any?>(
+                        store.palette()?.stored(),
+                        if (store.black()) 1 else 0,
+                        store.avatarShape()?.name,
+                        if (store.colourPerPerson()) 1 else 0,
+                    ),
+                )
             }
             else -> return null
         }
@@ -81,6 +89,10 @@ class ProfilesProvider : ContentProvider() {
         }
         if (values.containsKey(SharedProfilesContract.COLUMN_BLACK)) {
             store.setBlack(values.getAsInteger(SharedProfilesContract.COLUMN_BLACK) == 1)
+            changed++
+        }
+        if (values.containsKey(SharedProfilesContract.COLUMN_COLOUR_PER_PERSON)) {
+            store.setColourPerPerson(values.getAsInteger(SharedProfilesContract.COLUMN_COLOUR_PER_PERSON) == 1)
             changed++
         }
         if (values.containsKey(SharedProfilesContract.COLUMN_AVATAR_SHAPE)) {

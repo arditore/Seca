@@ -52,4 +52,6 @@
     <string name="design_palette_hue">Colour</string>
     <string name="design_palette_chroma">How much</string>
     <string name="design_keep">Keep</string>
+    <string name="design_colour_per_person">A colour per person</string>
+    <string name="design_colour_per_person_hint">Instead of their profile’s colour</string>
 </resources>

@@ -112,7 +112,11 @@ data class MessagesUi(
 
     fun profileOf(contact: SecaContact): Profile = profiles.profileForKey(contact.lookupKey)
 
-    fun toneOf(contact: SecaContact): Int = profiles.toneOf(profileOf(contact))
+    fun toneOf(contact: SecaContact): Int =
+        profiles.toneFor(contact.lookupKey, profileOf(contact))
+
+    /** Whether faces take a colour of their own, which the settings show and let the owner change. */
+    val colourPerPerson: Boolean get() = profiles.colourPerPerson
 
     /**
      * The shape a face is cut to, as Seca Contacts keeps it (#25).
@@ -786,6 +790,11 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     /** Takes the dark theme down to black, in all three apps; Seca Contacts keeps the choice. */
     fun setBlack(black: Boolean) {
         viewModelScope.launch { sharedProfiles.setBlack(black) }
+    }
+
+    /** Gives every person a colour of their own, or puts them back on their profile's (#52). */
+    fun setColourPerPerson(on: Boolean) {
+        viewModelScope.launch { sharedProfiles.setColourPerPerson(on) }
     }
 
     /** Cuts every face in all three apps to one shape, or back to one per person (#25). */

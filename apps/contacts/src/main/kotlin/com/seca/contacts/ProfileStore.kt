@@ -104,6 +104,14 @@ class ProfileStore(context: Context) {
         announceChange()
     }
 
+    /** Whether each person gets a colour of their own rather than their profile's (#52). */
+    fun colourPerPerson(): Boolean = prefs.getBoolean(KEY_COLOUR_PER_PERSON, false)
+
+    fun setColourPerPerson(on: Boolean) {
+        prefs.edit { putBoolean(KEY_COLOUR_PER_PERSON, on) }
+        announceChange()
+    }
+
     /** A shape chosen for one contact, which outranks the one chosen for everybody. */
     fun shapes(): Map<String, String> {
         val json = prefs.getString(KEY_SHAPES, null)?.let { JSONObject(it) } ?: return emptyMap()
@@ -184,6 +192,7 @@ class ProfileStore(context: Context) {
         private const val KEY_ASSIGNMENTS = "assignments"
         private const val KEY_CURRENT = "current_profile"
         private const val KEY_AVATAR_SHAPE = "avatar_shape"
+    private const val KEY_COLOUR_PER_PERSON = "colour_per_person"
     private const val KEY_SHAPES = "avatar_shapes"
     private const val KEY_FAVORITE_ORDER = "favorite_order"
     private const val KEY_PALETTE = "palette"

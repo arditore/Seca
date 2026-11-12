@@ -53,4 +53,6 @@
     <string name="design_palette_hue">Color</string>
     <string name="design_palette_chroma">Intensidad</string>
     <string name="design_keep">Guardar</string>
+    <string name="design_colour_per_person">Un color por persona</string>
+    <string name="design_colour_per_person_hint">En lugar del color del perfil</string>
 </resources>
