@@ -468,4 +468,10 @@
     <string name="received_sound">Dźwięk przychodzących wiadomości</string>
     <string name="received_sound_hint">Otwiera stronę Androida dla powiadomień o wiadomościach, gdzie można wybrać dowolny dźwięk z telefonu</string>
     <string name="app_name_plain">Wiadomości</string>
+    <string name="settings_appearance_hint">Kolory, kształt zdjęć, kolejność aplikacji</string>
+    <string name="settings_messages_hint">Domyślna aplikacja wiadomości, powiadomienia, kody, reklamy, dźwięki</string>
+    <string name="settings_link_hint">Zaszyfrowane wiadomości między dwoma telefonami Seca</string>
+    <string name="settings_backup_hint">Kopie zapasowe, cały pakiet Seca</string>
+    <string name="settings_privacy_hint">Blokada, prywatny ekran, co opuszcza telefon</string>
+    <string name="settings_link">Seca Link</string>
 </resources>

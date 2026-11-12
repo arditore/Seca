@@ -70,4 +70,6 @@
     <string name="suite_order_hint">El orden en que aparecen, en la barra inferior de las tres</string>
     <string name="suite_order_up">Subir %1$s</string>
     <string name="suite_order_down">Bajar %1$s</string>
+    <string name="suite_plain_names">Nombres sencillos en el lanzador</string>
+    <string name="suite_plain_names_hint">«Contactos», «Teléfono» y «Mensajes» en lugar de «Seca Contactos» y los demás</string>
 </resources>

@@ -445,4 +445,10 @@
     <string name="received_sound">Ton für eingehende Nachrichten</string>
     <string name="received_sound_hint">Öffnet die Android-Seite für die Nachrichten-Benachrichtigungen dieser App, wo jeder Ton des Telefons gewählt werden kann</string>
     <string name="app_name_plain">Nachrichten</string>
+    <string name="settings_appearance_hint">Farben, Form der Bilder, Reihenfolge der Apps</string>
+    <string name="settings_messages_hint">Standard-Nachrichten-App, Benachrichtigungen, Codes, Werbung, Töne</string>
+    <string name="settings_link_hint">Verschlüsselte Nachrichten zwischen zwei Seca-Telefonen</string>
+    <string name="settings_backup_hint">Sicherungen, die ganze Seca-Suite</string>
+    <string name="settings_privacy_hint">Sperre, privater Bildschirm, was das Telefon verlässt</string>
+    <string name="settings_link">Seca Link</string>
 </resources>

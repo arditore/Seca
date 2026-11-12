@@ -211,4 +211,10 @@
     <string name="yesterday">Yesterday</string>
     <string name="choose">Choose</string>
     <string name="app_name_plain">Phone</string>
+    <string name="backup">Backup</string>
+    <string name="settings_appearance_hint">Colours, the shape of the faces, the order of the apps</string>
+    <string name="settings_calls_hint">The default phone app, the call screen, the history</string>
+    <string name="settings_filtering_hint">Which calls ring, and which do not</string>
+    <string name="settings_backup_hint">Backups, the whole Seca suite</string>
+    <string name="settings_privacy_hint">The app lock, the private screen, what leaves the phone</string>
 </resources>

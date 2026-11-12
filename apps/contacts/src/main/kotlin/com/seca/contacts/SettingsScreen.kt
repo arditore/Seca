@@ -52,11 +52,13 @@ import android.Manifest
 import com.seca.core.model.Profile
 import com.seca.core.suite.AutoBackupSection
 import com.seca.core.suite.SuiteBackupSection
+import com.seca.core.suite.SuiteNamesSection
 import com.seca.core.suite.SuiteOrderSection
 import java.time.LocalDate
 import com.seca.core.design.label
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.activity.compose.BackHandler
 
 /** What a .vcf file may be labelled as, depending on the app that made it. */
 private val VCardTypes = arrayOf("text/x-vcard", "text/vcard", "text/directory", "text/plain", "application/octet-stream")
@@ -92,10 +94,19 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
     var renaming by remember { mutableStateOf<Profile?>(null) }
     var deleting by remember { mutableStateOf<Profile?>(null) }
     val dynamic = ui.palette == null
+    // Which part of the settings is showing. State rather than a route of its own: it is one
+    // screen showing one of its parts, and the back gesture already means "the part before".
+    var page by remember { mutableStateOf(SettingsPage.Master) }
+    BackHandler(enabled = page != SettingsPage.Master) { page = SettingsPage.Master }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "", onBack = { viewModel.back() }) },
+        topBar = {
+            SecaTopBar(
+                title = "",
+                onBack = { if (page == SettingsPage.Master) viewModel.back() else page = SettingsPage.Master },
+            )
+        },
     ) { padding ->
         Column(
             Modifier
@@ -105,165 +116,211 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                 .padding(bottom = 32.dp),
         ) {
             Text(
-                text = stringResource(R.string.settings),
+                text = stringResource(page.title),
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
             )
 
-            SecaSectionLabel(stringResource(R.string.colors))
-            SecaGroupItem(index = 0, count = 3) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .toggleable(
-                            value = dynamic,
-                            role = Role.Switch,
-                            onValueChange = { on -> viewModel.setPalette(if (on) null else SecaPalette.Ocean) },
-                        )
-                        .padding(16.dp),
-                ) {
-                    IconBadge(SecaIcons.AutoAwesome)
-                    Column(
-                        Modifier
-                            .weight(1f)
-                            .padding(horizontal = 16.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.dynamic_colors),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Text(
-                            text = stringResource(R.string.dynamic_colors_hint),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            when (page) {
+                SettingsPage.Master -> {
+                    SettingsEntry(
+                        icon = SecaIcons.Palette,
+                        title = stringResource(R.string.colors),
+                        subtitle = stringResource(R.string.settings_appearance_hint),
+                        index = 0,
+                        count = 5,
+                    ) { page = SettingsPage.Appearance }
+                    SettingsEntry(
+                        icon = SecaIcons.Label,
+                        title = stringResource(R.string.profiles),
+                        subtitle = stringResource(R.string.profiles_hint),
+                        index = 1,
+                        count = 5,
+                    ) { page = SettingsPage.Profiles }
+                    SettingsEntry(
+                        icon = SecaIcons.Lock,
+                        title = stringResource(R.string.backup),
+                        subtitle = stringResource(R.string.settings_backup_hint),
+                        index = 2,
+                        count = 5,
+                    ) { page = SettingsPage.Backup }
+                    SettingsEntry(
+                        icon = SecaIcons.Contacts,
+                        title = stringResource(R.string.tidy_up),
+                        subtitle = stringResource(R.string.settings_tidy_hint),
+                        index = 3,
+                        count = 5,
+                    ) { page = SettingsPage.TidyUp }
+                    SettingsEntry(
+                        icon = SecaIcons.Shield,
+                        title = stringResource(R.string.protection),
+                        subtitle = stringResource(R.string.settings_privacy_hint),
+                        index = 4,
+                        count = 5,
+                    ) { page = SettingsPage.Privacy }
+                }
+                SettingsPage.Appearance -> {
+                    SecaSectionLabel(stringResource(R.string.colors))
+                    SecaGroupItem(index = 0, count = 4) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .toggleable(
+                                    value = dynamic,
+                                    role = Role.Switch,
+                                    onValueChange = { on -> viewModel.setPalette(if (on) null else SecaPalette.Ocean) },
+                                )
+                                .padding(16.dp),
+                        ) {
+                            IconBadge(SecaIcons.AutoAwesome)
+                            Column(
+                                Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = 16.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.dynamic_colors),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = stringResource(R.string.dynamic_colors_hint),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Switch(checked = dynamic, onCheckedChange = null)
+                        }
+                    }
+                    SecaGroupItem(index = 1, count = 4) {
+                        SecaSwitchRow(
+                            icon = SecaIcons.DarkMode,
+                            title = stringResource(R.string.black_theme),
+                            subtitle = stringResource(R.string.black_theme_hint),
+                            checked = ui.black,
+                            onCheckedChange = viewModel::setBlack,
                         )
                     }
-                    Switch(checked = dynamic, onCheckedChange = null)
+                    SecaGroupItem(index = 2, count = 4) {
+                        SecaPaletteSection(ui.palette, dynamic, viewModel::setPalette)
+                    }
+                    SecaGroupItem(index = 3, count = 4) {
+                        SecaShapeSection(ui.avatarShape, viewModel::setAvatarShape)
+                    }
+                    SecaHint(stringResource(R.string.dark_mode_hint))
+                    SuiteOrderSection()
+                    SuiteNamesSection()
                 }
-            }
-            SecaGroupItem(index = 1, count = 3) {
-                SecaSwitchRow(
-                    icon = SecaIcons.DarkMode,
-                    title = stringResource(R.string.black_theme),
-                    subtitle = stringResource(R.string.black_theme_hint),
-                    checked = ui.black,
-                    onCheckedChange = viewModel::setBlack,
-                )
-            }
-            SecaGroupItem(index = 2, count = 4) {
-                SecaPaletteSection(ui.palette, dynamic, viewModel::setPalette)
-            }
-            SecaGroupItem(index = 3, count = 4) {
-                SecaShapeSection(ui.avatarShape, viewModel::setAvatarShape)
-            }
-            SecaHint(stringResource(R.string.dark_mode_hint))
-
-            SecaSectionLabel(stringResource(R.string.profiles))
-            val total = ui.profiles.size + 1
-            ui.profiles.forEachIndexed { index, profile ->
-                SecaGroupItem(index = index, count = total) {
-                    ProfileRow(
-                        profile = profile,
-                        tone = index,
-                        count = ui.counts[profile.id] ?: 0,
-                        editable = profile.id != ProfileStore.Principal.id,
-                        onRename = { renaming = profile },
-                        onDelete = { deleting = profile },
-                    )
+                SettingsPage.Profiles -> {
+                    SecaSectionLabel(stringResource(R.string.profiles))
+                    val total = ui.profiles.size + 1
+                    ui.profiles.forEachIndexed { index, profile ->
+                        SecaGroupItem(index = index, count = total) {
+                            ProfileRow(
+                                profile = profile,
+                                tone = index,
+                                count = ui.counts[profile.id] ?: 0,
+                                editable = profile.id != ProfileStore.Principal.id,
+                                onRename = { renaming = profile },
+                                onDelete = { deleting = profile },
+                            )
+                        }
+                    }
+                    SecaGroupItem(index = ui.profiles.size, count = total, onClick = { adding = true }) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+                            IconBadge(SecaIcons.Add)
+                            Text(
+                                text = stringResource(R.string.add_profile),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(start = 16.dp),
+                            )
+                        }
+                    }
+                    SecaHint(stringResource(R.string.profiles_hint))
                 }
-            }
-            SecaGroupItem(index = ui.profiles.size, count = total, onClick = { adding = true }) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-                    IconBadge(SecaIcons.Add)
-                    Text(
-                        text = stringResource(R.string.add_profile),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(start = 16.dp),
-                    )
-                }
-            }
-            SecaHint(stringResource(R.string.profiles_hint))
-
-            SecaSectionLabel(stringResource(R.string.backup))
-            SecaGroupItem(index = 0, count = 4, onClick = { backupLauncher.launch("seca-contacts-${LocalDate.now()}.seca") }) {
-                SecaSettingRow(
-                    icon = SecaIcons.Lock,
-                    title = stringResource(R.string.encrypted_backup),
-                    subtitle = stringResource(R.string.encrypted_backup_hint),
-                )
-            }
-            SecaGroupItem(index = 1, count = 4, onClick = { askWriteThen { restoreLauncher.launch(arrayOf("*/*")) } }) {
-                SecaSettingRow(
-                    icon = SecaIcons.Download,
-                    title = stringResource(R.string.restore_backup),
-                    subtitle = stringResource(R.string.restore_backup_hint),
-                )
-            }
-            SecaGroupItem(index = 2, count = 4, onClick = { exportLauncher.launch("contacts-seca-${LocalDate.now()}.vcf") }) {
-                SecaSettingRow(
-                    icon = SecaIcons.Upload,
-                    title = stringResource(R.string.export_contacts),
-                    subtitle = stringResource(R.string.export_contacts_hint),
-                )
-            }
-            SecaGroupItem(index = 3, count = 4, onClick = { importLauncher.launch(VCardTypes) }) {
-                SecaSettingRow(
-                    icon = SecaIcons.Download,
-                    title = stringResource(R.string.import_contacts),
-                    subtitle = stringResource(R.string.import_contacts_hint),
-                )
-            }
-            SecaHint(stringResource(R.string.backup_hint))
-
-            SuiteOrderSection()
-            SuiteBackupSection(beforeRestore = askWriteThen)
-            AutoBackupSection()
-
-            SecaSectionLabel(stringResource(R.string.tidy_up))
-            SecaGroupItem(index = 0, count = 2) {
-                SecaSwitchRow(
-                    icon = SecaIcons.PersonOutline,
-                    title = stringResource(R.string.show_my_card),
-                    subtitle = stringResource(R.string.show_my_card_hint),
-                    checked = ui.showMyCard,
-                    onCheckedChange = viewModel::setShowMyCard,
-                )
-            }
-            SecaGroupItem(index = 1, count = 2, onClick = { viewModel.open(DuplicatesRoute) }) {
-                SecaSettingRow(
-                    icon = SecaIcons.Contacts,
-                    title = stringResource(R.string.duplicates),
-                    subtitle = stringResource(R.string.duplicates_row_hint),
-                )
-            }
-
-            SecaSectionLabel(stringResource(R.string.protection))
-            SecaPrivacySettingsGroup(stringResource(R.string.app_name))
-
-            SecaSectionLabel(stringResource(R.string.privacy))
-            SecaGroupItem(index = 0, count = 1) {
-                Row(Modifier.padding(16.dp)) {
-                    IconBadge(SecaIcons.Lock)
-                    Column(
-                        Modifier
-                            .weight(1f)
-                            .padding(start = 16.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.privacy_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                SettingsPage.Backup -> {
+                    SecaSectionLabel(stringResource(R.string.backup))
+                    SecaGroupItem(index = 0, count = 4, onClick = { backupLauncher.launch("seca-contacts-${LocalDate.now()}.seca") }) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Lock,
+                            title = stringResource(R.string.encrypted_backup),
+                            subtitle = stringResource(R.string.encrypted_backup_hint),
                         )
-                        Text(
-                            text = stringResource(R.string.privacy_text),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp),
+                    }
+                    SecaGroupItem(index = 1, count = 4, onClick = { askWriteThen { restoreLauncher.launch(arrayOf("*/*")) } }) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Download,
+                            title = stringResource(R.string.restore_backup),
+                            subtitle = stringResource(R.string.restore_backup_hint),
                         )
+                    }
+                    SecaGroupItem(index = 2, count = 4, onClick = { exportLauncher.launch("contacts-seca-${LocalDate.now()}.vcf") }) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Upload,
+                            title = stringResource(R.string.export_contacts),
+                            subtitle = stringResource(R.string.export_contacts_hint),
+                        )
+                    }
+                    SecaGroupItem(index = 3, count = 4, onClick = { importLauncher.launch(VCardTypes) }) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Download,
+                            title = stringResource(R.string.import_contacts),
+                            subtitle = stringResource(R.string.import_contacts_hint),
+                        )
+                    }
+                    SecaHint(stringResource(R.string.backup_hint))
+
+                    SuiteBackupSection(beforeRestore = askWriteThen)
+                    AutoBackupSection()
+                }
+                SettingsPage.TidyUp -> {
+                    SecaSectionLabel(stringResource(R.string.tidy_up))
+                    SecaGroupItem(index = 0, count = 2) {
+                        SecaSwitchRow(
+                            icon = SecaIcons.PersonOutline,
+                            title = stringResource(R.string.show_my_card),
+                            subtitle = stringResource(R.string.show_my_card_hint),
+                            checked = ui.showMyCard,
+                            onCheckedChange = viewModel::setShowMyCard,
+                        )
+                    }
+                    SecaGroupItem(index = 1, count = 2, onClick = { viewModel.open(DuplicatesRoute) }) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Contacts,
+                            title = stringResource(R.string.duplicates),
+                            subtitle = stringResource(R.string.duplicates_row_hint),
+                        )
+                    }
+                }
+                SettingsPage.Privacy -> {
+                    SecaSectionLabel(stringResource(R.string.protection))
+                    SecaPrivacySettingsGroup(stringResource(R.string.app_name))
+
+                    SecaSectionLabel(stringResource(R.string.privacy))
+                    SecaGroupItem(index = 0, count = 1) {
+                        Row(Modifier.padding(16.dp)) {
+                            IconBadge(SecaIcons.Lock)
+                            Column(
+                                Modifier
+                                    .weight(1f)
+                                    .padding(start = 16.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.privacy_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = stringResource(R.string.privacy_text),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -393,5 +450,30 @@ private fun ProfileRow(
                 Icon(SecaIcons.Delete, contentDescription = stringResource(R.string.delete_named, profile.name))
             }
         }
+    }
+}
+
+/** Which part of the settings is showing. */
+private enum class SettingsPage(val title: Int) {
+    Master(R.string.settings),
+    Appearance(R.string.colors),
+    Profiles(R.string.profiles),
+    Backup(R.string.backup),
+    TidyUp(R.string.tidy_up),
+    Privacy(R.string.protection),
+}
+
+/** One row of the first page: what is in there, and the way in. */
+@Composable
+private fun SettingsEntry(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    index: Int,
+    count: Int,
+    onClick: () -> Unit,
+) {
+    SecaGroupItem(index = index, count = count, onClick = onClick) {
+        SecaSettingRow(icon = icon, title = title, subtitle = subtitle)
     }
 }

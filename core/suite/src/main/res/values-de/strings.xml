@@ -70,4 +70,6 @@
     <string name="suite_order_hint">Die Reihenfolge in der Leiste am unteren Rand aller drei Apps</string>
     <string name="suite_order_up">%1$s nach oben</string>
     <string name="suite_order_down">%1$s nach unten</string>
+    <string name="suite_plain_names">Einfache Namen im Starter</string>
+    <string name="suite_plain_names_hint">„Kontakte“, „Telefon“ und „Nachrichten“ statt „Seca Kontakte“ und der Rest</string>
 </resources>

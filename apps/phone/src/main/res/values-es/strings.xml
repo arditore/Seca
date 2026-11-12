@@ -216,4 +216,10 @@
     <string name="yesterday">Ayer</string>
     <string name="choose">Seleccionar</string>
     <string name="app_name_plain">Teléfono</string>
+    <string name="backup">Copia de seguridad</string>
+    <string name="settings_appearance_hint">Colores, forma de las fotos, orden de las aplicaciones</string>
+    <string name="settings_calls_hint">Aplicación de teléfono predeterminada, pantalla de llamada, historial</string>
+    <string name="settings_filtering_hint">Qué llamadas suenan y cuáles no</string>
+    <string name="settings_backup_hint">Copias de seguridad, toda la suite Seca</string>
+    <string name="settings_privacy_hint">Bloqueo, pantalla privada, lo que sale del teléfono</string>
 </resources>

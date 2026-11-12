@@ -70,4 +70,6 @@
     <string name="suite_order_hint">Kolejność, w jakiej stoją na pasku na dole wszystkich trzech</string>
     <string name="suite_order_up">Przenieś %1$s w górę</string>
     <string name="suite_order_down">Przenieś %1$s w dół</string>
+    <string name="suite_plain_names">Proste nazwy w menu aplikacji</string>
+    <string name="suite_plain_names_hint">„Kontakty”, „Telefon” i „Wiadomości” zamiast „Seca Kontakty” i pozostałych</string>
 </resources>

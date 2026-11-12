@@ -211,4 +211,10 @@
     <string name="yesterday">Gestern</string>
     <string name="choose">Auswählen</string>
     <string name="app_name_plain">Telefon</string>
+    <string name="backup">Sicherung</string>
+    <string name="settings_appearance_hint">Farben, Form der Bilder, Reihenfolge der Apps</string>
+    <string name="settings_calls_hint">Standard-Telefon-App, Anrufbildschirm, Verlauf</string>
+    <string name="settings_filtering_hint">Welche Anrufe klingeln und welche nicht</string>
+    <string name="settings_backup_hint">Sicherungen, die ganze Seca-Suite</string>
+    <string name="settings_privacy_hint">Sperre, privater Bildschirm, was das Telefon verlässt</string>
 </resources>

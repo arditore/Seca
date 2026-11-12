@@ -220,4 +220,8 @@
     <string name="photo_shape">Forme de la photo</string>
     <string name="photo_shape_everyone">Comme tout le monde</string>
     <string name="app_name_plain">Contacts</string>
+    <string name="settings_appearance_hint">Couleurs, forme des photos, ordre des applications</string>
+    <string name="settings_backup_hint">Sauvegardes, toute la suite Seca, import et export</string>
+    <string name="settings_tidy_hint">Votre fiche, doublons</string>
+    <string name="settings_privacy_hint">Verrouillage, écran privé, ce qui quitte le téléphone</string>
 </resources>

@@ -29,6 +29,13 @@ import com.seca.core.design.icon
 import com.seca.core.design.identityOf
 import com.seca.core.design.isInstalled
 import com.seca.core.design.label
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Switch
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.Role
+import com.seca.core.design.component.SecaSettingRow
 
 /**
  * In each Seca app's settings: which order the three stand in along the bottom.
@@ -92,6 +99,35 @@ fun SuiteOrderSection() {
     }
 }
 
+/**
+ * In each Seca app's settings: whether the launcher says "Contacts" or "Seca Contacts" (#33).
+ *
+ * One switch renames all three, because nobody wants two of their three icons renamed. A
+ * launcher may take a moment to notice, and some redraw the drawer only when something else
+ * makes them look again.
+ */
+@Composable
+fun SuiteNamesSection() {
+    val context = LocalContext.current
+    var plain by remember { mutableStateOf(PlainNames.enabled(context)) }
+    SecaGroupItem(index = 0, count = 1) {
+        SecaSettingRow(
+            icon = SecaIcons.Label,
+            title = stringResource(R.string.suite_plain_names),
+            subtitle = stringResource(R.string.suite_plain_names_hint),
+            modifier = Modifier.toggleable(
+                value = plain,
+                role = Role.Switch,
+                onValueChange = { on ->
+                    plain = on
+                    SuiteOrderSync.setPlainNames(context, on)
+                },
+            ),
+            trailing = { Switch(checked = plain, onCheckedChange = null) },
+        )
+    }
+}
+
 /** The list with the app at [from] moved by [by] places. */
 private fun moved(order: List<SecaAppIdentity>, from: Int, by: Int): List<SecaAppIdentity> {
     val to = (from + by).coerceIn(0, order.size - 1)
@@ -111,17 +147,34 @@ object SuiteOrderSync {
 
     internal const val ACTION = "com.seca.suite.action.ORDER"
     private const val EXTRA_ORDER = "order"
+    private const val EXTRA_PLAIN_NAMES = "plain_names"
     private const val SEPARATOR = ","
 
+    /** The order the bar stands in, here and in the siblings. */
     fun set(context: Context, order: List<SecaAppIdentity>) {
         SuiteOrder.store(context, order)
-        val said = order.joinToString(SEPARATOR) { it.name }
+        tell(context) { putExtra(EXTRA_ORDER, order.joinToString(SEPARATOR) { it.name }) }
+    }
+
+    /**
+     * Whether the launcher shows the plain names, here and in the siblings.
+     *
+     * An app can only rename its own entry, so each one is told and does it to itself. A
+     * sibling that is not running is woken by the message to do it, which is the whole reason
+     * this goes by broadcast rather than by a setting one app reads out of another.
+     */
+    fun setPlainNames(context: Context, plain: Boolean) {
+        PlainNames.apply(context, plain)
+        tell(context) { putExtra(EXTRA_PLAIN_NAMES, plain) }
+    }
+
+    private fun tell(context: Context, extras: Intent.() -> Intent) {
         SecaAppIdentity.entries
             .filterNot { it.packageName == context.packageName }
             .forEach { sibling ->
                 runCatching {
                     context.sendBroadcast(
-                        Intent(ACTION).setPackage(sibling.packageName).putExtra(EXTRA_ORDER, said),
+                        Intent(ACTION).setPackage(sibling.packageName).extras(),
                         SuiteBackup.PERMISSION,
                     )
                 }
@@ -132,12 +185,14 @@ object SuiteOrderSync {
     class Receiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action != ACTION) return
-            val order = intent.getStringExtra(EXTRA_ORDER)
+            intent.getStringExtra(EXTRA_ORDER)
                 ?.split(SEPARATOR)
                 ?.mapNotNull { name -> SecaAppIdentity.entries.firstOrNull { it.name == name } }
                 ?.takeIf { it.isNotEmpty() }
-                ?: return
-            SuiteOrder.store(context, order)
+                ?.let { SuiteOrder.store(context, it) }
+            if (intent.hasExtra(EXTRA_PLAIN_NAMES)) {
+                PlainNames.apply(context, intent.getBooleanExtra(EXTRA_PLAIN_NAMES, false))
+            }
         }
     }
 }

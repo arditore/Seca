@@ -210,4 +210,8 @@
     <string name="photo_shape">Shape of the photo</string>
     <string name="photo_shape_everyone">Everyone’s</string>
     <string name="app_name_plain">Contacts</string>
+    <string name="settings_appearance_hint">Colours, the shape of the faces, the order of the apps</string>
+    <string name="settings_backup_hint">Backups, the whole Seca suite, import and export</string>
+    <string name="settings_tidy_hint">Your own card, duplicates</string>
+    <string name="settings_privacy_hint">The app lock, the private screen, what leaves the phone</string>
 </resources>

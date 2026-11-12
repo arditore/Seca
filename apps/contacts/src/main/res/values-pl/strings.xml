@@ -221,4 +221,8 @@
     <string name="photo_shape">Kształt zdjęcia</string>
     <string name="photo_shape_everyone">Jak u wszystkich</string>
     <string name="app_name_plain">Kontakty</string>
+    <string name="settings_appearance_hint">Kolory, kształt zdjęć, kolejność aplikacji</string>
+    <string name="settings_backup_hint">Kopie zapasowe, cały pakiet Seca, import i eksport</string>
+    <string name="settings_tidy_hint">Twoja wizytówka, duplikaty</string>
+    <string name="settings_privacy_hint">Blokada, prywatny ekran, co opuszcza telefon</string>
 </resources>

@@ -70,4 +70,6 @@
     <string name="suite_order_hint">The order they stand in, in the bar at the bottom of all three</string>
     <string name="suite_order_up">Move %1$s up</string>
     <string name="suite_order_down">Move %1$s down</string>
+    <string name="suite_plain_names">Plain names in the launcher</string>
+    <string name="suite_plain_names_hint">"Contacts", "Phone" and "Messages" rather than "Seca Contacts" and the rest</string>
 </resources>

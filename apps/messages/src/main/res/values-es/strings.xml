@@ -466,4 +466,10 @@
     <string name="received_sound">Sonido de los mensajes recibidos</string>
     <string name="received_sound_hint">Abre la página de Android para las notificaciones de mensajes, donde puede elegirse cualquier sonido del teléfono</string>
     <string name="app_name_plain">Mensajes</string>
+    <string name="settings_appearance_hint">Colores, forma de las fotos, orden de las aplicaciones</string>
+    <string name="settings_messages_hint">Aplicación de mensajes predeterminada, notificaciones, códigos, publicidad, sonidos</string>
+    <string name="settings_link_hint">Mensajes cifrados entre dos teléfonos Seca</string>
+    <string name="settings_backup_hint">Copias de seguridad, toda la suite Seca</string>
+    <string name="settings_privacy_hint">Bloqueo, pantalla privada, lo que sale del teléfono</string>
+    <string name="settings_link">Seca Link</string>
 </resources>

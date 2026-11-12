@@ -44,6 +44,7 @@ import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 import com.seca.core.suite.AutoBackupSection
 import com.seca.core.suite.SuiteBackupSection
+import com.seca.core.suite.SuiteNamesSection
 import com.seca.core.suite.SuiteOrderSection
 import com.seca.phone.call.InCallSettings
 import com.seca.phone.screening.BlockMode
@@ -54,6 +55,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.seca.core.design.label
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.res.stringResource
+import androidx.activity.compose.BackHandler
 
 /** A way into one of the system's own call screens; [intents] are tried in order. */
 private data class SystemEntry(val icon: ImageVector, val title: String, val subtitle: String, val intents: List<Intent>)
@@ -97,9 +99,19 @@ internal fun SettingsScreen(
         ),
     )
 
+    // Which part of the settings is showing. State rather than a route of its own: it is one
+    // screen showing one of its parts, and the back gesture already means "the part before".
+    var page by remember { mutableStateOf(SettingsPage.Master) }
+    BackHandler(enabled = page != SettingsPage.Master) { page = SettingsPage.Master }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "", onBack = { viewModel.back() }) },
+        topBar = {
+            SecaTopBar(
+                title = "",
+                onBack = { if (page == SettingsPage.Master) viewModel.back() else page = SettingsPage.Master },
+            )
+        },
     ) { padding ->
         Column(
             Modifier
@@ -109,197 +121,242 @@ internal fun SettingsScreen(
                 .padding(bottom = 32.dp),
         ) {
             Text(
-                text = stringResource(R.string.settings),
+                text = stringResource(page.title),
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
             )
 
-            SecaSectionLabel(stringResource(R.string.phone_app))
-            SecaGroupItem(
-                index = 0,
-                count = 1,
-                onClick = {
-                    if (isDefaultDialer) {
-                        openSystemScreen(context, listOf(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)))
-                    } else {
-                        onBecomeDefault()
-                    }
-                },
-            ) {
-                SecaSettingRow(
-                    icon = SecaIcons.Phone,
-                    title = stringResource(if (isDefaultDialer) R.string.default_on else R.string.default_off),
-                    subtitle = stringResource(if (isDefaultDialer) R.string.default_on_hint else R.string.default_off_hint),
-                    trailing = if (isDefaultDialer) {
-                        { Icon(SecaIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
-                    } else {
-                        null
-                    },
-                )
-            }
-            SecaHint(stringResource(R.string.default_hint))
-
-            SecaSectionLabel(stringResource(R.string.call_filtering))
-            val screening = remember { ScreeningSettings(context) }
-            var blockTelemarketing by remember { mutableStateOf(screening.blockTelemarketing) }
-            var silenceUnknown by remember { mutableStateOf(screening.silenceUnknown) }
-            SecaGroupItem(index = 0, count = 3) {
-                SecaSettingRow(
-                    icon = SecaIcons.Shield,
-                    title = stringResource(R.string.block_telemarketing),
-                    subtitle = stringResource(R.string.block_telemarketing_hint),
-                    modifier = Modifier.toggleable(value = blockTelemarketing, role = Role.Switch) {
-                        blockTelemarketing = it
-                        screening.blockTelemarketing = it
-                    },
-                    trailing = { Switch(checked = blockTelemarketing, onCheckedChange = null) },
-                )
-            }
-            SecaGroupItem(index = 1, count = 3) {
-                SecaSettingRow(
-                    icon = SecaIcons.VolumeOff,
-                    title = stringResource(R.string.silence_unknown),
-                    subtitle = stringResource(R.string.silence_unknown_hint),
-                    modifier = Modifier.toggleable(value = silenceUnknown, role = Role.Switch) {
-                        silenceUnknown = it
-                        screening.silenceUnknown = it
-                    },
-                    trailing = { Switch(checked = silenceUnknown, onCheckedChange = null) },
-                )
-            }
-            var managingBlocked by remember { mutableStateOf(false) }
-            val blockedProfiles = ui.blockedProfileList
-            SecaGroupItem(index = 2, count = 3, onClick = if (ui.profiles.connected) ({ managingBlocked = true }) else null) {
-                SecaSettingRow(
-                    icon = SecaIcons.Block,
-                    title = stringResource(R.string.blocked_profiles),
-                    subtitle = when {
-                        !ui.profiles.connected -> stringResource(R.string.blocked_profiles_needs_contacts)
-                        blockedProfiles.isEmpty() -> stringResource(R.string.blocked_profiles_none)
-                        ui.blockMode == BlockMode.Decline ->
-                            stringResource(R.string.blocked_profiles_declined, blockedProfiles.joinToString(", ") { it.label(context) })
-                        else -> stringResource(R.string.blocked_profiles_silenced, blockedProfiles.joinToString(", ") { it.label(context) })
-                    },
-                )
-            }
-            if (managingBlocked) BlockedProfilesDialog(ui, viewModel, onDismiss = { managingBlocked = false })
-            SecaHint(stringResource(if (isDefaultDialer) R.string.filtering_local else R.string.filtering_needs_default))
-
-            SecaSectionLabel(stringResource(R.string.colors))
-            if (ui.profiles.connected) {
-                SecaGroupItem(index = 0, count = 3) {
-                    SecaSettingRow(
-                        icon = SecaIcons.AutoAwesome,
-                        title = stringResource(R.string.dynamic_colors),
-                        subtitle = stringResource(R.string.dynamic_colors_hint),
-                        modifier = Modifier.toggleable(
-                            value = dynamic,
-                            role = Role.Switch,
-                            onValueChange = { on -> viewModel.setPalette(if (on) null else SecaPalette.Ocean) },
-                        ),
-                        trailing = { Switch(checked = dynamic, onCheckedChange = null) },
-                    )
+            when (page) {
+                SettingsPage.Master -> {
+                    SettingsEntry(
+                        icon = SecaIcons.Palette,
+                        title = stringResource(R.string.colors),
+                        subtitle = stringResource(R.string.settings_appearance_hint),
+                        index = 0,
+                        count = 5,
+                    ) { page = SettingsPage.Appearance }
+                    SettingsEntry(
+                        icon = SecaIcons.Phone,
+                        title = stringResource(R.string.calls),
+                        subtitle = stringResource(R.string.settings_calls_hint),
+                        index = 1,
+                        count = 5,
+                    ) { page = SettingsPage.Calls }
+                    SettingsEntry(
+                        icon = SecaIcons.Block,
+                        title = stringResource(R.string.call_filtering),
+                        subtitle = stringResource(R.string.settings_filtering_hint),
+                        index = 2,
+                        count = 5,
+                    ) { page = SettingsPage.Filtering }
+                    SettingsEntry(
+                        icon = SecaIcons.Lock,
+                        title = stringResource(R.string.backup),
+                        subtitle = stringResource(R.string.settings_backup_hint),
+                        index = 3,
+                        count = 5,
+                    ) { page = SettingsPage.Backup }
+                    SettingsEntry(
+                        icon = SecaIcons.Shield,
+                        title = stringResource(R.string.protection),
+                        subtitle = stringResource(R.string.settings_privacy_hint),
+                        index = 4,
+                        count = 5,
+                    ) { page = SettingsPage.Privacy }
                 }
-                SecaGroupItem(index = 1, count = 3) {
-                    SecaSwitchRow(
-                        icon = SecaIcons.DarkMode,
-                        title = stringResource(R.string.black_theme),
-                        subtitle = stringResource(R.string.black_theme_hint),
-                        checked = ui.black,
-                        onCheckedChange = viewModel::setBlack,
-                    )
-                }
-                SecaGroupItem(index = 2, count = 4) {
-                    SecaPaletteSection(ui.palette, dynamic, viewModel::setPalette)
-                }
-                SecaGroupItem(index = 3, count = 4) {
-                    SecaShapeSection(ui.avatarShape, viewModel::setAvatarShape)
-                }
-                SecaHint(stringResource(R.string.colors_shared_hint))
-            } else {
-                SecaHint(stringResource(R.string.colors_need_contacts))
-            }
-
-            SecaSectionLabel(stringResource(R.string.call_screen))
-            val inCall = remember { InCallSettings(context) }
-            var showLabels by remember { mutableStateOf(inCall.showLabels) }
-            var screenOffNearEar by remember { mutableStateOf(inCall.proximity) }
-            var editingReplies by remember { mutableStateOf(false) }
-            if (editingReplies) {
-                QuickRepliesDialog(settings = inCall, onDismiss = { editingReplies = false })
-            }
-            SecaGroupItem(index = 0, count = 3) {
-                SecaSwitchRow(
-                    icon = SecaIcons.Subject,
-                    title = stringResource(R.string.button_labels),
-                    subtitle = stringResource(R.string.button_labels_hint),
-                    checked = showLabels,
-                    onCheckedChange = { on ->
-                        showLabels = on
-                        inCall.showLabels = on
-                    },
-                )
-            }
-            SecaGroupItem(index = 1, count = 3) {
-                SecaSwitchRow(
-                    icon = SecaIcons.VisibilityOff,
-                    title = stringResource(R.string.screen_off_near_ear),
-                    subtitle = stringResource(R.string.screen_off_near_ear_hint),
-                    checked = screenOffNearEar,
-                    onCheckedChange = { on ->
-                        screenOffNearEar = on
-                        inCall.proximity = on
-                    },
-                )
-            }
-            SecaGroupItem(index = 2, count = 3, onClick = { editingReplies = true }) {
-                SecaSettingRow(
-                    icon = SecaIcons.Messages,
-                    title = stringResource(R.string.decline_and_reply),
-                    subtitle = stringResource(R.string.decline_and_reply_hint),
-                )
-            }
-            SecaHint(stringResource(R.string.call_screen_hint))
-
-            SecaSectionLabel(stringResource(R.string.calls))
-            calls.forEachIndexed { index, entry ->
-                SecaGroupItem(
-                    index = index,
-                    count = calls.size,
-                    onClick = {
-                        if (!openSystemScreen(context, entry.intents)) {
-                            Toast.makeText(context, unavailableText, Toast.LENGTH_SHORT).show()
+                SettingsPage.Appearance -> {
+                    SecaSectionLabel(stringResource(R.string.colors))
+                    if (ui.profiles.connected) {
+                        SecaGroupItem(index = 0, count = 3) {
+                            SecaSettingRow(
+                                icon = SecaIcons.AutoAwesome,
+                                title = stringResource(R.string.dynamic_colors),
+                                subtitle = stringResource(R.string.dynamic_colors_hint),
+                                modifier = Modifier.toggleable(
+                                    value = dynamic,
+                                    role = Role.Switch,
+                                    onValueChange = { on -> viewModel.setPalette(if (on) null else SecaPalette.Ocean) },
+                                ),
+                                trailing = { Switch(checked = dynamic, onCheckedChange = null) },
+                            )
                         }
-                    },
-                ) {
-                    SecaSettingRow(icon = entry.icon, title = entry.title, subtitle = entry.subtitle)
+                        SecaGroupItem(index = 1, count = 3) {
+                            SecaSwitchRow(
+                                icon = SecaIcons.DarkMode,
+                                title = stringResource(R.string.black_theme),
+                                subtitle = stringResource(R.string.black_theme_hint),
+                                checked = ui.black,
+                                onCheckedChange = viewModel::setBlack,
+                            )
+                        }
+                        SecaGroupItem(index = 2, count = 4) {
+                            SecaPaletteSection(ui.palette, dynamic, viewModel::setPalette)
+                        }
+                        SecaGroupItem(index = 3, count = 4) {
+                            SecaShapeSection(ui.avatarShape, viewModel::setAvatarShape)
+                        }
+                        SecaHint(stringResource(R.string.colors_shared_hint))
+                    } else {
+                        SecaHint(stringResource(R.string.colors_need_contacts))
+                    }
+                    SuiteOrderSection()
+                    SuiteNamesSection()
                 }
-            }
+                SettingsPage.Calls -> {
+                    SecaSectionLabel(stringResource(R.string.phone_app))
+                    SecaGroupItem(
+                        index = 0,
+                        count = 1,
+                        onClick = {
+                            if (isDefaultDialer) {
+                                openSystemScreen(context, listOf(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)))
+                            } else {
+                                onBecomeDefault()
+                            }
+                        },
+                    ) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Phone,
+                            title = stringResource(if (isDefaultDialer) R.string.default_on else R.string.default_off),
+                            subtitle = stringResource(if (isDefaultDialer) R.string.default_on_hint else R.string.default_off_hint),
+                            trailing = if (isDefaultDialer) {
+                                { Icon(SecaIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                            } else {
+                                null
+                            },
+                        )
+                    }
+                    SecaHint(stringResource(R.string.default_hint))
+                    SecaSectionLabel(stringResource(R.string.call_screen))
+                    val inCall = remember { InCallSettings(context) }
+                    var showLabels by remember { mutableStateOf(inCall.showLabels) }
+                    var screenOffNearEar by remember { mutableStateOf(inCall.proximity) }
+                    var editingReplies by remember { mutableStateOf(false) }
+                    if (editingReplies) {
+                        QuickRepliesDialog(settings = inCall, onDismiss = { editingReplies = false })
+                    }
+                    SecaGroupItem(index = 0, count = 3) {
+                        SecaSwitchRow(
+                            icon = SecaIcons.Subject,
+                            title = stringResource(R.string.button_labels),
+                            subtitle = stringResource(R.string.button_labels_hint),
+                            checked = showLabels,
+                            onCheckedChange = { on ->
+                                showLabels = on
+                                inCall.showLabels = on
+                            },
+                        )
+                    }
+                    SecaGroupItem(index = 1, count = 3) {
+                        SecaSwitchRow(
+                            icon = SecaIcons.VisibilityOff,
+                            title = stringResource(R.string.screen_off_near_ear),
+                            subtitle = stringResource(R.string.screen_off_near_ear_hint),
+                            checked = screenOffNearEar,
+                            onCheckedChange = { on ->
+                                screenOffNearEar = on
+                                inCall.proximity = on
+                            },
+                        )
+                    }
+                    SecaGroupItem(index = 2, count = 3, onClick = { editingReplies = true }) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Messages,
+                            title = stringResource(R.string.decline_and_reply),
+                            subtitle = stringResource(R.string.decline_and_reply_hint),
+                        )
+                    }
+                    SecaHint(stringResource(R.string.call_screen_hint))
 
-            SecaSectionLabel(stringResource(R.string.history))
-            SecaGroupItem(index = 0, count = 1, onClick = { confirmClear = true }) {
-                SecaSettingRow(
-                    icon = SecaIcons.Delete,
-                    title = stringResource(R.string.clear_history),
-                    subtitle = stringResource(R.string.clear_history_hint),
-                )
-            }
+                    SecaSectionLabel(stringResource(R.string.calls))
+                    calls.forEachIndexed { index, entry ->
+                        SecaGroupItem(
+                            index = index,
+                            count = calls.size,
+                            onClick = {
+                                if (!openSystemScreen(context, entry.intents)) {
+                                    Toast.makeText(context, unavailableText, Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                        ) {
+                            SecaSettingRow(icon = entry.icon, title = entry.title, subtitle = entry.subtitle)
+                        }
+                    }
 
-            SuiteOrderSection()
-            SuiteBackupSection(beforeRestore = askCallLogThen)
-            AutoBackupSection()
+                    SecaSectionLabel(stringResource(R.string.history))
+                    SecaGroupItem(index = 0, count = 1, onClick = { confirmClear = true }) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Delete,
+                            title = stringResource(R.string.clear_history),
+                            subtitle = stringResource(R.string.clear_history_hint),
+                        )
+                    }
+                }
+                SettingsPage.Filtering -> {
+                    SecaSectionLabel(stringResource(R.string.call_filtering))
+                    val screening = remember { ScreeningSettings(context) }
+                    var blockTelemarketing by remember { mutableStateOf(screening.blockTelemarketing) }
+                    var silenceUnknown by remember { mutableStateOf(screening.silenceUnknown) }
+                    SecaGroupItem(index = 0, count = 3) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Shield,
+                            title = stringResource(R.string.block_telemarketing),
+                            subtitle = stringResource(R.string.block_telemarketing_hint),
+                            modifier = Modifier.toggleable(value = blockTelemarketing, role = Role.Switch) {
+                                blockTelemarketing = it
+                                screening.blockTelemarketing = it
+                            },
+                            trailing = { Switch(checked = blockTelemarketing, onCheckedChange = null) },
+                        )
+                    }
+                    SecaGroupItem(index = 1, count = 3) {
+                        SecaSettingRow(
+                            icon = SecaIcons.VolumeOff,
+                            title = stringResource(R.string.silence_unknown),
+                            subtitle = stringResource(R.string.silence_unknown_hint),
+                            modifier = Modifier.toggleable(value = silenceUnknown, role = Role.Switch) {
+                                silenceUnknown = it
+                                screening.silenceUnknown = it
+                            },
+                            trailing = { Switch(checked = silenceUnknown, onCheckedChange = null) },
+                        )
+                    }
+                    var managingBlocked by remember { mutableStateOf(false) }
+                    val blockedProfiles = ui.blockedProfileList
+                    SecaGroupItem(index = 2, count = 3, onClick = if (ui.profiles.connected) ({ managingBlocked = true }) else null) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Block,
+                            title = stringResource(R.string.blocked_profiles),
+                            subtitle = when {
+                                !ui.profiles.connected -> stringResource(R.string.blocked_profiles_needs_contacts)
+                                blockedProfiles.isEmpty() -> stringResource(R.string.blocked_profiles_none)
+                                ui.blockMode == BlockMode.Decline ->
+                                    stringResource(R.string.blocked_profiles_declined, blockedProfiles.joinToString(", ") { it.label(context) })
+                                else -> stringResource(R.string.blocked_profiles_silenced, blockedProfiles.joinToString(", ") { it.label(context) })
+                            },
+                        )
+                    }
+                    if (managingBlocked) BlockedProfilesDialog(ui, viewModel, onDismiss = { managingBlocked = false })
+                    SecaHint(stringResource(if (isDefaultDialer) R.string.filtering_local else R.string.filtering_needs_default))
+                }
+                SettingsPage.Backup -> {
+                    SuiteBackupSection(beforeRestore = askCallLogThen)
+                    AutoBackupSection()
+                }
+                SettingsPage.Privacy -> {
+                    SecaSectionLabel(stringResource(R.string.protection))
+                    SecaPrivacySettingsGroup(stringResource(R.string.app_name))
 
-            SecaSectionLabel(stringResource(R.string.protection))
-            SecaPrivacySettingsGroup(stringResource(R.string.app_name))
-
-            SecaSectionLabel(stringResource(R.string.privacy))
-            SecaGroupItem(index = 0, count = 1) {
-                SecaSettingRow(
-                    icon = SecaIcons.Lock,
-                    title = stringResource(R.string.privacy_title),
-                    subtitle = stringResource(R.string.privacy_text),
-                )
+                    SecaSectionLabel(stringResource(R.string.privacy))
+                    SecaGroupItem(index = 0, count = 1) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Lock,
+                            title = stringResource(R.string.privacy_title),
+                            subtitle = stringResource(R.string.privacy_text),
+                        )
+                    }
+                }
             }
         }
     }
@@ -361,4 +418,29 @@ private fun QuickRepliesDialog(settings: InCallSettings, onDismiss: () -> Unit) 
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
+}
+
+/** Which part of the settings is showing. */
+private enum class SettingsPage(val title: Int) {
+    Master(R.string.settings),
+    Appearance(R.string.colors),
+    Calls(R.string.calls),
+    Filtering(R.string.call_filtering),
+    Backup(R.string.backup),
+    Privacy(R.string.protection),
+}
+
+/** One row of the first page: what is in there, and the way in. */
+@Composable
+private fun SettingsEntry(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    index: Int,
+    count: Int,
+    onClick: () -> Unit,
+) {
+    SecaGroupItem(index = index, count = count, onClick = onClick) {
+        SecaSettingRow(icon = icon, title = title, subtitle = subtitle)
+    }
 }

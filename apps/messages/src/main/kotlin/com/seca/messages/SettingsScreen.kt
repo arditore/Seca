@@ -42,9 +42,12 @@ import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 import com.seca.core.suite.AutoBackupSection
 import com.seca.core.suite.SuiteBackupSection
+import com.seca.core.suite.SuiteNamesSection
 import com.seca.core.suite.SuiteOrderSection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.graphics.vector.ImageVector
 
 @Composable
 internal fun SettingsScreen(
@@ -64,9 +67,19 @@ internal fun SettingsScreen(
     }
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { restoreSource = it }
 
+    // Which part of the settings is showing. State rather than a route of its own: it is one
+    // screen showing one of its parts, and the back gesture already means "the part before".
+    var page by remember { mutableStateOf(SettingsPage.Master) }
+    BackHandler(enabled = page != SettingsPage.Master) { page = SettingsPage.Master }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        topBar = { SecaTopBar(title = "", onBack = { viewModel.back() }) },
+        topBar = {
+            SecaTopBar(
+                title = "",
+                onBack = { if (page == SettingsPage.Master) viewModel.back() else page = SettingsPage.Master },
+            )
+        },
     ) { padding ->
         Column(
             Modifier
@@ -76,202 +89,247 @@ internal fun SettingsScreen(
                 .padding(bottom = 32.dp),
         ) {
             Text(
-                text = stringResource(R.string.settings),
+                text = stringResource(page.title),
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
             )
 
-            SecaSectionLabel(stringResource(R.string.sms_app))
-            SecaGroupItem(
-                index = 0,
-                count = 1,
-                onClick = { if (isDefaultApp) openDefaultAppsSettings(context) else onBecomeDefault() },
-            ) {
-                SecaSettingRow(
-                    icon = SecaIcons.Messages,
-                    title = stringResource(if (isDefaultApp) R.string.default_on else R.string.default_off),
-                    subtitle = stringResource(if (isDefaultApp) R.string.default_on_hint else R.string.default_off_hint),
-                    trailing = if (isDefaultApp) {
-                        { Icon(SecaIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
-                    } else {
-                        null
-                    },
-                )
-            }
-
-            SecaSectionLabel(stringResource(R.string.notifications))
-            SecaGroupItem(index = 0, count = 1, onClick = { openNotificationSettings(context) }) {
-                SecaSettingRow(
-                    icon = SecaIcons.Bell,
-                    title = stringResource(R.string.notifications),
-                    subtitle = stringResource(R.string.notifications_hint),
-                )
-            }
-
-            SecaSectionLabel(stringResource(R.string.colors))
-            if (ui.profiles.connected) {
-                SecaGroupItem(index = 0, count = 3) {
-                    SecaSettingRow(
-                        icon = SecaIcons.AutoAwesome,
-                        title = stringResource(R.string.dynamic_colors),
-                        subtitle = stringResource(R.string.dynamic_colors_hint),
-                        modifier = Modifier.toggleable(
-                            value = dynamic,
-                            role = Role.Switch,
-                            onValueChange = { on -> viewModel.setPalette(if (on) null else SecaPalette.Ocean) },
-                        ),
-                        trailing = { Switch(checked = dynamic, onCheckedChange = null) },
-                    )
-                }
-                SecaGroupItem(index = 1, count = 3) {
-                    SecaSwitchRow(
-                        icon = SecaIcons.DarkMode,
-                        title = stringResource(R.string.black_theme),
-                        subtitle = stringResource(R.string.black_theme_hint),
-                        checked = ui.black,
-                        onCheckedChange = viewModel::setBlack,
-                    )
-                }
-                SecaGroupItem(index = 2, count = 4) {
-                    SecaPaletteSection(ui.palette, dynamic, viewModel::setPalette)
-                }
-                SecaGroupItem(index = 3, count = 4) {
-                    SecaShapeSection(ui.avatarShape, viewModel::setAvatarShape)
-                }
-                SecaHint(stringResource(R.string.colors_shared_hint))
-            } else {
-                SecaHint(stringResource(R.string.colors_need_contacts))
-            }
-
-            SecaSectionLabel(stringResource(R.string.backup))
-            SecaGroupItem(index = 0, count = 2, onClick = { backupLauncher.launch("seca-messages-${LocalDate.now()}.seca") }) {
-                SecaSettingRow(
-                    icon = SecaIcons.Lock,
-                    title = stringResource(R.string.encrypted_backup),
-                    subtitle = stringResource(R.string.encrypted_backup_hint),
-                )
-            }
-            SecaGroupItem(
-                index = 1,
-                count = 2,
-                onClick = {
-                    if (isDefaultApp) {
-                        restoreLauncher.launch(arrayOf("*/*"))
-                    } else {
-                        Toast.makeText(context, needDefaultText, Toast.LENGTH_LONG).show()
-                    }
-                },
-            ) {
-                SecaSettingRow(
-                    icon = SecaIcons.Download,
-                    title = stringResource(R.string.restore_backup),
-                    subtitle = stringResource(R.string.restore_backup_hint),
-                )
-            }
-            SecaHint(stringResource(R.string.backup_hint))
-
-            SuiteOrderSection()
-            SuiteBackupSection()
-            AutoBackupSection()
-
-            CodeAndSpamSettings(onFile = { swept -> swept.forEach { viewModel.setSpam(it.threadId, spam = true) } })
-
-            SecaSectionLabel("Seca Link")
-            val link = ui.link
-            var askNetwork by remember { mutableStateOf(false) }
-            val published = link.statuses.values.count { it.state == RelayState.Published }
-            val linkRows = if (link.enabled) 6 else 1
-            SecaGroupItem(index = 0, count = linkRows) {
-                SecaSettingRow(
-                    icon = SecaIcons.Link,
-                    title = stringResource(R.string.link_encryption),
-                    subtitle = when {
-                        !link.enabled -> stringResource(R.string.link_off_hint)
-                        link.error != null -> link.error
-                        link.offline -> stringResource(R.string.link_offline)
-                        link.statuses.values.any { it.state == RelayState.Publishing } -> stringResource(R.string.link_publishing)
-                        published > 0 -> pluralStringResource(R.plurals.link_published, published, published)
-                        link.statuses.isNotEmpty() -> stringResource(R.string.link_no_relay)
-                        else -> stringResource(R.string.on)
-                    },
-                    modifier = Modifier.toggleable(
-                        value = link.enabled,
-                        role = Role.Switch,
-                        onValueChange = { on ->
-                            viewModel.setLinkEnabled(on)
-                            // Android has no prompt for network access, which some systems, GrapheneOS among them, let the owner take away.
-                            if (on && !viewModel.networkAvailable()) askNetwork = true
-                        },
-                    ),
-                    trailing = { Switch(checked = link.enabled, onCheckedChange = null) },
-                )
-            }
-            if (link.enabled) {
-                SecaGroupItem(index = 1, count = linkRows, onClick = { viewModel.open(MessagesScreen.Relays) }) {
-                    SecaSettingRow(
-                        icon = SecaIcons.Wifi,
-                        title = stringResource(R.string.relays),
-                        subtitle = pluralStringResource(R.plurals.relays_count, link.relays.size, link.relays.size),
-                    )
-                }
-                BackgroundAccessRow(index = 2, count = linkRows)
-                TorRow(link, viewModel, index = 3, count = linkRows)
-                SecaGroupItem(index = 4, count = linkRows, onClick = { viewModel.open(LinkStatusRoute) }) {
-                    SecaSettingRow(
-                        icon = SecaIcons.Check,
-                        title = stringResource(R.string.link_status),
-                        subtitle = stringResource(R.string.link_status_hint),
-                    )
-                }
-                SecaGroupItem(index = 5, count = linkRows) {
-                    SecaSettingRow(
+            when (page) {
+                SettingsPage.Master -> {
+                    SettingsEntry(
+                        icon = SecaIcons.Palette,
+                        title = stringResource(R.string.colors),
+                        subtitle = stringResource(R.string.settings_appearance_hint),
+                        index = 0,
+                        count = 5,
+                    ) { page = SettingsPage.Appearance }
+                    SettingsEntry(
+                        icon = SecaIcons.Messages,
+                        title = stringResource(R.string.sms_app),
+                        subtitle = stringResource(R.string.settings_messages_hint),
+                        index = 1,
+                        count = 5,
+                    ) { page = SettingsPage.Messages }
+                    SettingsEntry(
+                        icon = SecaIcons.Link,
+                        title = "Seca Link",
+                        subtitle = stringResource(R.string.settings_link_hint),
+                        index = 2,
+                        count = 5,
+                    ) { page = SettingsPage.Link }
+                    SettingsEntry(
+                        icon = SecaIcons.Lock,
+                        title = stringResource(R.string.backup),
+                        subtitle = stringResource(R.string.settings_backup_hint),
+                        index = 3,
+                        count = 5,
+                    ) { page = SettingsPage.Backup }
+                    SettingsEntry(
                         icon = SecaIcons.Shield,
-                        title = stringResource(R.string.fingerprint),
-                        subtitle = link.fingerprint ?: stringResource(R.string.creating_keys),
-                    )
+                        title = stringResource(R.string.protection),
+                        subtitle = stringResource(R.string.settings_privacy_hint),
+                        index = 4,
+                        count = 5,
+                    ) { page = SettingsPage.Privacy }
                 }
-                SecaGroupItem(index = 0, count = 2, modifier = Modifier.padding(top = 8.dp)) {
-                    SecaSettingRow(
-                        icon = SecaIcons.Check,
-                        title = stringResource(R.string.read_receipts),
-                        subtitle = stringResource(R.string.read_receipts_hint),
-                        modifier = Modifier.toggleable(
-                            value = link.readReceipts,
-                            role = Role.Switch,
-                            onValueChange = viewModel::setReadReceipts,
-                        ),
-                        trailing = { Switch(checked = link.readReceipts, onCheckedChange = null) },
-                    )
+                SettingsPage.Appearance -> {
+                    SecaSectionLabel(stringResource(R.string.colors))
+                    if (ui.profiles.connected) {
+                        SecaGroupItem(index = 0, count = 3) {
+                            SecaSettingRow(
+                                icon = SecaIcons.AutoAwesome,
+                                title = stringResource(R.string.dynamic_colors),
+                                subtitle = stringResource(R.string.dynamic_colors_hint),
+                                modifier = Modifier.toggleable(
+                                    value = dynamic,
+                                    role = Role.Switch,
+                                    onValueChange = { on -> viewModel.setPalette(if (on) null else SecaPalette.Ocean) },
+                                ),
+                                trailing = { Switch(checked = dynamic, onCheckedChange = null) },
+                            )
+                        }
+                        SecaGroupItem(index = 1, count = 3) {
+                            SecaSwitchRow(
+                                icon = SecaIcons.DarkMode,
+                                title = stringResource(R.string.black_theme),
+                                subtitle = stringResource(R.string.black_theme_hint),
+                                checked = ui.black,
+                                onCheckedChange = viewModel::setBlack,
+                            )
+                        }
+                        SecaGroupItem(index = 2, count = 4) {
+                            SecaPaletteSection(ui.palette, dynamic, viewModel::setPalette)
+                        }
+                        SecaGroupItem(index = 3, count = 4) {
+                            SecaShapeSection(ui.avatarShape, viewModel::setAvatarShape)
+                        }
+                        SecaHint(stringResource(R.string.colors_shared_hint))
+                    } else {
+                        SecaHint(stringResource(R.string.colors_need_contacts))
+                    }
+                    SuiteOrderSection()
+                    SuiteNamesSection()
                 }
-                SecaGroupItem(index = 1, count = 2) {
-                    SecaSettingRow(
-                        icon = SecaIcons.Edit,
-                        title = stringResource(R.string.typing_indicator),
-                        subtitle = stringResource(R.string.typing_indicator_hint),
-                        modifier = Modifier.toggleable(
-                            value = link.typingIndicator,
-                            role = Role.Switch,
-                            onValueChange = viewModel::setTypingIndicator,
-                        ),
-                        trailing = { Switch(checked = link.typingIndicator, onCheckedChange = null) },
-                    )
-                }
-                if (link.offline) NetworkBlockedCard(Modifier.padding(top = 8.dp))
-            }
-            SecaHint(stringResource(R.string.link_hint))
-            if (askNetwork) NetworkAccessDialog(onDismiss = { askNetwork = false })
+                SettingsPage.Messages -> {
+                    SecaSectionLabel(stringResource(R.string.sms_app))
+                    SecaGroupItem(
+                        index = 0,
+                        count = 1,
+                        onClick = { if (isDefaultApp) openDefaultAppsSettings(context) else onBecomeDefault() },
+                    ) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Messages,
+                            title = stringResource(if (isDefaultApp) R.string.default_on else R.string.default_off),
+                            subtitle = stringResource(if (isDefaultApp) R.string.default_on_hint else R.string.default_off_hint),
+                            trailing = if (isDefaultApp) {
+                                { Icon(SecaIcons.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                            } else {
+                                null
+                            },
+                        )
+                    }
 
-            SecaSectionLabel(stringResource(R.string.protection))
-            SecaPrivacySettingsGroup(stringResource(R.string.app_name))
+                    SecaSectionLabel(stringResource(R.string.notifications))
+                    SecaGroupItem(index = 0, count = 1, onClick = { openNotificationSettings(context) }) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Bell,
+                            title = stringResource(R.string.notifications),
+                            subtitle = stringResource(R.string.notifications_hint),
+                        )
+                    }
+                    CodeAndSpamSettings(onFile = { swept -> swept.forEach { viewModel.setSpam(it.threadId, spam = true) } })
+                }
+                SettingsPage.Link -> {
+                    SecaSectionLabel("Seca Link")
+                    val link = ui.link
+                    var askNetwork by remember { mutableStateOf(false) }
+                    val published = link.statuses.values.count { it.state == RelayState.Published }
+                    val linkRows = if (link.enabled) 6 else 1
+                    SecaGroupItem(index = 0, count = linkRows) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Link,
+                            title = stringResource(R.string.link_encryption),
+                            subtitle = when {
+                                !link.enabled -> stringResource(R.string.link_off_hint)
+                                link.error != null -> link.error
+                                link.offline -> stringResource(R.string.link_offline)
+                                link.statuses.values.any { it.state == RelayState.Publishing } -> stringResource(R.string.link_publishing)
+                                published > 0 -> pluralStringResource(R.plurals.link_published, published, published)
+                                link.statuses.isNotEmpty() -> stringResource(R.string.link_no_relay)
+                                else -> stringResource(R.string.on)
+                            },
+                            modifier = Modifier.toggleable(
+                                value = link.enabled,
+                                role = Role.Switch,
+                                onValueChange = { on ->
+                                    viewModel.setLinkEnabled(on)
+                                    // Android has no prompt for network access, which some systems, GrapheneOS among them, let the owner take away.
+                                    if (on && !viewModel.networkAvailable()) askNetwork = true
+                                },
+                            ),
+                            trailing = { Switch(checked = link.enabled, onCheckedChange = null) },
+                        )
+                    }
+                    if (link.enabled) {
+                        SecaGroupItem(index = 1, count = linkRows, onClick = { viewModel.open(MessagesScreen.Relays) }) {
+                            SecaSettingRow(
+                                icon = SecaIcons.Wifi,
+                                title = stringResource(R.string.relays),
+                                subtitle = pluralStringResource(R.plurals.relays_count, link.relays.size, link.relays.size),
+                            )
+                        }
+                        BackgroundAccessRow(index = 2, count = linkRows)
+                        TorRow(link, viewModel, index = 3, count = linkRows)
+                        SecaGroupItem(index = 4, count = linkRows, onClick = { viewModel.open(LinkStatusRoute) }) {
+                            SecaSettingRow(
+                                icon = SecaIcons.Check,
+                                title = stringResource(R.string.link_status),
+                                subtitle = stringResource(R.string.link_status_hint),
+                            )
+                        }
+                        SecaGroupItem(index = 5, count = linkRows) {
+                            SecaSettingRow(
+                                icon = SecaIcons.Shield,
+                                title = stringResource(R.string.fingerprint),
+                                subtitle = link.fingerprint ?: stringResource(R.string.creating_keys),
+                            )
+                        }
+                        SecaGroupItem(index = 0, count = 2, modifier = Modifier.padding(top = 8.dp)) {
+                            SecaSettingRow(
+                                icon = SecaIcons.Check,
+                                title = stringResource(R.string.read_receipts),
+                                subtitle = stringResource(R.string.read_receipts_hint),
+                                modifier = Modifier.toggleable(
+                                    value = link.readReceipts,
+                                    role = Role.Switch,
+                                    onValueChange = viewModel::setReadReceipts,
+                                ),
+                                trailing = { Switch(checked = link.readReceipts, onCheckedChange = null) },
+                            )
+                        }
+                        SecaGroupItem(index = 1, count = 2) {
+                            SecaSettingRow(
+                                icon = SecaIcons.Edit,
+                                title = stringResource(R.string.typing_indicator),
+                                subtitle = stringResource(R.string.typing_indicator_hint),
+                                modifier = Modifier.toggleable(
+                                    value = link.typingIndicator,
+                                    role = Role.Switch,
+                                    onValueChange = viewModel::setTypingIndicator,
+                                ),
+                                trailing = { Switch(checked = link.typingIndicator, onCheckedChange = null) },
+                            )
+                        }
+                        if (link.offline) NetworkBlockedCard(Modifier.padding(top = 8.dp))
+                    }
+                    SecaHint(stringResource(R.string.link_hint))
+                    if (askNetwork) NetworkAccessDialog(onDismiss = { askNetwork = false })
+                }
+                SettingsPage.Backup -> {
+                    SecaSectionLabel(stringResource(R.string.backup))
+                    SecaGroupItem(index = 0, count = 2, onClick = { backupLauncher.launch("seca-messages-${LocalDate.now()}.seca") }) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Lock,
+                            title = stringResource(R.string.encrypted_backup),
+                            subtitle = stringResource(R.string.encrypted_backup_hint),
+                        )
+                    }
+                    SecaGroupItem(
+                        index = 1,
+                        count = 2,
+                        onClick = {
+                            if (isDefaultApp) {
+                                restoreLauncher.launch(arrayOf("*/*"))
+                            } else {
+                                Toast.makeText(context, needDefaultText, Toast.LENGTH_LONG).show()
+                            }
+                        },
+                    ) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Download,
+                            title = stringResource(R.string.restore_backup),
+                            subtitle = stringResource(R.string.restore_backup_hint),
+                        )
+                    }
+                    SecaHint(stringResource(R.string.backup_hint))
 
-            SecaSectionLabel(stringResource(R.string.privacy))
-            SecaGroupItem(index = 0, count = 1) {
-                SecaSettingRow(
-                    icon = SecaIcons.Shield,
-                    title = stringResource(R.string.privacy_title),
-                    subtitle = stringResource(R.string.privacy_text),
-                )
+                    SuiteBackupSection()
+                    AutoBackupSection()
+                }
+                SettingsPage.Privacy -> {
+                    SecaSectionLabel(stringResource(R.string.protection))
+                    SecaPrivacySettingsGroup(stringResource(R.string.app_name))
+
+                    SecaSectionLabel(stringResource(R.string.privacy))
+                    SecaGroupItem(index = 0, count = 1) {
+                        SecaSettingRow(
+                            icon = SecaIcons.Shield,
+                            title = stringResource(R.string.privacy_title),
+                            subtitle = stringResource(R.string.privacy_text),
+                        )
+                    }
+                }
             }
         }
     }
@@ -299,5 +357,30 @@ internal fun SettingsScreen(
                 restoreSource = null
             },
         )
+    }
+}
+
+/** Which part of the settings is showing. */
+private enum class SettingsPage(val title: Int) {
+    Master(R.string.settings),
+    Appearance(R.string.colors),
+    Messages(R.string.sms_app),
+    Link(R.string.settings_link),
+    Backup(R.string.backup),
+    Privacy(R.string.protection),
+}
+
+/** One row of the first page: what is in there, and the way in. */
+@Composable
+private fun SettingsEntry(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    index: Int,
+    count: Int,
+    onClick: () -> Unit,
+) {
+    SecaGroupItem(index = index, count = count, onClick = onClick) {
+        SecaSettingRow(icon = icon, title = title, subtitle = subtitle)
     }
 }

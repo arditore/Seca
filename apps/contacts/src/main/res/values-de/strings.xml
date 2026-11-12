@@ -210,4 +210,8 @@
     <string name="photo_shape">Form des Bildes</string>
     <string name="photo_shape_everyone">Wie bei allen</string>
     <string name="app_name_plain">Kontakte</string>
+    <string name="settings_appearance_hint">Farben, Form der Bilder, Reihenfolge der Apps</string>
+    <string name="settings_backup_hint">Sicherungen, die ganze Seca-Suite, Import und Export</string>
+    <string name="settings_tidy_hint">Ihre eigene Karte, Duplikate</string>
+    <string name="settings_privacy_hint">Sperre, privater Bildschirm, was das Telefon verlässt</string>
 </resources>

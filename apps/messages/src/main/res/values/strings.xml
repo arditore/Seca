@@ -445,4 +445,10 @@
     <string name="received_sound">Sound for arriving messages</string>
     <string name="received_sound_hint">Opens Android’s own page for this app’s message notifications, where any sound on the phone can be chosen</string>
     <string name="app_name_plain">Messages</string>
+    <string name="settings_appearance_hint">Colours, the shape of the faces, the order of the apps</string>
+    <string name="settings_messages_hint">The default messaging app, notifications, codes, advertising, sounds</string>
+    <string name="settings_link_hint">Encrypted messages between two Seca phones</string>
+    <string name="settings_backup_hint">Backups, the whole Seca suite</string>
+    <string name="settings_privacy_hint">The app lock, the private screen, what leaves the phone</string>
+    <string name="settings_link">Seca Link</string>
 </resources>

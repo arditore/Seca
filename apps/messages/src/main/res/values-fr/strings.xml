@@ -466,4 +466,10 @@
     <string name="received_sound">Son des messages reçus</string>
     <string name="received_sound_hint">Ouvre la page d\'Android pour les notifications de messages, où n\'importe quel son du téléphone peut être choisi</string>
     <string name="app_name_plain">Messages</string>
+    <string name="settings_appearance_hint">Couleurs, forme des photos, ordre des applications</string>
+    <string name="settings_messages_hint">Application SMS par défaut, notifications, codes, publicité, sons</string>
+    <string name="settings_link_hint">Messages chiffrés entre deux téléphones Seca</string>
+    <string name="settings_backup_hint">Sauvegardes, toute la suite Seca</string>
+    <string name="settings_privacy_hint">Verrouillage, écran privé, ce qui quitte le téléphone</string>
+    <string name="settings_link">Seca Link</string>
 </resources>
