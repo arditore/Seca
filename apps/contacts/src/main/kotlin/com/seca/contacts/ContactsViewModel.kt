@@ -70,6 +70,8 @@ data class ContactsUi(
     val myPhoto: ImageBitmap? = null,
     /** The phone's SIM lines, read only once the owner allowed it. */
     val simLines: List<SimLine> = emptyList(),
+    /** The order the favourites were arranged in, as lookup keys; empty means alphabetical. */
+    val favoriteOrder: List<String> = emptyList(),
 ) {
     /** The owner's numbers: those the SIMs carry, then those typed in, each once. */
     val myNumbers: List<String>
@@ -182,6 +184,12 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     /** Null goes back to the wallpaper colours. */
     fun setPalette(palette: SecaPalette?) {
         store.setPalette(palette)
+        refreshPreferences()
+    }
+
+    /** Remembers the order the favourites were arranged in (#26). */
+    fun setFavoriteOrder(lookupKeys: List<String>) {
+        store.setFavoriteOrder(lookupKeys)
         refreshPreferences()
     }
 
@@ -512,6 +520,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                 palette = store.palette(),
                 black = store.black(),
                 showMyCard = store.showMyCard(),
+                favoriteOrder = store.favoriteOrder(),
             )
         }
     }

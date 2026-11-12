@@ -213,4 +213,8 @@
         <item quantity="many">%d de años</item>
     </plurals>
     <string name="default_one">Predeterminado</string>
+    <string name="arrange_favorites">Organizar los favoritos</string>
+    <string name="arrange_favorites_hint">El primero de esta lista es el primero de la fila.</string>
+    <string name="arrange_earlier">Mover %1$s antes</string>
+    <string name="arrange_later">Mover %1$s después</string>
 </resources>

@@ -203,4 +203,8 @@
         <item quantity="other">%d years old</item>
     </plurals>
     <string name="default_one">Default</string>
+    <string name="arrange_favorites">Arrange favourites</string>
+    <string name="arrange_favorites_hint">The first in this list is the first in the row.</string>
+    <string name="arrange_earlier">Move %1$s earlier</string>
+    <string name="arrange_later">Move %1$s later</string>
 </resources>

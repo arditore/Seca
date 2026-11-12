@@ -214,4 +214,8 @@
         <item quantity="other">%d lat</item>
     </plurals>
     <string name="default_one">Domyślny</string>
+    <string name="arrange_favorites">Ułóż ulubione</string>
+    <string name="arrange_favorites_hint">Pierwszy na tej liście jest pierwszy w rzędzie.</string>
+    <string name="arrange_earlier">Przenieś %1$s wcześniej</string>
+    <string name="arrange_later">Przenieś %1$s później</string>
 </resources>

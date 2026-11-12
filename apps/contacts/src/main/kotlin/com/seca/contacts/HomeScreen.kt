@@ -129,6 +129,7 @@ internal fun HomeScreen(
                 listState,
                 onOpen = { onPick?.invoke(it.id) ?: viewModel.open(Screen.Detail(it.id)) },
                 onOpenMyCard = { viewModel.open(Screen.MyCard) },
+                onArrangeFavorites = viewModel::setFavoriteOrder,
             )
         }
     }
@@ -267,6 +268,7 @@ private fun HomeContent(
     listState: LazyListState,
     onOpen: (SecaContact) -> Unit,
     onOpenMyCard: () -> Unit,
+    onArrangeFavorites: (List<String>) -> Unit,
 ) {
     if (!ui.loaded) return
     val searching = ui.query.isNotBlank()
@@ -283,7 +285,18 @@ private fun HomeContent(
         EmptyHome(ui, searching = true)
         return
     }
-    val favorites = remember(shown, searching) { if (searching) emptyList() else shown.filter { it.isFavorite } }
+    var arranging by remember { mutableStateOf(false) }
+    // Arranged by hand where somebody has arranged them, and alphabetical where they have not.
+    // A newly starred contact is not in the arrangement yet, so it follows the ones that are.
+    val favorites = remember(shown, searching, ui.favoriteOrder) {
+        if (searching) {
+            emptyList()
+        } else {
+            val starred = shown.filter { it.isFavorite }
+            val places = ui.favoriteOrder.withIndex().associate { (place, key) -> key to place }
+            starred.sortedBy { places[it.lookupKey] ?: (places.size + starred.indexOf(it)) }
+        }
+    }
     // The provider already sorts by name, so grouping keeps the letters in order.
     val sections = remember(shown, searching) {
         if (searching) emptyMap() else shown.groupBy { sectionLetterOf(it.displayName) }
@@ -319,7 +332,12 @@ private fun HomeContent(
                 }
             } else {
                 if (favorites.isNotEmpty()) {
-                    item(key = "favorites-label", contentType = "label") { SecaSectionLabel(stringResource(R.string.favorites)) }
+                    item(key = "favorites-label", contentType = "label") {
+                        FavoritesLabel(
+                            // Nothing to arrange with one favourite, so nothing is offered.
+                            onArrange = { arranging = true }.takeIf { favorites.size > 1 },
+                        )
+                    }
                     item(key = "favorites", contentType = "favorites") {
                         FavoritesRow(favorites, ui, onOpen, beside = if (showScroller) SCROLLER_WIDTH else 0.dp)
                     }
@@ -353,6 +371,18 @@ private fun HomeContent(
                     .padding(top = 16.dp, bottom = 112.dp, end = 2.dp),
             )
         }
+    }
+
+    if (arranging) {
+        ArrangeFavoritesDialog(
+            favorites = favorites,
+            ui = ui,
+            onDismiss = { arranging = false },
+            onKeep = { order ->
+                onArrangeFavorites(order)
+                arranging = false
+            },
+        )
     }
 }
 

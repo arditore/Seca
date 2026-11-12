@@ -86,6 +86,24 @@ class ProfileStore(context: Context) {
         announceChange()
     }
 
+    /**
+     * The order the favourites stand in, as lookup keys.
+     *
+     * Empty until somebody arranges one, and alphabetical until then: a default nobody chose
+     * should be the one they would have chosen. A favourite that is not in the list — newly
+     * starred, or starred on another phone — goes after the ones that are, in its usual place,
+     * rather than nowhere.
+     */
+    fun favoriteOrder(): List<String> {
+        val json = prefs.getString(KEY_FAVORITE_ORDER, null)?.let { JSONArray(it) } ?: return emptyList()
+        return (0 until json.length()).map { json.getString(it) }
+    }
+
+    fun setFavoriteOrder(lookupKeys: List<String>) {
+        prefs.edit { putString(KEY_FAVORITE_ORDER, JSONArray(lookupKeys).toString()) }
+        announceChange()
+    }
+
     /** Whether the dark theme goes down to black. Off by default: Material's own dark theme. */
     fun black(): Boolean = prefs.getBoolean(KEY_BLACK, false)
 
@@ -134,7 +152,8 @@ class ProfileStore(context: Context) {
         private const val KEY_PROFILES = "profiles"
         private const val KEY_ASSIGNMENTS = "assignments"
         private const val KEY_CURRENT = "current_profile"
-        private const val KEY_PALETTE = "palette"
+        private const val KEY_FAVORITE_ORDER = "favorite_order"
+    private const val KEY_PALETTE = "palette"
         private const val KEY_BLACK = "black_theme"
         private const val KEY_MY_CARD = "show_my_card"
     }
