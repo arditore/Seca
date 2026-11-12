@@ -213,4 +213,5 @@
         <item quantity="many">%d lat</item>
         <item quantity="other">%d lat</item>
     </plurals>
+    <string name="default_one">Domyślny</string>
 </resources>

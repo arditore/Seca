@@ -439,4 +439,7 @@
         <item quantity="one">Delete %d conversation?</item>
         <item quantity="other">Delete %d conversations?</item>
     </plurals>
+    <string name="sent_sound_section">Sound</string>
+    <string name="sent_sound">Sound when a message is sent</string>
+    <string name="sent_sound_hint">A short tone, at the volume set for notifications; never when the phone is silent</string>
 </resources>

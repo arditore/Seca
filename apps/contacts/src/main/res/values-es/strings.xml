@@ -212,4 +212,5 @@
         <item quantity="other">%d años</item>
         <item quantity="many">%d de años</item>
     </plurals>
+    <string name="default_one">Predeterminado</string>
 </resources>

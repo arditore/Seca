@@ -10,6 +10,9 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import com.seca.core.design.SecaAppIdentity
 import java.io.File
+import android.provider.CalendarContract
+import java.time.LocalDate
+import java.time.ZoneId
 
 private const val SECA_PHONE = "com.seca.phone"
 private const val SECA_MESSAGES = "com.seca.messages"
@@ -82,6 +85,20 @@ internal fun openMap(context: Context, address: String) =
 internal fun openLink(context: Context, url: String) {
     val full = if (url.contains("://")) url else "https://$url"
     startSafely(context, Intent(Intent.ACTION_VIEW, full.toUri()))
+}
+
+/**
+ * The phone's calendar, opened on [day].
+ *
+ * Seca cannot open the event itself: the event belongs to whichever app writes a contact's
+ * dates into a calendar, in a store this app has never asked to read and does not want the
+ * permission for. What it can do is put the owner on the right day and let their calendar
+ * show them what is on it, which is the handover asked for in #30.
+ */
+internal fun openCalendar(context: Context, day: LocalDate) {
+    val at = day.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    val uri = CalendarContract.CONTENT_URI.buildUpon().appendPath("time").appendPath(at.toString()).build()
+    startSafely(context, Intent(Intent.ACTION_VIEW, uri))
 }
 
 internal fun openAppSettings(context: Context) = startSafely(

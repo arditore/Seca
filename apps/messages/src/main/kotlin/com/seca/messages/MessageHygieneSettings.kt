@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.pluralStringResource
+import com.seca.messages.sms.SentSound
 import com.seca.messages.sms.SpamSweep
 import com.seca.messages.sms.SweptConversation
 import com.seca.messages.sms.SpamFilter
@@ -57,6 +58,7 @@ internal fun CodeAndSpamSettings(onFile: (List<SweptConversation>) -> Unit) {
     var lifetime by remember { mutableStateOf(CodeCleanup.lifetime(context)) }
     var filterSpam by remember { mutableStateOf(SpamFilter.enabled(context)) }
     var deliveryReports by remember { mutableStateOf(DeliveryReports.enabled(context)) }
+    var sentSound by remember { mutableStateOf(SentSound.enabled(context)) }
     var sweeping by remember { mutableStateOf(false) }
     var found by remember { mutableStateOf<List<SweptConversation>?>(null) }
 
@@ -207,4 +209,22 @@ internal fun CodeAndSpamSettings(onFile: (List<SweptConversation>) -> Unit) {
         )
     }
     SecaHint(stringResource(R.string.delivery_reports_note))
+
+    SecaSectionLabel(stringResource(R.string.sent_sound_section))
+    SecaGroupItem(index = 0, count = 1) {
+        SecaSettingRow(
+            icon = SecaIcons.Send,
+            title = stringResource(R.string.sent_sound),
+            subtitle = stringResource(R.string.sent_sound_hint),
+            modifier = Modifier.toggleable(
+                value = sentSound,
+                role = Role.Switch,
+                onValueChange = { on ->
+                    sentSound = on
+                    SentSound.setEnabled(context, on)
+                },
+            ),
+            trailing = { Switch(checked = sentSound, onCheckedChange = null) },
+        )
+    }
 }

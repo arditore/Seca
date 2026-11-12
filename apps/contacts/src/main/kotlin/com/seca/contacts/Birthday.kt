@@ -43,3 +43,18 @@ internal fun ageFrom(raw: String, today: LocalDate = LocalDate.now()): Int? = ru
 
 /** Older than anybody has been, so a year read wrong says nothing rather than something absurd. */
 private const val OLDEST = 130
+
+/**
+ * The next day this yearly date falls on, for opening a calendar there.
+ *
+ * The year the date was saved with is the year it happened, not a day anybody wants to look at,
+ * so what is offered is the coming one: today if it is today, otherwise the next time round.
+ * Null for a date that cannot be read at all, where there is nowhere honest to go.
+ */
+internal fun nextOccurrence(raw: String, today: LocalDate = LocalDate.now()): LocalDate? = runCatching {
+    val text = raw.trim()
+    val day = if (text.startsWith("--")) MonthDay.parse(text) else MonthDay.from(LocalDate.parse(text))
+    // A 29th of February in a year that has no such day lands on the 28th rather than nowhere.
+    val thisYear = day.atYear(today.year)
+    if (thisYear < today) day.atYear(today.year + 1) else thisYear
+}.getOrNull()

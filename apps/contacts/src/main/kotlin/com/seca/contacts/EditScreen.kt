@@ -84,6 +84,7 @@ import java.time.LocalDate
 import com.seca.core.design.label
 import androidx.compose.ui.res.stringResource
 import com.seca.core.contacts.describe
+import com.seca.core.design.component.SecaChoicePill
 
 /** The kinds offered in the editor; any other kind a contact already has is kept and shown. */
 // Custom comes last in each list: it is the one that asks a question back.
@@ -539,6 +540,9 @@ private fun FieldList(
     typeLabel: (Int) -> String,
     describe: ((String) -> String?)? = null,
 ) {
+    // One number is the default whether anybody says so or not, so the choice is only offered
+    // where there is a choice to make (#34).
+    val choosable = fields.count { it.value.isNotBlank() } > 1
     fields.forEachIndexed { index, field ->
         FieldEditor(
             value = field.value,
@@ -556,6 +560,18 @@ private fun FieldList(
             removable = fields.size > 1 || field.value.isNotEmpty(),
             onChange = { fields[index] = field.copy(value = it) },
             onRemove = { if (fields.size > 1) fields.removeAt(index) else fields[index] = field.copy(value = "") },
+            isDefault = field.isDefault,
+            // Exactly one, or none: choosing this one unchooses whichever held it before.
+            onMakeDefault = if (choosable && field.value.isNotBlank()) {
+                {
+                    val wanted = !field.isDefault
+                    fields.indices.forEach { other ->
+                        fields[other] = fields[other].copy(isDefault = wanted && other == index)
+                    }
+                }
+            } else {
+                null
+            },
         )
     }
 }
@@ -576,6 +592,9 @@ private fun FieldEditor(
     supporting: String?,
     onChange: (String) -> Unit,
     onRemove: () -> Unit,
+    isDefault: Boolean = false,
+    /** Null where there is nothing to choose between, and so nothing to offer. */
+    onMakeDefault: (() -> Unit)? = null,
 ) {
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -600,6 +619,14 @@ private fun FieldEditor(
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             TypeSelector(type, types, typeLabel, onTypeChange)
+            onMakeDefault?.let { choose ->
+                SecaChoicePill(
+                    label = stringResource(R.string.default_one),
+                    selected = isDefault,
+                    onClick = choose,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            }
             // Only a field the owner is naming themselves asks for a word.
             if (type == CUSTOM_TYPE) {
                 OutlinedTextField(

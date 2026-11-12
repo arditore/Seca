@@ -439,4 +439,7 @@
         <item quantity="one">%d Unterhaltung löschen?</item>
         <item quantity="other">%d Unterhaltungen löschen?</item>
     </plurals>
+    <string name="sent_sound_section">Ton</string>
+    <string name="sent_sound">Ton beim Senden einer Nachricht</string>
+    <string name="sent_sound_hint">Ein kurzer Ton, in der Lautstärke für Benachrichtigungen; nie bei stummem Telefon</string>
 </resources>

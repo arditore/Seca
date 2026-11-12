@@ -462,4 +462,7 @@
         <item quantity="many">Usunąć %d rozmów?</item>
         <item quantity="other">Usunąć %d rozmów?</item>
     </plurals>
+    <string name="sent_sound_section">Dźwięk</string>
+    <string name="sent_sound">Dźwięk przy wysyłaniu wiadomości</string>
+    <string name="sent_sound_hint">Krótki dźwięk, na głośności powiadomień; nigdy, gdy telefon jest wyciszony</string>
 </resources>

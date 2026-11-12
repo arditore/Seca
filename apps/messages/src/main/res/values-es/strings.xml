@@ -460,4 +460,7 @@
         <item quantity="other">¿Borrar %d conversaciones?</item>
         <item quantity="many">¿Borrar %d conversaciones?</item>
     </plurals>
+    <string name="sent_sound_section">Sonido</string>
+    <string name="sent_sound">Sonido al enviar un mensaje</string>
+    <string name="sent_sound_hint">Un tono breve, al volumen de las notificaciones; nunca con el teléfono en silencio</string>
 </resources>

@@ -30,6 +30,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.withContext
+import android.database.Cursor
 
 /**
  * One phone number, e-mail address or postal address of a contact; [id] is null until saved.
@@ -38,7 +39,20 @@ import kotlinx.coroutines.withContext
  * house". The provider keeps it beside the type, and it is the whole of what a custom type
  * means: without it such a field comes back as a plain one, which is what it used to do here.
  */
-data class ContactField(val id: Long?, val value: String, val type: Int, val label: String? = null) {
+data class ContactField(
+    val id: Long?,
+    val value: String,
+    val type: Int,
+    val label: String? = null,
+    /**
+     * Whether this is the one to use when a contact is reduced to a single number or address.
+     *
+     * Android's own flag, which Seca read and wrote for the first time in #34: without it, a
+     * contact with a work number and a mobile was called on whichever the provider returned
+     * first, which is not a choice anybody made.
+     */
+    val isDefault: Boolean = false,
+) {
 
     /** What to show for this field's kind, when it is the owner's own word rather than a type. */
     val customLabel: String? get() = label?.takeIf { type == CUSTOM_TYPE && it.isNotBlank() }
@@ -174,6 +188,7 @@ class ContactsRepository(
             arrayOf(
                 Data._ID, Data.MIMETYPE, Data.DATA1, Data.DATA2, Data.DATA3, Data.DATA4,
                 Data.DATA5, Data.DATA6, Data.DATA7, Data.DATA8, Data.DATA9, Data.DATA10,
+                Data.IS_SUPER_PRIMARY,
             ),
             "${Data.CONTACT_ID} = ?",
             arrayOf(id.toString()),
@@ -191,10 +206,10 @@ class ContactsRepository(
                     // For a number, an e-mail or an address, DATA1 is the value and DATA2 its type.
                     // DATA3 holds the owner's own word for the field, kept for a custom type.
                     Phone.CONTENT_ITEM_TYPE -> cursor.getString(2)?.let {
-                        phones += ContactField(dataId, it, cursor.getInt(3), cursor.getString(4))
+                        phones += ContactField(dataId, it, cursor.getInt(3), cursor.getString(4), superPrimary(cursor))
                     }
                     Email.CONTENT_ITEM_TYPE -> cursor.getString(2)?.let {
-                        emails += ContactField(dataId, it, cursor.getInt(3), cursor.getString(4))
+                        emails += ContactField(dataId, it, cursor.getInt(3), cursor.getString(4), superPrimary(cursor))
                     }
                     // An address is read from its parts, and only guessed at from the one line
                     // when there are no parts to read — which is every address Seca itself
@@ -711,9 +726,16 @@ class ContactsRepository(
             .orEmpty()
     }
 
+    /**
+     * Every contact's numbers, the chosen one first.
+     *
+     * The order matters: a contact is shown and called by its first number in the list, on the
+     * contacts list, under a favourite's face and in Seca Phone's contacts. Unordered, that was
+     * whichever row the provider happened to return first (#34).
+     */
     private fun queryPhones(): List<PhoneRow> {
         val projection = arrayOf(Phone.CONTACT_ID, Phone.NUMBER)
-        return resolver.query(Phone.CONTENT_URI, projection, null, null, null)
+        return resolver.query(Phone.CONTENT_URI, projection, null, null, "${Phone.IS_SUPER_PRIMARY} DESC")
             ?.use { cursor ->
                 val contactId = cursor.getColumnIndexOrThrow(Phone.CONTACT_ID)
                 val number = cursor.getColumnIndexOrThrow(Phone.NUMBER)
@@ -934,6 +956,15 @@ class ContactsRepository(
     }
 
     /** Turns the editor's list into deletes, updates and inserts against the saved rows. */
+    /**
+     * The default flag.
+     *
+     * Found by name rather than by counting: the projection above has thirteen columns and the
+     * next person to add one would have had to know that the number here moves with it.
+     */
+    private fun superPrimary(cursor: Cursor): Boolean =
+        cursor.getInt(cursor.getColumnIndexOrThrow(Data.IS_SUPER_PRIMARY)) == 1
+
     private fun syncFields(
         ops: MutableList<ContentProviderOperation>,
         rawContactId: Long,
@@ -958,6 +989,8 @@ class ContactsRepository(
                     .withValue(Data.DATA1, field.value.trim())
                     .withValue(Data.DATA2, field.type)
                     .withValue(Data.DATA3, field.customLabel)
+                    .withValue(Data.IS_SUPER_PRIMARY, if (field.isDefault) 1 else 0)
+                    .withValue(Data.IS_PRIMARY, if (field.isDefault) 1 else 0)
                     .apply { normalizedNumber(mimeType, field.value)?.let { withValue(Phone.NORMALIZED_NUMBER, it) } }
                     .build()
             }

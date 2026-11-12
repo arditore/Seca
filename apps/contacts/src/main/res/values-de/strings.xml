@@ -202,4 +202,5 @@
         <item quantity="one">%d Jahr alt</item>
         <item quantity="other">%d Jahre alt</item>
     </plurals>
+    <string name="default_one">Standard</string>
 </resources>

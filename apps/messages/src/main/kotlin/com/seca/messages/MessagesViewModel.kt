@@ -35,6 +35,7 @@ import com.seca.messages.mms.MmsPdu
 import com.seca.messages.mms.MmsSender
 import com.seca.messages.sms.SendingSim
 import com.seca.messages.sms.sendingSims
+import com.seca.messages.sms.SentSound
 import com.seca.messages.sms.SmsSender
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -442,6 +443,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     fun send(address: String, text: String, replyTo: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             if (!links.sendText(address, text, replyTo)) SmsSender(getApplication()).send(address, text)
+            SentSound.play(getApplication())
         }
     }
 
@@ -454,6 +456,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     fun sendFrom(address: String, text: String, subscriptionId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             SmsSender(getApplication()).send(address, text, subscriptionId)
+            SentSound.play(getApplication())
         }
     }
 
@@ -494,6 +497,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                 withContext(Dispatchers.Main) { toast(text(R.string.attachment_not_sent)) }
                 return@launch
             }
+            SentSound.play(getApplication())
             // Sent, but not all of it: said afterwards, so the message still goes.
             refused.firstOrNull()?.let { left ->
                 withContext(Dispatchers.Main) {

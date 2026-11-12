@@ -67,6 +67,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.combinedClickable
 import com.seca.core.design.R as DesignR
 import com.seca.core.design.component.secaCopy
+import android.content.Context
 
 @Composable
 internal fun DetailScreen(
@@ -281,7 +282,9 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 FieldRow(
                     icon = SecaIcons.Phone,
                     value = ui.numbers.display(field.value),
-                    label = Phone.getTypeLabel(resources, field.type, field.customLabel.orEmpty()).toString(),
+                    // The chosen one says so, because it is the one every other screen uses.
+                    label = Phone.getTypeLabel(resources, field.type, field.customLabel.orEmpty()).toString()
+                        .let { if (field.isDefault) "$it · ${stringResource(R.string.default_one)}" else it },
                     onClick = { dial(context, field.value) },
                     // The number as it was saved, not as it is spaced out for reading.
                     copyable = field.value,
@@ -333,6 +336,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
 /** Company, birthday and notes: what a card holds besides ways to reach someone. */
 @Composable
 private fun About(detail: ContactDetail) {
+    val context = LocalContext.current
     val company = listOf(detail.jobTitle, detail.organization?.value.orEmpty())
         .filter { it.isNotBlank() }
         .joinToString(" · ")
@@ -341,7 +345,7 @@ private fun About(detail: ContactDetail) {
     val anniversaryLabel = stringResource(R.string.anniversary)
     val notesLabel = stringResource(R.string.notes)
     val rows = buildList {
-        if (company.isNotBlank()) add(Triple(SecaIcons.Work, company, companyLabel))
+        if (company.isNotBlank()) add(AboutRow(SecaIcons.Work, company, companyLabel))
         // The date, and how old that makes them today: a birthday is read to work that out.
         detail.birthday?.let { field ->
             val age = ageFrom(field.value)
@@ -350,19 +354,38 @@ private fun About(detail: ContactDetail) {
             } else {
                 stringResource(R.string.birthday_with_age, formatBirthday(field.value), pluralStringResource(R.plurals.years_old, age, age))
             }
-            add(Triple(SecaIcons.Cake, written, birthdayLabel))
+            add(AboutRow(SecaIcons.Cake, written, birthdayLabel, onCalendar(context, field.value)))
         }
-        detail.anniversary?.let { add(Triple(SecaIcons.Event, formatBirthday(it.value), anniversaryLabel)) }
-        detail.note?.let { add(Triple(SecaIcons.Subject, it.value, notesLabel)) }
+        detail.anniversary?.let {
+            add(AboutRow(SecaIcons.Event, formatBirthday(it.value), anniversaryLabel, onCalendar(context, it.value)))
+        }
+        detail.note?.let { add(AboutRow(SecaIcons.Subject, it.value, notesLabel)) }
     }
     if (rows.isEmpty()) return
     SecaSectionLabel(stringResource(R.string.about))
-    rows.forEachIndexed { index, (icon, value, label) ->
+    rows.forEachIndexed { index, row ->
         SecaGroupItem(index = index, count = rows.size) {
-            FieldRow(icon = icon, value = value, label = label, onClick = null)
+            FieldRow(icon = row.icon, value = row.value, label = row.label, onClick = row.onClick)
         }
     }
 }
+
+/** One line of the About section: what it says, and what tapping it does, where anything does. */
+private class AboutRow(
+    val icon: ImageVector,
+    val value: String,
+    val label: String,
+    val onClick: (() -> Unit)? = null,
+)
+
+/**
+ * Tapping a yearly date opens the calendar on the day it next falls (#30).
+ *
+ * Null for a date that cannot be read: a row that looks tappable and does nothing is worse
+ * than a row that does not look tappable.
+ */
+private fun onCalendar(context: Context, raw: String): (() -> Unit)? =
+    nextOccurrence(raw)?.let { day -> { openCalendar(context, day) } }
 
 /** The contact's profile; tapping it moves the contact to another one. */
 @Composable
