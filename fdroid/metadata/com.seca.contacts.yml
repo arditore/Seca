@@ -14,9 +14,36 @@ Repo: https://github.com/arditore/Seca.git
 Binaries: https://github.com/arditore/Seca/releases/download/v%v/seca-contacts-%v.apk
 
 Builds:
-  - versionName: 0.1.0-beta9
-    versionCode: 9
-    commit: 0e99c974c92aba7f63fb1f1210b3690087255403
+  - versionName: 0.1.0-beta6
+    versionCode: 6
+    commit: 097d0599867785dbf4fe89812aa48b6be0a716d9
+    subdir: apps/contacts
+    gradle:
+      - yes
+    prebuild: sed -i '/libsignal repository (start)/,/libsignal repository (end)/d'
+      ../../settings.gradle.kts
+
+  - versionName: 0.1.0-beta8
+    versionCode: 8
+    commit: c95c340cdf649c783057412aca2f135542854764
+    subdir: apps/contacts
+    gradle:
+      - yes
+    prebuild: sed -i '/libsignal repository (start)/,/libsignal repository (end)/d'
+      ../../settings.gradle.kts
+
+  - versionName: 0.1.0-beta10
+    versionCode: 10
+    commit: da6b4deaab2627674bacb3dac2c035998a895018
+    subdir: apps/contacts
+    gradle:
+      - yes
+    prebuild: sed -i '/libsignal repository (start)/,/libsignal repository (end)/d'
+      ../../settings.gradle.kts
+
+  - versionName: 0.1.0-beta11
+    versionCode: 11
+    commit: 397bc5582255b47259ad5b911a7c120ebefe577c
     subdir: apps/contacts
     gradle:
       - yes
@@ -27,5 +54,5 @@ AllowedAPKSigningKeys: 2fdea7b46beffe16459bb4dcdd34db5e0cb912274a5eb628e4b0d8a59
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 0.1.0-beta9
-CurrentVersionCode: 9
+CurrentVersion: 0.1.0-beta11
+CurrentVersionCode: 11

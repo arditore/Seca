@@ -1,21 +1,31 @@
 # Publishing Seca on F-Droid
 
-Where each app stands, what this repository already satisfies, and the steps that need a
-person with an account somewhere.
+Where each app stands, what this repository has to keep satisfying for F-Droid to rebuild it,
+and what a new release has to do in what order.
 
 | App | F-Droid | IzzyOnDroid |
 |---|---|---|
-| Seca Contacts | **published**, reproducible: f-droid.org hands out the file published here | ready to request |
-| Seca Phone | **published**, reproducible | ready to request |
-| Seca Messages | merge request !49106 reopened at 0.1.0-beta8, with both native libraries built from source | ready to request |
+| Seca Contacts | **published** ([!49024](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49024)), reproducible | ready to request |
+| Seca Phone | **published** ([!49025](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49025)), reproducible | ready to request |
+| Seca Messages | **published** ([!49106](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49106)), reproducible, both native libraries built from source | ready to request |
 
-The reproducible build is not a claim: the APK f-droid.org serves for Seca Contacts has the
-same SHA-256 as the one attached to the GitHub release, `11f14bf8…` for 0.1.0-beta6. Their
-server rebuilt it, found the same bytes, and distributes ours with this project's signature.
+The reproducible build is not a claim. For 0.1.0-beta10, the APK f-droid.org serves has the
+same SHA-256 as the one attached to the GitHub release, for all three:
 
-Both published apps follow new tags by themselves (`AutoUpdateMode: Version`), so a release
-here reaches F-Droid without a merge request — as long as the APK published here stays
-reproducible, which means building it the way their server does. See below.
+```text
+46e0cdf43878edb8f0ce16a01f8acebd57bb2ead76dd68d64ef057fa8d190760  seca-contacts
+202f3e114bb13a9c6686e72aa89ca72d20368142ab4fa7c28ee0bf2485c9688d  seca-phone
+22cd33add05402d6f93c8af112586bb278080eb66e00a745e773f9e4b358baf9  seca-messages
+```
+
+Their server rebuilt each one, found the same bytes, and distributes ours with this project's
+signature.
+
+All three follow new tags by themselves (`AutoUpdateMode: Version`), so a release here reaches
+F-Droid without a merge request — as long as the APK published here stays reproducible, which
+means building it the way their server does. Their queue means F-Droid trails the release here
+by a few days, and `fdroid/metadata/` in this repository is a copy of what `fdroiddata` carries,
+not the other way round.
 
 ## Decisions taken
 
@@ -104,25 +114,26 @@ libraries for both ABIs, and F-Droid's own server rebuilt all three published AP
 them — `...successfully verified`. The whole procedure is: build in Linux, sign on Windows, attach
 to the GitHub release.
 
-## Seca Messages: the second review, and what it still needs
+## Seca Messages: what the second review asked for
 
 A second reviewer went through 0.1.0-beta6 in detail on 3 October, and the merge request was
-closed on 1 November for having had no answer in between. Reopening it needs three things, two
-of which are done here:
+closed on 1 November for having had no answer in between. It was reopened with the three points
+below answered, and merged: Seca Messages is published.
 
 1. **The licence had to agree with itself.** The metadata said AGPL-3.0-or-later, because the app
    links libsignal, while the repository said GPL. Seca Messages now carries its own
    `apps/messages/LICENSE`, the AGPL, and the README says which app is under which.
-2. **Picture messages are supported, both ways, as of beta 12.** This was the reviewer's
-   sharpest point and it no longer stands: as the default SMS app, Seca Messages is the only
-   app the phone hands a WAP push to, so for a while adopting it cost a user their picture
-   messages without a word. They arrive and are shown since beta 10. Sending was built in
-   beta 11 but no message reached anybody: the recipient's address was written the way the
-   sender's is, so the carrier accepted every message and had nowhere to send it, while the
-   sending phone showed it as sent. Fixed in beta 12, which is the first release where a
-   picture message actually arrives — a picture, a video, a file, a contact card or a voice message, through the
-   carrier. Group conversations over MMS are still to come, and the listing says so rather
-   than claiming otherwise.
+2. **Picture messages are supported, both ways.** This was the reviewer's sharpest point. As the
+   default SMS app, Seca Messages is the only app the phone hands a WAP push to, so for a while
+   adopting it cost a user their picture messages without a word. They arrive and are shown
+   since beta 10. Sending was built in beta 11 but no message reached anybody: the recipient's
+   address was written the way the sender's is, so the carrier accepted every message and had
+   nowhere to send it, while the sending phone showed it as sent. Fixed in beta 12, the first
+   release where a picture, a video, a file, a contact card or a voice message actually arrives
+   through the carrier. Beta 13 fixed the other half: a part that names its type in plain words,
+   which is the form Seca's own composer writes, made the reader give up, so a picture sent by
+   Seca was stored by Seca with no parts at all. Group conversations over MMS are still to come,
+   and the listing says so rather than claiming otherwise.
 3. **secp256k1 was a prebuilt binary, and is not any more.**
    `fr.acinq.secp256k1:secp256k1-kmp-jni-android` ships `libsecp256k1-jni.so`, which F-Droid does
    not accept any more than libsignal's. The recipe builds it from the `Secp256k1Kmp` srclib, the
@@ -144,26 +155,29 @@ build id and of any absolute path. `strings -a` and `readelf -n` over `lib/*/*.s
 empty for `/home/`, `/opt/`, `/builds/` and `Build ID` on the two libraries built here. The three
 AndroidX libraries keep their build ids, which is harmless: both sides download the same file.
 
-## Steps that need an account
+## Publishing a new version
 
 ### F-Droid
 
-The three merge requests are open against <https://gitlab.com/fdroid/fdroiddata>, one per app,
-each on its own branch in a fork, and each carrying the metadata file from `fdroid/metadata/`.
-Seca Messages also carries `fdroid/srclibs/libsignal.yml` as `srclibs/libsignal.yml`.
+The three merge requests against <https://gitlab.com/fdroid/fdroiddata> are merged, so nothing
+needs an account any more: their bot opens the merge request for each new tag by itself, and the
+recipes in `fdroid/metadata/` are kept here only as a copy of what it maintains there.
 
-To publish a new version: update `versionName`, `versionCode`, `commit` (the full hash),
-`CurrentVersion` and `CurrentVersionCode` in each file, and open one merge request per app —
-or let `AutoUpdateMode: Version` do it once the apps are published.
+**Attach the APKs to the GitHub release before pushing the tag, not after.** `Binaries:` points
+at a file named after the tag, and their build runs as soon as the tag exists. Beta 11 was tagged
+seventeen hours before its APKs went up, their build landed in that window with nothing to fetch,
+and someone opened [issue #45](https://github.com/arditore/Seca/issues/45) about it.
 
-**While a merge request is still waiting**, a new release goes into that same merge request, not
-into a new one: push the updated recipe to its branch. Their reviewer asked for exactly that, and
-a recipe left pointing at an older commit would have them test a version nobody runs any more.
-Their queue is long, so expect the wait to be measured in weeks.
+Should a recipe ever need changing by hand, the three fields that move are `versionName`,
+`versionCode` and `commit` (the full hash, never the tag name), plus `CurrentVersion` and
+`CurrentVersionCode`. While a merge request is waiting, a new release goes into that same merge
+request rather than a new one: push the updated recipe to its branch. Their reviewer asked for
+exactly that, and a recipe left pointing at an older commit would have them test a version
+nobody runs any more.
 
-### IzzyOnDroid, for the three apps
+### IzzyOnDroid, not asked for yet
 
-Requirements already met: APKs signed with the release key, attached to the latest GitHub release,
+This one still needs an account and a request, for all three apps. Requirements already met: APKs signed with the release key, attached to the latest GitHub release,
 under 30 MB, no debuggable or testOnly flag, fastlane metadata in the repository.
 
 Open a request at <https://codeberg.org/IzzyOnDroid/repo/issues> with the link to

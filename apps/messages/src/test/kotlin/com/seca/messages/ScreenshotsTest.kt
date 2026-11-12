@@ -137,8 +137,8 @@ class ScreenshotsTest {
             contacts = contacts,
             index = NumberIndex(contacts, numbers),
             profiles = SharedProfiles(
-                profiles = listOf(Profile.Principal, sampleProfile("famille"), sampleProfile("travail")),
-                assignments = mapOf("camille" to "famille", "lea" to "famille", "hugo" to "travail"),
+                profiles = listOf(Profile.Principal, sampleProfile("family"), sampleProfile("work")),
+                assignments = mapOf("camille" to "family", "lea" to "family", "hugo" to "work"),
                 connected = true,
             ),
             conversations = listOf(
@@ -186,10 +186,11 @@ class ScreenshotsTest {
 internal fun sampleProfile(key: String): Profile = Profile(
     key,
     when (Locale.getDefault().language) {
-        "fr" -> mapOf("famille" to "Famille", "travail" to "Travail", "sport" to "Sport")
-        "es" -> mapOf("famille" to "Familia", "travail" to "Trabajo", "sport" to "Deporte")
-        "pl" -> mapOf("famille" to "Rodzina", "travail" to "Praca", "sport" to "Sport")
-        else -> mapOf("famille" to "Family", "travail" to "Work", "sport" to "Sport")
+        "fr" -> mapOf("family" to "Famille", "work" to "Travail", "sport" to "Sport")
+        "es" -> mapOf("family" to "Familia", "work" to "Trabajo", "sport" to "Deporte")
+        "pl" -> mapOf("family" to "Rodzina", "work" to "Praca", "sport" to "Sport")
+        "de" -> mapOf("family" to "Familie", "work" to "Arbeit", "sport" to "Sport")
+        else -> mapOf("family" to "Family", "work" to "Work", "sport" to "Sport")
     }.getValue(key),
 )
 

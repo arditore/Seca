@@ -73,8 +73,8 @@ class ScreenshotsTest {
     }
 
     @Test
-    fun homeProfile() = shoot("contacts-home-famille") {
-        HomeScreen(sampleUi().copy(currentProfileId = "famille"), viewModel(), rememberLazyListState(), onOpenSibling = {})
+    fun homeProfile() = shoot("contacts-home-family") {
+        HomeScreen(sampleUi().copy(currentProfileId = "family"), viewModel(), rememberLazyListState(), onOpenSibling = {})
     }
 
     /** The launcher icon at the size app stores ask for. */
@@ -108,10 +108,10 @@ class ScreenshotsTest {
 
     private fun sampleUi(): ContactsUi {
         val names = listOf(
-            "Alice Garnier" to "principal", "Antoine Roux" to "travail", "Camille Durand" to "famille",
-            "Chloé Fontaine" to "sport", "Élodie Mercier" to "principal", "Hugo Martin" to "travail",
-            "Inès Moreau" to "travail", "Julien Lambert" to "sport", "Léa Petit" to "famille",
-            "Lucas Girard" to "principal", "Manon Chevalier" to "famille", "Nicolas Bernard" to "principal",
+            "Alice Garnier" to "principal", "Antoine Roux" to "work", "Camille Durand" to "family",
+            "Chloé Fontaine" to "sport", "Élodie Mercier" to "principal", "Hugo Martin" to "work",
+            "Inès Moreau" to "work", "Julien Lambert" to "sport", "Léa Petit" to "family",
+            "Lucas Girard" to "principal", "Manon Chevalier" to "family", "Nicolas Bernard" to "principal",
         )
         val contacts = names.mapIndexed { index, (name, _) ->
             SecaContact(
@@ -129,8 +129,8 @@ class ScreenshotsTest {
             contacts = contacts,
             profiles = listOf(
                 ProfileStore.Principal,
-                sampleProfile("famille"),
-                sampleProfile("travail"),
+                sampleProfile("family"),
+                sampleProfile("work"),
                 sampleProfile("sport"),
             ),
             currentProfileId = ProfileStore.ALL,
@@ -148,9 +148,10 @@ class ScreenshotsTest {
 internal fun sampleProfile(key: String): Profile = Profile(
     key,
     when (Locale.getDefault().language) {
-        "fr" -> mapOf("famille" to "Famille", "travail" to "Travail", "sport" to "Sport")
-        "es" -> mapOf("famille" to "Familia", "travail" to "Trabajo", "sport" to "Deporte")
-        "pl" -> mapOf("famille" to "Rodzina", "travail" to "Praca", "sport" to "Sport")
-        else -> mapOf("famille" to "Family", "travail" to "Work", "sport" to "Sport")
+        "fr" -> mapOf("family" to "Famille", "work" to "Travail", "sport" to "Sport")
+        "es" -> mapOf("family" to "Familia", "work" to "Trabajo", "sport" to "Deporte")
+        "pl" -> mapOf("family" to "Rodzina", "work" to "Praca", "sport" to "Sport")
+        "de" -> mapOf("family" to "Familie", "work" to "Arbeit", "sport" to "Sport")
+        else -> mapOf("family" to "Family", "work" to "Work", "sport" to "Sport")
     }.getValue(key),
 )

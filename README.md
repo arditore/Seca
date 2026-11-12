@@ -91,7 +91,8 @@ backup. And, between Seca phones, Seca Link.
 
 From any of the three, a **suite backup** gathers contacts and profiles, call
 history and filtering, texts, conversations and settings into one encrypted
-file, to carry to a new phone.
+file, to carry to a new phone. Point it at a folder and it writes itself in the
+small hours, every day or every week, keeping as many as you ask it to.
 
 ## 🖼️ Screens
 
@@ -99,7 +100,7 @@ file, to carry to a new phone.
 
 | One profile at a time | The dialer | Who called |
 |---|---|---|
-| <img src="docs/screenshots/contacts-home-famille.png" width="240"> | <img src="docs/screenshots/phone-dialer.png" width="240"> | <img src="docs/screenshots/phone-call-detail.png" width="240"> |
+| <img src="docs/screenshots/contacts-home-family.png" width="240"> | <img src="docs/screenshots/phone-dialer.png" width="240"> | <img src="docs/screenshots/phone-call-detail.png" width="240"> |
 
 | A conversation | Phone, settings | Messages, settings |
 |---|---|---|
@@ -196,10 +197,11 @@ Seca is **in beta**.
 
 | | Seca Contacts | Seca Phone | Seca Messages |
 |---|---|---|---|
-| F-Droid | [published](https://f-droid.org/packages/com.seca.contacts/) | [published](https://f-droid.org/packages/com.seca.phone/) | [not yet](docs/fdroid.md) |
+| F-Droid | [published](https://f-droid.org/packages/com.seca.contacts/) | [published](https://f-droid.org/packages/com.seca.phone/) | [published](https://f-droid.org/packages/com.seca.messages/) |
 | GitHub | [latest release](https://github.com/arditore/Seca/releases/latest) | [latest release](https://github.com/arditore/Seca/releases/latest) | [latest release](https://github.com/arditore/Seca/releases/latest) |
 
-The state of the F-Droid submissions is in [docs/fdroid.md](docs/fdroid.md).
+F-Droid rebuilds each tag itself, so its copy trails the release here by a few
+days. How that works is in [docs/fdroid.md](docs/fdroid.md).
 
 After installing, choose Seca Phone as the Phone app and Seca Messages as the
 SMS app, in Android's default-apps settings. The three install in any order and
@@ -236,6 +238,9 @@ explains them brand by brand.
 - **No profiles backed by address books, yet.** Profiles are assigned by hand;
   deriving them from the DAVx⁵ account a contact syncs from is
   [issue #44](https://github.com/arditore/Seca/issues/44).
+- **No GIF button on the keyboard, yet.** A GIF picked from the gallery sends,
+  and one that arrives plays, but the keyboard's own GIF key is not listened
+  for: [issue #54](https://github.com/arditore/Seca/issues/54).
 
 ## 🧱 Build
 
