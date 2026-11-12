@@ -350,6 +350,7 @@ private fun ConversationList(
             onAway = { viewModel.setArchived(conversation.threadId, true) },
             icon = SecaIcons.Archive,
             label = archiveLabel,
+            enabled = chosen.isEmpty(),
         ) {
             ConversationRow(
                 conversation = conversation,

@@ -36,6 +36,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.Role
 import com.seca.core.design.component.SecaSettingRow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * In each Seca app's settings: which order the three stand in along the bottom.
@@ -180,13 +183,25 @@ object SuiteOrderSync {
     class Receiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action != ACTION) return
-            intent.getStringExtra(EXTRA_ORDER)
+            val order = intent.getStringExtra(EXTRA_ORDER)
                 ?.split(SEPARATOR)
                 ?.mapNotNull { name -> SecaAppIdentity.entries.firstOrNull { it.name == name } }
                 ?.takeIf { it.isNotEmpty() }
-                ?.let { SuiteOrder.store(context, it) }
-            if (intent.hasExtra(EXTRA_PLAIN_NAMES)) {
-                PlainNames.apply(context, intent.getBooleanExtra(EXTRA_PLAIN_NAMES, false))
+            val plain = if (intent.hasExtra(EXTRA_PLAIN_NAMES)) {
+                intent.getBooleanExtra(EXTRA_PLAIN_NAMES, false)
+            } else {
+                null
+            }
+            // Renaming the launcher entry is a call into the package manager, which is not a
+            // thing to do on the thread that draws.
+            val pending = goAsync()
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    order?.let { SuiteOrder.store(context, it) }
+                    plain?.let { PlainNames.apply(context, it) }
+                } finally {
+                    pending.finish()
+                }
             }
         }
     }

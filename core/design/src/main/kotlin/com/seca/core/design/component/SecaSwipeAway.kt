@@ -36,8 +36,14 @@ fun SecaSwipeAway(
     icon: ImageVector,
     label: String,
     modifier: Modifier = Modifier,
+    /** False while the row is doing something else with the finger, such as being chosen. */
+    enabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
+    if (!enabled) {
+        content()
+        return
+    }
     val away = rememberUpdatedState(onAway)
     val state = rememberSwipeToDismissBoxState(
         // Most of the way across, not a third of it: a list that is being scrolled with a
