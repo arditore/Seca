@@ -31,7 +31,7 @@ used together: one Material 3 Expressive design, one set of coloured profiles,
 one backup. They need no account, no server of mine, and nothing from Google.
 
 Seca Contacts and Seca Phone do not have the `INTERNET` permission at all. Not
-"we promise not to" — the permission is absent, so the system refuses the
+"we promise not to": the permission is absent, so the system refuses the
 connection whatever the code asks for.
 
 ## 📱 The three apps
@@ -62,24 +62,28 @@ connection whatever the code asks for.
 <tr>
 <td valign="top">
 
-Coloured profiles — Family, Work, whatever you make — shared with the other two
-apps. Favourites, search, duplicate merging, your own card handed over by QR
-code, vCard import and export that keeps each contact's profile, encrypted
-backup.
+Coloured profiles (Family, Work, whatever you make) shared with the other two
+apps. Favourites you can arrange by hand, search, duplicate merging, your own
+card handed over by QR code, a default number and e-mail per contact, birthdays
+that open your calendar, vCard import and export that keeps each contact's
+profile, encrypted backup.
 
 </td>
 <td valign="top">
 
 A call screen showing the caller's profile, T9 search, the number ranges France
 reserves for telemarketing blocked, unknown callers silenced, a profile muted
-for a chosen time, a remembered SIM per contact, declining with a message.
+for a chosen time, a remembered SIM per contact, declining with a message,
+several calls deleted at once.
 
 </td>
 <td valign="top">
 
-Texts and picture messages, conversations in the colours of the contact's
+Texts and picture messages, up to four pictures at a time, GIFs that move,
+photos you can zoom and keep. Conversations in the colours of the contact's
 profile, scheduled messages, verification codes erased after a delay,
-advertising filed away, encrypted backup. And, between Seca phones, Seca Link.
+advertising filed away, conversations archived or deleted in bulk, encrypted
+backup. And, between Seca phones, Seca Link.
 
 </td>
 </tr>
@@ -95,15 +99,21 @@ file, to carry to a new phone.
 
 | One profile at a time | The dialer | Who called |
 |---|---|---|
-| <img src="docs/screenshots/contacts-profile.png" width="240"> | <img src="docs/screenshots/phone-dialer.png" width="240"> | <img src="docs/screenshots/phone-call.png" width="240"> |
+| <img src="docs/screenshots/contacts-home-famille.png" width="240"> | <img src="docs/screenshots/phone-dialer.png" width="240"> | <img src="docs/screenshots/phone-call-detail.png" width="240"> |
 
 | A conversation | Phone, settings | Messages, settings |
 |---|---|---|
 | <img src="docs/screenshots/messages-conversation.png" width="240"> | <img src="docs/screenshots/phone-settings.png" width="240"> | <img src="docs/screenshots/messages-settings.png" width="240"> |
 
-| Contacts, dark | Phone, dark | A conversation, dark |
+| Contacts, dark | Phone, dark | Conversations, dark |
 |---|---|---|
-| <img src="docs/screenshots/contacts-home-dark.png" width="240"> | <img src="docs/screenshots/phone-home-dark.png" width="240"> | <img src="docs/screenshots/messages-conversation-dark.png" width="240"> |
+| <img src="docs/screenshots/contacts-home-dark.png" width="240"> | <img src="docs/screenshots/phone-home-dark.png" width="240"> | <img src="docs/screenshots/messages-conversations-dark.png" width="240"> |
+
+The look is yours to set, once, for all three apps: four palettes or one you mix
+from a hue and an amount of colour, the shape faces are cut to (a different one
+per person, one for everybody, or one for a single contact), a colour per person
+instead of per profile, the order the three apps stand in along the bottom, and
+whether the launcher says "Contacts" or "Seca Contacts".
 
 There is a **Pure black** switch as well, for OLED screens: in the dark theme the
 backgrounds drop to black, with four steps just out of it so a card still reads
@@ -136,7 +146,7 @@ server of mine.
   with the post-quantum PQXDH key agreement.
 - Encrypted messages travel through public [Nostr](https://nostr.com) relays.
   Each envelope is signed by a throwaway key: a relay sees who receives, when
-  and roughly how much — never who writes, nor what is written.
+  and roughly how much. Never who writes, nor what is written.
 - Two phones that both have Seca Link find each other on their own, through a
   data SMS a phone without Seca never displays, sent when a conversation opens.
   The conversation then says so and turns encrypted. Scanning each other's code
@@ -144,9 +154,9 @@ server of mine.
 - Read receipts, typing, reactions, quoted replies, encrypted photos and voice
   messages, disappearing messages, and a safety number to compare.
 - A contact who turns Seca Link off tells your phone at once: the lock goes and
-  what you write leaves as an ordinary SMS. One who removes Seca says nothing —
-  nothing runs there any more — so their keys stop being refreshed and expire
-  within a day, which ends the conversation the same way.
+  what you write leaves as an ordinary SMS. One who removes Seca says nothing,
+  because nothing runs there any more, so their keys stop being refreshed and
+  expire within a day. That ends the conversation the same way.
 - A contact's new phone brings a new key. Only your side is told, and the safety
   number is there to compare.
 - A Tor option with [Orbot](https://orbot.app): relays no longer see the phone's
@@ -155,9 +165,10 @@ server of mine.
 
 ## 🌍 Languages
 
-English, French, Spanish and Polish, following the phone's own language — or the
-per-app language Android 13 offers. Nothing ships half translated: a language is
-listed in the build only once its strings are complete.
+English, French, Spanish, Polish and German, following the phone's own language,
+or the per-app language Android 13 offers. Nothing ships half translated: a
+language is listed in the build only once its strings are complete, in the apps
+and in every module they share.
 
 Translations are welcome. The strings are in each app's
 `src/main/res/values-<language>/strings.xml`.
@@ -166,9 +177,9 @@ Translations are welcome. The strings are in each app's
 
 F-Droid does not take my word for it. Their servers rebuild each app from this
 source and compare the result, byte for byte, with the file I published. When it
-matches, what they distribute is **my own APK, signed with my key** — so the app
-you install from F-Droid is the one I built, and anyone can check that claim
-rather than believe it.
+matches, what they distribute is **my own APK, signed with my key**. The app you
+install from F-Droid is the one I built, and anyone can check that claim rather
+than believe it.
 
 That property is maintained deliberately: the release build is done on Linux,
 and signing preserves the archive's alignment so that not one byte moves.
@@ -185,7 +196,7 @@ Seca is **in beta**.
 
 | | Seca Contacts | Seca Phone | Seca Messages |
 |---|---|---|---|
-| F-Droid | [published](https://f-droid.org/packages/com.seca.contacts/) | [published](https://f-droid.org/packages/com.seca.phone/) | in review |
+| F-Droid | [published](https://f-droid.org/packages/com.seca.contacts/) | [published](https://f-droid.org/packages/com.seca.phone/) | [not yet](docs/fdroid.md) |
 | GitHub | [latest release](https://github.com/arditore/Seca/releases/latest) | [latest release](https://github.com/arditore/Seca/releases/latest) | [latest release](https://github.com/arditore/Seca/releases/latest) |
 
 The state of the F-Droid submissions is in [docs/fdroid.md](docs/fdroid.md).
@@ -218,8 +229,13 @@ explains them brand by brand.
   decision of mine, and I cannot work around it.
 - **No Wi-Fi calling as such.** VoWiFi belongs to the system's IMS stack and
   works whatever the dialer; Seca Phone shows its state.
-- **No sending of picture messages, yet.** Receiving them works; sending is
-  next. See [issue #17](https://github.com/arditore/Seca/issues/17).
+- **No group conversations over MMS, yet.** A group text arrives and is readable,
+  but the thread is named after whoever wrote last and a reply goes to them
+  rather than to everyone. Being fixed:
+  [issue #48](https://github.com/arditore/Seca/issues/48).
+- **No blocking a whole contact, yet.** A number can be blocked from a call's
+  page, which writes Android's own list; every number on one card in a single
+  act is [issue #50](https://github.com/arditore/Seca/issues/50).
 
 ## 🧱 Build
 
@@ -232,16 +248,16 @@ Requirements: JDK 17 and the Android SDK (platform `android-37`, build-tools
 ./gradlew check
 ```
 
-To draw the main screens with made-up data — the screenshots in this README and
-in the F-Droid listings:
+To draw the main screens with made-up data, which is where the screenshots in
+this README and in the F-Droid listings come from:
 
 ```sh
 SECA_SCREENSHOTS=build/captures SECA_SCREENSHOTS_LANGUAGE=en-rUS \
   ./gradlew testDebugUnitTest --tests "*ScreenshotsTest"
 ```
 
-`SECA_SCREENSHOTS_LANGUAGE` takes an Android qualifier — `en-rUS`, `fr-rFR`,
-`es-rES` — and draws every screen in that language, words and dates alike. Each
+`SECA_SCREENSHOTS_LANGUAGE` takes an Android qualifier (`en-rUS`, `fr-rFR`,
+`es-rES`) and draws every screen in that language, words and dates alike. Each
 listing's images are generated this way, one language at a time.
 
 ## 📜 License

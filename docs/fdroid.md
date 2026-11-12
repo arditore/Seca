@@ -113,11 +113,14 @@ of which are done here:
 1. **The licence had to agree with itself.** The metadata said AGPL-3.0-or-later, because the app
    links libsignal, while the repository said GPL. Seca Messages now carries its own
    `apps/messages/LICENSE`, the AGPL, and the README says which app is under which.
-2. **Picture messages are supported, both ways, as of beta 11.** This was the reviewer's
+2. **Picture messages are supported, both ways, as of beta 12.** This was the reviewer's
    sharpest point and it no longer stands: as the default SMS app, Seca Messages is the only
    app the phone hands a WAP push to, so for a while adopting it cost a user their picture
-   messages without a word. They arrive and are shown since beta 10, and can be sent since
-   beta 11 — a picture, a video, a file, a contact card or a voice message, through the
+   messages without a word. They arrive and are shown since beta 10. Sending was built in
+   beta 11 but no message reached anybody: the recipient's address was written the way the
+   sender's is, so the carrier accepted every message and had nowhere to send it, while the
+   sending phone showed it as sent. Fixed in beta 12, which is the first release where a
+   picture message actually arrives — a picture, a video, a file, a contact card or a voice message, through the
    carrier. Group conversations over MMS are still to come, and the listing says so rather
    than claiming otherwise.
 3. **secp256k1 was a prebuilt binary, and is not any more.**
