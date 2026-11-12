@@ -54,7 +54,8 @@ import androidx.core.net.toUri
 import android.content.Context
 import com.seca.phone.placeCall
 import com.seca.core.design.SecaIcons
-import com.seca.core.design.SecaPalette
+import com.seca.core.design.SecaPaletteSpec
+import com.seca.core.design.secaPaletteOf
 import com.seca.core.design.SecaTheme
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaGroupItem
@@ -649,11 +650,11 @@ private fun QuickReplyDialog(onDismiss: () -> Unit, onSend: (String) -> Unit) {
 
 /** The colours chosen in Seca Contacts, so the call screen matches the rest of the suite. */
 @Composable
-private fun rememberSuiteColors(): Pair<SecaPalette?, Boolean> {
+private fun rememberSuiteColors(): Pair<SecaPaletteSpec?, Boolean> {
     val context = LocalContext.current
-    val colors by produceState<Pair<SecaPalette?, Boolean>>(null to false, context) {
+    val colors by produceState<Pair<SecaPaletteSpec?, Boolean>>(null to false, context) {
         val shared = SharedProfilesClient(context.contentResolver).load()
-        value = SecaPalette.entries.firstOrNull { it.name == shared.palette } to shared.black
+        value = secaPaletteOf(shared.palette) to shared.black
     }
     return colors
 }

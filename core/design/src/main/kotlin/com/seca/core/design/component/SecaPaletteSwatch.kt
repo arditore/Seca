@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
+import com.seca.core.design.SecaPaletteSpec
 import com.seca.core.design.color.darkSchemeFor
 import com.seca.core.design.color.lightSchemeFor
 import androidx.compose.ui.res.stringResource
@@ -45,11 +46,13 @@ import com.seca.core.design.R
  */
 @Composable
 fun SecaPaletteSwatch(
-    palette: SecaPalette?,
+    palette: SecaPaletteSpec?,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = 56.dp,
+    /** What to call it. Named palettes say their own name; a mixed one is told what to say. */
+    label: String? = null,
 ) {
     val colors = swatchColors(palette)
     val corner by animateDpAsState(if (selected) size / 2 else 16.dp, label = "corner")
@@ -91,7 +94,9 @@ fun SecaPaletteSwatch(
             }
         }
         Text(
-            text = stringResource(palette?.label ?: R.string.design_palette_wallpaper),
+            text = label
+                ?: (palette as? SecaPalette)?.let { stringResource(it.label) }
+                ?: stringResource(R.string.design_palette_wallpaper),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -102,7 +107,7 @@ fun SecaPaletteSwatch(
 }
 
 @Composable
-private fun swatchColors(palette: SecaPalette?): List<Color> {
+private fun swatchColors(palette: SecaPaletteSpec?): List<Color> {
     val dark = isSystemInDarkTheme()
     val context = LocalContext.current
     return remember(palette, dark) {

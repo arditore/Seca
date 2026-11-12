@@ -48,4 +48,8 @@
     <string name="design_shape_section">Form der Bilder</string>
     <string name="design_shape_hint_playful">Jede Person erhält ihre eigene Form</string>
     <string name="design_shape_hint_one">Dieselbe Form für alle</string>
+    <string name="design_palette_mine">Meine</string>
+    <string name="design_palette_hue">Farbe</string>
+    <string name="design_palette_chroma">Stärke</string>
+    <string name="design_keep">Behalten</string>
 </resources>

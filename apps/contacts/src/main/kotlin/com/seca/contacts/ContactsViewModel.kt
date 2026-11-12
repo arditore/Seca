@@ -40,6 +40,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
+import com.seca.core.design.SecaPaletteSpec
+import com.seca.core.design.secaPaletteOf
+import com.seca.core.design.stored
 
 /** The app's screens; the last entry of the back stack is the one shown. */
 sealed interface Screen {
@@ -62,7 +65,7 @@ data class ContactsUi(
     val assignments: Map<String, String> = emptyMap(),
     val query: String = "",
     /** Null, the default, follows the wallpaper colours (Material You). */
-    val palette: SecaPalette? = null,
+    val palette: SecaPaletteSpec? = null,
     /** Whether the dark theme goes down to black, for OLED screens. */
     val black: Boolean = false,
     /** Whether the owner's own card sits at the top of the list. */
@@ -198,7 +201,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     }
 
     /** Null goes back to the wallpaper colours. */
-    fun setPalette(palette: SecaPalette?) {
+    fun setPalette(palette: SecaPaletteSpec?) {
         store.setPalette(palette)
         refreshPreferences()
     }

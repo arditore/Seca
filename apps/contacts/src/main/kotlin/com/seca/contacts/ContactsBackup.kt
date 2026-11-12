@@ -8,7 +8,8 @@ import com.seca.core.contacts.ContactsRepository
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.VCard
 import com.seca.core.contacts.VCardContact
-import com.seca.core.design.SecaPalette
+import com.seca.core.design.secaPaletteOf
+import com.seca.core.design.stored
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
 import com.seca.core.suite.SuiteBackup
@@ -50,7 +51,7 @@ internal class ContactsBackup(private val context: Context) {
                 },
             )
             .put("myCard", JSONObject().put("name", myCard.name).put("numbers", JSONArray(myCard.numbers)))
-            .apply { store.palette()?.let { put("palette", it.name) } }
+            .apply { store.palette()?.let { put("palette", it.stored()) } }
             .put(
                 SuiteBackup.KEY_SUMMARY,
                 if (readable) quantity(R.plurals.contacts_count, entries.size) else context.getString(R.string.backup_profiles_only),
@@ -67,7 +68,7 @@ internal class ContactsBackup(private val context: Context) {
         }
         // The suite's colours come back only onto a phone that never had any chosen.
         if (store.palette() == null) {
-            SecaPalette.entries.firstOrNull { it.name == part.optString("palette") }?.let(store::setPalette)
+            secaPaletteOf(part.optString("palette"))?.let(store::setPalette)
         }
         // "My card" only comes back onto a phone where it was never filled in.
         part.optJSONObject("myCard")?.let { card ->

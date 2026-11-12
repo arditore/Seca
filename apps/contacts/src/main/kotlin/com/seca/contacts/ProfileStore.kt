@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.core.content.edit
 import com.seca.core.contacts.SharedProfilesContract
 import com.seca.core.design.SecaAvatarShape
-import com.seca.core.design.SecaPalette
+import com.seca.core.design.SecaPaletteSpec
+import com.seca.core.design.secaPaletteOf
+import com.seca.core.design.stored
 import com.seca.core.model.Profile
 import org.json.JSONArray
 import org.json.JSONObject
@@ -75,14 +77,11 @@ class ProfileStore(context: Context) {
     }
 
     /** Null, the default, means the wallpaper colours. */
-    fun palette(): SecaPalette? {
-        val name = prefs.getString(KEY_PALETTE, null) ?: return null
-        return SecaPalette.entries.firstOrNull { it.name == name }
-    }
+    fun palette(): SecaPaletteSpec? = secaPaletteOf(prefs.getString(KEY_PALETTE, null))
 
-    fun setPalette(palette: SecaPalette?) {
+    fun setPalette(palette: SecaPaletteSpec?) {
         prefs.edit {
-            if (palette == null) remove(KEY_PALETTE) else putString(KEY_PALETTE, palette.name)
+            if (palette == null) remove(KEY_PALETTE) else putString(KEY_PALETTE, palette.stored())
         }
         announceChange()
     }

@@ -49,4 +49,8 @@
     <string name="design_shape_section">Forma de las fotos</string>
     <string name="design_shape_hint_playful">Cada persona tiene su propia forma</string>
     <string name="design_shape_hint_one">La misma forma para todos</string>
+    <string name="design_palette_mine">Mía</string>
+    <string name="design_palette_hue">Color</string>
+    <string name="design_palette_chroma">Intensidad</string>
+    <string name="design_keep">Guardar</string>
 </resources>

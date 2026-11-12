@@ -14,9 +14,9 @@ import androidx.annotation.StringRes
  */
 enum class SecaPalette(
     @StringRes val label: Int,
-    internal val baseHue: Float,
-    internal val chroma: Float,
-) {
+    override val baseHue: Float,
+    override val chroma: Float,
+) : SecaPaletteSpec {
     Ocean(R.string.design_palette_ocean, baseHue = 185f, chroma = 1f),
     Foret(R.string.design_palette_forest, baseHue = 128f, chroma = 0.9f),
     Crepuscule(R.string.design_palette_dusk, baseHue = 322f, chroma = 0.95f),

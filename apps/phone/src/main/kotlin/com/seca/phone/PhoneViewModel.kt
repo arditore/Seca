@@ -30,6 +30,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.seca.core.design.SecaAvatarShape
+import com.seca.core.design.SecaPaletteSpec
+import com.seca.core.design.secaPaletteOf
+import com.seca.core.design.stored
 
 /** The app's screens; the last entry of the back stack is the one shown. */
 sealed interface PhoneScreen {
@@ -80,7 +83,7 @@ data class PhoneUi(
     val blockedUntil: Long = 0L,
 ) {
     /** The palette picked in Seca Contacts; null follows the wallpaper. */
-    val palette: SecaPalette? get() = SecaPalette.entries.firstOrNull { it.name == profiles.palette }
+    val palette: SecaPaletteSpec? get() = secaPaletteOf(profiles.palette)
 
     /** Whether the dark theme goes down to black, as picked anywhere in the suite. */
     val black: Boolean get() = profiles.black
@@ -196,8 +199,8 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Sets the palette of every Seca app; null follows the wallpaper. */
-    fun setPalette(palette: SecaPalette?) {
-        viewModelScope.launch { sharedProfiles.setPalette(palette?.name) }
+    fun setPalette(palette: SecaPaletteSpec?) {
+        viewModelScope.launch { sharedProfiles.setPalette(palette?.stored()) }
     }
 
     /** Takes the dark theme down to black, in all three apps; Seca Contacts keeps the choice. */

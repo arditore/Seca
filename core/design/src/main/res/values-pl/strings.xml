@@ -50,4 +50,8 @@
     <string name="design_shape_section">Kształt zdjęć</string>
     <string name="design_shape_hint_playful">Każda osoba ma własny kształt</string>
     <string name="design_shape_hint_one">Ten sam kształt dla wszystkich</string>
+    <string name="design_palette_mine">Moja</string>
+    <string name="design_palette_hue">Kolor</string>
+    <string name="design_palette_chroma">Nasycenie</string>
+    <string name="design_keep">Zachowaj</string>
 </resources>

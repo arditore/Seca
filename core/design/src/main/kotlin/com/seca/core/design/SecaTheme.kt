@@ -32,7 +32,7 @@ import com.seca.core.design.color.pureBlack
 @Composable
 fun SecaTheme(
     identity: SecaAppIdentity,
-    palette: SecaPalette? = null,
+    palette: SecaPaletteSpec? = null,
     darkTheme: Boolean = isSystemInDarkTheme(),
     black: Boolean = false,
     content: @Composable () -> Unit,

@@ -5,7 +5,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import com.seca.core.design.SecaAppIdentity
-import com.seca.core.design.SecaPalette
+import com.seca.core.design.SecaPaletteSpec
 
 /** One app's accent within one palette, for one theme. */
 private data class Accent(
@@ -23,7 +23,7 @@ private data class Accent(
  */
 private const val IdentityHueStep = 34f
 
-private fun hueFor(palette: SecaPalette, identity: SecaAppIdentity): Float {
+private fun hueFor(palette: SecaPaletteSpec, identity: SecaAppIdentity): Float {
     val step = when (identity) {
         SecaAppIdentity.Contacts -> 0f
         SecaAppIdentity.Phone -> IdentityHueStep
@@ -35,7 +35,7 @@ private fun hueFor(palette: SecaPalette, identity: SecaAppIdentity): Float {
 // Contrast: primary against onPrimary is tightest on green hues (Foret, 128 deg,
 // near 5.0:1 against white at chroma 0.9). Re-check WCAG 4.5:1 after changing
 // any chroma, lightness or base hue.
-private fun lightAccent(palette: SecaPalette, identity: SecaAppIdentity): Accent {
+private fun lightAccent(palette: SecaPaletteSpec, identity: SecaAppIdentity): Accent {
     val h = hueFor(palette, identity)
     val s = 0.62f * palette.chroma
     return Accent(
@@ -46,7 +46,7 @@ private fun lightAccent(palette: SecaPalette, identity: SecaAppIdentity): Accent
     )
 }
 
-private fun darkAccent(palette: SecaPalette, identity: SecaAppIdentity): Accent {
+private fun darkAccent(palette: SecaPaletteSpec, identity: SecaAppIdentity): Accent {
     val h = hueFor(palette, identity)
     val s = 0.55f * palette.chroma
     return Accent(
@@ -106,7 +106,7 @@ private val OnErrorDark = Color(0xFF690005)
 private val ErrorContainerDark = Color(0xFF93000A)
 private val OnErrorContainerDark = Color(0xFFFFDAD6)
 
-internal fun lightSchemeFor(palette: SecaPalette, identity: SecaAppIdentity): ColorScheme {
+internal fun lightSchemeFor(palette: SecaPaletteSpec, identity: SecaAppIdentity): ColorScheme {
     val a = lightAccent(palette, identity)
     return lightColorScheme(
         primary = a.primary,
@@ -147,7 +147,7 @@ internal fun lightSchemeFor(palette: SecaPalette, identity: SecaAppIdentity): Co
     )
 }
 
-internal fun darkSchemeFor(palette: SecaPalette, identity: SecaAppIdentity): ColorScheme {
+internal fun darkSchemeFor(palette: SecaPaletteSpec, identity: SecaAppIdentity): ColorScheme {
     val a = darkAccent(palette, identity)
     return darkColorScheme(
         primary = a.primary,

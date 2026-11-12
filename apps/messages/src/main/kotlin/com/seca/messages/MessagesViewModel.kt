@@ -54,6 +54,9 @@ import org.json.JSONObject
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import com.seca.core.design.SecaAvatarShape
+import com.seca.core.design.SecaPaletteSpec
+import com.seca.core.design.secaPaletteOf
+import com.seca.core.design.stored
 
 /** Searching the text of every message waits for this pause in typing. */
 private const val SEARCH_PAUSE_MILLIS = 250L
@@ -98,7 +101,7 @@ data class MessagesUi(
     }
 
     /** The palette picked in Seca Contacts; null follows the wallpaper. */
-    val palette: SecaPalette? get() = SecaPalette.entries.firstOrNull { it.name == profiles.palette }
+    val palette: SecaPaletteSpec? get() = secaPaletteOf(profiles.palette)
 
     /** Whether the dark theme goes down to black, as picked anywhere in the suite. */
     val black: Boolean get() = profiles.black
@@ -776,8 +779,8 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     }
 
     /** Sets the palette of every Seca app; null follows the wallpaper. */
-    fun setPalette(palette: SecaPalette?) {
-        viewModelScope.launch { sharedProfiles.setPalette(palette?.name) }
+    fun setPalette(palette: SecaPaletteSpec?) {
+        viewModelScope.launch { sharedProfiles.setPalette(palette?.stored()) }
     }
 
     /** Takes the dark theme down to black, in all three apps; Seca Contacts keeps the choice. */

@@ -48,4 +48,8 @@
     <string name="design_shape_section">Shape of the faces</string>
     <string name="design_shape_hint_playful">Each person gets a shape of their own</string>
     <string name="design_shape_hint_one">The same shape for everyone</string>
+    <string name="design_palette_mine">Mine</string>
+    <string name="design_palette_hue">Colour</string>
+    <string name="design_palette_chroma">How much</string>
+    <string name="design_keep">Keep</string>
 </resources>

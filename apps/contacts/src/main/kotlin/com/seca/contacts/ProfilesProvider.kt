@@ -7,7 +7,8 @@ import android.database.MatrixCursor
 import android.net.Uri
 import com.seca.core.contacts.SharedProfilesContract
 import com.seca.core.design.SecaAvatarShape
-import com.seca.core.design.SecaPalette
+import com.seca.core.design.secaPaletteOf
+import com.seca.core.design.stored
 
 /**
  * Lets the other Seca apps read the profiles, and nothing else: no writes.
@@ -51,7 +52,7 @@ class ProfilesProvider : ContentProvider() {
                     SharedProfilesContract.COLUMN_AVATAR_SHAPE,
                 ),
             ).apply {
-                addRow(arrayOf<Any?>(store.palette()?.name, if (store.black()) 1 else 0, store.avatarShape()?.name))
+                addRow(arrayOf<Any?>(store.palette()?.stored(), if (store.black()) 1 else 0, store.avatarShape()?.name))
             }
             else -> return null
         }
@@ -75,7 +76,7 @@ class ProfilesProvider : ContentProvider() {
         var changed = 0
         if (values.containsKey(SharedProfilesContract.COLUMN_PALETTE)) {
             val name = values.getAsString(SharedProfilesContract.COLUMN_PALETTE)
-            store.setPalette(SecaPalette.entries.firstOrNull { it.name == name })
+            store.setPalette(secaPaletteOf(name))
             changed++
         }
         if (values.containsKey(SharedProfilesContract.COLUMN_BLACK)) {
