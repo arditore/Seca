@@ -37,7 +37,7 @@
     <string name="backup">Backup</string>
     <string name="backup_done">Encrypted backup: %1$s</string>
     <string name="backup_failed">The backup failed</string>
-    <string name="backup_hint">Nothing is synced: keep the backup somewhere other than this phone.</string>
+    <string name="backup_hint">Keep a copy somewhere other than this phone</string>
     <string name="backup_restored">Backup restored: %1$s</string>
     <string name="backup_settings_only">settings and Seca Link only, access to texts is denied</string>
     <string name="backup_settings_restored">settings restored</string>
@@ -71,14 +71,14 @@
     <string name="code_hour">1 hour</string>
     <string name="code_keep">Keep</string>
     <string name="code_quarter_hour">15 min</string>
-    <string name="codes_hint">Texts containing a verification code are erased from the phone after this delay.</string>
+    <string name="codes_hint">Verification codes erase themselves</string>
     <string name="codes_match">Codes match</string>
     <string name="codes_mismatch">The codes do not match</string>
     <string name="colors">Colors</string>
     <string name="colors_need_contacts">Install Seca Contacts to choose the suite\'s colors.</string>
     <string name="black_theme">Pure black</string>
-    <string name="black_theme_hint">In dark mode, backgrounds go to black. On an OLED screen those pixels stay unlit.</string>
-    <string name="colors_shared_hint">Colors are shared by all Seca apps. Dark mode follows the phone.</string>
+    <string name="black_theme_hint">Black backgrounds in dark mode</string>
+    <string name="colors_shared_hint">Shared by the three Seca apps</string>
     <string name="compare_hint">Compare these digits with those on %1$s\'s phone, or show them this code. If they are the same, no one sits between you.</string>
     <string name="connect_in_person">Connect in person</string>
     <string name="connected_hint">Your messages are now encrypted by Seca Link. This phone\'s answer also leaves by SMS.</string>
@@ -441,14 +441,14 @@
     </plurals>
     <string name="sent_sound_section">Sound</string>
     <string name="sent_sound">Sound when a message is sent</string>
-    <string name="sent_sound_hint">A short tone, at the volume set for notifications; never when the phone is silent</string>
+    <string name="sent_sound_hint">Never when the phone is silent</string>
     <string name="received_sound">Sound for arriving messages</string>
-    <string name="received_sound_hint">Opens Android’s own page for this app’s message notifications, where any sound on the phone can be chosen</string>
+    <string name="received_sound_hint">Chosen on Android\'s own page</string>
     <string name="app_name_plain">Messages</string>
-    <string name="settings_appearance_hint">Colours, the shape of the faces, the order of the apps</string>
-    <string name="settings_messages_hint">The default messaging app, notifications, codes, advertising, sounds</string>
-    <string name="settings_link_hint">Encrypted messages between two Seca phones</string>
-    <string name="settings_backup_hint">Backups, the whole Seca suite</string>
-    <string name="settings_privacy_hint">The app lock, the private screen, what leaves the phone</string>
+    <string name="settings_appearance_hint">Palette, shapes, order</string>
+    <string name="settings_messages_hint">Default app, notifications, sounds</string>
+    <string name="settings_link_hint">Between two Seca phones</string>
+    <string name="settings_backup_hint">Backups, the Seca suite</string>
+    <string name="settings_privacy_hint">App lock, private screen</string>
     <string name="settings_link">Seca Link</string>
 </resources>

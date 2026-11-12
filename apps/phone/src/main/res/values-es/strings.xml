@@ -92,8 +92,8 @@
     <string name="colors">Colores</string>
     <string name="colors_need_contacts">Instala Seca Contacts para elegir los colores de la suite.</string>
     <string name="black_theme">Negro absoluto</string>
-    <string name="black_theme_hint">En modo oscuro, los fondos pasan a negro. En una pantalla OLED esos píxeles quedan apagados.</string>
-    <string name="colors_shared_hint">Los colores son comunes a todas las aplicaciones Seca. El modo oscuro sigue al del teléfono.</string>
+    <string name="black_theme_hint">Fondos negros en modo oscuro</string>
+    <string name="colors_shared_hint">Compartidos por las tres aplicaciones Seca</string>
     <string name="contact_card">Contacto</string>
     <string name="contacts">Contactos</string>
     <plurals name="contacts_count">
@@ -217,9 +217,9 @@
     <string name="choose">Seleccionar</string>
     <string name="app_name_plain">Teléfono</string>
     <string name="backup">Copia de seguridad</string>
-    <string name="settings_appearance_hint">Colores, forma de las fotos, orden de las aplicaciones</string>
-    <string name="settings_calls_hint">Aplicación de teléfono predeterminada, pantalla de llamada, historial</string>
-    <string name="settings_filtering_hint">Qué llamadas suenan y cuáles no</string>
-    <string name="settings_backup_hint">Copias de seguridad, toda la suite Seca</string>
-    <string name="settings_privacy_hint">Bloqueo, pantalla privada, lo que sale del teléfono</string>
+    <string name="settings_appearance_hint">Paleta, formas, orden</string>
+    <string name="settings_calls_hint">Pantalla de llamada, historial</string>
+    <string name="settings_filtering_hint">Qué llamadas suenan</string>
+    <string name="settings_backup_hint">Copias, la suite Seca</string>
+    <string name="settings_privacy_hint">Bloqueo, pantalla privada</string>
 </resources>

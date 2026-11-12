@@ -33,8 +33,8 @@
     <string name="design_unlock">Odblokuj</string>
     <string name="design_unlock_app">Odblokuj %1$s</string>
     <string name="seca_palette">Paleta Seca</string>
-    <string name="seca_palette_hint_dynamic">Aby zastąpić kolory tapety</string>
-    <string name="seca_palette_hint_on">Każda aplikacja Seca przyjmuje własny odcień</string>
+    <string name="seca_palette_hint_dynamic">Zamiast kolorów tapety</string>
+    <string name="seca_palette_hint_on">Każda aplikacja bierze swój odcień</string>
     <string name="design_copied">Skopiowano</string>
     <string name="design_copy">Kopiuj</string>
     <string name="design_choose_all">Zaznacz wszystko</string>
@@ -48,7 +48,7 @@
     <string name="design_shape_sunny">Słońce</string>
     <string name="design_shape_flower">Kwiat</string>
     <string name="design_shape_section">Kształt zdjęć</string>
-    <string name="design_shape_hint_playful">Każda osoba ma własny kształt</string>
+    <string name="design_shape_hint_playful">Inny kształt dla każdej osoby</string>
     <string name="design_shape_hint_one">Ten sam kształt dla wszystkich</string>
     <string name="design_palette_mine">Moja</string>
     <string name="design_palette_hue">Kolor</string>

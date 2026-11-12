@@ -25,7 +25,7 @@
     <string name="auto_run_now">Zapisz kopię teraz</string>
     <string name="auto_section">Kopie zapisywane automatycznie</string>
     <string name="auto_turn_off">Przestań zapisywać kopie</string>
-    <string name="auto_turn_off_hint">Zapomina folder i hasło; już zapisane pliki zostają</string>
+    <string name="auto_turn_off_hint">Już zapisane pliki pozostają</string>
     <string name="auto_understand">Rozumiem</string>
     <string name="auto_weekly">Co tydzień</string>
     <string name="auto_write_failed">Nie udało się zapisać pliku.</string>
@@ -34,7 +34,7 @@
     <string name="suite_app_phone">Seca Phone</string>
     <string name="suite_backing_up">Tworzenie kopii trzech aplikacji…</string>
     <string name="suite_backup_all">Utwórz kopię trzech aplikacji</string>
-    <string name="suite_backup_all_hint">Kontakty i profile, połączenia i filtrowanie, wiadomości i rozmowy, w jednym zaszyfrowanym pliku</string>
+    <string name="suite_backup_all_hint">Wszystko z trzech aplikacji, w jednym zaszyfrowanym pliku</string>
     <string name="suite_done">Gotowe</string>
     <string name="suite_empty">Kopia nie zawiera niczego do przywrócenia</string>
     <string name="suite_encrypt">Zaszyfruj</string>
@@ -50,7 +50,7 @@
     <string name="suite_permission_label">tworzenie kopii zapasowej pakietu Seca</string>
     <string name="suite_restore">Przywróć</string>
     <string name="suite_restore_all">Przywróć trzy aplikacje</string>
-    <string name="suite_restore_all_hint">Każda zainstalowana aplikacja odbiera swoją część; nic nie jest nadpisywane</string>
+    <string name="suite_restore_all_hint">Każda zainstalowana aplikacja odbiera swoją część</string>
     <string name="suite_restore_failed">przywracanie nie udało się</string>
     <string name="suite_restoring">Przywracanie trzech aplikacji…</string>
     <string name="suite_saved">zapisano</string>
@@ -67,9 +67,9 @@
     <string name="door_title">Aplikacja Seca odczytała Twoje dane</string>
     <string name="door_unknown_caller">Aplikacja, której Android nie potrafił nazwać</string>
     <string name="suite_order_section">Kolejność aplikacji</string>
-    <string name="suite_order_hint">Kolejność, w jakiej stoją na pasku na dole wszystkich trzech</string>
     <string name="suite_order_up">Przenieś %1$s w górę</string>
     <string name="suite_order_down">Przenieś %1$s w dół</string>
-    <string name="suite_plain_names">Proste nazwy w menu aplikacji</string>
-    <string name="suite_plain_names_hint">„Kontakty”, „Telefon” i „Wiadomości” zamiast „Seca Kontakty” i pozostałych</string>
+    <string name="suite_plain_names">Proste nazwy</string>
+    <string name="suite_plain_names_hint">Bez „Seca” z przodu</string>
+    <string name="suite_names_section">Nazwy aplikacji</string>
 </resources>

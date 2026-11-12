@@ -37,7 +37,7 @@
     <string name="backup">Kopia zapasowa</string>
     <string name="backup_done">Szyfrowana kopia zapasowa: %1$s</string>
     <string name="backup_failed">Tworzenie kopii zapasowej nie powiodło się</string>
-    <string name="backup_hint">Nic nie jest synchronizowane: przechowuj kopię zapasową poza tym telefonem.</string>
+    <string name="backup_hint">Trzymaj kopię poza tym telefonem</string>
     <string name="backup_restored">Kopia zapasowa przywrócona: %1$s</string>
     <string name="backup_settings_only">tylko ustawienia i Seca Link, dostęp do wiadomości tekstowych jest zablokowany</string>
     <string name="backup_settings_restored">ustawienia zostały przywrócone</string>
@@ -73,12 +73,12 @@
     <string name="code_hour">1 godzinę</string>
     <string name="code_keep">Zachowaj</string>
     <string name="code_quarter_hour">15 min</string>
-    <string name="codes_hint">Wiadomości zawierające kody weryfikacyjne są usuwane z telefonu po tym czasie.</string>
+    <string name="codes_hint">Kody weryfikacyjne kasują się same</string>
     <string name="codes_match">Kody są zgodne</string>
     <string name="codes_mismatch">Kody nie są zgodne</string>
     <string name="colors">Kolory</string>
     <string name="colors_need_contacts">Zainstaluj Seca Contacts, aby wybrać kolory pakietu aplikacji.</string>
-    <string name="colors_shared_hint">Kolory są współdzielone przez wszystkie aplikacje Seca. Ciemny motyw dostosowuje się do systemu telefonu.</string>
+    <string name="colors_shared_hint">Wspólne dla trzech aplikacji Seca</string>
     <string name="compare_hint">Porównaj te cyfry z cyframi na telefonie użytkownika %1$s lub pokaż mu ten kod. Jeśli są takie same, nikt nie podsłuchuje Waszego połączenia.</string>
     <string name="connect_in_person">Połącz osobiście</string>
     <string name="connected_hint">Twoje wiadomości są teraz szyfrowane przez Seca Link. Odpowiedź z tego telefonu zostanie również wysłana SMS-em.</string>
@@ -446,7 +446,7 @@
     <string name="your_link_code">Twój kod Seca Link</string>
     <string name="your_reply">Twoja odpowiedź</string>
     <string name="black_theme">Czysta czerń</string>
-    <string name="black_theme_hint">W trybie ciemnym tło zmienia kolor na czarny. Na ekranie OLED te piksele pozostają wyłączone.</string>
+    <string name="black_theme_hint">Czarne tła w trybie ciemnym</string>
     <plurals name="sweep_found">
         <item quantity="one">%1$d rozmowa do zarchiwizowania</item>
         <item quantity="few">%1$d rozmowy do zarchiwizowania</item>
@@ -464,14 +464,14 @@
     </plurals>
     <string name="sent_sound_section">Dźwięk</string>
     <string name="sent_sound">Dźwięk przy wysyłaniu wiadomości</string>
-    <string name="sent_sound_hint">Krótki dźwięk, na głośności powiadomień; nigdy, gdy telefon jest wyciszony</string>
+    <string name="sent_sound_hint">Nigdy, gdy telefon jest wyciszony</string>
     <string name="received_sound">Dźwięk przychodzących wiadomości</string>
-    <string name="received_sound_hint">Otwiera stronę Androida dla powiadomień o wiadomościach, gdzie można wybrać dowolny dźwięk z telefonu</string>
+    <string name="received_sound_hint">Wybierany na stronie Androida</string>
     <string name="app_name_plain">Wiadomości</string>
-    <string name="settings_appearance_hint">Kolory, kształt zdjęć, kolejność aplikacji</string>
-    <string name="settings_messages_hint">Domyślna aplikacja wiadomości, powiadomienia, kody, reklamy, dźwięki</string>
-    <string name="settings_link_hint">Zaszyfrowane wiadomości między dwoma telefonami Seca</string>
-    <string name="settings_backup_hint">Kopie zapasowe, cały pakiet Seca</string>
-    <string name="settings_privacy_hint">Blokada, prywatny ekran, co opuszcza telefon</string>
+    <string name="settings_appearance_hint">Paleta, kształty, kolejność</string>
+    <string name="settings_messages_hint">Domyślna, powiadomienia, dźwięki</string>
+    <string name="settings_link_hint">Między dwoma telefonami Seca</string>
+    <string name="settings_backup_hint">Kopie, pakiet Seca</string>
+    <string name="settings_privacy_hint">Blokada, prywatny ekran</string>
     <string name="settings_link">Seca Link</string>
 </resources>

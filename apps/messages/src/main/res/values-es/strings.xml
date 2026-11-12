@@ -37,7 +37,7 @@
     <string name="backup">Copia de seguridad</string>
     <string name="backup_done">Copia cifrada: %1$s</string>
     <string name="backup_failed">La copia falló</string>
-    <string name="backup_hint">Nada se sincroniza: guarda la copia en otro sitio que no sea este teléfono.</string>
+    <string name="backup_hint">Guarda una copia fuera de este teléfono</string>
     <string name="backup_restored">Copia restaurada: %1$s</string>
     <string name="backup_settings_only">solo los ajustes y Seca Link, el acceso a los mensajes está denegado</string>
     <string name="backup_settings_restored">ajustes restaurados</string>
@@ -73,14 +73,14 @@
     <string name="code_hour">1 hora</string>
     <string name="code_keep">Conservar</string>
     <string name="code_quarter_hour">15 min</string>
-    <string name="codes_hint">Los mensajes que contienen un código de verificación se borran del teléfono tras este plazo.</string>
+    <string name="codes_hint">Los códigos de verificación se borran solos</string>
     <string name="codes_match">Los códigos coinciden</string>
     <string name="codes_mismatch">Los códigos no coinciden</string>
     <string name="colors">Colores</string>
     <string name="colors_need_contacts">Instala Seca Contacts para elegir los colores de la suite.</string>
     <string name="black_theme">Negro absoluto</string>
-    <string name="black_theme_hint">En modo oscuro, los fondos pasan a negro. En una pantalla OLED esos píxeles quedan apagados.</string>
-    <string name="colors_shared_hint">Los colores son comunes a todas las aplicaciones Seca. El modo oscuro sigue al del teléfono.</string>
+    <string name="black_theme_hint">Fondos negros en modo oscuro</string>
+    <string name="colors_shared_hint">Compartidos por las tres aplicaciones Seca</string>
     <string name="compare_hint">Compara estas cifras con las del teléfono de %1$s, o muéstrale este código. Si son iguales, nadie se interpone entre vosotros.</string>
     <string name="connect_in_person">Conectar en persona</string>
     <string name="connected_hint">Tus mensajes van ahora cifrados por Seca Link. La respuesta de este teléfono también sale por SMS.</string>
@@ -462,14 +462,14 @@
     </plurals>
     <string name="sent_sound_section">Sonido</string>
     <string name="sent_sound">Sonido al enviar un mensaje</string>
-    <string name="sent_sound_hint">Un tono breve, al volumen de las notificaciones; nunca con el teléfono en silencio</string>
+    <string name="sent_sound_hint">Nunca con el teléfono en silencio</string>
     <string name="received_sound">Sonido de los mensajes recibidos</string>
-    <string name="received_sound_hint">Abre la página de Android para las notificaciones de mensajes, donde puede elegirse cualquier sonido del teléfono</string>
+    <string name="received_sound_hint">Elegido en la página de Android</string>
     <string name="app_name_plain">Mensajes</string>
-    <string name="settings_appearance_hint">Colores, forma de las fotos, orden de las aplicaciones</string>
-    <string name="settings_messages_hint">Aplicación de mensajes predeterminada, notificaciones, códigos, publicidad, sonidos</string>
-    <string name="settings_link_hint">Mensajes cifrados entre dos teléfonos Seca</string>
-    <string name="settings_backup_hint">Copias de seguridad, toda la suite Seca</string>
-    <string name="settings_privacy_hint">Bloqueo, pantalla privada, lo que sale del teléfono</string>
+    <string name="settings_appearance_hint">Paleta, formas, orden</string>
+    <string name="settings_messages_hint">Predeterminada, notificaciones, sonidos</string>
+    <string name="settings_link_hint">Entre dos teléfonos Seca</string>
+    <string name="settings_backup_hint">Copias, la suite Seca</string>
+    <string name="settings_privacy_hint">Bloqueo, pantalla privada</string>
     <string name="settings_link">Seca Link</string>
 </resources>

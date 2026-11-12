@@ -30,7 +30,7 @@
     </plurals>
     <string name="backup_done">Sauvegarde chiffrée : %1$s</string>
     <string name="backup_failed">La sauvegarde a échoué</string>
-    <string name="backup_hint">Seca ne synchronise rien : gardez une copie de vos contacts ailleurs que sur ce téléphone.</string>
+    <string name="backup_hint">Gardez une copie ailleurs que sur ce téléphone</string>
     <string name="backup_profiles_only">profils seulement, l\'accès aux contacts est refusé</string>
     <string name="backup_profiles_restored">profils remis</string>
     <string name="backup_profiles_restored_no_access">profils remis ; autorisez les contacts dans Seca Contacts, puis restaurez à nouveau pour ranger les fiches</string>
@@ -84,8 +84,7 @@
     <string name="current_profile">Profil actuel</string>
     <string name="current_type">Type actuel</string>
     <string name="black_theme">Noir absolu</string>
-    <string name="black_theme_hint">En mode sombre, les fonds passent au noir. Sur un écran OLED, ces pixels restent éteints.</string>
-    <string name="dark_mode_hint">Le mode clair ou sombre suit celui du téléphone.</string>
+    <string name="black_theme_hint">Fonds noirs en mode sombre</string>
     <string name="delete">Supprimer</string>
     <string name="delete_contact_text">« %1$s » sera supprimé de ce téléphone. C\'est définitif.</string>
     <string name="delete_contact_title">Supprimer ce contact ?</string>
@@ -93,7 +92,7 @@
     <string name="delete_profile_text">Ses contacts reviennent dans Principal. Aucun contact n\'est supprimé.</string>
     <string name="delete_profile_title">Supprimer « %1$s » ?</string>
     <string name="duplicates">Doublons</string>
-    <string name="duplicates_hint">Fusionner réunit les fiches d\'une même personne sous un seul contact. Android garde chaque fiche d\'origine : rien n\'est supprimé.</string>
+    <string name="duplicates_hint">Plusieurs fiches pour une personne, réunies</string>
     <string name="duplicates_row_hint">Réunir les fiches d\'une même personne</string>
     <string name="dynamic_colors">Couleurs dynamiques</string>
     <string name="dynamic_colors_hint">Assorties au fond d\'écran du téléphone</string>
@@ -106,7 +105,7 @@
     <string name="encrypted_backup">Sauvegarde chiffrée</string>
     <string name="encrypted_backup_hint">Contacts, profils et Ma fiche, protégés par un mot de passe</string>
     <string name="export_contacts">Exporter les contacts</string>
-    <string name="export_contacts_hint">Un fichier .vcf, gardé où vous voulez, avec le profil de chaque contact</string>
+    <string name="export_contacts_hint">Un fichier .vcf, profils compris</string>
     <string name="export_failed">L\'export a échoué</string>
     <string name="family_name">Nom</string>
     <string name="favorites">Favoris</string>
@@ -131,7 +130,7 @@
     <string name="message">Message</string>
     <string name="more_options">Plus d\'options</string>
     <string name="my_card">Ma fiche</string>
-    <string name="my_card_hint">Ce que vous donnez par QR code quand on vous demande votre numéro</string>
+    <string name="my_card_hint">Ce que le code QR transmet</string>
     <string name="my_card_privacy">Ma fiche reste dans Seca Contacts : elle n\'est ni partagée avec les autres applications, ni synchronisée. Seul le QR code, quand vous le montrez, la donne à quelqu\'un.</string>
     <string name="my_card_qr">QR code de votre fiche</string>
     <string name="my_card_qr_hint">Scannez-le avec l\'appareil photo de l\'autre téléphone pour ajouter votre fiche. Rien ne passe par Internet, et la photo n\'est pas incluse.</string>
@@ -170,7 +169,7 @@
     <string name="profile_empty_hint">Ouvrez la fiche d\'un contact pour le ranger ici, ou créez-en un.</string>
     <string name="profile_name">Nom du profil</string>
     <string name="profiles">Profils</string>
-    <string name="profiles_hint">Rangez vos contacts par profil, comme Travail ou Famille. Supprimer un profil ne supprime aucun contact.</string>
+    <string name="profiles_hint">Supprimer un profil ne supprime aucun contact</string>
     <string name="protection">Protection</string>
     <string name="read_sim_numbers">Lire les numéros des cartes SIM</string>
     <string name="read_sim_numbers_hint">Lus sur ce téléphone, jamais envoyés</string>
@@ -205,7 +204,7 @@
     <string name="wrong_password">Mot de passe incorrect, ou fichier abîmé</string>
     <string name="your_name">Votre nom</string>
     <string name="show_my_card">Afficher Ma fiche</string>
-    <string name="show_my_card_hint">Votre propre fiche en haut de la liste. Masquée, elle reste dans les paramètres.</string>
+    <string name="show_my_card_hint">En haut de la liste</string>
     <string name="birthday_with_age">%1$s (%2$s)</string>
     <plurals name="years_old">
         <item quantity="one">%d an</item>
@@ -220,9 +219,9 @@
     <string name="photo_shape">Forme de la photo</string>
     <string name="photo_shape_everyone">Comme tout le monde</string>
     <string name="app_name_plain">Contacts</string>
-    <string name="settings_appearance_hint">Couleurs, forme des photos, ordre des applications</string>
-    <string name="settings_backup_hint">Sauvegardes, toute la suite Seca, import et export</string>
+    <string name="settings_appearance_hint">Palette, formes, ordre</string>
+    <string name="settings_backup_hint">Sauvegardes, import et export</string>
     <string name="settings_tidy_hint">Votre fiche, doublons</string>
-    <string name="settings_privacy_hint">Verrouillage, écran privé, ce qui quitte le téléphone</string>
-    <string name="settings_profiles_hint">Travail, Famille, et comment vos contacts sont rangés</string>
+    <string name="settings_privacy_hint">Verrouillage, écran privé</string>
+    <string name="settings_profiles_hint">Travail, Famille, et le reste</string>
 </resources>

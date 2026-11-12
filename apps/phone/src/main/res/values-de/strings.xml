@@ -90,8 +90,8 @@
     <string name="colors">Farben</string>
     <string name="colors_need_contacts">Installiere Seca Kontakte, um die Farben der Suite zu wählen.</string>
     <string name="black_theme">Reines Schwarz</string>
-    <string name="black_theme_hint">Im Dunkelmodus werden Hintergründe schwarz. Auf einem OLED-Display bleiben diese Pixel unbeleuchtet.</string>
-    <string name="colors_shared_hint">Die Farben gelten für alle Seca-Apps. Der Dunkelmodus folgt dem Gerät.</string>
+    <string name="black_theme_hint">Schwarze Hintergründe im Dunkelmodus</string>
+    <string name="colors_shared_hint">Von allen drei Seca-Apps geteilt</string>
     <string name="contact_card">Kontakt</string>
     <string name="contacts">Kontakte</string>
     <plurals name="contacts_count">
@@ -212,9 +212,9 @@
     <string name="choose">Auswählen</string>
     <string name="app_name_plain">Telefon</string>
     <string name="backup">Sicherung</string>
-    <string name="settings_appearance_hint">Farben, Form der Bilder, Reihenfolge der Apps</string>
-    <string name="settings_calls_hint">Standard-Telefon-App, Anrufbildschirm, Verlauf</string>
-    <string name="settings_filtering_hint">Welche Anrufe klingeln und welche nicht</string>
-    <string name="settings_backup_hint">Sicherungen, die ganze Seca-Suite</string>
-    <string name="settings_privacy_hint">Sperre, privater Bildschirm, was das Telefon verlässt</string>
+    <string name="settings_appearance_hint">Palette, Formen, Reihenfolge</string>
+    <string name="settings_calls_hint">Anrufbildschirm, Verlauf</string>
+    <string name="settings_filtering_hint">Welche Anrufe klingeln</string>
+    <string name="settings_backup_hint">Sicherungen, die Seca-Suite</string>
+    <string name="settings_privacy_hint">Sperre, privater Bildschirm</string>
 </resources>

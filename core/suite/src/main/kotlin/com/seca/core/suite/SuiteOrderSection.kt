@@ -55,12 +55,6 @@ fun SuiteOrderSection() {
 
     SecaSectionLabel(stringResource(R.string.suite_order_section))
     Column {
-        Text(
-            text = stringResource(R.string.suite_order_hint),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp),
-        )
         here.forEachIndexed { index, app ->
             SecaGroupItem(index = index, count = here.size) {
                 val name = stringResource(app.label)
@@ -110,6 +104,7 @@ fun SuiteOrderSection() {
 fun SuiteNamesSection() {
     val context = LocalContext.current
     var plain by remember { mutableStateOf(PlainNames.enabled(context)) }
+    SecaSectionLabel(stringResource(R.string.suite_names_section))
     SecaGroupItem(index = 0, count = 1) {
         SecaSettingRow(
             icon = SecaIcons.Label,

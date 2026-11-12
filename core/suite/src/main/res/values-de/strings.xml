@@ -25,7 +25,7 @@
     <string name="auto_run_now">Jetzt eine schreiben</string>
     <string name="auto_section">Sicherungen, die sich selbst schreiben</string>
     <string name="auto_turn_off">Keine Sicherungen mehr schreiben</string>
-    <string name="auto_turn_off_hint">Vergisst Ordner und Passwort; die bereits geschriebenen Dateien bleiben</string>
+    <string name="auto_turn_off_hint">Bereits geschriebene Dateien bleiben</string>
     <string name="auto_understand">Ich habe verstanden</string>
     <string name="auto_weekly">Wöchentlich</string>
     <string name="auto_write_failed">Die Datei konnte nicht geschrieben werden.</string>
@@ -34,7 +34,7 @@
     <string name="suite_app_phone">Seca Telefon</string>
     <string name="suite_backing_up">Alle drei Apps werden gesichert …</string>
     <string name="suite_backup_all">Alle drei Apps sichern</string>
-    <string name="suite_backup_all_hint">Kontakte und Profile, Anrufe und Filter, Nachrichten und Unterhaltungen, in einer verschlüsselten Datei</string>
+    <string name="suite_backup_all_hint">Alles aus den drei Apps, in einer verschlüsselten Datei</string>
     <string name="suite_done">Fertig</string>
     <string name="suite_empty">Die Sicherung enthält nichts zum Wiederherstellen</string>
     <string name="suite_encrypt">Verschlüsseln</string>
@@ -50,7 +50,7 @@
     <string name="suite_permission_label">die Seca-Suite sichern</string>
     <string name="suite_restore">Wiederherstellen</string>
     <string name="suite_restore_all">Alle drei Apps wiederherstellen</string>
-    <string name="suite_restore_all_hint">Jede installierte App nimmt ihren Teil zurück; nichts wird ersetzt</string>
+    <string name="suite_restore_all_hint">Jede installierte App nimmt ihren Teil zurück</string>
     <string name="suite_restore_failed">Wiederherstellung fehlgeschlagen</string>
     <string name="suite_restoring">Alle drei Apps werden wiederhergestellt …</string>
     <string name="suite_saved">gesichert</string>
@@ -67,9 +67,9 @@
     <string name="door_title">Eine Seca-App hat Ihre Daten gelesen</string>
     <string name="door_unknown_caller">Eine App, die Android nicht benennen konnte</string>
     <string name="suite_order_section">Reihenfolge der Apps</string>
-    <string name="suite_order_hint">Die Reihenfolge in der Leiste am unteren Rand aller drei Apps</string>
     <string name="suite_order_up">%1$s nach oben</string>
     <string name="suite_order_down">%1$s nach unten</string>
-    <string name="suite_plain_names">Einfache Namen im Starter</string>
-    <string name="suite_plain_names_hint">„Kontakte“, „Telefon“ und „Nachrichten“ statt „Seca Kontakte“ und der Rest</string>
+    <string name="suite_plain_names">Einfache Namen</string>
+    <string name="suite_plain_names_hint">Ohne „Seca“ davor</string>
+    <string name="suite_names_section">Namen der Apps</string>
 </resources>

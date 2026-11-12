@@ -90,8 +90,8 @@
     <string name="colors">Colors</string>
     <string name="colors_need_contacts">Install Seca Contacts to choose the suite\'s colors.</string>
     <string name="black_theme">Pure black</string>
-    <string name="black_theme_hint">In dark mode, backgrounds go to black. On an OLED screen those pixels stay unlit.</string>
-    <string name="colors_shared_hint">Colors are shared by all Seca apps. Dark mode follows the phone.</string>
+    <string name="black_theme_hint">Black backgrounds in dark mode</string>
+    <string name="colors_shared_hint">Shared by the three Seca apps</string>
     <string name="contact_card">Contact</string>
     <string name="contacts">Contacts</string>
     <plurals name="contacts_count">
@@ -212,9 +212,9 @@
     <string name="choose">Choose</string>
     <string name="app_name_plain">Phone</string>
     <string name="backup">Backup</string>
-    <string name="settings_appearance_hint">Colours, the shape of the faces, the order of the apps</string>
-    <string name="settings_calls_hint">The default phone app, the call screen, the history</string>
-    <string name="settings_filtering_hint">Which calls ring, and which do not</string>
-    <string name="settings_backup_hint">Backups, the whole Seca suite</string>
-    <string name="settings_privacy_hint">The app lock, the private screen, what leaves the phone</string>
+    <string name="settings_appearance_hint">Palette, shapes, order</string>
+    <string name="settings_calls_hint">Call screen, history</string>
+    <string name="settings_filtering_hint">Which calls ring</string>
+    <string name="settings_backup_hint">Backups, the Seca suite</string>
+    <string name="settings_privacy_hint">App lock, private screen</string>
 </resources>

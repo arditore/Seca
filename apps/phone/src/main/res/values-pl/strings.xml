@@ -81,7 +81,7 @@
     <string name="clear_history_title">Wyczyścić całą historię?</string>
     <string name="colors">Kolory</string>
     <string name="colors_need_contacts">Zainstaluj Seca Contacts, aby wybrać kolory pakietu aplikacji.</string>
-    <string name="colors_shared_hint">Kolory są współdzielone przez wszystkie aplikacje Seca. Ciemny motyw dostosowuje się do systemu telefonu.</string>
+    <string name="colors_shared_hint">Wspólne dla trzech aplikacji Seca</string>
     <string name="contact_card">Kontakt</string>
     <string name="contacts">Kontakty</string>
     <plurals name="contacts_count">
@@ -205,7 +205,7 @@
     <string name="wifi_calling_hint">Rozmawiaj przez Wi-Fi, gdy sygnał sieci komórkowej jest słaby</string>
     <string name="yesterday">Wczoraj</string>
     <string name="black_theme">Czysta czerń</string>
-    <string name="black_theme_hint">W trybie ciemnym tło zmienia kolor na czarny. Na ekranie OLED te piksele pozostają wyłączone.</string>
+    <string name="black_theme_hint">Czarne tła w trybie ciemnym</string>
     <string name="button_labels">Nazwy przycisków</string>
     <string name="button_labels_hint">Nazwa pod każdym przyciskiem w trakcie połączenia. Wyłączone — zostają same ikony.</string>
     <string name="call_screen">Ekran połączenia</string>
@@ -217,9 +217,9 @@
     <string name="choose">Wybierz</string>
     <string name="app_name_plain">Telefon</string>
     <string name="backup">Kopia zapasowa</string>
-    <string name="settings_appearance_hint">Kolory, kształt zdjęć, kolejność aplikacji</string>
-    <string name="settings_calls_hint">Domyślna aplikacja telefonu, ekran połączenia, historia</string>
-    <string name="settings_filtering_hint">Które połączenia dzwonią, a które nie</string>
-    <string name="settings_backup_hint">Kopie zapasowe, cały pakiet Seca</string>
-    <string name="settings_privacy_hint">Blokada, prywatny ekran, co opuszcza telefon</string>
+    <string name="settings_appearance_hint">Paleta, kształty, kolejność</string>
+    <string name="settings_calls_hint">Ekran połączenia, historia</string>
+    <string name="settings_filtering_hint">Które połączenia dzwonią</string>
+    <string name="settings_backup_hint">Kopie, pakiet Seca</string>
+    <string name="settings_privacy_hint">Blokada, prywatny ekran</string>
 </resources>

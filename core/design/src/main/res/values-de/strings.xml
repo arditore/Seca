@@ -31,8 +31,8 @@
     <string name="design_unlock">Entsperren</string>
     <string name="design_unlock_app">%1$s entsperren</string>
     <string name="seca_palette">Seca-Palette</string>
-    <string name="seca_palette_hint_dynamic">Um die Farben des Hintergrundbilds zu ersetzen</string>
-    <string name="seca_palette_hint_on">Jede Seca-App erhält ihren eigenen Farbton</string>
+    <string name="seca_palette_hint_dynamic">Statt der Hintergrundfarben</string>
+    <string name="seca_palette_hint_on">Jede App nimmt ihren Ton</string>
     <string name="design_copied">Kopiert</string>
     <string name="design_copy">Kopieren</string>
     <string name="design_choose_all">Alle auswählen</string>
@@ -46,7 +46,7 @@
     <string name="design_shape_sunny">Sonne</string>
     <string name="design_shape_flower">Blume</string>
     <string name="design_shape_section">Form der Bilder</string>
-    <string name="design_shape_hint_playful">Jede Person erhält ihre eigene Form</string>
+    <string name="design_shape_hint_playful">Eine andere Form je Person</string>
     <string name="design_shape_hint_one">Dieselbe Form für alle</string>
     <string name="design_palette_mine">Meine</string>
     <string name="design_palette_hue">Farbe</string>

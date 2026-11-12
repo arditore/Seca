@@ -32,8 +32,8 @@
     <string name="design_unlock">Déverrouiller</string>
     <string name="design_unlock_app">Déverrouiller %1$s</string>
     <string name="seca_palette">Palette Seca</string>
-    <string name="seca_palette_hint_dynamic">Pour remplacer les couleurs du fond d\'écran</string>
-    <string name="seca_palette_hint_on">Chaque application Seca en prend sa propre nuance</string>
+    <string name="seca_palette_hint_dynamic">À la place des couleurs du fond d\'écran</string>
+    <string name="seca_palette_hint_on">Chaque application prend sa nuance</string>
     <string name="design_copied">Copié</string>
     <string name="design_copy">Copier</string>
     <string name="design_choose_all">Tout sélectionner</string>
@@ -47,7 +47,7 @@
     <string name="design_shape_sunny">Soleil</string>
     <string name="design_shape_flower">Fleur</string>
     <string name="design_shape_section">Forme des photos</string>
-    <string name="design_shape_hint_playful">Chaque personne a sa propre forme</string>
+    <string name="design_shape_hint_playful">Une forme différente par personne</string>
     <string name="design_shape_hint_one">La même forme pour tout le monde</string>
     <string name="design_palette_mine">La mienne</string>
     <string name="design_palette_hue">Couleur</string>

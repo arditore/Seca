@@ -25,7 +25,7 @@
     <string name="auto_run_now">Escribir una ahora</string>
     <string name="auto_section">Copias que se escriben solas</string>
     <string name="auto_turn_off">Dejar de escribir copias</string>
-    <string name="auto_turn_off_hint">Olvida la carpeta y la contraseña; los archivos ya escritos se quedan</string>
+    <string name="auto_turn_off_hint">Los archivos ya escritos se conservan</string>
     <string name="auto_understand">Entendido</string>
     <string name="auto_weekly">Cada semana</string>
     <string name="auto_write_failed">No se pudo escribir el archivo.</string>
@@ -34,7 +34,7 @@
     <string name="suite_app_phone">Seca Phone</string>
     <string name="suite_backing_up">Copiando las tres aplicaciones…</string>
     <string name="suite_backup_all">Copiar las tres aplicaciones</string>
-    <string name="suite_backup_all_hint">Contactos y perfiles, llamadas y filtrado, mensajes y conversaciones, en un solo archivo cifrado</string>
+    <string name="suite_backup_all_hint">Todo lo que guardan las tres aplicaciones, en un archivo cifrado</string>
     <string name="suite_done">Hecho</string>
     <string name="suite_empty">La copia no contiene nada que restaurar</string>
     <string name="suite_encrypt">Cifrar</string>
@@ -50,7 +50,7 @@
     <string name="suite_permission_label">copiar la suite Seca</string>
     <string name="suite_restore">Restaurar</string>
     <string name="suite_restore_all">Restaurar las tres aplicaciones</string>
-    <string name="suite_restore_all_hint">Cada aplicación instalada recupera su parte; nada se reemplaza</string>
+    <string name="suite_restore_all_hint">Cada aplicación instalada recupera su parte</string>
     <string name="suite_restore_failed">la restauración falló</string>
     <string name="suite_restoring">Restaurando las tres aplicaciones…</string>
     <string name="suite_saved">guardada</string>
@@ -67,9 +67,9 @@
     <string name="door_title">Una app de Seca ha leído tus datos</string>
     <string name="door_unknown_caller">Una app que Android no ha sabido nombrar</string>
     <string name="suite_order_section">Orden de las aplicaciones</string>
-    <string name="suite_order_hint">El orden en que aparecen, en la barra inferior de las tres</string>
     <string name="suite_order_up">Subir %1$s</string>
     <string name="suite_order_down">Bajar %1$s</string>
-    <string name="suite_plain_names">Nombres sencillos en el lanzador</string>
-    <string name="suite_plain_names_hint">«Contactos», «Teléfono» y «Mensajes» en lugar de «Seca Contactos» y los demás</string>
+    <string name="suite_plain_names">Nombres sencillos</string>
+    <string name="suite_plain_names_hint">Sin «Seca» delante</string>
+    <string name="suite_names_section">Nombres de las aplicaciones</string>
 </resources>

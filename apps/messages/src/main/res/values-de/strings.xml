@@ -37,7 +37,7 @@
     <string name="backup">Backup</string>
     <string name="backup_done">Verschlüsseltes Backup: %1$s</string>
     <string name="backup_failed">Das Backup ist fehlgeschlagen</string>
-    <string name="backup_hint">Nichts wird synchronisiert: Bewahre das Backup an einem anderen Ort als auf diesem Gerät auf.</string>
+    <string name="backup_hint">Bewahren Sie eine Kopie außerhalb dieses Telefons auf</string>
     <string name="backup_restored">Backup wiederhergestellt: %1$s</string>
     <string name="backup_settings_only">nur Einstellungen und Seca Link, der Zugriff auf SMS wurde verweigert</string>
     <string name="backup_settings_restored">Einstellungen wiederhergestellt</string>
@@ -71,14 +71,14 @@
     <string name="code_hour">1 Stunde</string>
     <string name="code_keep">Behalten</string>
     <string name="code_quarter_hour">15 Min.</string>
-    <string name="codes_hint">SMS mit einem Bestätigungscode werden nach dieser Frist vom Gerät gelöscht.</string>
+    <string name="codes_hint">Bestätigungscodes löschen sich selbst</string>
     <string name="codes_match">Die Codes stimmen überein</string>
     <string name="codes_mismatch">Die Codes stimmen nicht überein</string>
     <string name="colors">Farben</string>
     <string name="colors_need_contacts">Installiere Seca Kontakte, um die Farben der Suite zu wählen.</string>
     <string name="black_theme">Reines Schwarz</string>
-    <string name="black_theme_hint">Im Dunkelmodus werden Hintergründe schwarz. Auf einem OLED-Display bleiben diese Pixel unbeleuchtet.</string>
-    <string name="colors_shared_hint">Die Farben gelten für alle Seca-Apps. Der Dunkelmodus folgt dem Gerät.</string>
+    <string name="black_theme_hint">Schwarze Hintergründe im Dunkelmodus</string>
+    <string name="colors_shared_hint">Von allen drei Seca-Apps geteilt</string>
     <string name="compare_hint">Vergleiche diese Ziffern mit denen auf dem Gerät von %1$s oder zeige ihm diesen Code. Wenn sie gleich sind, sitzt niemand zwischen euch.</string>
     <string name="connect_in_person">Persönlich verbinden</string>
     <string name="connected_hint">Deine Nachrichten werden jetzt von Seca Link verschlüsselt. Die Antwort dieses Geräts geht zusätzlich per SMS hinaus.</string>
@@ -441,14 +441,14 @@
     </plurals>
     <string name="sent_sound_section">Ton</string>
     <string name="sent_sound">Ton beim Senden einer Nachricht</string>
-    <string name="sent_sound_hint">Ein kurzer Ton, in der Lautstärke für Benachrichtigungen; nie bei stummem Telefon</string>
+    <string name="sent_sound_hint">Nie bei stummem Telefon</string>
     <string name="received_sound">Ton für eingehende Nachrichten</string>
-    <string name="received_sound_hint">Öffnet die Android-Seite für die Nachrichten-Benachrichtigungen dieser App, wo jeder Ton des Telefons gewählt werden kann</string>
+    <string name="received_sound_hint">Auf der Android-Seite gewählt</string>
     <string name="app_name_plain">Nachrichten</string>
-    <string name="settings_appearance_hint">Farben, Form der Bilder, Reihenfolge der Apps</string>
-    <string name="settings_messages_hint">Standard-Nachrichten-App, Benachrichtigungen, Codes, Werbung, Töne</string>
-    <string name="settings_link_hint">Verschlüsselte Nachrichten zwischen zwei Seca-Telefonen</string>
-    <string name="settings_backup_hint">Sicherungen, die ganze Seca-Suite</string>
-    <string name="settings_privacy_hint">Sperre, privater Bildschirm, was das Telefon verlässt</string>
+    <string name="settings_appearance_hint">Palette, Formen, Reihenfolge</string>
+    <string name="settings_messages_hint">Standard-App, Hinweise, Töne</string>
+    <string name="settings_link_hint">Zwischen zwei Seca-Telefonen</string>
+    <string name="settings_backup_hint">Sicherungen, die Seca-Suite</string>
+    <string name="settings_privacy_hint">Sperre, privater Bildschirm</string>
     <string name="settings_link">Seca Link</string>
 </resources>

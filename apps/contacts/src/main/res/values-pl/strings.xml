@@ -30,7 +30,7 @@
     </plurals>
     <string name="backup_done">Szyfrowana kopia zapasowa: %1$s</string>
     <string name="backup_failed">Tworzenie kopii zapasowej nie powiodło się</string>
-    <string name="backup_hint">Seca niczego nie synchronizuje: przechowuj kopię swoich kontaktów również poza tym telefonem.</string>
+    <string name="backup_hint">Trzymaj kopię poza tym telefonem</string>
     <string name="backup_profiles_only">tylko profile, dostęp do kontaktów jest zablokowany</string>
     <string name="backup_profiles_restored">profile zostały przywrócone</string>
     <string name="backup_profiles_restored_no_access">profile zostały przywrócone; zezwól na dostęp do kontaktów w Seca Contacts, a następnie przywróć ponownie, aby przypisać karty</string>
@@ -80,7 +80,6 @@
     <string name="create">Utwórz</string>
     <string name="current_profile">Bieżący profil</string>
     <string name="current_type">Bieżący typ</string>
-    <string name="dark_mode_hint">Jasny lub ciemny motyw dostosowuje się do systemu telefonu.</string>
     <string name="delete">Usuń</string>
     <string name="delete_contact_text">Kontakt „%1$s” zostanie usunięty z tego telefonu. Tego kroku nie można cofnąć.</string>
     <string name="delete_contact_title">Usunąć ten kontakt?</string>
@@ -88,7 +87,7 @@
     <string name="delete_profile_text">Przypisane do niego kontakty wrócą do profilu Głównego. Żaden kontakt nie zostanie usunięty.</string>
     <string name="delete_profile_title">Usunąć profil „%1$s”?</string>
     <string name="duplicates">Duplikaty</string>
-    <string name="duplicates_hint">Scalanie łączy wizytówki danej osoby w jeden kontakt. System Android zachowuje każdą oryginalną wizytówkę: nic nie zostaje usunięte.</string>
+    <string name="duplicates_hint">Kilka wizytówek jednej osoby, połączonych</string>
     <string name="duplicates_row_hint">Połącz wizytówki tej samej osoby</string>
     <string name="dynamic_colors">Kolory dynamiczne</string>
     <string name="dynamic_colors_hint">Dopasowane do tapety telefonu</string>
@@ -101,7 +100,7 @@
     <string name="encrypted_backup">Szyfrowana kopia zapasowa</string>
     <string name="encrypted_backup_hint">Kontakty, profile oraz Moja karta, chronione hasłem</string>
     <string name="export_contacts">Eksportuj kontakty</string>
-    <string name="export_contacts_hint">Plik .vcf z profilami przypisanymi do każdego kontaktu, który możesz zapisać w dowolnym miejscu</string>
+    <string name="export_contacts_hint">Plik .vcf, razem z profilami</string>
     <string name="export_failed">Eksport nie powiódł się</string>
     <string name="family_name">Nazwisko</string>
     <string name="favorites">Ulubione</string>
@@ -126,7 +125,7 @@
     <string name="message">Wiadomość</string>
     <string name="more_options">Więcej opcji</string>
     <string name="my_card">Moja wizytówka</string>
-    <string name="my_card_hint">To, co przekazujesz kodem QR, gdy ktoś prosi o twój numer</string>
+    <string name="my_card_hint">To, co przekazuje kod QR</string>
     <string name="my_card_privacy">Moja wizytówka pozostaje w Seca Contacts: nie jest udostępniana innym aplikacjom ani synchronizowana. Przekazujesz ją komuś tylko wtedy, gdy pokażesz swój kod QR.</string>
     <string name="my_card_qr">Kod QR Twojej wizytówki</string>
     <string name="my_card_qr_hint">Zeskanuj go aparatem drugiego telefonu, aby dodać swoją wizytówkę. Żadne dane nie są przesyłane przez internet, a zdjęcie nie jest dołączane.</string>
@@ -165,7 +164,7 @@
     <string name="profile_empty_hint">Otwórz wizytówkę kontaktu, aby przypisać go tutaj, lub utwórz nowy.</string>
     <string name="profile_name">Nazwa profilu</string>
     <string name="profiles">Profile</string>
-    <string name="profiles_hint">Uporządkuj swoje kontakty według profili, takich jak Praca lub Rodzina. Usunięcie profilu nie powoduje usunięcia żadnego kontaktu.</string>
+    <string name="profiles_hint">Usunięcie profilu nie usuwa żadnego kontaktu</string>
     <string name="protection">Ochrona</string>
     <string name="read_sim_numbers">Odczytaj numery z karty SIM</string>
     <string name="read_sim_numbers_hint">Odczytywane na tym telefonie, nigdy niewysyłane</string>
@@ -200,12 +199,12 @@
     <string name="wrong_password">Błędne hasło lub uszkodzony plik</string>
     <string name="your_name">Twoje imię i nazwisko</string>
     <string name="black_theme">Czysta czerń</string>
-    <string name="black_theme_hint">W trybie ciemnym tło zmienia kolor na czarny. Na ekranie OLED te piksele pozostają wyłączone.</string>
+    <string name="black_theme_hint">Czarne tła w trybie ciemnym</string>
     <string name="contact_not_saved">Ten telefon odrzucił próbę zapisania kontaktu. Otwórz własną aplikację Kontakty w telefonie, znajdź w jej ustawieniach, gdzie zapisywane są nowe kontakty, i wybierz tam konto.</string>
     <string name="contact_not_saved_because">Ten telefon odrzucił próbę zapisania kontaktu: %1$s</string>
     <string name="contacts_imported_some_refused">Dodano: %1$d. Odrzucone przez telefon: %2$d.</string>
     <string name="show_my_card">Pokaż Moją wizytówkę</string>
-    <string name="show_my_card_hint">Twoja własna wizytówka na górze listy. Ukryta, pozostaje w ustawieniach.</string>
+    <string name="show_my_card_hint">Na górze listy</string>
     <string name="birthday_with_age">%1$s (%2$s)</string>
     <plurals name="years_old">
         <item quantity="one">%d rok</item>
@@ -221,9 +220,9 @@
     <string name="photo_shape">Kształt zdjęcia</string>
     <string name="photo_shape_everyone">Jak u wszystkich</string>
     <string name="app_name_plain">Kontakty</string>
-    <string name="settings_appearance_hint">Kolory, kształt zdjęć, kolejność aplikacji</string>
-    <string name="settings_backup_hint">Kopie zapasowe, cały pakiet Seca, import i eksport</string>
+    <string name="settings_appearance_hint">Paleta, kształty, kolejność</string>
+    <string name="settings_backup_hint">Kopie, import i eksport</string>
     <string name="settings_tidy_hint">Twoja wizytówka, duplikaty</string>
-    <string name="settings_privacy_hint">Blokada, prywatny ekran, co opuszcza telefon</string>
-    <string name="settings_profiles_hint">Praca, Rodzina i jak są ułożone Twoje kontakty</string>
+    <string name="settings_privacy_hint">Blokada, prywatny ekran</string>
+    <string name="settings_profiles_hint">Praca, Rodzina i reszta</string>
 </resources>

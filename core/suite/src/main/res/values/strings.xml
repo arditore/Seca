@@ -25,7 +25,7 @@
     <string name="auto_run_now">Write one now</string>
     <string name="auto_section">Backups that write themselves</string>
     <string name="auto_turn_off">Stop writing backups</string>
-    <string name="auto_turn_off_hint">Forgets the folder and the passphrase; the files already written stay</string>
+    <string name="auto_turn_off_hint">The files already written stay</string>
     <string name="auto_understand">I understand</string>
     <string name="auto_weekly">Every week</string>
     <string name="auto_write_failed">The file could not be written.</string>
@@ -34,7 +34,7 @@
     <string name="suite_app_phone">Seca Phone</string>
     <string name="suite_backing_up">Backing up all three apps…</string>
     <string name="suite_backup_all">Back up all three apps</string>
-    <string name="suite_backup_all_hint">Contacts and profiles, calls and filtering, texts and conversations, in one encrypted file</string>
+    <string name="suite_backup_all_hint">Everything the three apps hold, in one encrypted file</string>
     <string name="suite_done">Done</string>
     <string name="suite_empty">The backup holds nothing to restore</string>
     <string name="suite_encrypt">Encrypt</string>
@@ -50,7 +50,7 @@
     <string name="suite_permission_label">back up the Seca suite</string>
     <string name="suite_restore">Restore</string>
     <string name="suite_restore_all">Restore all three apps</string>
-    <string name="suite_restore_all_hint">Each installed app takes back its part; nothing is replaced</string>
+    <string name="suite_restore_all_hint">Each installed app takes its part back</string>
     <string name="suite_restore_failed">restoration failed</string>
     <string name="suite_restoring">Restoring all three apps…</string>
     <string name="suite_saved">saved</string>
@@ -67,9 +67,9 @@
     <string name="door_title">A Seca app read your data</string>
     <string name="door_unknown_caller">An app Android could not name</string>
     <string name="suite_order_section">Order of the apps</string>
-    <string name="suite_order_hint">The order they stand in, in the bar at the bottom of all three</string>
     <string name="suite_order_up">Move %1$s up</string>
     <string name="suite_order_down">Move %1$s down</string>
-    <string name="suite_plain_names">Plain names in the launcher</string>
-    <string name="suite_plain_names_hint">"Contacts", "Phone" and "Messages" rather than "Seca Contacts" and the rest</string>
+    <string name="suite_plain_names">Plain names</string>
+    <string name="suite_plain_names_hint">Without "Seca" in front</string>
+    <string name="suite_names_section">App names</string>
 </resources>

@@ -31,8 +31,8 @@
     <string name="design_unlock">Unlock</string>
     <string name="design_unlock_app">Unlock %1$s</string>
     <string name="seca_palette">Seca palette</string>
-    <string name="seca_palette_hint_dynamic">To replace the wallpaper colors</string>
-    <string name="seca_palette_hint_on">Each Seca app takes its own shade</string>
+    <string name="seca_palette_hint_dynamic">Instead of the wallpaper colours</string>
+    <string name="seca_palette_hint_on">Each app takes its own shade</string>
     <string name="design_copied">Copied</string>
     <string name="design_copy">Copy</string>
     <string name="design_choose_all">Select all</string>
@@ -46,7 +46,7 @@
     <string name="design_shape_sunny">Sunny</string>
     <string name="design_shape_flower">Flower</string>
     <string name="design_shape_section">Shape of the faces</string>
-    <string name="design_shape_hint_playful">Each person gets a shape of their own</string>
+    <string name="design_shape_hint_playful">A different shape per person</string>
     <string name="design_shape_hint_one">The same shape for everyone</string>
     <string name="design_palette_mine">Mine</string>
     <string name="design_palette_hue">Colour</string>

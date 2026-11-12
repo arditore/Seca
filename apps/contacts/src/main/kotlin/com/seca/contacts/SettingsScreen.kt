@@ -208,7 +208,6 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                     SecaGroupItem(index = 3, count = 4) {
                         SecaShapeSection(ui.avatarShape, viewModel::setAvatarShape)
                     }
-                    SecaHint(stringResource(R.string.dark_mode_hint))
                     SuiteOrderSection()
                     SuiteNamesSection()
                 }

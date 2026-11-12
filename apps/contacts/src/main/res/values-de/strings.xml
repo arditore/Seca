@@ -28,7 +28,7 @@
     </plurals>
     <string name="backup_done">Verschlüsseltes Backup: %1$s</string>
     <string name="backup_failed">Das Backup ist fehlgeschlagen</string>
-    <string name="backup_hint">Seca synchronisiert nichts: Bewahre eine Kopie deiner Kontakte an einem anderen Ort als diesem Gerät auf.</string>
+    <string name="backup_hint">Bewahren Sie eine Kopie außerhalb dieses Telefons auf</string>
     <string name="backup_profiles_only">nur Profile, der Zugriff auf Kontakte wurde verweigert</string>
     <string name="backup_profiles_restored">Profile wiederhergestellt</string>
     <string name="backup_profiles_restored_no_access">Profile wiederhergestellt; erlaube den Zugriff auf Kontakte in Seca Kontakte und stelle dann erneut wieder her, um die Karten einzuordnen</string>
@@ -77,8 +77,7 @@
     <string name="current_profile">Aktuelles Profil</string>
     <string name="current_type">Aktueller Typ</string>
     <string name="black_theme">Reines Schwarz</string>
-    <string name="black_theme_hint">Im Dunkelmodus werden Hintergründe schwarz. Auf einem OLED-Display bleiben diese Pixel unbeleuchtet.</string>
-    <string name="dark_mode_hint">Hell- oder Dunkelmodus folgt dem System.</string>
+    <string name="black_theme_hint">Schwarze Hintergründe im Dunkelmodus</string>
     <string name="delete">Löschen</string>
     <string name="delete_contact_text">„%1$s“ wird von diesem Gerät gelöscht. Dies kann nicht rückgängig gemacht werden.</string>
     <string name="delete_contact_title">Diesen Kontakt löschen?</string>
@@ -86,7 +85,7 @@
     <string name="delete_profile_text">Die zugehörigen Kontakte wandern zurück zu Main. Es wird kein Kontakt gelöscht.</string>
     <string name="delete_profile_title">„%1$s“ löschen?</string>
     <string name="duplicates">Duplikate</string>
-    <string name="duplicates_hint">Beim Zusammenführen werden die Karten einer Person unter einem einzigen Kontakt vereint. Android behält alle Originalkarten: Es wird nichts gelöscht.</string>
+    <string name="duplicates_hint">Mehrere Karten einer Person, zusammengeführt</string>
     <string name="duplicates_row_hint">Die Karten einer Person zusammenführen</string>
     <string name="dynamic_colors">Dynamische Farben</string>
     <string name="dynamic_colors_hint">Passend zum Hintergrundbild des Geräts</string>
@@ -99,7 +98,7 @@
     <string name="encrypted_backup">Verschlüsselte Backup</string>
     <string name="encrypted_backup_hint">Kontakte, Profile und Meine Karte, durch ein Passwort geschützt</string>
     <string name="export_contacts">Kontakte exportieren</string>
-    <string name="export_contacts_hint">Eine .vcf-Datei, die du ablegen kannst, wo du willst, mit dem Profil jedes Kontakts</string>
+    <string name="export_contacts_hint">Eine .vcf-Datei, mit Profilen</string>
     <string name="export_failed">Export fehlgeschlagen</string>
     <string name="family_name">Nachname</string>
     <string name="favorites">Favoriten</string>
@@ -122,7 +121,7 @@
     <string name="message">Nachricht</string>
     <string name="more_options">Weitere Optionen</string>
     <string name="my_card">Meine Karte</string>
-    <string name="my_card_hint">Was du per QR-Code weitergibst, wenn jemand nach deiner Nummer fragt</string>
+    <string name="my_card_hint">Was der QR-Code übergibt</string>
     <string name="my_card_privacy">Meine Karte bleibt in Seca Kontakte: Sie wird weder mit anderen Apps geteilt noch synchronisiert. Nur der QR-Code gibt sie weiter, wenn du ihn zeigst.</string>
     <string name="my_card_qr">QR-Code deiner Karte</string>
     <string name="my_card_qr_hint">Scanne ihn mit der Kamera des anderen Geräts, um deine Karte hinzuzufügen. Nichts läuft über das Internet, und das Foto ist nicht enthalten.</string>
@@ -161,7 +160,7 @@
     <string name="profile_empty_hint">Öffne die Karte eines Kontakts, um ihn hier abzulegen, oder erstelle einen neuen.</string>
     <string name="profile_name">Profilname</string>
     <string name="profiles">Profile</string>
-    <string name="profiles_hint">Ordne deine Kontakte nach Profilen, etwa Arbeit oder Familie. Das Löschen eines Profils löscht keinen Kontakt.</string>
+    <string name="profiles_hint">Ein Profil zu löschen löscht keinen Kontakt</string>
     <string name="protection">Schutz</string>
     <string name="read_sim_numbers">SIM-Kartennummern lesen</string>
     <string name="read_sim_numbers_hint">Auf diesem Gerät gelesen, nie gesendet</string>
@@ -196,7 +195,7 @@
     <string name="wrong_password">Falsches Passwort oder beschädigte Datei</string>
     <string name="your_name">Dein Name</string>
     <string name="show_my_card">Meine Karte anzeigen</string>
-    <string name="show_my_card_hint">Deine eigene Karte oben in der Liste. Ausgeblendet findest du sie weiterhin in den Einstellungen.</string>
+    <string name="show_my_card_hint">Oben in der Liste</string>
     <string name="birthday_with_age">%1$s (%2$s)</string>
     <plurals name="years_old">
         <item quantity="one">%d Jahr alt</item>
@@ -210,9 +209,9 @@
     <string name="photo_shape">Form des Bildes</string>
     <string name="photo_shape_everyone">Wie bei allen</string>
     <string name="app_name_plain">Kontakte</string>
-    <string name="settings_appearance_hint">Farben, Form der Bilder, Reihenfolge der Apps</string>
-    <string name="settings_backup_hint">Sicherungen, die ganze Seca-Suite, Import und Export</string>
-    <string name="settings_tidy_hint">Ihre eigene Karte, Duplikate</string>
-    <string name="settings_privacy_hint">Sperre, privater Bildschirm, was das Telefon verlässt</string>
-    <string name="settings_profiles_hint">Arbeit, Familie, und wie Ihre Kontakte abgelegt sind</string>
+    <string name="settings_appearance_hint">Palette, Formen, Reihenfolge</string>
+    <string name="settings_backup_hint">Sicherungen, Import und Export</string>
+    <string name="settings_tidy_hint">Ihre Karte, Duplikate</string>
+    <string name="settings_privacy_hint">Sperre, privater Bildschirm</string>
+    <string name="settings_profiles_hint">Arbeit, Familie und der Rest</string>
 </resources>

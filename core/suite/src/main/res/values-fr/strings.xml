@@ -25,7 +25,7 @@
     <string name="auto_run_now">En écrire une maintenant</string>
     <string name="auto_section">Sauvegardes automatiques</string>
     <string name="auto_turn_off">Arrêter les sauvegardes</string>
-    <string name="auto_turn_off_hint">Oublie le dossier et la phrase secrète ; les fichiers déjà écrits restent</string>
+    <string name="auto_turn_off_hint">Les fichiers déjà écrits restent</string>
     <string name="auto_understand">J\'ai compris</string>
     <string name="auto_weekly">Chaque semaine</string>
     <string name="auto_write_failed">Le fichier n\'a pas pu être écrit.</string>
@@ -34,7 +34,7 @@
     <string name="suite_app_phone">Seca Téléphone</string>
     <string name="suite_backing_up">Sauvegarde des trois applis…</string>
     <string name="suite_backup_all">Sauvegarder les trois applis</string>
-    <string name="suite_backup_all_hint">Contacts et profils, appels et filtrage, SMS et conversations, dans un fichier chiffré</string>
+    <string name="suite_backup_all_hint">Tout ce que contiennent les trois applications, en un fichier chiffré</string>
     <string name="suite_done">C\'est fait</string>
     <string name="suite_empty">La sauvegarde ne contient rien à restaurer</string>
     <string name="suite_encrypt">Chiffrer</string>
@@ -50,7 +50,7 @@
     <string name="suite_permission_label">sauvegarder la suite Seca</string>
     <string name="suite_restore">Restaurer</string>
     <string name="suite_restore_all">Restaurer les trois applis</string>
-    <string name="suite_restore_all_hint">Chaque appli installée reprend sa part ; rien n\'est remplacé</string>
+    <string name="suite_restore_all_hint">Chaque application installée reprend sa part</string>
     <string name="suite_restore_failed">restauration impossible</string>
     <string name="suite_restoring">Restauration des trois applis…</string>
     <string name="suite_saved">sauvegardée</string>
@@ -67,9 +67,9 @@
     <string name="door_title">Une app Seca a lu vos données</string>
     <string name="door_unknown_caller">Une app qu\'Android n\'a pas su nommer</string>
     <string name="suite_order_section">Ordre des applications</string>
-    <string name="suite_order_hint">L\'ordre dans lequel elles apparaissent, dans la barre en bas des trois</string>
     <string name="suite_order_up">Monter %1$s</string>
     <string name="suite_order_down">Descendre %1$s</string>
-    <string name="suite_plain_names">Noms simples dans le lanceur</string>
-    <string name="suite_plain_names_hint">« Contacts », « Téléphone » et « Messages » plutôt que « Seca Contacts » et les autres</string>
+    <string name="suite_plain_names">Noms simples</string>
+    <string name="suite_plain_names_hint">Sans « Seca » devant</string>
+    <string name="suite_names_section">Noms des applications</string>
 </resources>

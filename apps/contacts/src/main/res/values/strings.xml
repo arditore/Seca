@@ -28,7 +28,7 @@
     </plurals>
     <string name="backup_done">Encrypted backup: %1$s</string>
     <string name="backup_failed">The backup failed</string>
-    <string name="backup_hint">Seca syncs nothing: keep a copy of your contacts somewhere other than this phone.</string>
+    <string name="backup_hint">Keep a copy somewhere other than this phone</string>
     <string name="backup_profiles_only">profiles only, access to contacts is denied</string>
     <string name="backup_profiles_restored">profiles restored</string>
     <string name="backup_profiles_restored_no_access">profiles restored; allow contacts in Seca Contacts, then restore again to file the cards</string>
@@ -77,8 +77,7 @@
     <string name="current_profile">Current profile</string>
     <string name="current_type">Current type</string>
     <string name="black_theme">Pure black</string>
-    <string name="black_theme_hint">In dark mode, backgrounds go to black. On an OLED screen those pixels stay unlit.</string>
-    <string name="dark_mode_hint">Light or dark mode follows the phone.</string>
+    <string name="black_theme_hint">Black backgrounds in dark mode</string>
     <string name="delete">Delete</string>
     <string name="delete_contact_text">“%1$s” will be deleted from this phone. This cannot be undone.</string>
     <string name="delete_contact_title">Delete this contact?</string>
@@ -86,7 +85,7 @@
     <string name="delete_profile_text">Its contacts go back to Main. No contact is deleted.</string>
     <string name="delete_profile_title">Delete “%1$s”?</string>
     <string name="duplicates">Duplicates</string>
-    <string name="duplicates_hint">Merging brings one person\'s cards together under a single contact. Android keeps every original card: nothing is deleted.</string>
+    <string name="duplicates_hint">Several cards for one person, brought together</string>
     <string name="duplicates_row_hint">Bring one person\'s cards together</string>
     <string name="dynamic_colors">Dynamic colors</string>
     <string name="dynamic_colors_hint">Matching the phone\'s wallpaper</string>
@@ -99,7 +98,7 @@
     <string name="encrypted_backup">Encrypted backup</string>
     <string name="encrypted_backup_hint">Contacts, profiles and My card, protected by a password</string>
     <string name="export_contacts">Export contacts</string>
-    <string name="export_contacts_hint">A .vcf file, kept wherever you like, with each contact\'s profile</string>
+    <string name="export_contacts_hint">A .vcf file, profiles included</string>
     <string name="export_failed">Export failed</string>
     <string name="family_name">Last name</string>
     <string name="favorites">Favorites</string>
@@ -122,7 +121,7 @@
     <string name="message">Message</string>
     <string name="more_options">More options</string>
     <string name="my_card">My card</string>
-    <string name="my_card_hint">What you hand over by QR code when someone asks for your number</string>
+    <string name="my_card_hint">What a QR code hands over</string>
     <string name="my_card_privacy">My card stays in Seca Contacts: it is neither shared with other apps nor synced. Only the QR code, when you show it, gives it to someone.</string>
     <string name="my_card_qr">QR code of your card</string>
     <string name="my_card_qr_hint">Scan it with the other phone\'s camera to add your card. Nothing goes through the Internet, and the photo is not included.</string>
@@ -161,7 +160,7 @@
     <string name="profile_empty_hint">Open a contact\'s card to file it here, or create one.</string>
     <string name="profile_name">Profile name</string>
     <string name="profiles">Profiles</string>
-    <string name="profiles_hint">File your contacts by profile, such as Work or Family. Deleting a profile deletes no contact.</string>
+    <string name="profiles_hint">Deleting a profile deletes no contact</string>
     <string name="protection">Protection</string>
     <string name="read_sim_numbers">Read the SIM card numbers</string>
     <string name="read_sim_numbers_hint">Read on this phone, never sent</string>
@@ -196,7 +195,7 @@
     <string name="wrong_password">Wrong password, or damaged file</string>
     <string name="your_name">Your name</string>
     <string name="show_my_card">Show My card</string>
-    <string name="show_my_card_hint">Your own card at the top of the list. Hidden, it is still in the settings.</string>
+    <string name="show_my_card_hint">At the top of the list</string>
     <string name="birthday_with_age">%1$s (%2$s)</string>
     <plurals name="years_old">
         <item quantity="one">%d year old</item>
@@ -210,9 +209,9 @@
     <string name="photo_shape">Shape of the photo</string>
     <string name="photo_shape_everyone">Everyone’s</string>
     <string name="app_name_plain">Contacts</string>
-    <string name="settings_appearance_hint">Colours, the shape of the faces, the order of the apps</string>
-    <string name="settings_backup_hint">Backups, the whole Seca suite, import and export</string>
-    <string name="settings_tidy_hint">Your own card, duplicates</string>
-    <string name="settings_privacy_hint">The app lock, the private screen, what leaves the phone</string>
-    <string name="settings_profiles_hint">Work, Family, and how your contacts are filed</string>
+    <string name="settings_appearance_hint">Palette, shapes, order</string>
+    <string name="settings_backup_hint">Backups, import and export</string>
+    <string name="settings_tidy_hint">Your card, duplicates</string>
+    <string name="settings_privacy_hint">App lock, private screen</string>
+    <string name="settings_profiles_hint">Work, Family, and the rest</string>
 </resources>

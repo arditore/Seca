@@ -92,8 +92,8 @@
     <string name="colors">Couleurs</string>
     <string name="colors_need_contacts">Installez Seca Contacts pour choisir les couleurs de la suite.</string>
     <string name="black_theme">Noir absolu</string>
-    <string name="black_theme_hint">En mode sombre, les fonds passent au noir. Sur un écran OLED, ces pixels restent éteints.</string>
-    <string name="colors_shared_hint">Les couleurs sont communes à toutes les applications Seca. Le mode sombre suit le téléphone.</string>
+    <string name="black_theme_hint">Fonds noirs en mode sombre</string>
+    <string name="colors_shared_hint">Partagées par les trois applications Seca</string>
     <string name="contact_card">Fiche</string>
     <string name="contacts">Contacts</string>
     <plurals name="contacts_count">
@@ -217,9 +217,9 @@
     <string name="choose">Sélectionner</string>
     <string name="app_name_plain">Téléphone</string>
     <string name="backup">Sauvegarde</string>
-    <string name="settings_appearance_hint">Couleurs, forme des photos, ordre des applications</string>
-    <string name="settings_calls_hint">Application téléphone par défaut, écran d’appel, historique</string>
-    <string name="settings_filtering_hint">Quels appels sonnent, et lesquels non</string>
-    <string name="settings_backup_hint">Sauvegardes, toute la suite Seca</string>
-    <string name="settings_privacy_hint">Verrouillage, écran privé, ce qui quitte le téléphone</string>
+    <string name="settings_appearance_hint">Palette, formes, ordre</string>
+    <string name="settings_calls_hint">Écran d\'appel, historique</string>
+    <string name="settings_filtering_hint">Quels appels sonnent</string>
+    <string name="settings_backup_hint">Sauvegardes, suite Seca</string>
+    <string name="settings_privacy_hint">Verrouillage, écran privé</string>
 </resources>
