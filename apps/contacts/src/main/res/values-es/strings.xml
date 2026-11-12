@@ -224,4 +224,5 @@
     <string name="settings_backup_hint">Copias de seguridad, toda la suite Seca, importar y exportar</string>
     <string name="settings_tidy_hint">Tu ficha, duplicados</string>
     <string name="settings_privacy_hint">Bloqueo, pantalla privada, lo que sale del teléfono</string>
+    <string name="settings_profiles_hint">Trabajo, Familia, y cómo se ordenan tus contactos</string>
 </resources>

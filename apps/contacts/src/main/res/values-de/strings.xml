@@ -214,4 +214,5 @@
     <string name="settings_backup_hint">Sicherungen, die ganze Seca-Suite, Import und Export</string>
     <string name="settings_tidy_hint">Ihre eigene Karte, Duplikate</string>
     <string name="settings_privacy_hint">Sperre, privater Bildschirm, was das Telefon verlässt</string>
+    <string name="settings_profiles_hint">Arbeit, Familie, und wie Ihre Kontakte abgelegt sind</string>
 </resources>

@@ -166,7 +166,6 @@ internal fun SettingsScreen(
                     ) { page = SettingsPage.Privacy }
                 }
                 SettingsPage.Appearance -> {
-                    SecaSectionLabel(stringResource(R.string.colors))
                     if (ui.profiles.connected) {
                         SecaGroupItem(index = 0, count = 3) {
                             SecaSettingRow(
@@ -294,7 +293,6 @@ internal fun SettingsScreen(
                     }
                 }
                 SettingsPage.Filtering -> {
-                    SecaSectionLabel(stringResource(R.string.call_filtering))
                     val screening = remember { ScreeningSettings(context) }
                     var blockTelemarketing by remember { mutableStateOf(screening.blockTelemarketing) }
                     var silenceUnknown by remember { mutableStateOf(screening.silenceUnknown) }
@@ -345,7 +343,6 @@ internal fun SettingsScreen(
                     AutoBackupSection()
                 }
                 SettingsPage.Privacy -> {
-                    SecaSectionLabel(stringResource(R.string.protection))
                     SecaPrivacySettingsGroup(stringResource(R.string.app_name))
 
                     SecaSectionLabel(stringResource(R.string.privacy))

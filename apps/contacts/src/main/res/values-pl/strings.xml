@@ -225,4 +225,5 @@
     <string name="settings_backup_hint">Kopie zapasowe, cały pakiet Seca, import i eksport</string>
     <string name="settings_tidy_hint">Twoja wizytówka, duplikaty</string>
     <string name="settings_privacy_hint">Blokada, prywatny ekran, co opuszcza telefon</string>
+    <string name="settings_profiles_hint">Praca, Rodzina i jak są ułożone Twoje kontakty</string>
 </resources>

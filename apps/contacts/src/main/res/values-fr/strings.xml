@@ -224,4 +224,5 @@
     <string name="settings_backup_hint">Sauvegardes, toute la suite Seca, import et export</string>
     <string name="settings_tidy_hint">Votre fiche, doublons</string>
     <string name="settings_privacy_hint">Verrouillage, écran privé, ce qui quitte le téléphone</string>
+    <string name="settings_profiles_hint">Travail, Famille, et comment vos contacts sont rangés</string>
 </resources>

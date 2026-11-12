@@ -134,7 +134,7 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                     SettingsEntry(
                         icon = SecaIcons.Label,
                         title = stringResource(R.string.profiles),
-                        subtitle = stringResource(R.string.profiles_hint),
+                        subtitle = stringResource(R.string.settings_profiles_hint),
                         index = 1,
                         count = 5,
                     ) { page = SettingsPage.Profiles }
@@ -161,7 +161,6 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                     ) { page = SettingsPage.Privacy }
                 }
                 SettingsPage.Appearance -> {
-                    SecaSectionLabel(stringResource(R.string.colors))
                     SecaGroupItem(index = 0, count = 4) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -214,7 +213,6 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                     SuiteNamesSection()
                 }
                 SettingsPage.Profiles -> {
-                    SecaSectionLabel(stringResource(R.string.profiles))
                     val total = ui.profiles.size + 1
                     ui.profiles.forEachIndexed { index, profile ->
                         SecaGroupItem(index = index, count = total) {
@@ -242,7 +240,6 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                     SecaHint(stringResource(R.string.profiles_hint))
                 }
                 SettingsPage.Backup -> {
-                    SecaSectionLabel(stringResource(R.string.backup))
                     SecaGroupItem(index = 0, count = 4, onClick = { backupLauncher.launch("seca-contacts-${LocalDate.now()}.seca") }) {
                         SecaSettingRow(
                             icon = SecaIcons.Lock,
@@ -277,7 +274,6 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                     AutoBackupSection()
                 }
                 SettingsPage.TidyUp -> {
-                    SecaSectionLabel(stringResource(R.string.tidy_up))
                     SecaGroupItem(index = 0, count = 2) {
                         SecaSwitchRow(
                             icon = SecaIcons.PersonOutline,
@@ -296,7 +292,6 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                     }
                 }
                 SettingsPage.Privacy -> {
-                    SecaSectionLabel(stringResource(R.string.protection))
                     SecaPrivacySettingsGroup(stringResource(R.string.app_name))
 
                     SecaSectionLabel(stringResource(R.string.privacy))

@@ -134,7 +134,6 @@ internal fun SettingsScreen(
                     ) { page = SettingsPage.Privacy }
                 }
                 SettingsPage.Appearance -> {
-                    SecaSectionLabel(stringResource(R.string.colors))
                     if (ui.profiles.connected) {
                         SecaGroupItem(index = 0, count = 3) {
                             SecaSettingRow(
@@ -172,7 +171,6 @@ internal fun SettingsScreen(
                     SuiteNamesSection()
                 }
                 SettingsPage.Messages -> {
-                    SecaSectionLabel(stringResource(R.string.sms_app))
                     SecaGroupItem(
                         index = 0,
                         count = 1,
@@ -201,7 +199,6 @@ internal fun SettingsScreen(
                     CodeAndSpamSettings(onFile = { swept -> swept.forEach { viewModel.setSpam(it.threadId, spam = true) } })
                 }
                 SettingsPage.Link -> {
-                    SecaSectionLabel("Seca Link")
                     val link = ui.link
                     var askNetwork by remember { mutableStateOf(false) }
                     val published = link.statuses.values.count { it.state == RelayState.Published }
@@ -287,7 +284,6 @@ internal fun SettingsScreen(
                     if (askNetwork) NetworkAccessDialog(onDismiss = { askNetwork = false })
                 }
                 SettingsPage.Backup -> {
-                    SecaSectionLabel(stringResource(R.string.backup))
                     SecaGroupItem(index = 0, count = 2, onClick = { backupLauncher.launch("seca-messages-${LocalDate.now()}.seca") }) {
                         SecaSettingRow(
                             icon = SecaIcons.Lock,
@@ -318,7 +314,6 @@ internal fun SettingsScreen(
                     AutoBackupSection()
                 }
                 SettingsPage.Privacy -> {
-                    SecaSectionLabel(stringResource(R.string.protection))
                     SecaPrivacySettingsGroup(stringResource(R.string.app_name))
 
                     SecaSectionLabel(stringResource(R.string.privacy))

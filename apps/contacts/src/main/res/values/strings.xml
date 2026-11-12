@@ -214,4 +214,5 @@
     <string name="settings_backup_hint">Backups, the whole Seca suite, import and export</string>
     <string name="settings_tidy_hint">Your own card, duplicates</string>
     <string name="settings_privacy_hint">The app lock, the private screen, what leaves the phone</string>
+    <string name="settings_profiles_hint">Work, Family, and how your contacts are filed</string>
 </resources>
