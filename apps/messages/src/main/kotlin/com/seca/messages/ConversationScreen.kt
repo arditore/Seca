@@ -612,7 +612,7 @@ private fun joined(first: Message, second: Message): Boolean =
 private fun previewOf(message: Message): String = when {
     message.audio != null -> stringResource(R.string.preview_voice)
     // Something attached, with words: the words. On its own, it says what it is.
-    message.image != null -> message.body.ifBlank { stringResource(R.string.preview_photo) }
+    message.images.isNotEmpty() -> message.body.ifBlank { stringResource(R.string.preview_photo) }
     message.attachment != null -> message.body.ifBlank { stringResource(carried(message.attachment)) }
     else -> message.body.ifEmpty { stringResource(R.string.preview_photo) }
 }
@@ -899,7 +899,10 @@ private fun Bubble(
     // Which card carried it, where there is a choice. Said next to the time rather than on the
     // bubble: it answers "which number was this?", which is a question asked after the fact.
     val sim = simName(message.subscriptionId)
-    val image = message.image
+    val images = message.images
+    // Tapping a bubble opens a picture, and with several there is no single one to open, so
+    // the tap belongs to each picture rather than to the bubble.
+    val image = images.firstOrNull()
     val audio = message.audio
 
     Column(
@@ -922,7 +925,8 @@ private fun Bubble(
             val carried = message.attachment
             val carriedAt = message.attachmentAt
             when {
-                image != null -> PhotoBubble(image, shape, container, content, message.body, modifier = touch)
+                images.isNotEmpty() ->
+                    PhotoBubble(images, shape, container, content, message.body, onOpen = onOpenPhoto, modifier = touch)
                 audio != null -> VoiceBubble(audio, shape, container, content, modifier = touch)
                 carried != null && carriedAt != null ->
                     AttachmentBubble(carried, carriedAt, message.body, shape, container, content, modifier = touch)
@@ -1095,39 +1099,49 @@ private fun QuoteBox(quoted: Message?, contactName: String, content: Color) {
     }
 }
 
-/** A photo in the conversation, at its own proportions within the bubble's width. */
+/**
+ * The pictures of a message, at their own proportions within the bubble's width.
+ *
+ * A message may carry several. One alone keeps its shape; several are stacked, each one
+ * opening on its own tap, because a bubble with four pictures in it has no single picture for
+ * a tap on the bubble to mean.
+ */
 @Composable
 private fun PhotoBubble(
-    path: String,
+    paths: List<String>,
     shape: RoundedCornerShape,
     container: Color,
     content: Color,
     caption: String,
+    onOpen: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val photo = rememberMessagePicture(path, PREVIEW_EDGE_PX)
     val frame = Modifier
         .widthIn(max = 260.dp)
         .clip(shape)
         .background(container)
         .then(modifier)
     // A picture message usually carries words with the photo, and they belong to it: one bubble,
-    // the photo above and what was written below, rather than the words thrown away.
+    // the photos above and what was written below, rather than the words thrown away.
     Column(frame) {
-        if (photo == null || photo.width <= 0 || photo.height <= 0) {
-            Box(Modifier.size(width = 220.dp, height = 160.dp))
-        } else {
-            MessagePictureImage(
-                picture = photo,
-                description = stringResource(R.string.photo),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .heightIn(max = 360.dp)
-                    .aspectRatio(
-                        ratio = photo.width.toFloat() / photo.height,
-                        matchHeightConstraintsFirst = photo.height > photo.width,
-                    ),
-            )
+        paths.forEach { path ->
+            val photo = rememberMessagePicture(path, PREVIEW_EDGE_PX)
+            if (photo == null || photo.width <= 0 || photo.height <= 0) {
+                Box(Modifier.size(width = 220.dp, height = 160.dp))
+            } else {
+                MessagePictureImage(
+                    picture = photo,
+                    description = stringResource(R.string.photo),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .heightIn(max = 360.dp)
+                        .aspectRatio(
+                            ratio = photo.width.toFloat() / photo.height,
+                            matchHeightConstraintsFirst = photo.height > photo.width,
+                        )
+                        .clickable(onClickLabel = stringResource(R.string.photo)) { onOpen(path) },
+                )
+            }
         }
         if (caption.isNotBlank()) {
             Text(

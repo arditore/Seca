@@ -138,6 +138,9 @@ internal object MmsParser {
      * written with their lengths in front. A part whose lengths do not fit in what is left ends
      * the reading rather than being guessed at.
      */
+    /** The parts of a body on their own, for the tests: the composer writes one, this reads it. */
+    internal fun partsOf(body: ByteArray): List<MmsPdu.Part> = readParts(PduReader(body)).orEmpty()
+
     private fun readParts(reader: PduReader): List<MmsPdu.Part>? {
         val count = reader.uintvar()?.toInt() ?: return null
         if (count <= 0 || count > MAX_PARTS) return emptyList()
@@ -166,18 +169,32 @@ internal object MmsParser {
         val first = reader.peek() ?: return null
         var contentType = "application/octet-stream"
         var typeEnd = end
-        if (first >= 0x80) {
-            reader.byte()
-            contentType = wellKnownType(first and 0x7F)
-        } else {
-            val length = reader.valueLength()?.toInt() ?: return null
-            typeEnd = (reader.position + length).coerceAtMost(end)
-            val type = reader.peek() ?: return null
-            contentType = if (type >= 0x80) {
+        when {
+            // One byte standing for a type everybody knows, with nothing after it.
+            first >= 0x80 -> {
                 reader.byte()
-                wellKnownType(type and 0x7F)
-            } else {
-                reader.textString() ?: contentType
+                contentType = wellKnownType(first and 0x7F)
+            }
+            // A length, then the type and whatever parameters belong to it.
+            first <= PduReader.SHORT_LENGTH_MAX || first == PduReader.LENGTH_QUOTE -> {
+                val length = reader.valueLength()?.toInt() ?: return null
+                typeEnd = (reader.position + length).coerceAtMost(end)
+                val type = reader.peek() ?: return null
+                contentType = if (type >= 0x80) {
+                    reader.byte()
+                    wellKnownType(type and 0x7F)
+                } else {
+                    reader.textString() ?: contentType
+                }
+            }
+            // The type spelled out on its own, with no length in front and no parameters
+            // after it. This is what the standard calls the constrained form, it is what Seca
+            // itself writes, and the parser used to give up on it: the length it looked for
+            // was the letter "a" of "application", so every part was dropped and the message
+            // arrived with nothing in it. A picture sent by Seca could not be read by Seca.
+            else -> {
+                contentType = reader.textString() ?: return null
+                typeEnd = reader.position
             }
         }
         // Parameters follow the type, inside its length: the file name and the part's own id.

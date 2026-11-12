@@ -28,7 +28,7 @@ internal object MmsReader {
         val rows = rows(resolver, "${Mms.THREAD_ID} = ?", arrayOf(threadId.toString()), "${Mms.DATE} ASC")
         if (rows.isEmpty()) return emptyList()
         val parts = partsOf(resolver, rows.map(Row::id))
-        return rows.map { it.message(resolver, parts[it.id] ?: Parts("", null)) }
+        return rows.map { it.message(resolver, parts[it.id] ?: Parts("", emptyList())) }
     }
 
     /** The newest multimedia message of each conversation, for the list of conversations. */
@@ -40,7 +40,7 @@ internal object MmsReader {
             .distinctBy(Row::threadId)
             .let { latest ->
                 val parts = partsOf(resolver, latest.map(Row::id))
-                latest.associate { it.threadId to it.message(resolver, parts[it.id] ?: Parts("", null)) }
+                latest.associate { it.threadId to it.message(resolver, parts[it.id] ?: Parts("", emptyList())) }
             }
 
     /** How many multimedia messages each conversation has that nobody has read yet. */
@@ -89,7 +89,7 @@ internal object MmsReader {
                 date = date * MILLIS_PER_SECOND,
                 status = statusOf(box),
                 subscriptionId = subscriptionId,
-                image = parts.image,
+                images = parts.images,
                 audio = parts.audio,
                 attachment = parts.other,
                 attachmentAt = parts.otherAt,
@@ -129,7 +129,7 @@ internal object MmsReader {
      */
     private class Parts(
         val text: String,
-        val image: String?,
+        val images: List<String>,
         val audio: String? = null,
         val other: String? = null,
         val otherAt: String? = null,
@@ -152,7 +152,9 @@ internal object MmsReader {
             "seq ASC",
         )?.use { c ->
             val words = HashMap<Long, StringBuilder>()
-            val images = HashMap<Long, String>()
+            // Every picture, not the first: a message may carry four, and keeping one made it
+            // look as though only one had been sent.
+            val images = HashMap<Long, MutableList<String>>()
             val sounds = HashMap<Long, String>()
             val others = HashMap<Long, String>()
             val othersAt = HashMap<Long, String>()
@@ -172,7 +174,7 @@ internal object MmsReader {
                         }
                     // The presentation part describes a slideshow; it is not something to show.
                     type == SMIL -> Unit
-                    type.startsWith("image/") -> images.getOrPut(owner) { where }
+                    type.startsWith("image/") -> images.getOrPut(owner) { mutableListOf() }.add(where)
                     SoundPart.matches(type, called) -> sounds.getOrPut(owner) { where }
                     else -> {
                         others.getOrPut(owner) { type }
@@ -181,7 +183,13 @@ internal object MmsReader {
                 }
             }
             (words.keys + images.keys + sounds.keys + others.keys).associateWith {
-                Parts(words[it]?.toString().orEmpty(), images[it], sounds[it], others[it], othersAt[it])
+                Parts(
+                    text = words[it]?.toString().orEmpty(),
+                    images = images[it].orEmpty(),
+                    audio = sounds[it],
+                    other = others[it],
+                    otherAt = othersAt[it],
+                )
             }
         }
     }.getOrNull().orEmpty()

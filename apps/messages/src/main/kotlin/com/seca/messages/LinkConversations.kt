@@ -242,7 +242,7 @@ class LinkConversations(context: Context) {
             },
             encrypted = true,
             linkId = id,
-            image = file?.takeIf { media.startsWith("image/") },
+            images = listOfNotNull(file?.takeIf { media.startsWith("image/") }),
             audio = file?.takeIf { media.startsWith("audio/") },
             replyTo = replyTo,
             myReaction = myReaction,

@@ -116,6 +116,33 @@ class MmsComposerTest {
     }
 
     @Test
+    fun `a message Seca composed is a message Seca can read`() {
+        // The round trip nobody had tested. The composer wrote each part's type as a plain
+        // string, which is legal and is what carriers pass through, and the parser looked for
+        // a length there: it found the letter "a" of "application", gave up, and handed back a
+        // message with no parts at all. A picture sent by Seca arrived at Seca as "Photo" and
+        // nothing else.
+        val body = MmsComposer.body(
+            listOf(
+                MmsPdu.Part("application/smil", "smil.xml", "<smil>", "<smil/>".toByteArray()),
+                MmsPdu.Part("text/plain", "text.txt", "<text>", "two of them".toByteArray()),
+                MmsPdu.Part("image/jpeg", "one.jpg", "<one>", ByteArray(32) { 1 }),
+                MmsPdu.Part("image/jpeg", "two.jpg", "<two>", ByteArray(48) { 2 }),
+            ),
+        )
+
+        val read = MmsParser.partsOf(body)
+
+        assertEquals(4, read.size)
+        assertEquals(
+            listOf("application/smil", "text/plain", "image/jpeg", "image/jpeg"),
+            read.map { it.contentType },
+        )
+        assertEquals(32, read[2].data.size)
+        assertEquals(48, read[3].data.size)
+    }
+
+    @Test
     fun `every recipient of a message reaches the headers`() {
         val pdu = MmsComposer.compose(
             Outgoing(
