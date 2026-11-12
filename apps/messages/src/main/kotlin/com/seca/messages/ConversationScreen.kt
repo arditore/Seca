@@ -557,7 +557,20 @@ internal fun ConversationContent(
                                     ).show()
                                 }
                             },
-                            simName = { id -> sims.firstOrNull { it.subscriptionId == id }?.let { "SIM ${it.slot + 1}" } },
+                            // The slot as the tray prints it, and the carrier's own name where
+                            // it says anything the slot does not. The slot already counts from
+                            // one; adding one again made a phone with two SIMs report that a
+                            // text had gone out on SIM 3 (#53).
+                            simName = { id ->
+                                sims.firstOrNull { it.subscriptionId == id }?.let { sim ->
+                                    val slot = "SIM ${sim.slot}"
+                                    if (sim.label.equals("SIM", ignoreCase = true)) {
+                                        slot
+                                    } else {
+                                        "${sim.label} · $slot"
+                                    }
+                                }
+                            },
                             onReply = { replyingTo = message },
                             onReact = { emoji -> viewModel.react(message, emoji) },
                         )
