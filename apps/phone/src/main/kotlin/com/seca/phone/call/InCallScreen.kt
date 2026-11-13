@@ -358,29 +358,20 @@ private fun ActiveControls(
     // button that dialled into a call the network would drop is worse than no button.
     val canAdd = !another && view.canHold && view.state == Call.STATE_ACTIVE
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
-            CallControl(SecaIcons.MicOff, stringResource(R.string.mute), checked = audio.muted) { CallSession.setMuted(!audio.muted) }
-            CallControl(SecaIcons.Dialpad, stringResource(R.string.keypad), checked = false, onClick = onKeypad)
-            AudioControl(audio)
-        }
-        Row(
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-        ) {
-            CallControl(
-                icon = SecaIcons.Pause,
-                label = stringResource(R.string.hold),
-                checked = view.state == Call.STATE_HOLDING,
-                enabled = view.canHold,
-            ) { CallSession.toggleHold(view) }
-            if (canAdd) {
-                CallControl(SecaIcons.PersonAdd, stringResource(R.string.add_call), checked = false, onClick = onAddCall)
-            }
-            if (another) CallControl(SecaIcons.SwapCalls, stringResource(R.string.swap), checked = false) { CallSession.swap() }
-            if (canMerge) CallControl(SecaIcons.CallMerge, stringResource(R.string.merge), checked = false) { CallSession.merge(view) }
-        }
+        CallControlGrid(
+            audio = audio,
+            holding = view.state == Call.STATE_HOLDING,
+            canHold = view.canHold,
+            canAdd = canAdd,
+            another = another,
+            canMerge = canMerge,
+            onMute = { CallSession.setMuted(!audio.muted) },
+            onKeypad = onKeypad,
+            onHold = { CallSession.toggleHold(view) },
+            onAddCall = onAddCall,
+            onSwap = { CallSession.swap() },
+            onMerge = { CallSession.merge(view) },
+        )
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -391,6 +382,70 @@ private fun ActiveControls(
         }
     }
 }
+
+/**
+ * The buttons under a call in progress.
+ *
+ * Takes plain flags rather than the call itself, so the part that is only layout can be drawn
+ * without Android's telephony behind it, and looked at in every language the apps ship.
+ */
+@Composable
+internal fun CallControlGrid(
+    audio: AudioView,
+    holding: Boolean,
+    canHold: Boolean,
+    canAdd: Boolean,
+    another: Boolean,
+    canMerge: Boolean,
+    onMute: () -> Unit,
+    onKeypad: () -> Unit,
+    onHold: () -> Unit,
+    onAddCall: () -> Unit,
+    onSwap: () -> Unit,
+    onMerge: () -> Unit,
+) {
+    // A grid of three, not rows that share out whatever width is left. The controls come and go
+    // with the call - Add appears alone, Swap and Merge arrive together - so rows of two, three
+    // and four followed each other and nothing stood in a column. Three fixed columns, filled
+    // from the left and padded with empty cells, keep every button under the one above it.
+    val cells = buildList<@Composable () -> Unit> {
+        add { CallControl(SecaIcons.MicOff, stringResource(R.string.mute), checked = audio.muted, onClick = onMute) }
+        add { CallControl(SecaIcons.Dialpad, stringResource(R.string.keypad), checked = false, onClick = onKeypad) }
+        add { AudioControl(audio) }
+        add {
+            CallControl(
+                icon = SecaIcons.Pause,
+                label = stringResource(R.string.hold),
+                checked = holding,
+                enabled = canHold,
+                onClick = onHold,
+            )
+        }
+        // "Add call" is the heading of the keypad it opens; under an icon it is one word, or
+        // French, Polish and German run past the end of the button.
+        if (canAdd) add { CallControl(SecaIcons.PersonAdd, stringResource(R.string.add), checked = false, onClick = onAddCall) }
+        if (another) add { CallControl(SecaIcons.SwapCalls, stringResource(R.string.swap), checked = false, onClick = onSwap) }
+        if (canMerge) add { CallControl(SecaIcons.CallMerge, stringResource(R.string.merge), checked = false, onClick = onMerge) }
+    }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        cells.chunked(COLUMNS).forEachIndexed { row, group ->
+            Row(
+                verticalAlignment = Alignment.Top,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = if (row == 0) 0.dp else 20.dp),
+            ) {
+                group.forEach { cell ->
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.TopCenter) { cell() }
+                }
+                repeat(COLUMNS - group.size) { Box(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+/** Three across. Four is narrower than a thumb at this size, and two leaves a hole. */
+private const val COLUMNS = 3
 
 @Composable
 private fun HangUpButton(view: CallView) {
@@ -471,7 +526,7 @@ private fun CallControl(
         label = "container",
     )
     val content = if (checked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(96.dp)) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -487,8 +542,13 @@ private fun CallControl(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                modifier = Modifier.padding(top = 8.dp),
+                textAlign = TextAlign.Center,
+                // Two lines and an ellipsis rather than one line cut wherever it ran out: a
+                // Bluetooth device names itself and no caption here can be kept short enough
+                // to be sure. The captions themselves are one word, so this rarely shows.
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 8.dp, start = 2.dp, end = 2.dp),
             )
         }
     }

@@ -2,13 +2,17 @@ package com.seca.phone
 
 import android.app.Application
 import android.graphics.Bitmap
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import com.seca.core.contacts.NumberIndex
 import com.seca.core.contacts.PhoneNumbers
@@ -19,6 +23,10 @@ import com.seca.core.design.SecaTheme
 import com.seca.core.model.PhoneNumber
 import com.seca.core.model.Profile
 import com.seca.core.model.SecaContact
+import com.seca.phone.call.AudioView
+import com.seca.phone.call.CallControlGrid
+import java.io.File
+import java.util.Locale
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -28,8 +36,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.io.File
-import java.util.Locale
 
 /**
  * Draws the main screens with made-up contacts and calls, to look at them or
@@ -88,6 +94,57 @@ class ScreenshotsTest {
     @Test
     fun callDetail() = shoot("phone-call-detail") {
         CallDetailScreen("0698765432", sampleUi(), viewModel(), onCall = {}, onCallWithSim = {}, onDeleteCalls = {})
+    }
+
+    /**
+     * The buttons under a call in progress, with every one of them showing at once.
+     *
+     * The captions under these icons are the one place in the suite where a word has a hard
+     * ceiling, and the screen had never been drawn in anything but English: "Add call" fits
+     * where "Ajouter un appel" is cut to "Ajouter un ". Drawn in whichever language the run
+     * asks for, like every other image here, so the longest one can be looked at.
+     */
+    @Test
+    fun callControls() = shoot("phone-call-controls") {
+        Box(Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
+            // One call in progress: Add is offered, Swap and Merge are not. Five buttons, so
+            // the last row is short and has to stay in its columns rather than spread out.
+            CallControlGrid(
+                audio = AudioView(muted = true),
+                holding = false,
+                canHold = true,
+                canAdd = true,
+                another = false,
+                canMerge = false,
+                onMute = {},
+                onKeypad = {},
+                onHold = {},
+                onAddCall = {},
+                onSwap = {},
+                onMerge = {},
+            )
+        }
+    }
+
+    /** Two calls up, which is the most buttons the screen can ever show: Add is not one of them. */
+    @Test
+    fun callControlsTwoCalls() = shoot("phone-call-controls-two") {
+        Box(Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
+            CallControlGrid(
+                audio = AudioView(),
+                holding = true,
+                canHold = true,
+                canAdd = false,
+                another = true,
+                canMerge = true,
+                onMute = {},
+                onKeypad = {},
+                onHold = {},
+                onAddCall = {},
+                onSwap = {},
+                onMerge = {},
+            )
+        }
     }
 
     /** The launcher icon at the size app stores ask for. */
