@@ -1141,7 +1141,10 @@ private fun PhotoBubble(
         .then(modifier)
     // A picture message usually carries words with the photo, and they belong to it: one bubble,
     // the photos above and what was written below, rather than the words thrown away.
-    Column(frame) {
+    //
+    // A hair of the bubble's own colour between them, because four photographs stacked edge to
+    // edge read as one tall photograph.
+    Column(frame, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         paths.forEach { path ->
             val photo = rememberMessagePicture(path, PREVIEW_EDGE_PX)
             if (photo == null || photo.width <= 0 || photo.height <= 0) {
@@ -1819,31 +1822,57 @@ private fun Composer(
                     modifier = buttonPadding,
                 )
             } else {
-                FilledIconButton(
-                    onClick = onSend,
+                SendButton(
                     enabled = enabled,
-                    modifier = buttonPadding
-                        .size(56.dp)
-                        .then(
-                            if (!chooseSim) {
-                                Modifier
-                            } else {
-                                Modifier.combinedClickable(
-                                    role = Role.Button,
-                                    onClick = onSend,
-                                    onLongClickLabel = stringResource(R.string.send_from_other_sim),
-                                    onLongClick = { choosingSim = true },
-                                )
-                            },
-                        ),
-                ) {
-                    Icon(
-                        SecaIcons.Send,
-                        contentDescription = stringResource(if (encrypted) R.string.send_encrypted else R.string.send),
-                    )
-                }
+                    encrypted = encrypted,
+                    onSend = onSend,
+                    onChooseSim = if (chooseSim) ({ choosingSim = true }) else null,
+                    modifier = buttonPadding,
+                )
             }
         }
+    }
+}
+
+/**
+ * The send button, held down to choose a SIM (#53).
+ *
+ * Drawn here rather than taken from `FilledIconButton`. That button installs its own click
+ * handler inside itself, closer to the pointer than any modifier handed to it from outside, so
+ * it took the press and the long press never arrived: holding it down did nothing at all, with
+ * two SIMs and with one. Reported with a video of a finger held on a button that never answers.
+ *
+ * The look is the voice button's, which stands in this same place when nothing is written.
+ */
+@Composable
+private fun SendButton(
+    enabled: Boolean,
+    encrypted: Boolean,
+    onSend: () -> Unit,
+    onChooseSim: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val otherSim = stringResource(R.string.send_from_other_sim)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(56.dp)
+            .clip(CircleShape)
+            .background(if (enabled) colors.primary else colors.surfaceContainerHighest)
+            .combinedClickable(
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onSend,
+                onLongClickLabel = onChooseSim?.let { otherSim },
+                onLongClick = onChooseSim,
+            ),
+    ) {
+        Icon(
+            imageVector = SecaIcons.Send,
+            contentDescription = stringResource(if (encrypted) R.string.send_encrypted else R.string.send),
+            tint = if (enabled) colors.onPrimary else colors.onSurfaceVariant.copy(alpha = GREYED),
+        )
     }
 }
 

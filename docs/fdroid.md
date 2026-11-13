@@ -111,8 +111,8 @@ Three things had to be fixed for that to hold, all found by comparing their buil
 
 Proven twice over: libsignal built from scratch in two different folders gives byte-identical
 libraries for both ABIs, and F-Droid's own server rebuilt all three published APKs and verified
-them — `...successfully verified`. The whole procedure is: build in Linux, sign on Windows, attach
-to the GitHub release.
+them — `...successfully verified`. The whole procedure is: build in Linux, sign with the key kept
+off the build machine, attach the APKs to the GitHub release, and only then push the tag.
 
 ## Seca Messages: what the second review asked for
 
