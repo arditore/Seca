@@ -95,7 +95,29 @@ build tools 36.0.0 and the same NDK 28.0.13004108, and only signed on the machin
 key — signatures are stripped before the two builds are compared, so signing where the key lives
 changes nothing.
 
-Three things had to be fixed for that to hold, all found by comparing their build against ours:
+**Build the APKs from the commit the tag will point at, and no earlier one.** Not a convention: a
+requirement with teeth. Android Gradle Plugin writes the commit it built from into every release
+APK, as `META-INF/version-control-info.textproto`:
+
+```text
+repositories {
+  system: GIT
+  local_root_path: "$PROJECT_DIR"
+  revision: "<the full hash of HEAD at build time>"
+}
+```
+
+So an APK built from one commit and published against a tag pointing at the next one differs
+from what F-Droid rebuilds, in those 120 bytes, even when not a line of code changed between the
+two. A commit that only fixes a changelog typo is enough to break it. This was found the slow
+way, by two builds whose APK hashes differed when only three changelog files had changed.
+
+The folder the build runs in is not a problem, which is worth stating because it is the obvious
+suspicion: AGP writes `$PROJECT_DIR` rather than the real path. Checked rather than assumed, by
+building one commit twice in two different folders and comparing: byte for byte identical, all
+three apps, and identical again to a third build of the same commit in a third folder.
+
+Three more things had to be fixed, all found by comparing their build against ours:
 
 1. **Signing must not touch the archive.** `apksigner` re-aligns an APK as it signs, which moves
    every entry and breaks the signature copy their verification does. `--alignment-preserved`
@@ -167,6 +189,11 @@ recipes in `fdroid/metadata/` are kept here only as a copy of what it maintains 
 at a file named after the tag, and their build runs as soon as the tag exists. Beta 11 was tagged
 seventeen hours before its APKs went up, their build landed in that window with nothing to fetch,
 and someone opened [issue #45](https://github.com/arditore/Seca/issues/45) about it.
+
+A draft release does both halves in the right order: GitHub creates no tag for a draft, so the
+APKs can be uploaded first and the tag appears, with the files already behind it, the moment the
+release is published. The APKs must be built from the commit the draft targets, for the reason
+above.
 
 Should a recipe ever need changing by hand, the three fields that move are `versionName`,
 `versionCode` and `commit` (the full hash, never the tag name), plus `CurrentVersion` and
