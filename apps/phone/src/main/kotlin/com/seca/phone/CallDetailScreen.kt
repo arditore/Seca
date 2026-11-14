@@ -70,6 +70,7 @@ internal fun CallDetailScreen(
     val match = remember(number, ui.index) { ui.index?.find(number) }
     val contact = match?.contact
     val history = remember(number, ui.calls, ui.index) { ui.historyFor(number) }
+    val carrierName = remember(history) { history.firstNotNullOfOrNull { it.carrierName(context) } }
     // A contact with several numbers: each call says which one it was.
     val showNumbers = (contact?.phoneNumbers?.size ?: 0) > 1
     var menuOpen by remember { mutableStateOf(false) }
@@ -168,7 +169,7 @@ internal fun CallDetailScreen(
                 .padding(padding),
             contentPadding = PaddingValues(bottom = 32.dp),
         ) {
-            item(key = "header") { Header(number, match, ui) }
+            item(key = "header") { Header(number, match, ui, carrierName) }
             item(key = "actions") {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -197,7 +198,7 @@ internal fun CallDetailScreen(
                         SecaActionButton(
                             SecaIcons.PersonAdd,
                             stringResource(R.string.add),
-                            onClick = { addContact(context, number) },
+                            onClick = { addContact(context, number, carrierName) },
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -207,7 +208,7 @@ internal fun CallDetailScreen(
                 SimPreferenceRow(
                     number = match?.number?.raw ?: number,
                     lookupKey = contact?.lookupKey,
-                    name = contact?.displayName ?: ui.numbers.display(number),
+                    name = contact?.displayName ?: carrierName ?: ui.numbers.display(number),
                     numbers = ui.numbers,
                 )
             }
@@ -222,7 +223,7 @@ internal fun CallDetailScreen(
 }
 
 @Composable
-private fun Header(number: String, match: NumberMatch?, ui: PhoneUi) {
+private fun Header(number: String, match: NumberMatch?, ui: PhoneUi, carrierName: String?) {
     val context = LocalContext.current
     val copyLabel = stringResource(R.string.copy_number)
     val contact = match?.contact
@@ -243,7 +244,7 @@ private fun Header(number: String, match: NumberMatch?, ui: PhoneUi) {
             UnknownAvatar(modifier = Modifier.padding(top = 8.dp), size = 120.dp)
         }
         Text(
-            text = contact?.displayName ?: ui.numbers.display(number),
+            text = contact?.displayName ?: carrierName ?: ui.numbers.display(number),
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
@@ -284,6 +285,14 @@ private fun Header(number: String, match: NumberMatch?, ui: PhoneUi) {
                     .padding(horizontal = 8.dp, vertical = 2.dp),
             )
         } else {
+            if (carrierName != null) {
+                Text(
+                    text = ui.numbers.display(number),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
             ui.numbers.describe(number, LocalResources.current)?.let {
                 Text(
                     text = it,

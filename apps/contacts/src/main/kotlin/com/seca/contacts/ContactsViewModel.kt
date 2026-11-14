@@ -50,7 +50,7 @@ sealed interface Screen {
     data class Detail(val id: Long) : Screen
 
     /** [id] is null when creating a contact; [prefillPhone] comes from another app's "add". */
-    data class Edit(val id: Long?, val prefillPhone: String? = null) : Screen
+    data class Edit(val id: Long?, val prefillPhone: String? = null, val prefillName: String? = null) : Screen
     data object Settings : Screen
     data object MyCard : Screen
 }
