@@ -1,0 +1,1 @@
+When a caller's carrier sends a name, Seca shows it in place of the number on the call, in the call history and in missed call notifications, with the number beneath it. Add the caller to contacts and the name is already filled in. Contacts are never read for this.

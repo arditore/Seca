@@ -16,6 +16,7 @@ import android.provider.ContactsContract.PhoneLookup
 import android.telecom.Call
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.design.notification.NotificationAvatars
+import com.seca.phone.CarrierNames
 import com.seca.phone.MainActivity
 import com.seca.phone.R
 
@@ -147,12 +148,15 @@ internal object CallNotifications {
         ensureChannels(context, manager)
         val known = number?.takeIf { it.isNotBlank() }
         val contact = known?.let { lookUp(context, it) }
-        val who = contact?.name ?: known?.let { PhoneNumbers(PhoneNumbers.detectRegion(context)).display(it) }
+        val shown = known?.let { PhoneNumbers(PhoneNumbers.detectRegion(context)).display(it) }
+        val carrier = if (contact == null && known != null) CarrierNames.of(context, known) else null
+        val who = contact?.name ?: carrier ?: shown
         val builder = Notification.Builder(context, MISSED)
             .setSmallIcon(R.drawable.ic_stat_call)
             .setColor(NotificationAvatars.accentOf(context))
             .setContentTitle(context.resources.getQuantityString(R.plurals.missed_calls, count, count))
             .setContentText(who ?: context.getString(R.string.missed_open_history))
+            .setSubText(shown.takeIf { carrier != null })
             .setCategory(Notification.CATEGORY_MISSED_CALL)
             .setContentIntent(historyIntent(context))
             .setAutoCancel(true)
