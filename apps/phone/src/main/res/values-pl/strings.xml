@@ -3,10 +3,10 @@
     <string name="add">Dodaj</string>
     <string name="add_call">Dodaj połączenie</string>
     <string name="allow_access">Zezwól na dostęp</string>
-    <string name="allow_calls">Zezwól na wykonywanie połączeń z aplikacji Seca Phone</string>
+    <string name="allow_calls">Zezwól na wykonywanie połączeń z aplikacji Seca Telefon</string>
     <string name="always_use_sim">Zawsze używaj tej karty SIM dla: %1$s</string>
     <string name="answer">Odbierz</string>
-    <string name="app_name">Telefon</string>
+    <string name="app_name">Seca Telefon</string>
     <string name="ask_every_call">Pytaj przy każdym połączeniu</string>
     <string name="audio_earpiece">Słuchawka telefonu</string>
     <string name="audio_headset">Słuchawki</string>
@@ -23,7 +23,7 @@
         <item quantity="many">%d połączeń i filtrowanie</item>
     </plurals>
     <string name="backup_filtering_restored">filtrowanie zostało przywrócone</string>
-    <string name="backup_filtering_restored_no_access">filtrowanie zostało przywrócone; otwórz Seca Phone, zezwól na dostęp do historii połączeń, a następnie przywróć ponownie, aby odzyskać połączenia</string>
+    <string name="backup_filtering_restored_no_access">filtrowanie zostało przywrócone; otwórz Seca Telefon, zezwól na dostęp do historii połączeń, a następnie przywróć ponownie, aby odzyskać połączenia</string>
     <string name="block_decline_hint">Połączenie jest odrzucane bez dzwonienia i pozostaje w historii wśród połączeń odrzuconych.</string>
     <string name="block_duration">Przez</string>
     <string name="block_failed">Nie udało się zablokować</string>
@@ -42,7 +42,7 @@
     <string name="blocked_profiles">Zablokowane profile</string>
     <string name="blocked_profiles_declined">%1$s · połączenia odrzucone</string>
     <string name="blocked_profiles_dialog_hint">Kontakty z zablokowanego profilu nie będą mogły się do Ciebie dodzwonić przez wybrany czas.</string>
-    <string name="blocked_profiles_needs_contacts">Zainstaluj Seca Contacts, aby zablokować cały profil</string>
+    <string name="blocked_profiles_needs_contacts">Zainstaluj Seca Kontakty, aby zablokować cały profil</string>
     <string name="blocked_profiles_none">Brak: wszyscy Twoi znajomi mogą dzwonić</string>
     <string name="blocked_profiles_silenced">%1$s · połączenia wyciszone</string>
     <string name="blocked_silenced">Ich połączenia dzwonią po cichu</string>
@@ -80,7 +80,7 @@
     <string name="clear_history_text">Wszystkie wykonane i odebrane połączenia zostaną usunięte z tego telefonu. Tego kroku nie można cofnąć.</string>
     <string name="clear_history_title">Wyczyścić całą historię?</string>
     <string name="colors">Kolory</string>
-    <string name="colors_need_contacts">Zainstaluj Seca Contacts, aby wybrać kolory pakietu aplikacji.</string>
+    <string name="colors_need_contacts">Zainstaluj Seca Kontakty, aby wybrać kolory pakietu aplikacji.</string>
     <string name="colors_shared_hint">Wspólne dla trzech aplikacji Seca</string>
     <string name="contact_card">Kontakt</string>
     <string name="contacts">Kontakty</string>
@@ -98,9 +98,9 @@
     <string name="default_banner_text">Zobaczysz, kto dzwoni oraz jego profil, a także będziesz mieć możliwość odbierania połączeń z poziomu ekranu blokady.</string>
     <string name="default_banner_title">Odbieraj połączenia w Seca</string>
     <string name="default_hint">Android nadal odpowiada za dzwonienie i wibracje; Seca wyświetla ekran połączenia. W każdej chwili możesz wrócić do poprzednich ustawień.</string>
-    <string name="default_off">Ustaw Seca Phone jako domyślną aplikację</string>
+    <string name="default_off">Ustaw Seca Telefon jako domyślną aplikację</string>
     <string name="default_off_hint">Aby widzieć, kto dzwoni i odbierać połączenia w Seca, nawet na ekranie blokady</string>
-    <string name="default_on">Seca Phone obsługuje Twoje połączenia</string>
+    <string name="default_on">Seca Telefon obsługuje Twoje połączenia</string>
     <string name="default_on_hint">Ekran połączenia, profil rozmówcy, blokowanie numerów</string>
     <plurals name="delete_calls">
         <item quantity="one">Usuń %d połączenie</item>
@@ -129,7 +129,7 @@
     <string name="filter_rejected">Odrzucone</string>
     <string name="filter_voicemail">Poczta głosowa</string>
     <string name="filtering_local">Filtrowanie odbywa się na tym telefonie – żadne dane nie są nigdzie wysyłane.</string>
-    <string name="filtering_needs_default">Działa, gdy Seca Phone jest domyślną aplikacją do telefonu.</string>
+    <string name="filtering_needs_default">Działa, gdy Seca Telefon jest domyślną aplikacją do telefonu.</string>
     <string name="forget">Zapomnij</string>
     <string name="hang_up">Rozłącz się</string>
     <string name="hidden_number">Numer prywatny</string>
@@ -159,15 +159,15 @@
     <string name="other_call">Inne połączenie: %1$s · %2$s</string>
     <string name="paste_number">Wklej numer</string>
     <string name="payphone">Automat telefoniczny</string>
-    <string name="permission_description">Seca Phone wyświetla historię połączeń tego telefonu i rozpoznaje Twoje kontakty. Żadne dane nie opuszczają urządzenia – aplikacja nie ma dostępu do internetu.</string>
-    <string name="permission_place_calls">wykonywanie połączeń za pomocą Seca Phone</string>
+    <string name="permission_description">Seca Telefon wyświetla historię połączeń tego telefonu i rozpoznaje Twoje kontakty. Żadne dane nie opuszczają urządzenia – aplikacja nie ma dostępu do internetu.</string>
+    <string name="permission_place_calls">wykonywanie połączeń za pomocą Seca Telefon</string>
     <string name="permission_read_profiles">odczytywanie profili Seca</string>
-    <string name="permission_send_messages">wysyłanie wiadomości za pomocą Seca Messages</string>
+    <string name="permission_send_messages">wysyłanie wiadomości za pomocą Seca Wiadomości</string>
     <string name="permission_title">Twoja historia połączeń</string>
     <string name="phone_app">Aplikacja do telefonu</string>
     <string name="place_call_with_sim">Wykonaj to połączenie przy użyciu tej karty</string>
     <string name="privacy">Prywatność</string>
-    <string name="privacy_text">Aplikacja Seca Phone nie ma dostępu do internetu. Historia połączeń pozostaje integralną częścią systemu Android – nic nie jest kopiowane w inne miejsca.</string>
+    <string name="privacy_text">Aplikacja Seca Telefon nie ma dostępu do internetu. Historia połączeń pozostaje integralną częścią systemu Android – nic nie jest kopiowane w inne miejsca.</string>
     <string name="privacy_title">Wszystko pozostaje na tym telefonie</string>
     <string name="protection">Ochrona</string>
     <string name="quick_reply_call_back">Oddzwonię później.</string>
