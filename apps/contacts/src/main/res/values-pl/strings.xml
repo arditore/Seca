@@ -151,7 +151,7 @@
     <string name="open_backup">Otwórz kopię zapasową</string>
     <string name="open_settings">Otwórz ustawienia</string>
     <string name="permission_description">Seca Kontakty wyświetla kontakty zapisane na tym telefonie. Żadne dane nie opuszczają urządzenia – aplikacja nie ma dostępu do internetu.</string>
-        <string name="permission_place_calls">wykonywanie połączeń za pomocą Seca Phone</string>
+        <string name="permission_place_calls">wykonywanie połączeń za pomocą Seca Telefon</string>
     <string name="permission_read_profiles">odczytywanie profili Seca</string>
     <string name="permission_title">Twoje kontakty na Twoim telefonie</string>
     <string name="photo_not_saved">Ten telefon nie zapisał zdjęcia dla tego kontaktu.</string>
@@ -226,5 +226,5 @@
     <string name="settings_privacy_hint">Blokada, prywatny ekran</string>
     <string name="settings_profiles_hint">Praca, Rodzina i reszta</string>
     <string name="block_contact">Zablokuj ten kontakt</string>
-    <string name="block_asked">Zablokowano w Seca Phone. Cofniesz to w jego ustawieniach, w Zablokowane numery.</string>
+    <string name="block_asked">Zablokowano w Seca Telefon. Cofniesz to w jego ustawieniach, w Zablokowane numery.</string>
 </resources>
