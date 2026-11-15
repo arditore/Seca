@@ -10,8 +10,8 @@
     <string name="allow">Zezwól</string>
     <string name="allow_exact_time">Zezwól na dokładny czas</string>
     <string name="allow_network">Zezwól na dostęp do sieci</string>
-    <string name="allow_network_text">Funkcja Seca Link łączy się z bramkami przez internet. Otwórz ustawienia Seca Messages, następnie Uprawnienia i włącz „Sieć”. Twoje klucze zostaną opublikowane, gdy tylko połączenie będzie możliwe.</string>
-    <string name="app_name">Wiadomości</string>
+    <string name="allow_network_text">Funkcja Seca Link łączy się z bramkami przez internet. Otwórz ustawienia Seca Wiadomości, następnie Uprawnienia i włącz „Sieć”. Twoje klucze zostaną opublikowane, gdy tylko połączenie będzie możliwe.</string>
+    <string name="app_name">Seca Wiadomości</string>
     <string name="archive">Archiwizuj</string>
     <string name="archived">Zarchiwizowane</string>
     <string name="archived_conversations">Zarchiwizowane konwersacje</string>
@@ -29,7 +29,7 @@
     <string name="slide_to_cancel">Przesuń, aby anulować</string>
     <string name="back">Wstecz</string>
     <string name="background_allowed_quiet">Dozwolone, bez powiadomienia</string>
-    <string name="background_dialog_text">Aby Seca Link mogła odbierać zaszyfrowane wiadomości w tle bez wyświetlania stałego powiadomienia, wyłącz optymalizację baterii dla aplikacji Seca Messages. Połączenie z bramkami zużywa niewiele energii.</string>
+    <string name="background_dialog_text">Aby Seca Link mogła odbierać zaszyfrowane wiadomości w tle bez wyświetlania stałego powiadomienia, wyłącz optymalizację baterii dla aplikacji Seca Wiadomości. Połączenie z bramkami zużywa niewiele energii.</string>
     <string name="background_granted">Zezwolono: Seca Link nasłuchuje bez powiadomienia</string>
     <string name="background_reception">Odbieranie w tle</string>
     <string name="background_tap">Dotknij, aby odbierać wiadomości bez stałego powiadomienia</string>
@@ -42,7 +42,7 @@
     <string name="backup_settings_only">tylko ustawienia i Seca Link, dostęp do wiadomości tekstowych jest zablokowany</string>
     <string name="backup_settings_restored">ustawienia zostały przywrócone</string>
     <string name="backup_sms_and_link">%1$s oraz %2$s</string>
-    <string name="backup_sms_not_restored">wiadomości tekstowe nie zostały przywrócone: ustaw Seca Messages jako domyślną aplikację do SMS-ów, a następnie spróbuj przywróć ponownie</string>
+    <string name="backup_sms_not_restored">wiadomości tekstowe nie zostały przywrócone: ustaw Seca Wiadomości jako domyślną aplikację do SMS-ów, a następnie spróbuj przywróć ponownie</string>
     <string name="call">Zadzwoń</string>
     <string name="camera_access">Dostęp do aparatu</string>
     <string name="camera_access_hint">Aby odczytać kod wyświetlony na telefonie użytkownika %1$s. Żadne zdjęcia nie są zapisywane.</string>
@@ -77,7 +77,7 @@
     <string name="codes_match">Kody są zgodne</string>
     <string name="codes_mismatch">Kody nie są zgodne</string>
     <string name="colors">Kolory</string>
-    <string name="colors_need_contacts">Zainstaluj Seca Contacts, aby wybrać kolory pakietu aplikacji.</string>
+    <string name="colors_need_contacts">Zainstaluj Seca Kontakty, aby wybrać kolory pakietu aplikacji.</string>
     <string name="colors_shared_hint">Wspólne dla trzech aplikacji Seca</string>
     <string name="compare_hint">Porównaj te cyfry z cyframi na telefonie użytkownika %1$s lub pokaż mu ten kod. Jeśli są takie same, nikt nie podsłuchuje Waszego połączenia.</string>
     <string name="connect_in_person">Połącz osobiście</string>
@@ -108,9 +108,9 @@
     <string name="default_banner_text">System Android przekazuje wiadomości tekstowe tylko jednej aplikacji jednocześnie.</string>
     <string name="default_banner_title">Odbieraj i wysyłaj z aplikacją Seca</string>
     <string name="default_list">Lista domyślna</string>
-    <string name="default_off">Używaj Seca Messages jako domyślnej aplikacji</string>
+    <string name="default_off">Używaj Seca Wiadomości jako domyślnej aplikacji</string>
     <string name="default_off_hint">Tylko domyślna aplikacja SMS może odbierać i wysyłać wiadomości</string>
-    <string name="default_on">Seca Messages obsługuje Twoje wiadomości SMS</string>
+    <string name="default_on">Seca Wiadomości obsługuje Twoje wiadomości SMS</string>
     <string name="default_on_hint">Odbieranie, wysyłanie oraz powiadomienia</string>
     <string name="delete">Usuń</string>
     <string name="delete_conversation">Usuń konwersację</string>
@@ -129,7 +129,7 @@
     <string name="dynamic_colors_hint">Dopasowane do tapety telefonu</string>
     <string name="edit">Edytuj</string>
     <string name="enable_in_settings">Włącz to w ustawieniach</string>
-    <string name="enable_to_send">Ustaw Seca Messages jako domyślną aplikację SMS, aby móc wysyłać wiadomości.</string>
+    <string name="enable_to_send">Ustaw Seca Wiadomości jako domyślną aplikację SMS, aby móc wysyłać wiadomości.</string>
     <string name="encrypt">Szyfruj</string>
     <string name="encrypt_backup">Szyfruj kopię zapasową</string>
     <string name="encrypt_with_link">Szyfruj za pomocą Seca Link</string>
@@ -226,7 +226,7 @@
     <string name="more_actions">Więcej działań</string>
     <string name="more_options">Więcej opcji</string>
     <string name="name_or_number">Nazwa lub numer</string>
-    <string name="need_default_app">Najpierw ustaw Seca Messages jako domyślną aplikację SMS</string>
+    <string name="need_default_app">Najpierw ustaw Seca Wiadomości jako domyślną aplikację SMS</string>
     <string name="network">Sieć</string>
     <string name="network_blocked">Brak dostępu: sprawdź połączenie oraz uprawnienie „Sieć”</string>
     <string name="new_message">Nowa wiadomość</string>
@@ -236,14 +236,14 @@
     <string name="no_conversations_hint">Wiadomości tekstowe z tego telefonu pojawią się tutaj.</string>
     <string name="no_link_contacts">Nie ma jeszcze żadnego kontaktu Seca Link. W oknie konwersacji dotknij ⋮, a następnie „Szyfruj za pomocą Seca Link” lub „Połącz osobiście”.</string>
     <string name="no_network_access">Brak dostępu do sieci</string>
-    <string name="no_network_hint">W ustawieniach Seca Messages otwórz Uprawnienia i włącz „Sieć” lub sprawdź połączenie internetowe. Publikowanie zostanie wznowione automatycznie.</string>
+    <string name="no_network_hint">W ustawieniach Seca Wiadomości otwórz Uprawnienia i włącz „Sieć” lub sprawdź połączenie internetowe. Publikowanie zostanie wznowione automatycznie.</string>
     <string name="no_relays">Brak bramek: dodaj bramkę lub powróć do domyślnej listy.</string>
     <string name="no_results">Brak wyników</string>
     <string name="no_spam">Brak spamu</string>
     <string name="no_spam_hint">Wiadomości reklamowe są przenoszone tutaj bez wyświetlania powiadomień. Wybranie opcji „To nie spam” przywróci konwersację na główną listę.</string>
     <string name="not_link_code">To nie jest kod Seca Link</string>
     <string name="not_listened_yet">Jeszcze nieodtworzone</string>
-    <string name="not_messages_backup">Ten plik nie jest kopią zapasową aplikacji Seca Messages</string>
+    <string name="not_messages_backup">Ten plik nie jest kopią zapasową aplikacji Seca Wiadomości</string>
     <string name="not_published">Jeszcze nieopublikowano</string>
     <string name="not_sent_retry">Niewysłano · Dotknij, aby ponowić</string>
     <string name="not_spam">To nie spam</string>
@@ -254,7 +254,7 @@
     <string name="number">Numer</string>
     <string name="older">Starsze</string>
     <string name="on">Włączone</string>
-    <string name="one_scan_hint">Wystarczy jedno skanowanie: odpowiedź zostanie wysłana SMS-em. Na obu telefonach musi być zainstalowana aplikacja Seca Messages oraz włączona funkcja Seca Link.</string>
+    <string name="one_scan_hint">Wystarczy jedno skanowanie: odpowiedź zostanie wysłana SMS-em. Na obu telefonach musi być zainstalowana aplikacja Seca Wiadomości oraz włączona funkcja Seca Link.</string>
     <string name="open">Otwórz</string>
     <string name="open_backup">Otwórz kopię zapasową</string>
     <string name="open_connect_hint">Na telefonie użytkownika %1$s otwórz konwersację, a następnie dotknij ⋮ i wybierz „Połącz osobiście”.</string>
@@ -270,10 +270,10 @@
     <string name="peer_left">Nie korzysta już z Seca Link · %1$s</string>
     <string name="peer_nothing">Brak dotychczasowej wymiany</string>
     <string name="peer_verified">Zaszyfrowano · zweryfikowano</string>
-    <string name="permission_description">Seca Messages odczytuje, odbiera oraz wysyła wiadomości tekstowe z tego telefonu. Pozostają one na urządzeniu i trafiają wyłącznie do osób, do których są pisane.</string>
-    <string name="permission_place_calls">wykonywanie połączeń za pomocą Seca Phone</string>
+    <string name="permission_description">Seca Wiadomości odczytuje, odbiera oraz wysyła wiadomości tekstowe z tego telefonu. Pozostają one na urządzeniu i trafiają wyłącznie do osób, do których są pisane.</string>
+    <string name="permission_place_calls">wykonywanie połączeń za pomocą Seca Telefon</string>
     <string name="permission_read_profiles">odczytywanie profili Seca</string>
-    <string name="permission_send_messages">wysyłanie wiadomości za pomocą Seca Messages</string>
+    <string name="permission_send_messages">wysyłanie wiadomości za pomocą Seca Wiadomości</string>
     <string name="permission_title">Twoje wiadomości</string>
     <string name="photo">Zdjęcie</string>
     <string name="photo_not_sent">Nie udało się wysłać zdjęcia</string>
@@ -347,7 +347,7 @@
     </plurals>
     <string name="scheduled_message">Zaplanowana wiadomość</string>
     <string name="scheduled_not_sent">Zaplanowana wiadomość nie została wysłana</string>
-    <string name="scheduled_not_sent_text">Wiadomość do użytkownika %1$s wciąż oczekuje. Seca Messages musi być domyślną aplikacją SMS, aby ją wysłać.</string>
+    <string name="scheduled_not_sent_text">Wiadomość do użytkownika %1$s wciąż oczekuje. Seca Wiadomości musi być domyślną aplikacją SMS, aby ją wysłać.</string>
     <string name="search_messages">Szukaj wiadomości</string>
     <string name="send">Wyślij</string>
     <string name="send_as_sms">Wyślij jako niezaszyfrowany SMS</string>
@@ -428,7 +428,7 @@
     <string name="unpin">Odepnij</string>
     <string name="unreachable">Nieosiągalny</string>
     <string name="unreadable_file">Nie można odczytać tego pliku</string>
-    <string name="use_seca_messages">Używaj Seca Messages</string>
+    <string name="use_seca_messages">Używaj Seca Wiadomości</string>
     <string name="use_tor">Połącz przez sieć Tor</string>
     <string name="verification_codes">Kody weryfikacyjne</string>
     <string name="verified">Zweryfikowano</string>
