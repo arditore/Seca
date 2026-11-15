@@ -29,9 +29,9 @@
     <string name="auto_understand">Rozumiem</string>
     <string name="auto_weekly">Co tydzień</string>
     <string name="auto_write_failed">Nie udało się zapisać pliku.</string>
-    <string name="suite_app_contacts">Seca Contacts</string>
-    <string name="suite_app_messages">Seca Messages</string>
-    <string name="suite_app_phone">Seca Phone</string>
+    <string name="suite_app_contacts">Seca Kontakty</string>
+    <string name="suite_app_messages">Seca Wiadomości</string>
+    <string name="suite_app_phone">Seca Telefon</string>
     <string name="suite_backing_up">Tworzenie kopii trzech aplikacji…</string>
     <string name="suite_backup_all">Utwórz kopię trzech aplikacji</string>
     <string name="suite_backup_all_hint">Wszystko z trzech aplikacji, w jednym zaszyfrowanym pliku</string>
