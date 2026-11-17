@@ -1,0 +1,6 @@
+Üçüncü beta.
+• Seca Link, ikisinde de bulunan iki telefon arasında kendiliğinden bağlanır: gönderilecek davet yok ve sohbet ne zaman şifrelendiğini söyler.
+• Seca Link'ten ayrılan kişi bağlantıyı sonlandırır: bilgilendirilirsiniz ve mesajlar SMS'e döner.
+• Seca Link'in taşıdığı her sohbetin fotoğrafında bir kilit.
+• Anahtarlar her beş saatte bir, yalnızca onları saklayan rölelere yeniden yayımlanır.
+• Mesaj bildirimleri yeniden sohbet biçiminde.

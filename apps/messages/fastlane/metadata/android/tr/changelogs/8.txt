@@ -1,0 +1,1 @@
+secp256k1 artık libsignal gibi kendi kaynaklarından derleniyor: Seca Mesajlar artık hazır derlenmiş yerel kitaplık taşımıyor; F-Droid'in ondan istediği de bu. Gezinme çubuğu da siyah temayı izliyor.

@@ -48,7 +48,7 @@ class CallControlLabelsTest {
 
     private companion object {
         /** Every language the apps ship, which is every language these words are read in. */
-        val LANGUAGES = listOf("en-rUS", "fr-rFR", "es-rES", "pl-rPL", "de-rDE")
+        val LANGUAGES = listOf("en-rUS", "fr-rFR", "es-rES", "pl-rPL", "de-rDE", "tr-rTR")
 
         /** The words drawn under the round buttons while a call is in progress. */
         val CAPTIONS = listOf(

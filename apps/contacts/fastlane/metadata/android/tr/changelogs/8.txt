@@ -1,0 +1,1 @@
+Gezinme çubuğu da siyah temayı izliyor: hâlâ Material'in renk tonlu grisini gösteriyor ve ışığı yanmaması gereken bir ekranın altında gri bir şerit bırakıyordu. Lehçe artık çevirinin katkı olarak verilmesinden sonra eklenen dizeleri de kapsıyor.

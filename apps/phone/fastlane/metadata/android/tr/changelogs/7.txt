@@ -1,0 +1,1 @@
+İspanyolca ve tmpjx555 sayesinde Lehçe. OLED ekranlar için saf siyah tema. Arama ekranında: bildirim artık tekrarladığı yanıtla ve reddet düğmelerinin üzerinde süzülmüyor, düğmelerin altındaki adlar gizlenebiliyor ve yakınlık algılayıcısı, sürekli kapalı kalan bir kılıf için kapatılabiliyor.

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="link_accept_intro">Seca Link: davet kabul edildi, mesajlarımız şifreli.</string>
+    <string name="link_encryption_failed">Şifreleme başarısız oldu</string>
+    <string name="link_incomplete_invitation">Eksik davet</string>
+    <string name="link_invalid_keys">Geçersiz anahtarlar: %1$s</string>
+    <string name="link_invite_intro">Seca Link: Seni Seca Mesajlar ile şifreli bir sohbete davet ediyorum.</string>
+    <string name="link_keys_not_found">Anahtarlar rölelerde bulunamadı</string>
+    <string name="link_no_key_received">Bu kişiden anahtar alınmadı</string>
+    <string name="link_no_network">Ağ erişimi yok</string>
+    <string name="link_no_relay_accepted">Hiçbir röle mesajı kabul etmedi</string>
+    <string name="link_not_kept">Anahtarları kabul etti ama saklamıyor</string>
+    <string name="link_unknown_contact">Bilinmeyen kişi</string>
+    <string name="link_untrusted_key">Anahtar onaylanmadı: %1$s</string>
+</resources>

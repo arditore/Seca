@@ -1,0 +1,3 @@
+İlk herkese açık beta (0.1.0-beta1).
+Paket genelinde paylaşılan renkli profiller, yinelenen birleştirme, QR koduyla paylaşılan kendi kartınız, vCard içe ve dışa aktarma, şifreli yedek ve üç Seca uygulaması için tek yedek.
+Beta: pürüzler bekleyin.

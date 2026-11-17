@@ -1,0 +1,1 @@
+Kişiler, telefonun yeni kişilerin nereye gideceğini söylediği yere kaydedilir. Android 16'dan beri bu, sahibinin tercihidir — eşitleme yapan bir bulut hesabı, cihaz ya da SIM — ve bunu yok saymak bir telefonda tek bir kişinin bile kaydedilmesini engelliyordu. Burada oluşturulan kişi artık, telefonun kendi kişiler uygulamasından olduğu gibi, telefonun gösterdiği hesaba ulaşır.

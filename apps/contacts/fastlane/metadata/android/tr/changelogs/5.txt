@@ -1,0 +1,1 @@
+Beşinci beta, F-Droid için: Seca artık 17 ve üzeri herhangi bir JDK ile derleniyor, her uygulama sürümünü F-Droid'in okuduğu yerde taşıyor ve derleme betiklerinde üçüncü taraf Maven adresi kalmadı. Telefonda hiçbir şey değişmiyor.

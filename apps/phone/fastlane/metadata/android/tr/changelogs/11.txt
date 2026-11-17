@@ -1,0 +1,1 @@
+Birden fazla arama, birini basılı tutarak aynı anda seçilip birlikte silinebiliyor. Bir kez görülen cevapsız arama görülmüş kalıyor: bildirimi artık her yeniden başlatmadan sonra geri gelmiyor. Geri gitmek uygulamayı kapatmak yerine aramadan çıkarıyor. Alttaki çubuk yalnızca gerçekten kurulu olan Seca uygulamalarını gösteriyor. Almanca, Natty-Narwhal sayesinde.

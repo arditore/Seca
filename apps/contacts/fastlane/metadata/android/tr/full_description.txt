@@ -1,0 +1,30 @@
+Dışarıya hiçbir şey gönderemeyen bir rehber.
+
+Seca Kişiler'de internet izni hiç yok; bu yüzden kişileriniz bu uygulama üzerinden telefondan dışarı çıkamaz. Kişiler Android'in kendi rehberinde kalır; DAVx⁵ veya seçtiğiniz herhangi bir eşitleme hizmeti yine de bu kişilere erişebilir.
+
+Üç uygulamadan biri — Kişiler, Telefon ve Mesajlar — ortak bir Material 3 Expressive tasarımını paylaşır. Android 12 ve üzeri, Google hizmetleriyle ya da onlarsız, en iyi GrapheneOS'te çalışır. İngilizce, Fransızca, Almanca, İspanyolca, Lehçe ve Türkçe dillerinde.
+
+<b>Kişileriniz telefonunuzda kalır</b>
+<ul>
+<li>İnternet izni yok: uygulama hiçbir yere hiçbir şey gönderemez.</li>
+<li>Kişiler Android'in kendi rehberinde kalır; DAVx⁵ veya seçtiğiniz herhangi bir eşitleme hizmeti bu kişilere erişebilir.</li>
+<li>GrapheneOS Kişi Kapsamları (Contact Scopes) ile çalışır.</li>
+</ul>
+
+<b>Hayatınıza göre düzenli</b>
+<ul>
+<li>Rengi Seca Telefon ve Seca Mesajlar'a da geçen renkli profiller (Aile, İş…).</li>
+<li>Favoriler, anında arama, harfe göre hızlı kaydırma.</li>
+<li>Ada ya da numaraya göre bulunan yinelenenler, hiçbir şey kaybedilmeden birleştirilir.</li>
+<li>Kendi kartınız, QR kodu olarak paylaşılır.</li>
+</ul>
+
+<b>Ayrıca</b>
+<ul>
+<li>vCard içe ve dışa aktarma.</li>
+<li>Parolayla şifrelenen yedek.</li>
+<li>Uygulama kilidi ve son uygulamalarda gizlenen önizleme.</li>
+<li>Duvar kâğıdı renkleri ya da Seca paletleri, koyu tema.</li>
+</ul>
+
+Reklam yok, izleyici yok, hesap yok. Açık kaynak.

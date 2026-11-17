@@ -1,0 +1,36 @@
+Sıradan kısa mesajlar ve Seca telefonları arasında uçtan uca şifreli mesajlar.
+
+Seca Link kapalıyken uygulama interneti hiç kullanmaz. Açtığınızda iki Seca telefonu arasındaki mesajlar Signal protokolüyle şifrelenerek, kimin yazdığını da ne yazıldığını da görmeyen herkese açık röleler üzerinden gider. Hesap yok, bize ait sunucu yok.
+
+Üç uygulamadan biri — Kişiler, Telefon ve Mesajlar — ortak bir Material 3 Expressive tasarımını paylaşır. Android 12 ve üzeri, Google hizmetleriyle ya da onlarsız, en iyi GrapheneOS'te çalışır. İngilizce, Fransızca, Almanca, İspanyolca, Lehçe ve Türkçe dillerinde.
+
+<b>Seca Link: uçtan uca şifreli</b>
+<ul>
+<li>İki Seca telefonu arasında mesajlar, operatörü aşarak Signal protokolüyle (libsignal, kuantum sonrası PQXDH) şifrelenerek gider.</li>
+<li>Hesap yok, Seca sunucusu yok: şifreli mesajlar, kimin yazdığını da ne yazıldığını da görmeyen herkese açık Nostr röleleri üzerinden gider.</li>
+<li>İki kişi görünmez bir SMS ile bağlanır; sonrasında her şey internet üzerinden gider.</li>
+<li>Okundu bilgisi ve yazıyor göstergesi, ikisi de kapatılabilir.</li>
+<li>Karşılaştırılacak ya da QR kodu olarak taranacak güvenlik numarası.</li>
+<li>Şifreli fotoğraflar ve sesli mesajlar; mikrofon izni yalnızca kayıt yaptığınızda istenir.</li>
+<li>Varsayılan olarak dört herkese açık röle ayarlıdır (relay.damus.io, nos.lol, relay.primal.net, nostr.mom) ve liste sizin değiştirmenize açıktır.</li>
+<li>Varsayılan olarak kapalı: Seca Link olmadan uygulama interneti kullanmaz.</li>
+</ul>
+
+<b>SMS</b>
+<ul>
+<li><b>MMS, iki yönlü.</b> Size gönderilen görsel mesaj gelir ve sohbette gösterilir. Göndermek de çalışır; operatörünüz üzerinden gittiği için her telefona ulaşır: bir resim, bir video, bir dosya, bir kişi kartı ya da bir sesli mesaj, iki uçta da hesap gerekmeden. Resimler, şebekenin taşıyabileceği boyuta küçültülür. MMS üzerinden grup sohbetleri üzerinde hâlâ çalışılıyor.</li>
+<li>Kişilerinizin fotoğrafları ve profilleriyle sohbetler, tüm mesajlarda arama.</li>
+<li>Bildirimden yanıtlama, zamanlanmış mesajlar.</li>
+<li>Doğrulama kodları tek dokunuşla kopyalanır ve bir süre sonra otomatik silinir.</li>
+<li>Reklam mesajları gereksiz olarak ayrılır.</li>
+<li>Sabitlenmiş ve arşivlenmiş sohbetler.</li>
+</ul>
+
+<b>Ayrıca</b>
+<ul>
+<li>Parolayla şifrelenen yedek.</li>
+<li>Uygulama kilidi ve son uygulamalarda gizlenen önizleme.</li>
+<li>Duvar kâğıdı renkleri ya da Seca paletleri, koyu tema.</li>
+</ul>
+
+Reklam yok, izleyici yok, hesap yok. Açık kaynak.

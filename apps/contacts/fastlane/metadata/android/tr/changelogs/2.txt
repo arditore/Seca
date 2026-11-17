@@ -1,0 +1,4 @@
+İkinci beta.
+• İngilizce arayüz, telefonun diline göre seçilir; Fransızca de duruyor.
+• vCard dışa aktarma ve paket yedeği her kişinin profilini korur.
+• Android 12 ve üzeri her telefonda çalışır; GrapheneOS önerilir.

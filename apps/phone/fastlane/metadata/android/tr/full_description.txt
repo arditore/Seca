@@ -1,0 +1,36 @@
+Telefonunuz çalmadan önce pazarlama aramalarını reddeden bir telefon uygulaması.
+
+Seca Telefon'da internet izni hiç yok; bu yüzden arama geçmişiniz bu uygulama üzerinden telefondan dışarı çıkamaz. Her arama cihazın kendisinde, başkasının görebileceği hiçbir listeye başvurmadan taranır.
+
+Üç uygulamadan biri — Kişiler, Telefon ve Mesajlar — ortak bir Material 3 Expressive tasarımını paylaşır. Android 12 ve üzeri, Google hizmetleriyle ya da onlarsız, en iyi GrapheneOS'te çalışır. İngilizce, Fransızca, Almanca, İspanyolca, Lehçe ve Türkçe dillerinde.
+
+<b>Aramalarınız telefonunuzda kalır</b>
+<ul>
+<li>İnternet izni yok: arama geçmişi hiçbir yere gidemez.</li>
+<li>Aramalar tamamen telefonda taranır.</li>
+</ul>
+
+<b>Arama filtreleme</b>
+<ul>
+<li>Pazarlama engeli: Fransa'da pazarlamaya ayrılmış numaralar (01 62, 01 63, 02 70…), kişileriniz hariç, çalmadan reddedilir.</li>
+<li>İsterseniz bilinmeyen arayanlar sessize alınır.</li>
+<li>Engellenen profiller: bir profilin (İş…) kişileri bir saat, yarına kadar ya da siz kaldırana kadar arayamaz. Aramalar reddedilir ya da sessizce çalar; seçim sizin.</li>
+</ul>
+
+<b>Arama</b>
+<ul>
+<li>Arayanın fotoğrafını ve profilini gösteren arama ekranı, hoparlör, Bluetooth, beklemeye alma, çağrı bekletme, konferans.</li>
+<li>T9 arama ve tuş takımı önerileri.</li>
+<li>Çift SIM: her aramada SIM seçilir, her kişi için hatırlanır.</li>
+<li>Mesajla reddetme, Seca Mesajlar tarafından hemen gönderilir.</li>
+<li>Arama türüne veya profile göre filtrelenen geçmiş; favoriler tek dokunuş uzağınızda.</li>
+</ul>
+
+<b>Ayrıca</b>
+<ul>
+<li>Wi-Fi ve HD arama göstergeleri, sesli mesaj, servis kodları.</li>
+<li>Uygulama kilidi (arama ekranına her zaman ulaşılabilir).</li>
+<li>Duvar kâğıdı renkleri ya da Seca paletleri, koyu tema.</li>
+</ul>
+
+Reklam yok, izleyici yok, hesap yok. Açık kaynak.
