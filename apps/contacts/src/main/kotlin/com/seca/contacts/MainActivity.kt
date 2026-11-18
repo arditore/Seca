@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
 import androidx.activity.ComponentActivity
+import com.seca.core.suite.SecaCrashReport
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -25,6 +26,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Keeps the next crash, so a report can carry a line number instead of a sentence.
+        SecaCrashReport.install(this, getString(R.string.app_name))
         switchWithoutAnimation()
         enableEdgeToEdge()
         if (savedInstanceState == null) handle(intent)

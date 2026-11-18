@@ -72,4 +72,9 @@
     <string name="suite_plain_names">Noms simples</string>
     <string name="suite_plain_names_hint">Sans « Seca » devant</string>
     <string name="suite_names_section">Noms des applications</string>
+    <string name="crash_title">Seca s\'est arrêté la dernière fois</string>
+    <string name="crash_body">Voici ce qui a été enregistré. Rien n\'a été envoyé. Lisez-le, et ne l\'envoyez que si vous le voulez.</string>
+    <string name="crash_send">Envoyer</string>
+    <string name="crash_discard">Jeter</string>
+    <string name="crash_subject">Rapport de plantage Seca</string>
 </resources>

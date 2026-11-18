@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.seca.core.suite.SecaCrashNotice
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaMotion
@@ -44,6 +45,8 @@ fun ContactsApp(
     /** Set when another app asked this one for a contact: the list answers instead of browsing. */
     onPick: ((Long) -> Unit)? = null,
 ) {
+    // The last crash, offered once, read before it goes anywhere.
+    SecaCrashNotice()
     val context = LocalContext.current
     val ui by viewModel.ui.collectAsState()
 

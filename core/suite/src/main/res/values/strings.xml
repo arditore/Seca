@@ -72,4 +72,9 @@
     <string name="suite_plain_names">Plain names</string>
     <string name="suite_plain_names_hint">Without "Seca" in front</string>
     <string name="suite_names_section">App names</string>
+    <string name="crash_title">Seca stopped last time</string>
+    <string name="crash_body">Here is what it recorded. Nothing has been sent anywhere. Read it, and send it only if you want to.</string>
+    <string name="crash_send">Send</string>
+    <string name="crash_discard">Discard</string>
+    <string name="crash_subject">Seca crash report</string>
 </resources>

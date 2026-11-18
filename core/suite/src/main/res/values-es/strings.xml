@@ -72,4 +72,9 @@
     <string name="suite_plain_names">Nombres sencillos</string>
     <string name="suite_plain_names_hint">Sin «Seca» delante</string>
     <string name="suite_names_section">Nombres de las aplicaciones</string>
+    <string name="crash_title">Seca se cerró la última vez</string>
+    <string name="crash_body">Esto es lo que quedó registrado. No se ha enviado nada. Léelo y envíalo solo si quieres.</string>
+    <string name="crash_send">Enviar</string>
+    <string name="crash_discard">Descartar</string>
+    <string name="crash_subject">Informe de fallo de Seca</string>
 </resources>

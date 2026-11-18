@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.seca.core.suite.SecaCrashNotice
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaMotion
@@ -65,6 +66,8 @@ fun PhoneApp(
     onCallRequestHandled: () -> Unit,
     viewModel: PhoneViewModel = viewModel(),
 ) {
+    // The last crash, offered once, read before it goes anywhere.
+    SecaCrashNotice()
     val context = LocalContext.current
     val ui by viewModel.ui.collectAsState()
     val scope = rememberCoroutineScope()

@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.telecom.TelecomManager
 import androidx.activity.ComponentActivity
+import com.seca.core.suite.SecaCrashReport
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +43,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Keeps the next crash, so a report can carry a line number instead of a sentence.
+        SecaCrashReport.install(this, getString(R.string.app_name))
         switchWithoutAnimation()
         enableEdgeToEdge()
         // Read before the first frame: otherwise the screen asking for access flashes before the history.
