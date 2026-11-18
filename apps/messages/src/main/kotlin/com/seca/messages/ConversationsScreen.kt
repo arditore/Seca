@@ -389,6 +389,43 @@ private fun ConversationList(
                 )
             }
         }
+        // At the top, not after every conversation. It was below the lot, so somebody with a
+        // few hundred of them could only get back to a conversation they had swiped aside by
+        // searching for a word in it — which makes the swipe a one-way door, and the swipe was
+        // chosen over deleting precisely because it is reversible.
+        val folders = (if (archivedCount > 0) 1 else 0) + (if (spamCount > 0) 1 else 0)
+        if (archivedCount > 0) {
+            item(key = "archived", contentType = "folder") {
+                SecaGroupItem(
+                    index = 0,
+                    count = folders,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    onClick = { viewModel.open(MessagesScreen.Archived) },
+                ) {
+                    SecaSettingRow(
+                        icon = SecaIcons.Archive,
+                        title = stringResource(R.string.archived_conversations),
+                        subtitle = pluralStringResource(R.plurals.conversations_count, archivedCount, archivedCount),
+                    )
+                }
+            }
+        }
+        if (spamCount > 0) {
+            item(key = "spam", contentType = "folder") {
+                SecaGroupItem(
+                    index = folders - 1,
+                    count = folders,
+                    modifier = if (folders == 1) Modifier.padding(bottom = 8.dp) else Modifier.padding(bottom = 8.dp),
+                    onClick = { viewModel.open(SpamRoute) },
+                ) {
+                    SecaSettingRow(
+                        icon = SecaIcons.Block,
+                        title = stringResource(R.string.spam),
+                        subtitle = pluralStringResource(R.plurals.spam_count, spamCount, spamCount),
+                    )
+                }
+            }
+        }
         if (pinned.isNotEmpty()) {
             item(key = "pinned-label", contentType = "label") { SecaSectionLabel(stringResource(R.string.pinned)) }
             itemsIndexed(pinned, key = { _, c -> "pinned-${c.threadId}" }, contentType = { _, _ -> "conversation" }) { index, c ->
@@ -407,39 +444,6 @@ private fun ConversationList(
             itemsIndexed(hits, key = { _, m -> "hit-${m.id}" }, contentType = { _, _ -> "hit" }) { index, message ->
                 SecaGroupItem(index = index, count = hits.size) {
                     MessageHit(message, ui, query, onOpen = { viewModel.openConversation(message.address) })
-                }
-            }
-        }
-        val folders = (if (archivedCount > 0) 1 else 0) + (if (spamCount > 0) 1 else 0)
-        if (archivedCount > 0) {
-            item(key = "archived", contentType = "folder") {
-                SecaGroupItem(
-                    index = 0,
-                    count = folders,
-                    modifier = Modifier.padding(top = 16.dp),
-                    onClick = { viewModel.open(MessagesScreen.Archived) },
-                ) {
-                    SecaSettingRow(
-                        icon = SecaIcons.Archive,
-                        title = stringResource(R.string.archived_conversations),
-                        subtitle = pluralStringResource(R.plurals.conversations_count, archivedCount, archivedCount),
-                    )
-                }
-            }
-        }
-        if (spamCount > 0) {
-            item(key = "spam", contentType = "folder") {
-                SecaGroupItem(
-                    index = folders - 1,
-                    count = folders,
-                    modifier = if (folders == 1) Modifier.padding(top = 16.dp) else Modifier,
-                    onClick = { viewModel.open(SpamRoute) },
-                ) {
-                    SecaSettingRow(
-                        icon = SecaIcons.Block,
-                        title = stringResource(R.string.spam),
-                        subtitle = pluralStringResource(R.plurals.spam_count, spamCount, spamCount),
-                    )
                 }
             }
         }
