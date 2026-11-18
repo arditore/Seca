@@ -62,7 +62,7 @@ data class CallView(
     /** The name the network sent along, when there is one. */
     val networkName: String?,
     val incoming: Boolean,
-    /** When the call was answered, or 0. */
+    /** When the conversation began (the call connected), or 0 while it has not. Fixed for the rest of the call. */
     val connectTime: Long,
     val canHold: Boolean,
     val canMerge: Boolean,
@@ -132,6 +132,17 @@ object CallSession {
     private val main = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val tracked = mutableListOf<Call>()
     private val callers = mutableMapOf<String, Caller?>()
+
+    /**
+     * When each call's conversation began: the first moment this app saw it active. Android's
+     * documentation says Call.Details.connectTimeMillis "is updated periodically, but user
+     * interfaces should not rely on this to display the call time clock", so the duration is
+     * pinned here and never changes until the call ends.
+     */
+    private val connectedAt = mutableMapOf<Call, Long>()
+
+    /** Calls seen before they were active; only for those is "now" the start of the conversation. */
+    private val seenBeforeActive = mutableSetOf<Call>()
     private var appContext: Context? = null
     private var service: SecaInCallService? = null
 
@@ -181,6 +192,8 @@ object CallSession {
         val last = viewOf(call)
         call.unregisterCallback(callback)
         tracked.remove(call)
+        connectedAt.remove(call)
+        seenBeforeActive.remove(call)
         if (tracked.isEmpty()) _ended.value = last
         changed()
     }
@@ -371,6 +384,18 @@ object CallSession {
     /** A route's name in the phone's language; the service is attached before any route is reported. */
     private fun nameOf(@StringRes id: Int): String = appContext?.getString(id).orEmpty()
 
+    private fun connectTimeOf(call: Call, state: Int, telecomTime: Long): Long {
+        connectedAt[call]?.let { return it }
+        if (state != Call.STATE_ACTIVE) {
+            seenBeforeActive += call
+            return 0
+        }
+        // First seen already talking (the app was restarted mid-call): Telecom's time is all there is.
+        val start = if (call in seenBeforeActive) System.currentTimeMillis() else telecomTime.takeIf { it > 0 } ?: System.currentTimeMillis()
+        connectedAt[call] = start
+        return start
+    }
+
     private fun viewOf(call: Call): CallView {
         val details = call.details
         val number = numberOf(call)
@@ -388,7 +413,7 @@ object CallSession {
                 it.isNotBlank() && details.callerDisplayNamePresentation == TelecomManager.PRESENTATION_ALLOWED
             },
             incoming = details.callDirection == Call.Details.DIRECTION_INCOMING,
-            connectTime = details.connectTimeMillis,
+            connectTime = connectTimeOf(call, details.state, details.connectTimeMillis),
             canHold = details.can(Call.Details.CAPABILITY_HOLD),
             canMerge = details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE),
             canSwap = details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE),

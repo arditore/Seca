@@ -121,14 +121,14 @@ internal object CallNotifications {
 
     private fun ongoing(context: Context, view: CallView, callStyle: Boolean): Notification {
         val title = view.title(context, CallSession.numbers)
-        val answered = view.connectTime > 0 && view.state == Call.STATE_ACTIVE
+        val answered = view.connectTime > 0
         val hangUp = broadcast(context, CallActionReceiver.HANG_UP, 3)
         val builder = base(context, ONGOING)
             .setContentTitle(title)
             .setContentText(view.status(context))
             .setUsesChronometer(answered)
             .setShowWhen(answered)
-            .setWhen(if (answered) view.connectTime else System.currentTimeMillis())
+            .setWhen(if (answered) view.connectTime else 0)
             .setContentIntent(screenIntent(context, answer = false))
         if (callStyle) {
             builder

@@ -58,7 +58,7 @@ internal fun OngoingCallBanner(modifier: Modifier = Modifier) {
             value = System.currentTimeMillis()
         }
     }
-    val answered = call.connectTime > 0 && call.state == Call.STATE_ACTIVE
+    val answered = call.connectTime > 0
     val colors = MaterialTheme.colorScheme
     Surface(
         onClick = { openCallScreen(context) },

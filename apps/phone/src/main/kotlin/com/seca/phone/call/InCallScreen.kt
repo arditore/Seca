@@ -284,7 +284,7 @@ private fun ProfileLine(view: CallView, subtitle: String) {
 @Composable
 private fun StatusLine(view: CallView) {
     val context = LocalContext.current
-    val text = if (view.state == Call.STATE_ACTIVE && view.connectTime > 0) {
+    val text = if (view.connectTime > 0 && view.state != Call.STATE_DISCONNECTED && view.state != Call.STATE_DISCONNECTING) {
         val seconds by produceState(0L, view.connectTime) {
             while (true) {
                 value = (System.currentTimeMillis() - view.connectTime) / 1000
