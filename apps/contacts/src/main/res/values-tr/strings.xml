@@ -224,4 +224,7 @@
         <item quantity="one">%d kişi</item>
         <item quantity="other">%d kişi</item>
     </plurals>
+    <string name="sort_by">Sıralama ölçütü</string>
+    <string name="sort_by_given">Ad</string>
+    <string name="sort_by_family">Soyad</string>
 </resources>

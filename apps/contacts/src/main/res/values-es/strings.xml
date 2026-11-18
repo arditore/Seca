@@ -235,4 +235,7 @@
         <item quantity="many">%d de contactos</item>
         <item quantity="other">%d contactos</item>
     </plurals>
+    <string name="sort_by">Ordenar por</string>
+    <string name="sort_by_given">Nombre</string>
+    <string name="sort_by_family">Apellido</string>
 </resources>

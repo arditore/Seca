@@ -224,4 +224,7 @@
         <item quantity="one">%d Kontakt</item>
         <item quantity="other">%d Kontakte</item>
     </plurals>
+    <string name="sort_by">Sortieren nach</string>
+    <string name="sort_by_given">Vorname</string>
+    <string name="sort_by_family">Nachname</string>
 </resources>

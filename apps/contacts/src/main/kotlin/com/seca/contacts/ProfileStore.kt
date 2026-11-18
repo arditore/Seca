@@ -2,6 +2,7 @@ package com.seca.contacts
 
 import android.content.Context
 import androidx.core.content.edit
+import com.seca.core.contacts.NameOrder
 import com.seca.core.contacts.SharedProfilesContract
 import com.seca.core.design.SecaAvatarShape
 import com.seca.core.design.SecaPaletteSpec
@@ -107,6 +108,24 @@ class ProfileStore(context: Context) {
     /** Whether each person gets a colour of their own rather than their profile's (#52). */
     fun colourPerPerson(): Boolean = prefs.getBoolean(KEY_COLOUR_PER_PERSON, false)
 
+    /**
+     * Which half of a name the list is ordered by, asked for rather than inherited.
+     *
+     * Android's own sort keys follow a setting buried in the phone's contacts app, so the
+     * same code sorted by given name on one phone and by surname on another and nobody could
+     * say why. The halves of the name are read and ordered here instead, so this means what
+     * it says everywhere.
+     *
+     * Given name is the default because it is what most of these phones were already doing;
+     * a setting arriving in an update should not reorder somebody's address book unasked.
+     */
+    fun nameOrder(): NameOrder =
+        if (prefs.getBoolean(KEY_BY_GIVEN_NAME, true)) NameOrder.GivenName else NameOrder.FamilyName
+
+    fun setNameOrder(order: NameOrder) {
+        prefs.edit { putBoolean(KEY_BY_GIVEN_NAME, order == NameOrder.GivenName) }
+    }
+
     fun setColourPerPerson(on: Boolean) {
         prefs.edit { putBoolean(KEY_COLOUR_PER_PERSON, on) }
         announceChange()
@@ -193,6 +212,7 @@ class ProfileStore(context: Context) {
         private const val KEY_CURRENT = "current_profile"
         private const val KEY_AVATAR_SHAPE = "avatar_shape"
     private const val KEY_COLOUR_PER_PERSON = "colour_per_person"
+    private const val KEY_BY_GIVEN_NAME = "sort_by_given_name"
     private const val KEY_SHAPES = "avatar_shapes"
     private const val KEY_FAVORITE_ORDER = "favorite_order"
     private const val KEY_PALETTE = "palette"

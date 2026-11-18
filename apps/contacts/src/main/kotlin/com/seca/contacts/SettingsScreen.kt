@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.seca.core.contacts.NameOrder
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.component.SecaGroupItem
@@ -319,7 +320,26 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                     }
                 }
                 SettingsPage.TidyUp -> {
-                    SecaGroupItem(index = 0, count = 2) {
+                    // Two choices, so touching the row takes the other one: a menu to pick
+                    // between exactly two things is a tap more than the job needs.
+                    SecaGroupItem(
+                        index = 0,
+                        count = 3,
+                        onClick = {
+                            viewModel.setNameOrder(
+                                if (ui.nameOrder == NameOrder.FamilyName) NameOrder.GivenName else NameOrder.FamilyName,
+                            )
+                        },
+                    ) {
+                        SecaSettingRow(
+                            icon = SecaIcons.SwapVert,
+                            title = stringResource(R.string.sort_by),
+                            subtitle = stringResource(
+                                if (ui.nameOrder == NameOrder.FamilyName) R.string.sort_by_family else R.string.sort_by_given,
+                            ),
+                        )
+                    }
+                    SecaGroupItem(index = 1, count = 3) {
                         SecaSwitchRow(
                             icon = SecaIcons.PersonOutline,
                             title = stringResource(R.string.show_my_card),
@@ -328,7 +348,7 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                             onCheckedChange = viewModel::setShowMyCard,
                         )
                     }
-                    SecaGroupItem(index = 1, count = 2, onClick = { viewModel.open(DuplicatesRoute) }) {
+                    SecaGroupItem(index = 2, count = 3, onClick = { viewModel.open(DuplicatesRoute) }) {
                         SecaSettingRow(
                             icon = SecaIcons.Contacts,
                             title = stringResource(R.string.duplicates),

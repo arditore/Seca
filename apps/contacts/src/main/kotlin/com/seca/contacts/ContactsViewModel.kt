@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.seca.core.contacts.NameOrder
 import com.seca.core.contacts.ContactDetail
 import com.seca.core.contacts.ContactInput
 import com.seca.core.contacts.squareJpeg
@@ -71,6 +72,8 @@ data class ContactsUi(
     val accounts: Map<Place, Int> = emptyMap(),
     /** The ones the owner has turned off, whose rows are not drawn. */
     val hiddenAccounts: Set<Place> = emptySet(),
+    /** Which half of a name the list is ordered by. */
+    val nameOrder: NameOrder = NameOrder.GivenName,
     val contacts: List<SecaContact> = emptyList(),
     val profiles: List<Profile> = listOf(ProfileStore.Principal),
     val currentProfileId: String = ProfileStore.Principal.id,
@@ -563,6 +566,12 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /** Orders the list by one half of the name or the other. */
+    fun setNameOrder(order: NameOrder) {
+        store.setNameOrder(order)
+        viewModelScope.launch { load() }
+    }
+
     /** Draws an account's rows again, or stops (#74). */
     fun setAccountShown(account: Place, shown: Boolean) {
         HiddenAccounts.setHidden(getApplication(), account, hidden = !shown)
@@ -570,7 +579,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     }
 
     private suspend fun load() {
-        val contacts = repository.contacts(HiddenAccounts.hidden(getApplication()))
+        val contacts = repository.contacts(HiddenAccounts.hidden(getApplication()), store.nameOrder())
         // Every number is read here, off the main thread: the list then only
         // looks results up, and scrolling never waits on parsing.
         withContext(Dispatchers.Default) {
@@ -582,6 +591,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                 contacts = contacts,
                 accounts = repository.accountsHolding(),
                 hiddenAccounts = HiddenAccounts.hidden(getApplication()),
+                nameOrder = store.nameOrder(),
             )
         }
     }

@@ -126,7 +126,7 @@ class ContactsRepository(
 ) {
 
     /** Every visible contact, in the order the system sorts names. */
-    suspend fun contacts(): List<SecaContact> = contacts(emptySet())
+    suspend fun contacts(): List<SecaContact> = contacts(emptySet(), NameOrder.FamilyName)
 
     /**
      * Every contact, minus the accounts the owner has turned off (#74, #64).
@@ -141,13 +141,13 @@ class ContactsRepository(
      * a selection built by pasting account names into SQL is a quoting bug waiting for the
      * first person whose account has an apostrophe in it.
      */
-    suspend fun contacts(hidden: Set<Place>): List<SecaContact> = withContext(Dispatchers.IO) {
-        if (hidden.isEmpty()) return@withContext groupContacts(queryContacts(), queryPhones())
+    suspend fun contacts(hidden: Set<Place>, order: NameOrder): List<SecaContact> = withContext(Dispatchers.IO) {
+        if (hidden.isEmpty()) return@withContext groupContacts(ordered(queryContacts(order), order), queryPhones())
         val byRaw = rawContactAccounts()
         // Known by one account that is still on is enough to stay: turning WhatsApp off must
         // not take away a contact that Google also knows.
         val visible = byRaw.filterValues { places -> places.any { it !in hidden } }.keys
-        val contacts = queryContacts().filter { it.id in visible }
+        val contacts = ordered(queryContacts(order).filter { it.id in visible }, order)
         val phones = queryPhones().filter { it.account == null || it.account !in hidden }
         groupContacts(contacts, phones)
     }
@@ -742,7 +742,51 @@ class ContactsRepository(
         }
     }
 
-    private fun queryContacts(): List<ContactRow> {
+    /**
+     * Each contact's name in two halves, for ordering the list.
+     *
+     * Android's sort keys cannot be used for this. `SORT_KEY_PRIMARY` and its alternative are
+     * both defined relative to a setting inside the phone's own contacts app, so the same code
+     * sorts by given name on one phone and by family name on another — which is exactly what
+     * happened: a user wrote saying the sort by surname suited him, on a phone where this code
+     * had been sorting by given name for everybody else. A setting offering "First name" has
+     * to mean first name, so the halves are read and the ordering is done here.
+     *
+     * One query for every contact at once. A card with no structured name at all keeps its
+     * display name, which is what somebody saved as a single word has.
+     */
+    private fun namesByContact(): Map<Long, Pair<String, String>> = runCatching {
+        val names = HashMap<Long, Pair<String, String>>()
+        resolver.query(
+            Data.CONTENT_URI,
+            arrayOf(Data.CONTACT_ID, StructuredName.GIVEN_NAME, StructuredName.FAMILY_NAME),
+            "${Data.MIMETYPE} = ?",
+            arrayOf(StructuredName.CONTENT_ITEM_TYPE),
+            null,
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val given = cursor.getString(1).orEmpty()
+                val family = cursor.getString(2).orEmpty()
+                if (given.isNotBlank() || family.isNotBlank()) names[cursor.getLong(0)] = given to family
+            }
+        }
+        names
+    }.getOrDefault(emptyMap())
+
+    /** Orders [rows] by the half of the name the owner asked for, then by the other. */
+    private fun ordered(rows: List<ContactRow>, order: NameOrder): List<ContactRow> {
+        val names = namesByContact()
+        fun keys(row: ContactRow): Pair<String, String> {
+            val (given, family) = names[row.id] ?: return row.name to ""
+            return if (order == NameOrder.GivenName) given to family else family to given
+        }
+        val comparator = compareBy<ContactRow, String>(String.CASE_INSENSITIVE_ORDER) { row ->
+            keys(row).first.ifBlank { row.name }
+        }.thenBy(String.CASE_INSENSITIVE_ORDER) { row -> keys(row).second }
+        return rows.sortedWith(comparator)
+    }
+
+    private fun queryContacts(order: NameOrder): List<ContactRow> {
         val projection = arrayOf(
             Contacts._ID,
             Contacts.LOOKUP_KEY,
@@ -1154,6 +1198,17 @@ class ContactWriteException(message: String) : Exception(message)
  * Both null means the phone itself, with no account behind it - a contact that syncs
  * nowhere and leaves with no one.
  */
+/**
+ * Which half of a name the list is ordered by.
+ *
+ * Seca used to pass `SORT_KEY_PRIMARY` and leave it at that, which quietly follows a setting
+ * buried in the phone's own contacts app. Two people with the same contacts therefore got
+ * different orders and neither could say why: one wrote in saying the sort by surname suited
+ * him, on a phone where this code sorts by given name. So it is asked for rather than
+ * inherited.
+ */
+enum class NameOrder { GivenName, FamilyName }
+
 data class Place(val type: String?, val name: String?) {
 
     /** Kept on the phone and nowhere else. */
