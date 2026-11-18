@@ -160,6 +160,9 @@ object CallSession {
         this.service = service
         appContext = service.applicationContext
         numbers = PhoneNumbers(PhoneNumbers.detectRegion(service))
+        // The carrier names are a file, and the next thing to ask for them is a call arriving
+        // on the thread that draws. Read now, while nothing is happening.
+        CarrierNames.warm(service)
     }
 
     internal fun detach(service: SecaInCallService) {
