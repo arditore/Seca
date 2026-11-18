@@ -86,7 +86,7 @@
     <string name="black_theme">Negro absoluto</string>
     <string name="black_theme_hint">Fondos negros en modo oscuro</string>
     <string name="delete">Eliminar</string>
-    <string name="delete_contact_text">«%1$s» se eliminará de este teléfono. No se puede deshacer.</string>
+    <string name="delete_contact_text">«%1$s» se va de este teléfono, para siempre.</string>
     <string name="delete_contact_title">¿Eliminar este contacto?</string>
     <string name="delete_named">Eliminar %1$s</string>
     <string name="delete_profile_text">Sus contactos vuelven a Principal. No se elimina ningún contacto.</string>

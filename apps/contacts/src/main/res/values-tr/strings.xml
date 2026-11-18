@@ -79,7 +79,7 @@
     <string name="black_theme">Saf siyah</string>
     <string name="black_theme_hint">Koyu modda siyah arka planlar</string>
     <string name="delete">Sil</string>
-    <string name="delete_contact_text">“%1$s” bu telefondan silinecek. Bu işlem geri alınamaz.</string>
+    <string name="delete_contact_text">“%1$s” bu telefondan temelli gider.</string>
     <string name="delete_contact_title">Bu kişi silinsin mi?</string>
     <string name="delete_named">%1$s kişisini sil</string>
     <string name="delete_profile_text">Profildeki kişiler Ana profile geri döner. Hiçbir kişi silinmez.</string>

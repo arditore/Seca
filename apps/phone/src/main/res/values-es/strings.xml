@@ -87,7 +87,7 @@
     <string name="clear_all">Borrar todo</string>
     <string name="clear_history">Borrar el historial de llamadas</string>
     <string name="clear_history_hint">En este teléfono, para todas las aplicaciones</string>
-    <string name="clear_history_text">Todas las llamadas hechas y recibidas se borrarán de este teléfono. No se puede deshacer.</string>
+    <string name="clear_history_text">Todas las llamadas hechas y recibidas, para siempre.</string>
     <string name="clear_history_title">¿Borrar todo el historial?</string>
     <string name="colors">Colores</string>
     <string name="colors_need_contacts">Instala Seca Contactos para elegir los colores de la suite.</string>

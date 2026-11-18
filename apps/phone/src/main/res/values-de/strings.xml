@@ -85,7 +85,7 @@
     <string name="clear_all">Alle löschen</string>
     <string name="clear_history">Anrufverlauf löschen</string>
     <string name="clear_history_hint">Auf diesem Gerät, für jede App</string>
-    <string name="clear_history_text">Alle getätigten und erhaltenen Anrufe werden von diesem Gerät entfernt. Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="clear_history_text">Alle geführten und empfangenen Anrufe, endgültig.</string>
     <string name="clear_history_title">Gesamten Verlauf löschen?</string>
     <string name="colors">Farben</string>
     <string name="colors_need_contacts">Installiere Seca Kontakte, um die Farben der Suite zu wählen.</string>

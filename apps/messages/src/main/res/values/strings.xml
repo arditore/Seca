@@ -112,7 +112,7 @@
     <string name="default_on_hint">Receiving, sending and notifications</string>
     <string name="delete">Delete</string>
     <string name="delete_conversation">Delete conversation</string>
-    <string name="delete_conversation_text">All messages with %1$s will be deleted from this phone.</string>
+    <string name="delete_conversation_text">Every message with %1$s goes with it.</string>
     <string name="delete_conversation_title">Delete the conversation?</string>
     <string name="delivered_at">Delivered · %1$s</string>
     <string name="delivery_reports">Delivery reports</string>

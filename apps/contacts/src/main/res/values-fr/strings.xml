@@ -86,7 +86,7 @@
     <string name="black_theme">Noir absolu</string>
     <string name="black_theme_hint">Fonds noirs en mode sombre</string>
     <string name="delete">Supprimer</string>
-    <string name="delete_contact_text">« %1$s » sera supprimé de ce téléphone. C\'est définitif.</string>
+    <string name="delete_contact_text">« %1$s » quitte ce téléphone, définitivement.</string>
     <string name="delete_contact_title">Supprimer ce contact ?</string>
     <string name="delete_named">Supprimer %1$s</string>
     <string name="delete_profile_text">Ses contacts reviennent dans Principal. Aucun contact n\'est supprimé.</string>

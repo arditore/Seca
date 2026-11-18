@@ -114,7 +114,7 @@
     <string name="default_on_hint">Odbieranie, wysyłanie oraz powiadomienia</string>
     <string name="delete">Usuń</string>
     <string name="delete_conversation">Usuń konwersację</string>
-    <string name="delete_conversation_text">Wszystkie wiadomości wymienione z użytkownikiem %1$s zostaną usunięte z tego telefonu.</string>
+    <string name="delete_conversation_text">Wszystkie wiadomości z %1$s znikną razem z nią.</string>
     <string name="delete_conversation_title">Usunąć konwersację?</string>
     <string name="delivered_at">Dostarczono · %1$s</string>
     <string name="delivery_reports">Raporty doręczenia</string>

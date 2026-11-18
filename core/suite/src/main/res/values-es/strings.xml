@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="auto_channel">Copias de seguridad</string>
-    <string name="auto_choose_folder">Elegir una carpeta</string>
     <string name="auto_daily">Cada día</string>
     <string name="auto_failed_title">No se escribió una copia</string>
     <string name="auto_folder">Carpeta</string>
@@ -20,7 +19,7 @@
     <string name="auto_passphrase_title">Una contraseña para estas copias</string>
     <string name="auto_portable">Escribir también una copia legible</string>
     <string name="auto_portable_hint">Contactos, llamadas y SMS en formatos abiertos</string>
-    <string name="auto_portable_warning">Esta segunda carpeta la puede leer cualquier cosa que la encuentre: no está cifrada, y así debe ser, para que cualquier programa pueda abrirla dentro de diez años. Contiene sus contactos, su registro de llamadas y sus SMS. No contiene sus perfiles, su filtrado de llamadas, sus conversaciones fijadas ni sus claves de Seca Link, porque ningún formato portátil las transporta.</string>
+    <string name="auto_portable_warning">Cualquier cosa que encuentre esta carpeta puede leerla. Es a propósito: sin cifrar, cualquier programa podrá abrirla dentro de diez años. Contiene contactos, llamadas y mensajes.</string>
     <string name="auto_rhythm">Cada cuánto</string>
     <string name="auto_run_now">Escribir una ahora</string>
     <string name="auto_section">Copias que se escriben solas</string>

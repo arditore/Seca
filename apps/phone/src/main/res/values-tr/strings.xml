@@ -85,7 +85,7 @@
     <string name="clear_all">Tümünü temizle</string>
     <string name="clear_history">Arama geçmişini temizle</string>
     <string name="clear_history_hint">Bu telefonda, tüm uygulamalar için</string>
-    <string name="clear_history_text">Yapılan ve alınan tüm aramalar bu telefondan kaldırılacak. Bu işlem geri alınamaz.</string>
+    <string name="clear_history_text">Yapılan ve gelen tüm aramalar, temelli.</string>
     <string name="clear_history_title">Tüm geçmiş temizlensin mi?</string>
     <string name="colors">Renkler</string>
     <string name="colors_need_contacts">Paketin renklerini seçmek için Seca Kişiler\'i kurun.</string>

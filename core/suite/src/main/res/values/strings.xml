@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="auto_channel">Backups</string>
-    <string name="auto_choose_folder">Choose a folder</string>
     <string name="auto_daily">Every day</string>
     <string name="auto_failed_title">A backup was not written</string>
     <string name="auto_folder">Folder</string>
@@ -20,7 +19,7 @@
     <string name="auto_passphrase_title">A passphrase for these backups</string>
     <string name="auto_portable">Also write a readable copy</string>
     <string name="auto_portable_hint">Contacts, calls and texts in open formats</string>
-    <string name="auto_portable_warning">This second folder is readable by anything that finds it: it is not encrypted, and it is meant not to be, so that any program can open it in ten years. It holds your contacts, your call log and your texts. It does not hold your profiles, your call filtering, your pinned conversations or your Seca Link keys, because no portable format carries them.</string>
+    <string name="auto_portable_warning">Anything that finds this folder can read it. That is deliberate: unencrypted is what lets any program still open it in ten years. It holds contacts, calls and texts.</string>
     <string name="auto_rhythm">How often</string>
     <string name="auto_run_now">Write one now</string>
     <string name="auto_section">Backups that write themselves</string>

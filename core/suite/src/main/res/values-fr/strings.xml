@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="auto_channel">Sauvegardes</string>
-    <string name="auto_choose_folder">Choisir un dossier</string>
     <string name="auto_daily">Chaque jour</string>
     <string name="auto_failed_title">Une sauvegarde n\'a pas été écrite</string>
     <string name="auto_folder">Dossier</string>
@@ -20,7 +19,7 @@
     <string name="auto_passphrase_title">Une phrase secrète pour ces sauvegardes</string>
     <string name="auto_portable">Écrire aussi une copie lisible</string>
     <string name="auto_portable_hint">Contacts, appels et SMS dans des formats ouverts</string>
-    <string name="auto_portable_warning">Ce second dossier est lisible par tout ce qui le trouve : il n\'est pas chiffré, et c\'est voulu, pour que n\'importe quel programme puisse l\'ouvrir dans dix ans. Il contient vos contacts, votre journal d\'appels et vos SMS. Il ne contient ni vos profils, ni votre filtrage d\'appels, ni vos conversations épinglées, ni vos clés Seca Link : aucun format portable ne les transporte.</string>
+    <string name="auto_portable_warning">Tout ce qui trouve ce dossier peut le lire. C’est voulu : non chiffré, il restera ouvrable par n’importe quel programme dans dix ans. Il contient contacts, appels et messages.</string>
     <string name="auto_rhythm">Fréquence</string>
     <string name="auto_run_now">En écrire une maintenant</string>
     <string name="auto_section">Sauvegardes automatiques</string>

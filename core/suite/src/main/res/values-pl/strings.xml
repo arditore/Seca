@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="auto_channel">Kopie zapasowe</string>
-    <string name="auto_choose_folder">Wybierz folder</string>
     <string name="auto_daily">Codziennie</string>
     <string name="auto_failed_title">Kopia nie została zapisana</string>
     <string name="auto_folder">Folder</string>
@@ -20,7 +19,7 @@
     <string name="auto_passphrase_title">Hasło do tych kopii</string>
     <string name="auto_portable">Zapisuj też czytelną kopię</string>
     <string name="auto_portable_hint">Kontakty, połączenia i SMS-y w otwartych formatach</string>
-    <string name="auto_portable_warning">Ten drugi folder może odczytać wszystko, co go znajdzie: nie jest zaszyfrowany i taki ma być, żeby za dziesięć lat otworzył go dowolny program. Zawiera kontakty, rejestr połączeń i SMS-y. Nie zawiera profili, filtrowania połączeń, przypiętych rozmów ani kluczy Seca Link, bo żaden przenośny format ich nie przenosi.</string>
+    <string name="auto_portable_warning">Cokolwiek znajdzie ten folder, może go odczytać. Tak ma być: bez szyfrowania otworzy go każdy program za dziesięć lat. Zawiera kontakty, połączenia i wiadomości.</string>
     <string name="auto_rhythm">Jak często</string>
     <string name="auto_run_now">Zapisz kopię teraz</string>
     <string name="auto_section">Kopie zapisywane automatycznie</string>

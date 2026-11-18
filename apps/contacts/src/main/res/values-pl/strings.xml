@@ -81,7 +81,7 @@
     <string name="current_profile">Bieżący profil</string>
     <string name="current_type">Bieżący typ</string>
     <string name="delete">Usuń</string>
-    <string name="delete_contact_text">Kontakt „%1$s” zostanie usunięty z tego telefonu. Tego kroku nie można cofnąć.</string>
+    <string name="delete_contact_text">„%1$s” znika z tego telefonu, na zawsze.</string>
     <string name="delete_contact_title">Usunąć ten kontakt?</string>
     <string name="delete_named">Usuń „%1$s”</string>
     <string name="delete_profile_text">Przypisane do niego kontakty wrócą do profilu Głównego. Żaden kontakt nie zostanie usunięty.</string>

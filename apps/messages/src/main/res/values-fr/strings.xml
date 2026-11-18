@@ -116,7 +116,7 @@
     <string name="default_on_hint">Réception, envoi et notifications</string>
     <string name="delete">Supprimer</string>
     <string name="delete_conversation">Supprimer la conversation</string>
-    <string name="delete_conversation_text">Tous les messages avec %1$s seront supprimés de ce téléphone.</string>
+    <string name="delete_conversation_text">Tous les messages avec %1$s partent avec elle.</string>
     <string name="delete_conversation_title">Supprimer la conversation ?</string>
     <string name="delivered_at">Reçu · %1$s</string>
     <string name="delivery_reports">Accusés de réception</string>

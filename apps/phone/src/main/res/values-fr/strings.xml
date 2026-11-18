@@ -87,7 +87,7 @@
     <string name="clear_all">Tout effacer</string>
     <string name="clear_history">Effacer l\'historique des appels</string>
     <string name="clear_history_hint">Sur ce téléphone, pour toutes les applications</string>
-    <string name="clear_history_text">Tous les appels passés et reçus seront retirés de ce téléphone. C\'est définitif.</string>
+    <string name="clear_history_text">Tous les appels passés et reçus, définitivement.</string>
     <string name="clear_history_title">Effacer tout l\'historique ?</string>
     <string name="colors">Couleurs</string>
     <string name="colors_need_contacts">Installez Seca Contacts pour choisir les couleurs de la suite.</string>

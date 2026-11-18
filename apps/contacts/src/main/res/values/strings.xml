@@ -79,7 +79,7 @@
     <string name="black_theme">Pure black</string>
     <string name="black_theme_hint">Black backgrounds in dark mode</string>
     <string name="delete">Delete</string>
-    <string name="delete_contact_text">“%1$s” will be deleted from this phone. This cannot be undone.</string>
+    <string name="delete_contact_text">“%1$s” goes from this phone, for good.</string>
     <string name="delete_contact_title">Delete this contact?</string>
     <string name="delete_named">Delete %1$s</string>
     <string name="delete_profile_text">Its contacts go back to Main. No contact is deleted.</string>

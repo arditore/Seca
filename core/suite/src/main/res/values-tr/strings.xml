@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="auto_channel">Yedekler</string>
-    <string name="auto_choose_folder">Bir klasör seç</string>
     <string name="auto_daily">Her gün</string>
     <string name="auto_failed_title">Bir yedek yazılamadı</string>
     <string name="auto_folder">Klasör</string>
@@ -20,7 +19,7 @@
     <string name="auto_passphrase_title">Bu yedekler için bir parola</string>
     <string name="auto_portable">Okunabilir bir kopya da yaz</string>
     <string name="auto_portable_hint">Kişiler, aramalar ve mesajlar açık biçimlerde</string>
-    <string name="auto_portable_warning">Bu ikinci klasör, onu bulan her şey tarafından okunabilir: şifrelenmemiştir ve bilerek öyledir, böylece herhangi bir program onu on yıl sonra da açabilir. Kişilerinizi, arama geçmişinizi ve mesajlarınızı içerir. Profillerinizi, arama filtrelemenizi, sabitlenmiş sohbetlerinizi ve Seca Link anahtarlarınızı içermez; çünkü hiçbir taşınabilir biçim bunları taşıyamaz.</string>
+    <string name="auto_portable_warning">Bu klasörü bulan her şey okuyabilir. Bilerek böyle: şifresiz olduğu için on yıl sonra da her program açabilir. Kişiler, aramalar ve mesajlar içinde.</string>
     <string name="auto_rhythm">Ne sıklıkla</string>
     <string name="auto_run_now">Şimdi yedek oluştur</string>
     <string name="auto_section">Otomatik yedeklemeler</string>

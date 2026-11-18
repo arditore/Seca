@@ -77,7 +77,7 @@
     <string name="clear_all">Wyczyść wszystko</string>
     <string name="clear_history">Wyczyść historię połączeń</string>
     <string name="clear_history_hint">Na tym telefonie, dla wszystkich aplikacji</string>
-    <string name="clear_history_text">Wszystkie wykonane i odebrane połączenia zostaną usunięte z tego telefonu. Tego kroku nie można cofnąć.</string>
+    <string name="clear_history_text">Wszystkie połączenia wykonane i odebrane, na zawsze.</string>
     <string name="clear_history_title">Wyczyścić całą historię?</string>
     <string name="colors">Kolory</string>
     <string name="colors_need_contacts">Zainstaluj Seca Kontakty, aby wybrać kolory pakietu aplikacji.</string>

@@ -79,7 +79,7 @@
     <string name="black_theme">Reines Schwarz</string>
     <string name="black_theme_hint">Schwarze Hintergründe im Dunkelmodus</string>
     <string name="delete">Löschen</string>
-    <string name="delete_contact_text">„%1$s“ wird von diesem Gerät gelöscht. Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="delete_contact_text">„%1$s“ verschwindet von diesem Telefon, endgültig.</string>
     <string name="delete_contact_title">Diesen Kontakt löschen?</string>
     <string name="delete_named">%1$s löschen</string>
     <string name="delete_profile_text">Die zugehörigen Kontakte wandern zurück zu Main. Es wird kein Kontakt gelöscht.</string>

@@ -112,7 +112,7 @@
     <string name="default_on_hint">Empfangen, Senden und Benachrichtigungen</string>
     <string name="delete">Löschen</string>
     <string name="delete_conversation">Unterhaltung löschen</string>
-    <string name="delete_conversation_text">Alle Nachrichten mit %1$s werden von diesem Gerät gelöscht.</string>
+    <string name="delete_conversation_text">Alle Nachrichten mit %1$s gehen mit.</string>
     <string name="delete_conversation_title">Unterhaltung löschen?</string>
     <string name="delivered_at">Zugestellt · %1$s</string>
     <string name="delivery_reports">Zustellberichte</string>

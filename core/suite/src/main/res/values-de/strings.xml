@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="auto_channel">Sicherungen</string>
-    <string name="auto_choose_folder">Ordner auswählen</string>
     <string name="auto_daily">Täglich</string>
     <string name="auto_failed_title">Eine Sicherung wurde nicht geschrieben</string>
     <string name="auto_folder">Ordner</string>
@@ -20,7 +19,7 @@
     <string name="auto_passphrase_title">Ein Passwort für diese Sicherungen</string>
     <string name="auto_portable">Auch eine lesbare Kopie schreiben</string>
     <string name="auto_portable_hint">Kontakte, Anrufe und Nachrichten in offenen Formaten</string>
-    <string name="auto_portable_warning">Dieser zweite Ordner ist für alles lesbar, was ihn findet: er ist nicht verschlüsselt, und das ist Absicht, damit ihn in zehn Jahren noch jedes Programm öffnen kann. Er enthält Ihre Kontakte, Ihre Anrufliste und Ihre Nachrichten. Er enthält nicht Ihre Profile, Ihre Anruffilter, Ihre angepinnten Unterhaltungen oder Ihre Seca-Link-Schlüssel, denn kein portables Format trägt sie.</string>
+    <string name="auto_portable_warning">Alles, was diesen Ordner findet, kann ihn lesen. Das ist Absicht: unverschlüsselt öffnet ihn in zehn Jahren noch jedes Programm. Er enthält Kontakte, Anrufe und Nachrichten.</string>
     <string name="auto_rhythm">Wie oft</string>
     <string name="auto_run_now">Jetzt eine schreiben</string>
     <string name="auto_section">Sicherungen, die sich selbst schreiben</string>
