@@ -499,7 +499,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     fun sendAttachments(address: String, uris: List<Uri>, text: String) {
         if (uris.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
-            val budget = MmsAttachment.BUDGET / uris.size
+            val budget = MmsAttachment.budgetOf(getApplication()) / uris.size
             val read = uris.map { MmsAttachment.read(getApplication(), it, budget) }
             val parts = read.mapNotNull { it.part }
             val refused = read.mapNotNull { it.refused }
@@ -562,7 +562,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                 withContext(Dispatchers.Main) { toast(text(R.string.voice_not_sent)) }
                 return@launch
             }
-            if (bytes.size > MmsAttachment.BUDGET) {
+            if (bytes.size > MmsAttachment.budgetOf(getApplication())) {
                 val said = text(R.string.attachment_too_large, file.name, bytes.size / BYTES_PER_KB)
                 withContext(Dispatchers.Main) { toast(said) }
                 return@launch

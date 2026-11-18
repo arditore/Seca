@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.telephony.SmsManager
 import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -30,7 +31,7 @@ internal class Attached(val part: MmsPdu.Part?, val refused: TooLarge?)
  */
 internal object MmsAttachment {
 
-    suspend fun read(context: Context, uri: Uri, budget: Int = BUDGET): Attached =
+    suspend fun read(context: Context, uri: Uri, budget: Int): Attached =
         withContext(Dispatchers.IO) {
             val type = context.contentResolver.getType(uri) ?: "application/octet-stream"
             val name = nameOf(context, uri)
@@ -114,13 +115,39 @@ internal object MmsAttachment {
         if (endsWith(".$extension", ignoreCase = true)) this else "${substringBeforeLast('.')}.$extension"
 
     /**
-     * What one message may carry.
+     * What one message may carry on this phone, as the carrier says.
      *
-     * Below the smallest cap in common use rather than at it: the headers, the words and the
-     * encoding all take room on top of the picture, and a message refused for being a few bytes
-     * over teaches the owner nothing.
+     * Asked rather than assumed. The cap was a constant below the smallest in common use, which
+     * is safe everywhere and wrong almost everywhere: a carrier allowing a megabyte had its
+     * subscribers told a 650 KB file was too large, by their own phone, before anything was
+     * sent. Android keeps each carrier's figure in the MMS configuration and `SmsManager` hands
+     * it over without a permission.
+     *
+     * [FALLBACK] is kept for a phone that answers nothing, or answers something absurd, and the
+     * headroom is taken off whatever comes back: the headers, the words and the base64 the
+     * encoding adds all take room on top of the picture, and a message refused for being a few
+     * bytes over teaches the owner nothing.
      */
-    const val BUDGET: Int = 280 * 1024
+    fun budgetOf(context: Context): Int {
+        val said = runCatching {
+            context.getSystemService(SmsManager::class.java)
+                ?.carrierConfigValues
+                ?.getInt(SmsManager.MMS_CONFIG_MAX_MESSAGE_SIZE, 0)
+                ?: 0
+        }.getOrDefault(0)
+        // A figure is trusted even when it is smaller than the old constant: a carrier that
+        // says 200 KB means it, and sending 280 KB in the face of that only moves the refusal
+        // from this phone to its network, where it arrives as a message that failed for no
+        // stated reason.
+        if (said > 0) return (said * HEADROOM).toInt()
+        return FALLBACK
+    }
+
+    /** What to allow when the phone will not say: below the smallest cap in common use. */
+    const val FALLBACK: Int = 280 * 1024
+
+    /** Room left over the attachment for the headers, the words, and what the encoding adds. */
+    private const val HEADROOM = 0.85f
 
     private val EDGES = listOf(1600, 1200, 900, 640)
     private val QUALITIES = listOf(80, 65, 50)

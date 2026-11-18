@@ -29,7 +29,7 @@ internal object ContactCard {
                 descriptor.createInputStream().use { it.readBytes() }
             }
         }.getOrNull() ?: return@withContext null
-        if (bytes.isEmpty() || bytes.size > MmsAttachment.BUDGET) return@withContext null
+        if (bytes.isEmpty() || bytes.size > MmsAttachment.budgetOf(context)) return@withContext null
         val file = "${fileName(name)}.vcf"
         MmsPdu.Part(CONTENT_TYPE, file, "<$file>", bytes)
     }
