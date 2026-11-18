@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.component.SecaGroupItem
@@ -300,19 +301,30 @@ internal fun SettingsScreen(
                     val screening = remember { ScreeningSettings(context) }
                     var blockTelemarketing by remember { mutableStateOf(screening.blockTelemarketing) }
                     var silenceUnknown by remember { mutableStateOf(screening.silenceUnknown) }
-                    SecaGroupItem(index = 0, count = 3) {
-                        SecaSettingRow(
-                            icon = SecaIcons.Shield,
-                            title = stringResource(R.string.block_telemarketing),
-                            subtitle = stringResource(R.string.block_telemarketing_hint),
-                            modifier = Modifier.toggleable(value = blockTelemarketing, role = Role.Switch) {
-                                blockTelemarketing = it
-                                screening.blockTelemarketing = it
-                            },
-                            trailing = { Switch(checked = blockTelemarketing, onCheckedChange = null) },
-                        )
+                    // The telemarketing ranges are France's, set by its regulator, and the
+                    // filter can do nothing anywhere else: offering it to somebody in Poland is
+                    // a switch that promises something and then never fires (#77).
+                    //
+                    // By the SIM's country, not the phone's language. A French speaker in
+                    // Belgium has no use for it and an English speaker in France does, which is
+                    // the opposite of what the language would have said.
+                    val inFrance = remember { PhoneNumbers.detectRegion(context) == FRANCE }
+                    val rows = if (inFrance) 3 else 2
+                    if (inFrance) {
+                        SecaGroupItem(index = 0, count = rows) {
+                            SecaSettingRow(
+                                icon = SecaIcons.Shield,
+                                title = stringResource(R.string.block_telemarketing),
+                                subtitle = stringResource(R.string.block_telemarketing_hint),
+                                modifier = Modifier.toggleable(value = blockTelemarketing, role = Role.Switch) {
+                                    blockTelemarketing = it
+                                    screening.blockTelemarketing = it
+                                },
+                                trailing = { Switch(checked = blockTelemarketing, onCheckedChange = null) },
+                            )
+                        }
                     }
-                    SecaGroupItem(index = 1, count = 3) {
+                    SecaGroupItem(index = rows - 2, count = rows) {
                         SecaSettingRow(
                             icon = SecaIcons.VolumeOff,
                             title = stringResource(R.string.silence_unknown),
@@ -326,7 +338,7 @@ internal fun SettingsScreen(
                     }
                     var managingBlocked by remember { mutableStateOf(false) }
                     val blockedProfiles = ui.blockedProfileList
-                    SecaGroupItem(index = 2, count = 3, onClick = if (ui.profiles.connected) ({ managingBlocked = true }) else null) {
+                    SecaGroupItem(index = rows - 1, count = rows, onClick = if (ui.profiles.connected) ({ managingBlocked = true }) else null) {
                         SecaSettingRow(
                             icon = SecaIcons.Block,
                             title = stringResource(R.string.blocked_profiles),
@@ -445,3 +457,6 @@ private fun SettingsEntry(
         SecaSettingRow(icon = icon, title = title, subtitle = subtitle)
     }
 }
+
+/** The only country whose telemarketing ranges this filter knows (#77). */
+private const val FRANCE = "FR"
