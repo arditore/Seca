@@ -1,0 +1,1 @@
+Cuando la operadora envía el nombre de quien llama, Seca lo muestra en lugar del número, durante la llamada, en el historial y en las notificaciones de llamadas perdidas, con el número debajo. Al añadir a quien llama a contactos, el nombre ya aparece escrito. Los contactos nunca se leen para esto.

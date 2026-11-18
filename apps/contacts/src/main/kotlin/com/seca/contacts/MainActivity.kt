@@ -88,7 +88,11 @@ class MainActivity : ComponentActivity() {
     private fun handle(intent: Intent?) {
         when (intent?.action) {
             Intent.ACTION_INSERT, Intent.ACTION_INSERT_OR_EDIT -> viewModel.startWith(
-                Screen.Edit(id = null, prefillPhone = intent.getStringExtra(ContactsContract.Intents.Insert.PHONE)),
+                Screen.Edit(
+                    id = null,
+                    prefillPhone = intent.getStringExtra(ContactsContract.Intents.Insert.PHONE),
+                    prefillName = intent.getStringExtra(ContactsContract.Intents.Insert.NAME),
+                ),
             )
             // A card from somewhere else is read and added; one of our own rows is opened.
             Intent.ACTION_VIEW -> intent.data?.let { opened ->

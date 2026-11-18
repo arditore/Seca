@@ -140,7 +140,7 @@ fun ContactsApp(
                         onPick = onPick,
                     )
                     is Screen.Detail -> DetailScreen(screen.id, ui, viewModel, withWrite)
-                    is Screen.Edit -> EditScreen(screen.id, ui, viewModel, withWrite, prefillPhone = screen.prefillPhone)
+                    is Screen.Edit -> EditScreen(screen.id, ui, viewModel, withWrite, prefillPhone = screen.prefillPhone, prefillName = screen.prefillName)
                     Screen.Settings -> SettingsScreen(ui, viewModel, withWrite)
                     Screen.MyCard -> MyCardScreen(ui, viewModel)
                     DuplicatesRoute -> DuplicatesScreen(ui, viewModel, withWrite)

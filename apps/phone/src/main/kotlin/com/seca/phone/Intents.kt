@@ -53,10 +53,11 @@ internal fun openContact(context: Context, contactId: Long, lookupKey: String) {
     startPreferring(context, Intent(Intent.ACTION_VIEW, uri), SECA_CONTACTS)
 }
 
-/** Opens a new contact with [number] already filled in. */
-internal fun addContact(context: Context, number: String) {
+/** Opens a new contact with [number], and the [name] the carrier sent, already filled in. */
+internal fun addContact(context: Context, number: String, name: String? = null) {
     val intent = Intent(Intent.ACTION_INSERT, ContactsContract.Contacts.CONTENT_URI)
         .putExtra(ContactsContract.Intents.Insert.PHONE, number)
+        .apply { if (name != null) putExtra(ContactsContract.Intents.Insert.NAME, name) }
     startPreferring(context, intent, SECA_CONTACTS)
 }
 

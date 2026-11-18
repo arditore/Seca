@@ -23,6 +23,7 @@ import androidx.core.os.BundleCompat
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.model.Profile
+import com.seca.phone.CarrierNames
 import com.seca.phone.SimPreferences
 import com.seca.phone.simKeyOf
 import kotlinx.coroutines.CoroutineScope
@@ -370,6 +371,11 @@ object CallSession {
     private fun viewOf(call: Call): CallView {
         val details = call.details
         val number = numberOf(call)
+        // Telecom does not keep the carrier's name in the call history, so keep it for the log and the missed-call notice.
+        val carrier = details.callerDisplayName?.takeIf {
+            it.isNotBlank() && details.callerDisplayNamePresentation == TelecomManager.PRESENTATION_ALLOWED
+        }
+        if (carrier != null && number.isNotBlank()) appContext?.let { CarrierNames.remember(it, number, carrier) }
         return CallView(
             call = call,
             state = details.state,

@@ -80,12 +80,16 @@ internal fun UnknownAvatar(modifier: Modifier = Modifier, size: Dp = 44.dp) {
 internal val CallRecord.callable: Boolean
     get() = presentation == Presentation.Allowed && number.isNotBlank()
 
+/** The name the carrier sent, when there is a number to put it beside. */
+internal fun CallRecord.carrierName(context: Context): String? =
+    if (callable) cachedName ?: CarrierNames.of(context, number) else null
+
 /** How to name a caller who is not a known contact. */
 internal fun callerLabel(context: Context, call: CallRecord, numbers: PhoneNumbers): String = when {
     call.presentation == Presentation.Restricted -> context.getString(R.string.hidden_number)
     call.presentation == Presentation.Payphone -> context.getString(R.string.payphone)
     !call.callable -> context.getString(R.string.unknown_number)
-    else -> call.cachedName ?: numbers.display(call.number)
+    else -> numbers.display(call.number)
 }
 
 /** Kept between rows, and rebuilt when the language or the 12/24-hour setting changes. */

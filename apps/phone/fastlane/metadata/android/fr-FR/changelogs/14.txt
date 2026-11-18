@@ -1,0 +1,1 @@
+Quand l'opérateur envoie le nom d'un appelant, Seca l'affiche à la place du numéro, pendant l'appel, dans l'historique et dans les notifications d'appels manqués, avec le numéro dessous. Ajouter l'appelant aux contacts remplit déjà le nom. Les contacts ne sont jamais lus pour cela.

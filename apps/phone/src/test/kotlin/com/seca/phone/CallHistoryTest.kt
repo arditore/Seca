@@ -31,6 +31,13 @@ class CallHistoryTest {
     }
 
     @Test
+    fun `a carrier's name follows the number however it is written`() {
+        assertEquals(CarrierNames.keyOf("+33 6 12 34 56 78"), CarrierNames.keyOf("06 12 34 56 78"))
+        assertFalse(CarrierNames.keyOf("06 12 34 56 78") == CarrierNames.keyOf("06 12 34 56 79"))
+        assertEquals("", CarrierNames.keyOf(""))
+    }
+
+    @Test
     fun `keypad letters find a name, accents included`() {
         assertTrue(matchesKeypadName("Éric Picard", "742"))
         assertTrue(matchesKeypadName("Éric Picard", "374"))

@@ -409,12 +409,15 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
     val context = LocalContext.current
     val call = group.latest
     val contact = group.match?.contact
-    val title = contact?.displayName ?: callerLabel(context, call, ui.numbers)
+    val carrier = if (contact == null) call.carrierName(context) else null
+    val title = contact?.displayName ?: carrier ?: callerLabel(context, call, ui.numbers)
     val details = buildList {
         add(timeOf(context, call.date))
         ui.simLabels[call.accountId]?.let { add(it) }
         if (contact != null) {
             ui.profileOf(contact).takeIf { it.id != Profile.Principal.id }?.let { add(it.name) }
+        } else if (carrier != null) {
+            add(ui.numbers.display(call.number))
         } else if (call.callable) {
             ui.numbers.countryOf(call.number)?.takeIf { !it.isHome }?.let { add(it.displayName) }
         }

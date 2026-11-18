@@ -101,6 +101,7 @@ internal fun EditScreen(
     viewModel: ContactsViewModel,
     withWrite: (() -> Unit) -> Unit,
     prefillPhone: String? = null,
+    prefillName: String? = null,
 ) {
     var existing by remember(id) { mutableStateOf<ContactDetail?>(null) }
     var ready by remember(id) { mutableStateOf(false) }
@@ -153,6 +154,7 @@ internal fun EditScreen(
             val (available, byDefault) = viewModel.savingPlaces()
             places = available
             savingIn = available.firstOrNull { it == byDefault } ?: byDefault
+            givenName = prefillName.orEmpty()
         }
         if (id != null) {
             val loaded = viewModel.detail(id)
