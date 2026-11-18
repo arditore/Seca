@@ -182,7 +182,7 @@ internal object MmsReader {
                 when {
                     // A contact card is written as text, and reading it into the bubble would
                     // put somebody's whole address book entry where a sentence belongs.
-                    type.startsWith("text/") && !type.endsWith("vcard") ->
+                    type.startsWith("text/", ignoreCase = true) && !type.endsWith("vcard", ignoreCase = true) ->
                         c.getString(2)?.takeIf { it.isNotBlank() }?.let { said ->
                             val sentence = words.getOrPut(owner) { StringBuilder() }
                             if (sentence.isNotEmpty()) sentence.append('\n')
@@ -190,7 +190,7 @@ internal object MmsReader {
                         }
                     // The presentation part describes a slideshow; it is not something to show.
                     type == SMIL -> Unit
-                    type.startsWith("image/") -> images.getOrPut(owner) { mutableListOf() }.add(where)
+                    type.startsWith("image/", ignoreCase = true) -> images.getOrPut(owner) { mutableListOf() }.add(where)
                     SoundPart.matches(type, called) -> sounds.getOrPut(owner) { where }
                     else -> {
                         others.getOrPut(owner) { type }

@@ -41,10 +41,37 @@ internal sealed interface MmsPdu {
         val contentId: String?,
         val data: ByteArray,
     ) {
-        val isText: Boolean get() = contentType.startsWith("text/")
+        /**
+         * Whether this part is words, by what it says **and** by what is in it.
+         *
+         * The second half is the load-bearing one and it was missing. A part was taken at its
+         * word, so a message whose type byte was read as a text one put its bytes straight
+         * into the conversation: two users reported a photo or a video arriving as a screen
+         * of replacement characters, with a few readable letters in it, which is what a video
+         * looks like decoded as UTF-8 (#72, #55).
+         *
+         * Whatever the underlying mistake — a content-type code this parser does not know, a
+         * carrier writing a header a way it has not seen — bytes that are not text are not
+         * text, and showing them as a sentence is the worst of the available answers. Shown
+         * as something attached instead, which is at least honest and can be saved.
+         */
+        val isText: Boolean get() = contentType.startsWith("text/", ignoreCase = true) && readsAsText()
 
         /** The part's words, when it has any. */
         val text: String? get() = if (isText) runCatching { data.toString(Charsets.UTF_8) }.getOrNull() else null
+
+        /**
+         * Whether [data] is text at all: valid UTF-8, and no NUL in it.
+         *
+         * Decoding never throws — an invalid byte becomes U+FFFD — so the check is whether
+         * decoding and encoding again gives back what went in. A NUL is checked separately
+         * because it survives that round trip and no message has one in its words.
+         */
+        private fun readsAsText(): Boolean {
+            if (data.isEmpty()) return true
+            if (data.any { it == 0.toByte() }) return false
+            return data.toString(Charsets.UTF_8).toByteArray(Charsets.UTF_8).contentEquals(data)
+        }
 
         // Data classes compare arrays by identity; parts are compared in tests, so this is spelled out.
         override fun equals(other: Any?): Boolean = this === other ||
