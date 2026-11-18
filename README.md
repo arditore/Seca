@@ -199,9 +199,17 @@ Seca is **in beta**.
 |---|---|---|---|
 | F-Droid | [published](https://f-droid.org/packages/com.seca.contacts/) | [published](https://f-droid.org/packages/com.seca.phone/) | [published](https://f-droid.org/packages/com.seca.messages/) |
 | GitHub | [latest release](https://github.com/arditore/Seca/releases/latest) | [latest release](https://github.com/arditore/Seca/releases/latest) | [latest release](https://github.com/arditore/Seca/releases/latest) |
+| Obtainium | `seca-contacts` | `seca-phone` | `seca-messages` |
 
 F-Droid rebuilds each tag itself, so its copy trails the release here by a few
 days. How that works is in [docs/fdroid.md](docs/fdroid.md).
+
+**Obtainium** takes all three from this one repository. Add
+`https://github.com/arditore/Seca` three times and set **APK selection → Filter
+links by regex** to the string above for each, so it picks the right file out of
+the release. Worked out and tested by `ralphocdol` in
+[issue #56](https://github.com/arditore/Seca/issues/56), which also carries
+ready-made badges that fill the filter in for you.
 
 After installing, choose Seca Phone as the Phone app and Seca Messages as the
 SMS app, in Android's default-apps settings. The three install in any order and
