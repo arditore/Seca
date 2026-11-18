@@ -216,4 +216,12 @@
     <string name="settings_profiles_hint">İş, Aile ve diğerleri</string>
     <string name="block_contact">Bu kişiyi engelle</string>
     <string name="block_asked">Seca Telefon\'da engellendi. Ayarlarından, Engellenen numaralar bölümünden geri alın.</string>
+    <string name="accounts">Hesaplar</string>
+    <string name="settings_accounts_hint">Hangileri gösterilir</string>
+    <string name="accounts_hint">Bir hesabı kapatmak satırlarını gizler. Hiçbir şey silinmez.</string>
+    <string name="accounts_none">Bu telefonda hiçbir hesapta kişi yok</string>
+    <plurals name="accounts_holding">
+        <item quantity="one">%d kişi</item>
+        <item quantity="other">%d kişi</item>
+    </plurals>
 </resources>

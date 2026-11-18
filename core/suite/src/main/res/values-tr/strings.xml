@@ -72,4 +72,9 @@
     <string name="suite_plain_names">Sade adlar</string>
     <string name="suite_plain_names_hint">Başında “Seca” olmadan</string>
     <string name="suite_names_section">Uygulama adları</string>
+    <string name="crash_title">Seca geçen sefer kapandı</string>
+    <string name="crash_body">Kaydedilenler burada. Hiçbir şey gönderilmedi. Okuyun ve yalnızca isterseniz gönderin.</string>
+    <string name="crash_send">Gönder</string>
+    <string name="crash_discard">Yoksay</string>
+    <string name="crash_subject">Seca çökme raporu</string>
 </resources>
