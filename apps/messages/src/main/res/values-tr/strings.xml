@@ -116,7 +116,7 @@
     <string name="delete_conversation_title">Sohbet silinsin mi?</string>
     <string name="delivered_at">Teslim edildi · %1$s</string>
     <string name="delivery_reports">Teslim raporları</string>
-    <string name="delivery_reports_hint">Mesaj ulaştığında ağdan bildirim isteyin</string>
+    <string name="delivery_reports_hint">Mesaj ulaştığında ağın haber vermesini isteyin</string>
     <string name="delivery_reports_note">Rapor diğer telefondan değil ağdan gelir, bu yüzden onlara sizinle ilgili hiçbir şey söylemez. Birçok operatör hiç rapor göndermez, bazıları da bunun için ücret alır; rapor gelmezse mesaj yalnızca Gönderildi durumunda kalır.</string>
     <string name="direct_connection">Rölelere doğrudan bağlantı</string>
     <string name="disappearing">Kaybolan</string>
@@ -285,7 +285,7 @@
     <string name="preview_file">📎 Dosya</string>
     <string name="preview_voice">🎤 Sesli mesaj</string>
     <string name="privacy">Gizlilik</string>
-    <string name="privacy_text">Mesajlar Android\'in tuttuğu yerde kalır: hiçbir yere kopyalanmaz. İnternet yalnızca, açtığınızda Seca Link için kullanılır ve yalnızca açık anahtarlar ile şifreli veriler üzerinden geçer.</string>
+    <string name="privacy_text">Mesajlar Android\'in tuttuğu yerde kalır: hiçbir yere kopyalanmaz. İnternet yalnızca, açtığınızda Seca Link için kullanılır ve bu yoldan yalnızca açık anahtarlar ve şifreli veriler geçer.</string>
     <string name="privacy_title">Mesajlarınız bu telefonda kalır</string>
     <string name="protection">Koruma</string>
     <string name="publish_again">Yeniden yayımla</string>

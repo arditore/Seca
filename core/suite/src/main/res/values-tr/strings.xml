@@ -16,7 +16,7 @@
     <string name="auto_never_run">Henüz yazılmadı</string>
     <string name="auto_no_folder">Hiçbir klasör seçilmedi.</string>
     <string name="auto_no_passphrase">Parola okunamadı. Yeniden belirleyin.</string>
-    <string name="auto_passphrase_hint">Bu telefonda, güvenlik çipiyle mühürlenmiş olarak saklanır; çünkü sabahın üçünde alınan bir yedek durup parola soramaz. Parola olmadan yedekler ne burada ne başka bir yerde açılabilir.</string>
+    <string name="auto_passphrase_hint">Parola bu telefonda, güvenlik çipiyle mühürlenmiş olarak saklanır; çünkü sabahın üçünde alınan bir yedek durup parola soramaz. Parola olmadan yedekler ne burada ne başka bir yerde açılabilir.</string>
     <string name="auto_passphrase_title">Bu yedekler için bir parola</string>
     <string name="auto_portable">Okunabilir bir kopya da yaz</string>
     <string name="auto_portable_hint">Kişiler, aramalar ve mesajlar açık biçimlerde</string>

@@ -153,7 +153,7 @@
     <string name="photo_not_saved">Bu telefon, bu kişinin fotoğrafını depolamadı.</string>
     <string name="pick_date">Tarih seç</string>
     <string name="privacy">Gizlilik</string>
-    <string name="privacy_text">Seca Kişiler\'in internet erişimi yoktur. Kişileriniz, profilleriniz ve ayarlarınız cihazdan asla çıkmaz; burada oluşturulan kişiler hesapsız eşitlenir.</string>
+    <string name="privacy_text">Seca Kişiler\'in internet erişimi yoktur. Kişileriniz, profilleriniz ve ayarlarınız cihazdan asla çıkmaz; burada oluşturulan kişiler hiçbir hesapla eşitlenmez.</string>
     <string name="privacy_title">Her şey bu telefonda kalır</string>
     <string name="profile">Profil</string>
     <string name="profile_empty">“%1$s” boş</string>
@@ -207,7 +207,7 @@
     <string name="arrange_earlier">%1$s öğesini öne taşı</string>
     <string name="arrange_later">%1$s öğesini arkaya taşı</string>
     <string name="photo_shape">Fotoğraf şekli</string>
-    <string name="photo_shape_everyone">Herkes için</string>
+    <string name="photo_shape_everyone">Herkesinki</string>
     <string name="app_name_plain">Kişiler</string>
     <string name="settings_appearance_hint">Palet, şekiller, sıra</string>
     <string name="settings_backup_hint">Yedekler, içe ve dışa aktarma</string>
