@@ -240,7 +240,18 @@ internal fun ConversationContent(
     // The list grows upwards, so the latest to leave comes first and sits at the very bottom.
     val scheduled = remember(ui.scheduled, screen.address) { ui.scheduledFor(screen.address).asReversed() }
     val byLinkId = remember(messages) { messages.filter { it.linkId != null }.associateBy { it.linkId } }
-    val name = ui.nameOf(screen.address)
+    // Everyone this thread is addressed to, when it is a group (#48). Taken from the list,
+    // which read it from the thread itself rather than from whoever wrote last.
+    val group = remember(ui.conversations, screen.threadId) {
+        ui.conversations.firstOrNull { it.threadId == screen.threadId }?.group.orEmpty()
+    }
+    val name = if (group.size < 2) {
+        ui.nameOf(screen.address)
+    } else {
+        // Everyone in it, by the name each is saved under, so a group is told apart from the
+        // person in it who happened to write last.
+        remember(group, ui.contacts, ui.index) { group.joinToString(", ") { ui.nameOf(it) } }
+    }
 
     val peer = rememberLinkPeer(screen.address)
     // Once the contact is connected, messages go encrypted through Seca Link, which needs no SMS role.
@@ -431,7 +442,11 @@ internal fun ConversationContent(
                     enabled = isDefaultApp || linked,
                     encrypted = linked,
                     onSend = {
-                        viewModel.send(screen.address, text, replyingTo?.linkId)
+                        if (group.size < 2) {
+                            viewModel.send(screen.address, text, replyingTo?.linkId)
+                        } else {
+                            viewModel.sendToGroup(group, text)
+                        }
                         text = ""
                         replyingTo = null
                     },

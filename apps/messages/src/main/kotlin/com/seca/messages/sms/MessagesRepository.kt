@@ -9,6 +9,7 @@ import android.os.Looper
 import android.provider.Telephony
 import android.provider.Telephony.Mms
 import android.provider.Telephony.Sms
+import androidx.core.net.toUri
 import com.seca.messages.R
 import com.seca.messages.mms.MmsReader
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,11 @@ import kotlinx.coroutines.withContext
 /** How many messages a search shows at most. */
 private const val SEARCH_LIMIT = 50
 
+/** The thread list, with the recipients of each as a list of ids into the address table. */
+private val SIMPLE_THREADS = "content://mms-sms/conversations?simple=true".toUri()
+private const val THREAD_RECIPIENTS = "recipient_ids"
+private const val CANONICAL_ADDRESS = "content://mms-sms/canonical-address"
+
 /** One conversation: the latest message with a number, and how many are still unread. */
 data class Conversation(
     val threadId: Long,
@@ -29,6 +35,13 @@ data class Conversation(
     val unread: Int,
     /** Whether the latest message is one the owner sent. */
     val outgoing: Boolean,
+    /**
+     * Everyone the thread is addressed to, when there is more than one (#48).
+     *
+     * Empty for the ordinary conversation of two, where [address] says it all. A group text
+     * fills it, and then [address] is only whoever wrote last.
+     */
+    val group: List<String> = emptyList(),
 )
 
 enum class MessageStatus { Received, Sending, Sent, Delivered, Read, Failed }
@@ -141,8 +154,15 @@ class MessagesRepository(private val context: Context) {
                 )
             }
         }
+        // Which threads are addressed to more than one person, asked once for all of them.
+        val groups = allRecipients()
         latest.values
-            .map { it.copy(unread = (unread[it.threadId] ?: 0) + (picturesUnread[it.threadId] ?: 0)) }
+            .map {
+                it.copy(
+                    unread = (unread[it.threadId] ?: 0) + (picturesUnread[it.threadId] ?: 0),
+                    group = groups[it.threadId].orEmpty(),
+                )
+            }
             .sortedByDescending(Conversation::date)
     }
 
@@ -254,6 +274,47 @@ class MessagesRepository(private val context: Context) {
     suspend fun threadIdFor(address: String): Long? = withContext(Dispatchers.IO) {
         runCatching { Telephony.Threads.getOrCreateThreadId(context, address) }.getOrNull()
     }
+
+    /**
+     * Everyone a thread is addressed to (#48).
+     *
+     * A conversation is not a number. Android keeps a thread's recipients as a list of ids
+     * pointing into a table of addresses, and a group text is a thread with several of them.
+     * Reading only the address on the newest message, as this app did, makes a group look like
+     * whichever member happened to write last: their name on it, their one-to-one history
+     * behind it, and a reply going to them alone.
+     *
+     * Empty when the thread cannot be read, and the caller keeps whatever it already had.
+     */
+    suspend fun recipientsOf(threadId: Long): List<String> = withContext(Dispatchers.IO) {
+        val ids = runCatching {
+            resolver.query(SIMPLE_THREADS, arrayOf(THREAD_RECIPIENTS), "_id = ?", arrayOf(threadId.toString()), null)
+                ?.use { if (it.moveToFirst()) it.getString(0) else null }
+        }.getOrNull().orEmpty().split(' ').filter { it.isNotBlank() }
+        ids.mapNotNull { addressOfRecipient(it) }
+    }
+
+    /** Every thread's recipients at once, which is one query instead of one per conversation. */
+    private fun allRecipients(): Map<Long, List<String>> = runCatching {
+        val byThread = HashMap<Long, List<String>>()
+        val addresses = HashMap<String, String>()
+        resolver.query(SIMPLE_THREADS, arrayOf("_id", THREAD_RECIPIENTS), null, null, null)?.use { c ->
+            while (c.moveToNext()) {
+                val ids = c.getString(1).orEmpty().split(' ').filter { it.isNotBlank() }
+                // One address is the ordinary case and needs no list: only a group does.
+                if (ids.size < 2) continue
+                byThread[c.getLong(0)] = ids.mapNotNull { id ->
+                    addresses.getOrPut(id) { addressOfRecipient(id) ?: "" }.takeIf { it.isNotBlank() }
+                }
+            }
+        }
+        byThread
+    }.getOrDefault(emptyMap())
+
+    private fun addressOfRecipient(id: String): String? = runCatching {
+        resolver.query("$CANONICAL_ADDRESS/$id".toUri(), arrayOf("address"), null, null, null)
+            ?.use { if (it.moveToFirst()) it.getString(0) else null }
+    }.getOrNull()?.takeIf { it.isNotBlank() }
 
     suspend fun markRead(threadId: Long) {
         withContext(Dispatchers.IO) {

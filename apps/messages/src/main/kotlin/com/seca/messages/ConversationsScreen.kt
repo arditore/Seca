@@ -361,7 +361,7 @@ private fun ConversationList(
                 chosen = conversation.threadId in chosen,
                 choosing = chosen.isNotEmpty(),
                 onChoose = { onChoose(conversation.threadId) },
-                onOpen = { viewModel.openConversation(conversation.address) },
+                onOpen = { viewModel.openConversation(conversation) },
             )
         }
     }
@@ -560,7 +560,7 @@ private fun FolderScreen(
                                     chosen + conversation.threadId
                                 }
                             },
-                            onOpen = { viewModel.openConversation(conversation.address) },
+                            onOpen = { viewModel.openConversation(conversation) },
                         )
                     }
                 }

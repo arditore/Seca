@@ -358,12 +358,28 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     fun openConversation(address: String, draft: String = "") {
         viewModelScope.launch {
             val threadId = repository.threadIdFor(address) ?: -1L
-            val screen = MessagesScreen.Conversation(threadId, address, draft)
-            if (backStack.lastOrNull() is MessagesScreen.NewMessage) {
-                backStack[backStack.lastIndex] = screen
-            } else {
-                backStack.add(screen)
-            }
+            show(MessagesScreen.Conversation(threadId, address, draft))
+        }
+    }
+
+    /**
+     * Opens a conversation already in the list, by the thread it is (#48, #55).
+     *
+     * Looking a thread up from an address is how a group conversation used to be opened, and
+     * it cannot work: `getOrCreateThreadId` of one number is the one-to-one thread with that
+     * person. A group whose last message came from Hugo was opened as the conversation with
+     * Hugo alone, showing his history and nothing of the group, which is exactly what it
+     * looked like from the outside. The list already knows the thread; it now says so.
+     */
+    fun openConversation(conversation: Conversation) {
+        show(MessagesScreen.Conversation(conversation.threadId, conversation.address))
+    }
+
+    private fun show(screen: MessagesScreen.Conversation) {
+        if (backStack.lastOrNull() is MessagesScreen.NewMessage) {
+            backStack[backStack.lastIndex] = screen
+        } else {
+            backStack.add(screen)
         }
     }
 
@@ -463,6 +479,24 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     fun send(address: String, text: String, replyTo: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             if (!links.sendText(address, text, replyTo)) SmsSender(getApplication()).send(address, text)
+            SentSound.play(getApplication())
+        }
+    }
+
+    /**
+     * Answers everyone in a group conversation (#48).
+     *
+     * A text to several people is a multimedia message carrying only words: that is how a
+     * group text has always worked on a carrier's network, and it is why the reply used to go
+     * to one person. Seca Link is not consulted, since it is a conversation between two.
+     */
+    fun sendToGroup(addresses: List<String>, text: String) {
+        if (addresses.size < 2 || text.isBlank()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            if (MmsSender.send(getApplication(), addresses, text, emptyList()) == null) {
+                withContext(Dispatchers.Main) { toast(text(R.string.attachment_not_sent)) }
+                return@launch
+            }
             SentSound.play(getApplication())
         }
     }
