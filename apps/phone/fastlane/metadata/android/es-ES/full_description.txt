@@ -22,7 +22,7 @@ Una de las tres aplicaciones — Contactos, Teléfono y Mensajes — con un mism
 <li>Pantalla de llamada con la foto y el perfil de quien llama, altavoz, Bluetooth, llamada en espera, multiconferencia.</li>
 <li>Búsqueda T9 y sugerencias en el teclado.</li>
 <li>Doble SIM: elige la SIM en cada llamada, recordada para cada contacto.</li>
-<li>Rechazar con un mensaje, enviado al instante por Seca Messages.</li>
+<li>Rechazar con un mensaje, enviado al instante por Seca Mensajes.</li>
 <li>Historial filtrado por tipo de llamada o por perfil, favoritos a un toque.</li>
 </ul>
 

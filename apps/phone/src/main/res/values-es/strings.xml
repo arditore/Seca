@@ -3,10 +3,10 @@
     <string name="add">Añadir</string>
     <string name="add_call">Añadir llamada</string>
     <string name="allow_access">Permitir el acceso</string>
-    <string name="allow_calls">Permite las llamadas para llamar desde Seca Phone</string>
+    <string name="allow_calls">Permite las llamadas para llamar desde Seca Teléfono</string>
     <string name="always_use_sim">Usar siempre esta SIM para %1$s</string>
     <string name="answer">Responder</string>
-    <string name="app_name">Seca Phone</string>
+    <string name="app_name">Seca Teléfono</string>
     <string name="ask_every_call">Preguntar en cada llamada</string>
     <string name="audio_earpiece">Teléfono</string>
     <string name="audio_headset">Auriculares</string>
@@ -23,7 +23,7 @@
         <item quantity="other">%d llamadas y el filtrado</item>
     </plurals>
     <string name="backup_filtering_restored">filtrado restaurado</string>
-    <string name="backup_filtering_restored_no_access">filtrado restaurado; abre Seca Phone, permite el historial de llamadas y restaura de nuevo para las llamadas</string>
+    <string name="backup_filtering_restored_no_access">filtrado restaurado; abre Seca Teléfono, permite el historial de llamadas y restaura de nuevo para las llamadas</string>
     <string name="block_decline_hint">La llamada se rechaza sin sonar y queda en el historial, entre las llamadas rechazadas.</string>
     <string name="block_duration">Durante</string>
     <string name="block_failed">No se pudo bloquear</string>
@@ -42,7 +42,7 @@
     <string name="blocked_profiles">Perfiles bloqueados</string>
     <string name="blocked_profiles_declined">%1$s · llamadas rechazadas</string>
     <string name="blocked_profiles_dialog_hint">Los contactos de un perfil bloqueado ya no pueden llamarte, durante el tiempo que elijas.</string>
-    <string name="blocked_profiles_needs_contacts">Instala Seca Contacts para bloquear un perfil entero</string>
+    <string name="blocked_profiles_needs_contacts">Instala Seca Contactos para bloquear un perfil entero</string>
     <string name="blocked_profiles_none">Ninguno: todos tus contactos pueden llamar</string>
     <string name="blocked_profiles_silenced">%1$s · llamadas silenciadas</string>
     <string name="blocked_silenced">Sus llamadas suenan en silencio</string>
@@ -90,7 +90,7 @@
     <string name="clear_history_text">Todas las llamadas hechas y recibidas se borrarán de este teléfono. No se puede deshacer.</string>
     <string name="clear_history_title">¿Borrar todo el historial?</string>
     <string name="colors">Colores</string>
-    <string name="colors_need_contacts">Instala Seca Contacts para elegir los colores de la suite.</string>
+    <string name="colors_need_contacts">Instala Seca Contactos para elegir los colores de la suite.</string>
     <string name="black_theme">Negro absoluto</string>
     <string name="black_theme_hint">Fondos negros en modo oscuro</string>
     <string name="colors_shared_hint">Compartidos por las tres aplicaciones Seca</string>
@@ -109,9 +109,9 @@
     <string name="default_banner_text">Verás quién llama y su perfil, y podrás responder desde la pantalla de bloqueo.</string>
     <string name="default_banner_title">Responde a las llamadas con Seca</string>
     <string name="default_hint">Android sigue sonando y vibrando; Seca muestra la llamada. Puedes volver atrás en cualquier momento.</string>
-    <string name="default_off">Usar Seca Phone por defecto</string>
+    <string name="default_off">Usar Seca Teléfono por defecto</string>
     <string name="default_off_hint">Para ver quién llama y responder desde Seca, incluso en la pantalla de bloqueo</string>
-    <string name="default_on">Seca Phone gestiona tus llamadas</string>
+    <string name="default_on">Seca Teléfono gestiona tus llamadas</string>
     <string name="default_on_hint">Pantalla de llamada, perfil de quien llama, bloqueo de números</string>
     <plurals name="delete_calls">
         <item quantity="one">Eliminar %d llamada</item>
@@ -140,7 +140,7 @@
     <string name="filter_rejected">Rechazadas</string>
     <string name="filter_voicemail">Buzón</string>
     <string name="filtering_local">La clasificación ocurre en este teléfono: no se envía nada a ningún sitio.</string>
-    <string name="filtering_needs_default">Funciona cuando Seca Phone es la aplicación de teléfono por defecto.</string>
+    <string name="filtering_needs_default">Funciona cuando Seca Teléfono es la aplicación de teléfono por defecto.</string>
     <string name="forget">Olvidar</string>
     <string name="hang_up">Colgar</string>
     <string name="hidden_number">Número oculto</string>
@@ -170,15 +170,15 @@
     <string name="other_call">Otra llamada: %1$s · %2$s</string>
     <string name="paste_number">Pegar un número</string>
     <string name="payphone">Teléfono público</string>
-    <string name="permission_description">Seca Phone muestra las llamadas de este teléfono y reconoce a tus contactos. Nada sale del dispositivo: la aplicación no tiene acceso a Internet.</string>
-    <string name="permission_place_calls">hacer llamadas con Seca Phone</string>
+    <string name="permission_description">Seca Teléfono muestra las llamadas de este teléfono y reconoce a tus contactos. Nada sale del dispositivo: la aplicación no tiene acceso a Internet.</string>
+    <string name="permission_place_calls">hacer llamadas con Seca Teléfono</string>
     <string name="permission_read_profiles">leer los perfiles de Seca</string>
-    <string name="permission_send_messages">enviar mensajes con Seca Messages</string>
+    <string name="permission_send_messages">enviar mensajes con Seca Mensajes</string>
     <string name="permission_title">Tu historial de llamadas</string>
     <string name="phone_app">Aplicación de teléfono</string>
     <string name="place_call_with_sim">Hacer esta llamada con esta tarjeta</string>
     <string name="privacy">Privacidad</string>
-    <string name="privacy_text">Seca Phone no tiene acceso a Internet. El historial sigue siendo el de Android: nada se copia a otro sitio.</string>
+    <string name="privacy_text">Seca Teléfono no tiene acceso a Internet. El historial sigue siendo el de Android: nada se copia a otro sitio.</string>
     <string name="privacy_title">Todo se queda en este teléfono</string>
     <string name="protection">Protección</string>
     <string name="quick_reply_call_back">Te llamo luego.</string>

@@ -13,7 +13,7 @@ Una de las tres aplicaciones — Contactos, Teléfono y Mensajes — con un mism
 
 <b>Ordenados como vives</b>
 <ul>
-<li>Perfiles de color (Familia, Trabajo…), cuyo color se traslada a Seca Phone y a Seca Messages.</li>
+<li>Perfiles de color (Familia, Trabajo…), cuyo color se traslada a Seca Teléfono y a Seca Mensajes.</li>
 <li>Favoritos, búsqueda instantánea, desplazamiento rápido por letra.</li>
 <li>Duplicados encontrados por nombre o por número, fusionados sin perder nada.</li>
 <li>Tu propia ficha, compartida como código QR.</li>

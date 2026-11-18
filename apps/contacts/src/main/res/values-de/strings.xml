@@ -16,7 +16,7 @@
     <string name="all">Alle</string>
     <string name="allow_access">Zugriff erlauben</string>
     <string name="anniversary">Jahrestag</string>
-    <string name="app_name">Seca Contacts</string>
+    <string name="app_name">Seca Kontakte</string>
     <string name="backup">Backup</string>
     <plurals name="backup_contacts_filed">
         <item quantity="one">%d Kontakt zurück in seinem Profil</item>
@@ -147,7 +147,7 @@
     <string name="open_backup">Backup öffnen</string>
     <string name="open_settings">Einstellungen öffnen</string>
     <string name="permission_description">Seca Kontakte zeigt die auf diesem Gerät gespeicherten Kontakte. Nichts verlässt das Gerät: Die App hat keinen Internetzugriff.</string>
-    <string name="permission_place_calls">Anrufe mit Seca Phone tätigen</string>
+    <string name="permission_place_calls">Anrufe mit Seca Telefon tätigen</string>
     <string name="permission_read_profiles">Seca-Profile lesen</string>
     <string name="permission_title">Deine Kontakte, auf deinem Gerät</string>
     <string name="photo_not_saved">Dieses Gerät wollte das Foto für diesen Kontakt nicht speichern.</string>
@@ -215,5 +215,5 @@
     <string name="settings_privacy_hint">Sperre, privater Bildschirm</string>
     <string name="settings_profiles_hint">Arbeit, Familie und der Rest</string>
     <string name="block_contact">Diesen Kontakt sperren</string>
-    <string name="block_asked">In Seca Phone gesperrt. Rückgängig in dessen Einstellungen, unter Gesperrte Nummern.</string>
+    <string name="block_asked">In Seca Telefon gesperrt. Rückgängig in dessen Einstellungen, unter Gesperrte Nummern.</string>
 </resources>

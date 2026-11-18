@@ -16,7 +16,7 @@
     <string name="all">Todos</string>
     <string name="allow_access">Permitir el acceso</string>
     <string name="anniversary">Aniversario</string>
-    <string name="app_name">Seca Contacts</string>
+    <string name="app_name">Seca Contactos</string>
     <string name="backup">Copia de seguridad</string>
     <plurals name="backup_contacts_filed">
         <item quantity="one">%d contacto de vuelta en su perfil</item>
@@ -33,7 +33,7 @@
     <string name="backup_hint">Guarda una copia fuera de este teléfono</string>
     <string name="backup_profiles_only">solo los perfiles, el acceso a los contactos está denegado</string>
     <string name="backup_profiles_restored">perfiles restaurados</string>
-    <string name="backup_profiles_restored_no_access">perfiles restaurados; permite los contactos en Seca Contacts y restaura de nuevo para archivar las fichas</string>
+    <string name="backup_profiles_restored_no_access">perfiles restaurados; permite los contactos en Seca Contactos y restaura de nuevo para archivar las fichas</string>
     <string name="backup_restored">Copia restaurada: %1$s</string>
     <string name="birthday">Cumpleaños</string>
     <string name="call">Llamar</string>
@@ -131,7 +131,7 @@
     <string name="more_options">Más opciones</string>
     <string name="my_card">Mi ficha</string>
     <string name="my_card_hint">Lo que entrega el código QR</string>
-    <string name="my_card_privacy">Mi ficha se queda en Seca Contacts: no se comparte con otras aplicaciones ni se sincroniza. Solo el código QR, cuando lo muestras, se la da a alguien.</string>
+    <string name="my_card_privacy">Mi ficha se queda en Seca Contactos: no se comparte con otras aplicaciones ni se sincroniza. Solo el código QR, cuando lo muestras, se la da a alguien.</string>
     <string name="my_card_qr">Código QR de tu ficha</string>
     <string name="my_card_qr_hint">Escanéalo con la cámara del otro teléfono para añadir tu ficha. Nada pasa por Internet, y la foto no se incluye.</string>
     <string name="my_numbers">Mis números</string>
@@ -148,21 +148,21 @@
     <string name="no_results">Sin resultados</string>
     <string name="no_results_hint">Ningún contacto coincide con «%1$s».</string>
     <string name="no_sim">Ninguna tarjeta SIM activa.</string>
-    <string name="not_contacts_backup">Este archivo no es una copia de Seca Contacts</string>
+    <string name="not_contacts_backup">Este archivo no es una copia de Seca Contactos</string>
     <string name="notes">Notas</string>
     <string name="number">Número</string>
     <string name="on">Activado</string>
     <string name="on_this_phone">Solo este teléfono</string>
     <string name="open_backup">Abrir la copia</string>
     <string name="open_settings">Abrir los ajustes</string>
-    <string name="permission_description">Seca Contacts muestra los contactos guardados en este teléfono. Nada sale del dispositivo: la aplicación no tiene acceso a Internet.</string>
-    <string name="permission_place_calls">hacer llamadas con Seca Phone</string>
+    <string name="permission_description">Seca Contactos muestra los contactos guardados en este teléfono. Nada sale del dispositivo: la aplicación no tiene acceso a Internet.</string>
+    <string name="permission_place_calls">hacer llamadas con Seca Teléfono</string>
     <string name="permission_read_profiles">leer los perfiles de Seca</string>
     <string name="permission_title">Tus contactos, en tu teléfono</string>
     <string name="photo_not_saved">Este teléfono no ha querido guardar la foto de este contacto.</string>
     <string name="pick_date">Elegir una fecha</string>
     <string name="privacy">Privacidad</string>
-    <string name="privacy_text">Seca Contacts no tiene acceso a Internet. Tus contactos, perfiles y ajustes nunca salen del dispositivo, y los contactos creados aquí no se sincronizan con ninguna cuenta.</string>
+    <string name="privacy_text">Seca Contactos no tiene acceso a Internet. Tus contactos, perfiles y ajustes nunca salen del dispositivo, y los contactos creados aquí no se sincronizan con ninguna cuenta.</string>
     <string name="privacy_title">Todo se queda en este teléfono</string>
     <string name="profile">Perfil</string>
     <string name="profile_empty">«%1$s» está vacío</string>
@@ -225,5 +225,5 @@
     <string name="settings_privacy_hint">Bloqueo, pantalla privada</string>
     <string name="settings_profiles_hint">Trabajo, Familia, y el resto</string>
     <string name="block_contact">Bloquear este contacto</string>
-    <string name="block_asked">Bloqueado en Seca Phone. Deshágalo en sus ajustes, en Números bloqueados.</string>
+    <string name="block_asked">Bloqueado en Seca Teléfono. Deshágalo en sus ajustes, en Números bloqueados.</string>
 </resources>

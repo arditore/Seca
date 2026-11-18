@@ -10,8 +10,8 @@
     <string name="allow">Erlauben</string>
     <string name="allow_exact_time">Genaue Uhrzeit erlauben</string>
     <string name="allow_network">Netzwerkzugriff erlauben</string>
-    <string name="allow_network_text">Seca Link erreicht die Relays über das Internet. Öffne die Einstellungen von Seca Messages, dann Berechtigungen, und aktiviere „Netzwerk“. Deine Schlüssel werden veröffentlicht, sobald die Verbindung möglich ist.</string>
-    <string name="app_name">Seca Messages</string>
+    <string name="allow_network_text">Seca Link erreicht die Relays über das Internet. Öffne die Einstellungen von Seca Nachrichten, dann Berechtigungen, und aktiviere „Netzwerk“. Deine Schlüssel werden veröffentlicht, sobald die Verbindung möglich ist.</string>
+    <string name="app_name">Seca Nachrichten</string>
     <string name="archive">Archivieren</string>
     <string name="archived">Archiviert</string>
     <string name="archived_conversations">Archivierte Unterhaltungen</string>
@@ -29,7 +29,7 @@
     <string name="slide_to_cancel">Zum Abbrechen wegwischen</string>
     <string name="back">Zurück</string>
     <string name="background_allowed_quiet">Erlaubt, ohne Benachrichtigung</string>
-    <string name="background_dialog_text">Damit Seca Link deine verschlüsselten Nachrichten im Hintergrund empfangen kann, ohne eine Benachrichtigung zu behalten, lass Seca Messages die Akkuoptimierung ignorieren. Die Verbindung zu den Relays bleibt sparsam.</string>
+    <string name="background_dialog_text">Damit Seca Link deine verschlüsselten Nachrichten im Hintergrund empfangen kann, ohne eine Benachrichtigung zu behalten, lass Seca Nachrichten die Akkuoptimierung ignorieren. Die Verbindung zu den Relays bleibt sparsam.</string>
     <string name="background_granted">Erlaubt: Seca Link hört ohne Benachrichtigung mit</string>
     <string name="background_reception">Empfang im Hintergrund</string>
     <string name="background_tap">Tippen, um ohne dauerhafte Benachrichtigung zu empfangen</string>
@@ -42,7 +42,7 @@
     <string name="backup_settings_only">nur Einstellungen und Seca Link, der Zugriff auf SMS wurde verweigert</string>
     <string name="backup_settings_restored">Einstellungen wiederhergestellt</string>
     <string name="backup_sms_and_link">%1$s und %2$s</string>
-    <string name="backup_sms_not_restored">SMS nicht wiederhergestellt: Wähle Seca Messages als SMS-App und stelle dann erneut wieder her</string>
+    <string name="backup_sms_not_restored">SMS nicht wiederhergestellt: Wähle Seca Nachrichten als SMS-App und stelle dann erneut wieder her</string>
     <string name="call">Anrufen</string>
     <string name="camera_access">Kamerazugriff</string>
     <string name="camera_access_hint">Um den Code zu lesen, der auf dem Gerät von %1$s angezeigt wird. Es wird kein Bild gespeichert.</string>
@@ -106,9 +106,9 @@
     <string name="default_banner_text">Android gibt SMS immer nur an eine App.</string>
     <string name="default_banner_title">Mit Seca empfangen und senden</string>
     <string name="default_list">Standardliste</string>
-    <string name="default_off">Seca Messages als Standard verwenden</string>
+    <string name="default_off">Seca Nachrichten als Standard verwenden</string>
     <string name="default_off_hint">Nur die Standard-SMS-App empfängt und sendet Nachrichten</string>
-    <string name="default_on">Seca Messages übernimmt deine SMS</string>
+    <string name="default_on">Seca Nachrichten übernimmt deine SMS</string>
     <string name="default_on_hint">Empfangen, Senden und Benachrichtigungen</string>
     <string name="delete">Löschen</string>
     <string name="delete_conversation">Unterhaltung löschen</string>
@@ -127,7 +127,7 @@
     <string name="dynamic_colors_hint">Passend zum Hintergrundbild des Geräts</string>
     <string name="edit">Bearbeiten</string>
     <string name="enable_in_settings">In den Einstellungen einschalten</string>
-    <string name="enable_to_send">Mache Seca Messages zur SMS-App, um zu senden.</string>
+    <string name="enable_to_send">Mache Seca Nachrichten zur SMS-App, um zu senden.</string>
     <string name="encrypt">Verschlüsseln</string>
     <string name="encrypt_backup">Backup verschlüsseln</string>
     <string name="encrypt_with_link">Mit Seca Link verschlüsseln</string>
@@ -218,7 +218,7 @@
     <string name="more_actions">Weitere Aktionen</string>
     <string name="more_options">Weitere Optionen</string>
     <string name="name_or_number">Name oder Nummer</string>
-    <string name="need_default_app">Mache zuerst Seca Messages zur SMS-App</string>
+    <string name="need_default_app">Mache zuerst Seca Nachrichten zur SMS-App</string>
     <string name="network">Netzwerk</string>
     <string name="network_blocked">Kein Zugriff: Prüfe die Verbindung und die Berechtigung „Netzwerk“</string>
     <string name="new_message">Neue Nachricht</string>
@@ -228,7 +228,7 @@
     <string name="no_conversations_hint">SMS auf diesem Gerät erscheinen hier.</string>
     <string name="no_link_contacts">Noch kein Seca-Link-Kontakt. Tippe in einer Unterhaltung auf ⋮ und dann auf „Mit Seca Link verschlüsseln“ oder „Persönlich verbinden“.</string>
     <string name="no_network_access">Kein Netzwerkzugriff</string>
-    <string name="no_network_hint">Öffne in den Einstellungen von Seca Messages die Berechtigungen und aktiviere „Netzwerk“, oder prüfe die Verbindung. Die Veröffentlichung wird von selbst fortgesetzt.</string>
+    <string name="no_network_hint">Öffne in den Einstellungen von Seca Nachrichten die Berechtigungen und aktiviere „Netzwerk“, oder prüfe die Verbindung. Die Veröffentlichung wird von selbst fortgesetzt.</string>
     <string name="no_relays">Keine Relays: Füge eines hinzu oder kehre zur Standardliste zurück.</string>
     <string name="no_results">Keine Ergebnisse</string>
     <string name="no_spam">Keine Spam-SMS</string>
@@ -246,7 +246,7 @@
     <string name="number">Nummer</string>
     <string name="older">Älter</string>
     <string name="on">An</string>
-    <string name="one_scan_hint">Ein Scan genügt: Die Antwort geht dann per SMS hinaus. Auf beiden Geräten muss Seca Messages installiert und Seca Link eingeschaltet sein.</string>
+    <string name="one_scan_hint">Ein Scan genügt: Die Antwort geht dann per SMS hinaus. Auf beiden Geräten muss Seca Nachrichten installiert und Seca Link eingeschaltet sein.</string>
     <string name="open">Öffnen</string>
     <string name="open_backup">Backup öffnen</string>
     <string name="open_connect_hint">Öffne auf dem Gerät von %1$s die Unterhaltung, dann ⋮ und „Persönlich verbinden“.</string>
@@ -262,10 +262,10 @@
     <string name="peer_left">Hat Seca Link nicht mehr · %1$s</string>
     <string name="peer_nothing">Noch kein Austausch</string>
     <string name="peer_verified">Verschlüsselt · verifiziert</string>
-    <string name="permission_description">Seca Messages liest, empfängt und sendet die SMS dieses Geräts. Sie bleiben auf dem Gerät und gehen nur an die Person, an die sie geschrieben sind.</string>
-    <string name="permission_place_calls">Anrufe mit Seca Phone tätigen</string>
+    <string name="permission_description">Seca Nachrichten liest, empfängt und sendet die SMS dieses Geräts. Sie bleiben auf dem Gerät und gehen nur an die Person, an die sie geschrieben sind.</string>
+    <string name="permission_place_calls">Anrufe mit Seca Telefon tätigen</string>
     <string name="permission_read_profiles">Seca-Profile lesen</string>
-    <string name="permission_send_messages">Nachrichten mit Seca Messages senden</string>
+    <string name="permission_send_messages">Nachrichten mit Seca Nachrichten senden</string>
     <string name="permission_title">Deine Nachrichten</string>
     <string name="photo">Foto</string>
     <string name="photo_not_sent">Das Foto konnte nicht gesendet werden</string>
@@ -337,7 +337,7 @@
     </plurals>
     <string name="scheduled_message">Geplante Nachricht</string>
     <string name="scheduled_not_sent">Geplante Nachricht nicht gesendet</string>
-    <string name="scheduled_not_sent_text">Die Nachricht für %1$s wartet noch. Seca Messages muss die SMS-App sein, um sie zu senden.</string>
+    <string name="scheduled_not_sent_text">Die Nachricht für %1$s wartet noch. Seca Nachrichten muss die SMS-App sein, um sie zu senden.</string>
     <string name="search_messages">Nachrichten durchsuchen</string>
     <string name="send">Senden</string>
     <string name="send_as_sms">Als unverschlüsselte SMS senden</string>
@@ -411,7 +411,7 @@
     <string name="unpin">Lösen</string>
     <string name="unreachable">Nicht erreichbar</string>
     <string name="unreadable_file">Diese Datei kann nicht gelesen werden</string>
-    <string name="use_seca_messages">Seca Messages verwenden</string>
+    <string name="use_seca_messages">Seca Nachrichten verwenden</string>
     <string name="use_tor">Über Tor verbinden</string>
     <string name="verification_codes">Bestätigungscodes</string>
     <string name="verified">Verifiziert</string>

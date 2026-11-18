@@ -3,10 +3,10 @@
     <string name="add">Hinzufügen</string>
     <string name="add_call">Anruf hinzufügen</string>
     <string name="allow_access">Zugriff erlauben</string>
-    <string name="allow_calls">Erlauben, Anrufe aus Seca Phone zu tätigen</string>
+    <string name="allow_calls">Erlauben, Anrufe aus Seca Telefon zu tätigen</string>
     <string name="always_use_sim">Für %1$s immer diese SIM verwenden</string>
     <string name="answer">Annehmen</string>
-    <string name="app_name">Seca Phone</string>
+    <string name="app_name">Seca Telefon</string>
     <string name="ask_every_call">Bei jedem Anruf fragen</string>
     <string name="audio_earpiece">Hörer</string>
     <string name="audio_headset">Kopfhörer</string>
@@ -21,7 +21,7 @@
         <item quantity="other">%d Anrufe und Filterung</item>
     </plurals>
     <string name="backup_filtering_restored">Filterung wiederhergestellt</string>
-    <string name="backup_filtering_restored_no_access">Filterung wiederhergestellt; öffne Seca Phone, erlaube den Anrufverlauf und stelle dann erneut wieder her, um die Anrufe zu erhalten</string>
+    <string name="backup_filtering_restored_no_access">Filterung wiederhergestellt; öffne Seca Telefon, erlaube den Anrufverlauf und stelle dann erneut wieder her, um die Anrufe zu erhalten</string>
     <string name="block_decline_hint">Der Anruf wird ohne Klingeln abgelehnt und bleibt im Verlauf, unter den abgelehnten Anrufen.</string>
     <string name="block_duration">Für</string>
     <string name="block_failed">Blockieren nicht möglich</string>
@@ -106,9 +106,9 @@
     <string name="default_banner_text">Du siehst, wer anruft, und das zugehörige Profil und kannst vom Sperrbildschirm aus annehmen.</string>
     <string name="default_banner_title">Anrufe mit Seca annehmen</string>
     <string name="default_hint">Android klingelt und vibriert weiterhin; Seca zeigt den Anruf an. Du kannst jederzeit zurückwechseln.</string>
-    <string name="default_off">Seca Phone als Standard verwenden</string>
+    <string name="default_off">Seca Telefon als Standard verwenden</string>
     <string name="default_off_hint">Um zu sehen, wer anruft, und in Seca anzunehmen, auch auf dem Sperrbildschirm</string>
-    <string name="default_on">Seca Phone übernimmt deine Anrufe</string>
+    <string name="default_on">Seca Telefon übernimmt deine Anrufe</string>
     <string name="default_on_hint">Anrufbildschirm, Profil des Anrufers, Nummernsperre</string>
     <plurals name="delete_calls">
         <item quantity="one">%d Anruf löschen</item>
@@ -136,7 +136,7 @@
     <string name="filter_rejected">Abgelehnt</string>
     <string name="filter_voicemail">Mailbox</string>
     <string name="filtering_local">Die Sortierung erfolgt auf diesem Gerät: Nichts wird irgendwohin gesendet.</string>
-    <string name="filtering_needs_default">Funktioniert, wenn Seca Phone die Standard-Telefon-App ist.</string>
+    <string name="filtering_needs_default">Funktioniert, wenn Seca Telefon die Standard-Telefon-App ist.</string>
     <string name="forget">Vergessen</string>
     <string name="hang_up">Auflegen</string>
     <string name="hidden_number">Private Nummer</string>
@@ -165,15 +165,15 @@
     <string name="other_call">Anderer Anruf: %1$s · %2$s</string>
     <string name="paste_number">Nummer einfügen</string>
     <string name="payphone">Münztelefon</string>
-    <string name="permission_description">Seca Phone zeigt die Anrufe dieses Geräts an und erkennt deine Kontakte. Nichts verlässt das Gerät: Die App hat keinen Internetzugriff.</string>
-    <string name="permission_place_calls">Anrufe mit Seca Phone tätigen</string>
+    <string name="permission_description">Seca Telefon zeigt die Anrufe dieses Geräts an und erkennt deine Kontakte. Nichts verlässt das Gerät: Die App hat keinen Internetzugriff.</string>
+    <string name="permission_place_calls">Anrufe mit Seca Telefon tätigen</string>
     <string name="permission_read_profiles">Seca-Profile lesen</string>
-    <string name="permission_send_messages">Nachrichten mit Seca Messages senden</string>
+    <string name="permission_send_messages">Nachrichten mit Seca Nachrichten senden</string>
     <string name="permission_title">Dein Anrufverlauf</string>
     <string name="phone_app">Telefon-App</string>
     <string name="place_call_with_sim">Diesen Anruf mit dieser Karte tätigen</string>
     <string name="privacy">Datenschutz</string>
-    <string name="privacy_text">Seca Phone hat keinen Internetzugriff. Der Verlauf bleibt der von Android: Nichts wird anderswohin kopiert.</string>
+    <string name="privacy_text">Seca Telefon hat keinen Internetzugriff. Der Verlauf bleibt der von Android: Nichts wird anderswohin kopiert.</string>
     <string name="privacy_title">Alles bleibt auf diesem Gerät</string>
     <string name="protection">Schutz</string>
     <string name="quick_reply_call_back">Ich rufe dich zurück.</string>
