@@ -126,8 +126,56 @@ class ContactsRepository(
 ) {
 
     /** Every visible contact, in the order the system sorts names. */
-    suspend fun contacts(): List<SecaContact> = withContext(Dispatchers.IO) {
-        groupContacts(queryContacts(), queryPhones())
+    suspend fun contacts(): List<SecaContact> = contacts(emptySet())
+
+    /**
+     * Every contact, minus the accounts the owner has turned off (#74, #64).
+     *
+     * A contact is not one row: Android keeps one per account that knows the person and shows
+     * them aggregated under one name. WhatsApp writes its own, with the same number in it, and
+     * a user with 625 contacts counted the duplicates and could not see where they came from.
+     * Turning an account off takes its rows out of the picture: a number that only WhatsApp
+     * knew stops being drawn twice, and a contact that only the SIM knew stops being drawn.
+     *
+     * Filtered here rather than in the query. The volume is a few thousand rows at worst, and
+     * a selection built by pasting account names into SQL is a quoting bug waiting for the
+     * first person whose account has an apostrophe in it.
+     */
+    suspend fun contacts(hidden: Set<Place>): List<SecaContact> = withContext(Dispatchers.IO) {
+        if (hidden.isEmpty()) return@withContext groupContacts(queryContacts(), queryPhones())
+        val byRaw = rawContactAccounts()
+        // Known by one account that is still on is enough to stay: turning WhatsApp off must
+        // not take away a contact that Google also knows.
+        val visible = byRaw.filterValues { places -> places.any { it !in hidden } }.keys
+        val contacts = queryContacts().filter { it.id in visible }
+        val phones = queryPhones().filter { it.account == null || it.account !in hidden }
+        groupContacts(contacts, phones)
+    }
+
+    /**
+     * Which account each aggregated contact is known by, as a contact id to the accounts
+     * behind it. A contact shown by at least one account that is on stays shown.
+     */
+    private fun rawContactAccounts(): Map<Long, List<Place>> = runCatching {
+        val byContact = HashMap<Long, MutableList<Place>>()
+        resolver.query(
+            RawContacts.CONTENT_URI,
+            arrayOf(RawContacts.CONTACT_ID, RawContacts.ACCOUNT_TYPE, RawContacts.ACCOUNT_NAME),
+            "${RawContacts.DELETED} = 0",
+            null,
+            null,
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val contact = cursor.getLong(0)
+                byContact.getOrPut(contact) { mutableListOf() } += Place(cursor.getString(1), cursor.getString(2))
+            }
+        }
+        byContact
+    }.getOrDefault(emptyMap())
+
+    /** The accounts that actually hold a contact on this phone, each with how many. */
+    suspend fun accountsHolding(): Map<Place, Int> = withContext(Dispatchers.IO) {
+        rawContactAccounts().values.flatten().groupingBy { it }.eachCount()
     }
 
     /** Emits whenever the contacts provider changes, whichever app changed it. */
@@ -734,7 +782,7 @@ class ContactsRepository(
      * whichever row the provider happened to return first (#34).
      */
     private fun queryPhones(): List<PhoneRow> {
-        val projection = arrayOf(Phone.CONTACT_ID, Phone.NUMBER)
+        val projection = arrayOf(Phone.CONTACT_ID, Phone.NUMBER, RawContacts.ACCOUNT_TYPE, RawContacts.ACCOUNT_NAME)
         return resolver.query(Phone.CONTENT_URI, projection, null, null, "${Phone.IS_SUPER_PRIMARY} DESC")
             ?.use { cursor ->
                 val contactId = cursor.getColumnIndexOrThrow(Phone.CONTACT_ID)
@@ -742,7 +790,13 @@ class ContactsRepository(
                 buildList {
                     while (cursor.moveToNext()) {
                         val raw = cursor.getString(number) ?: continue
-                        add(PhoneRow(contactId = cursor.getLong(contactId), number = raw))
+                        add(
+                            PhoneRow(
+                                contactId = cursor.getLong(contactId),
+                                number = raw,
+                                account = Place(cursor.getString(2), cursor.getString(3)),
+                            ),
+                        )
                     }
                 }
             }
@@ -1037,9 +1091,24 @@ internal data class ContactRow(
     val photoUri: String?,
 )
 
-internal data class PhoneRow(val contactId: Long, val number: String)
+internal data class PhoneRow(val contactId: Long, val number: String, val account: Place? = null)
 
-/** Attaches each contact's numbers, dropping the same number written twice. */
+/**
+ * Attaches each contact's numbers, dropping the same number written twice.
+ *
+ * The same line, not the same string. A contact known by two accounts is one card with both
+ * accounts' rows in it, and nothing makes them agree on a format: Google holds
+ * "+33 7 43 72 27 39" where Telegram holds "07 43 72 27 39". Those are the same line and the
+ * same nine digits, and they used to come out as two entries that looked identical on screen,
+ * because both are formatted the same way before anybody sees them.
+ *
+ * A user with 625 contacts counted those and could not work out what he had done wrong. He had
+ * done nothing wrong (#74).
+ *
+ * The first spelling wins, which is the one the provider sorted first: the super-primary
+ * number, then whatever order it gave. Comparing by the last nine digits is [PhoneNumber.matches],
+ * the same rule used to recognise a caller, so a card and an incoming call cannot disagree.
+ */
 internal fun groupContacts(contacts: List<ContactRow>, phones: List<PhoneRow>): List<SecaContact> {
     val numbersByContact = phones.groupBy(PhoneRow::contactId, PhoneRow::number)
     return contacts.map { row ->
@@ -1047,13 +1116,27 @@ internal fun groupContacts(contacts: List<ContactRow>, phones: List<PhoneRow>): 
             id = row.id,
             displayName = row.name,
             phoneNumbers = numbersByContact[row.id].orEmpty()
-                .distinctBy { PhoneNumber(it).digits }
-                .map(::PhoneNumber),
+                .map(::PhoneNumber)
+                .distinctLines(),
             isFavorite = row.starred,
             photoUri = row.photoUri,
             lookupKey = row.lookupKey,
         )
     }
+}
+
+/**
+ * One entry per line, keeping the first spelling of each.
+ *
+ * Not `distinctBy`: there is no key that makes a national and an international form equal
+ * without deciding a country first, and the country is the thing that is not known here.
+ * Nine digits at a time is quadratic, and a card with more than a handful of numbers does not
+ * exist.
+ */
+private fun List<PhoneNumber>.distinctLines(): List<PhoneNumber> {
+    val kept = mutableListOf<PhoneNumber>()
+    forEach { number -> if (kept.none { it.matches(number) }) kept += number }
+    return kept
 }
 
 /**

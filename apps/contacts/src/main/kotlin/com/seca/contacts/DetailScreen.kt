@@ -58,6 +58,8 @@ import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.component.rememberContactPhoto
+import com.seca.core.contacts.ContactField
+import com.seca.core.model.PhoneNumber
 import com.seca.core.model.Profile
 import com.seca.core.model.initialsOf
 import kotlinx.coroutines.launch
@@ -103,7 +105,7 @@ internal fun DetailScreen(
     var choosingShape by remember { mutableStateOf(false) }
     val blockAskedText = stringResource(R.string.block_asked)
     val current = detail
-    val blockableNumbers = current?.phones?.map { it.value }?.filter { it.isNotBlank() }.orEmpty()
+    val blockableNumbers = current?.phones?.map { it.value }?.filter { it.isNotBlank() }?.distinct().orEmpty()
     val blockable = blockableNumbers.isNotEmpty() && remember { SecaBlocking.available(context) }
     val ringtoneTitle = stringResource(R.string.contact_ringtone)
 
@@ -323,7 +325,21 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
         }
 
         SecaSectionLabel(stringResource(R.string.contact_info))
-        val count = detail.phones.size + detail.emails.size + detail.addresses.size + if (detail.website != null) 1 else 0
+        // One row per line, not per stored row (#74). A contact known by two accounts has one
+        // card with both accounts' rows in it, and nothing makes them agree on a format: one
+        // holds "+33 7 43 72 27 39" where the other holds "07 43 72 27 39". Both are drawn the
+        // same way, so the card showed the identical number twice with nothing to explain it.
+        //
+        // Only here, where it is read. The editor is given every row, because a row that
+        // cannot be seen cannot be deleted.
+        val phones = remember(detail.phones) {
+            val kept = mutableListOf<ContactField>()
+            detail.phones.forEach { field ->
+                if (kept.none { PhoneNumber(it.value).matches(PhoneNumber(field.value)) }) kept += field
+            }
+            kept.toList()
+        }
+        val count = phones.size + detail.emails.size + detail.addresses.size + if (detail.website != null) 1 else 0
         if (count == 0) {
             SecaGroupItem(index = 0, count = 1) {
                 Text(
@@ -334,7 +350,7 @@ private fun DetailContent(detail: ContactDetail, ui: ContactsUi, viewModel: Cont
                 )
             }
         }
-        detail.phones.forEachIndexed { index, field ->
+        phones.forEachIndexed { index, field ->
             SecaGroupItem(index = index, count = count) {
                 FieldRow(
                     icon = SecaIcons.Phone,

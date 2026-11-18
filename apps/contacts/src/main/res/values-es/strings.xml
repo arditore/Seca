@@ -226,4 +226,13 @@
     <string name="settings_profiles_hint">Trabajo, Familia, y el resto</string>
     <string name="block_contact">Bloquear este contacto</string>
     <string name="block_asked">Bloqueado en Seca Teléfono. Deshágalo en sus ajustes, en Números bloqueados.</string>
+    <string name="accounts">Cuentas</string>
+    <string name="settings_accounts_hint">Cuáles se muestran</string>
+    <string name="accounts_hint">Apagar una cuenta deja de mostrar sus filas. No se borra nada.</string>
+    <string name="accounts_none">Ninguna cuenta tiene contactos en este teléfono</string>
+    <plurals name="accounts_holding">
+        <item quantity="one">%d contacto</item>
+        <item quantity="many">%d de contactos</item>
+        <item quantity="other">%d contactos</item>
+    </plurals>
 </resources>

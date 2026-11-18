@@ -130,35 +130,42 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                         title = stringResource(R.string.colors),
                         subtitle = stringResource(R.string.settings_appearance_hint),
                         index = 0,
-                        count = 5,
+                        count = 6,
                     ) { page = SettingsPage.Appearance }
                     SettingsEntry(
                         icon = SecaIcons.Label,
                         title = stringResource(R.string.profiles),
                         subtitle = stringResource(R.string.settings_profiles_hint),
                         index = 1,
-                        count = 5,
+                        count = 6,
                     ) { page = SettingsPage.Profiles }
+                    SettingsEntry(
+                        icon = SecaIcons.PersonOutline,
+                        title = stringResource(R.string.accounts),
+                        subtitle = stringResource(R.string.settings_accounts_hint),
+                        index = 2,
+                        count = 6,
+                    ) { page = SettingsPage.Accounts }
                     SettingsEntry(
                         icon = SecaIcons.Lock,
                         title = stringResource(R.string.backup),
                         subtitle = stringResource(R.string.settings_backup_hint),
-                        index = 2,
-                        count = 5,
+                        index = 3,
+                        count = 6,
                     ) { page = SettingsPage.Backup }
                     SettingsEntry(
                         icon = SecaIcons.Contacts,
                         title = stringResource(R.string.tidy_up),
                         subtitle = stringResource(R.string.settings_tidy_hint),
-                        index = 3,
-                        count = 5,
+                        index = 4,
+                        count = 6,
                     ) { page = SettingsPage.TidyUp }
                     SettingsEntry(
                         icon = SecaIcons.Shield,
                         title = stringResource(R.string.protection),
                         subtitle = stringResource(R.string.settings_privacy_hint),
-                        index = 4,
-                        count = 5,
+                        index = 5,
+                        count = 6,
                     ) { page = SettingsPage.Privacy }
                 }
                 SettingsPage.Appearance -> {
@@ -275,6 +282,41 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
 
                     SuiteBackupSection(beforeRestore = askWriteThen)
                     AutoBackupSection()
+                }
+                SettingsPage.Accounts -> {
+                    val accounts = ui.accounts.toList()
+                    if (accounts.isEmpty()) {
+                        SecaGroupItem(index = 0, count = 1) {
+                            SecaSettingRow(
+                                icon = SecaIcons.PersonOutline,
+                                title = stringResource(R.string.accounts_none),
+                                subtitle = null,
+                            )
+                        }
+                    }
+                    Text(
+                        text = stringResource(R.string.accounts_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    accounts.forEachIndexed { index, (account, held) ->
+                        SecaGroupItem(index = index, count = accounts.size) {
+                            SecaSwitchRow(
+                                icon = SecaIcons.PersonOutline,
+                                title = account.name ?: stringResource(R.string.on_this_phone),
+                                // The type as well as the name, because "8345900371" is the
+                                // name an app gave its own account and says nothing about
+                                // which app that is, which is the whole question being asked.
+                                subtitle = listOfNotNull(
+                                    pluralStringResource(R.plurals.accounts_holding, held, held),
+                                    account.type,
+                                ).joinToString(" · "),
+                                checked = account !in ui.hiddenAccounts,
+                                onCheckedChange = { shown -> viewModel.setAccountShown(account, shown) },
+                            )
+                        }
+                    }
                 }
                 SettingsPage.TidyUp -> {
                     SecaGroupItem(index = 0, count = 2) {
@@ -456,6 +498,7 @@ private enum class SettingsPage(val title: Int) {
     Master(R.string.settings),
     Appearance(R.string.colors),
     Profiles(R.string.profiles),
+    Accounts(R.string.accounts),
     Backup(R.string.backup),
     TidyUp(R.string.tidy_up),
     Privacy(R.string.protection),

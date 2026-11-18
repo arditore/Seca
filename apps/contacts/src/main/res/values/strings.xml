@@ -216,4 +216,12 @@
     <string name="settings_profiles_hint">Work, Family, and the rest</string>
     <string name="block_contact">Block this contact</string>
     <string name="block_asked">Blocked in Seca Phone. Undo it in its settings, under Blocked numbers.</string>
+    <string name="accounts">Accounts</string>
+    <string name="settings_accounts_hint">Which ones are shown</string>
+    <string name="accounts_hint">Turning one off stops Seca drawing its rows. Nothing is deleted.</string>
+    <string name="accounts_none">No account holds a contact on this phone</string>
+    <plurals name="accounts_holding">
+        <item quantity="one">%d contact</item>
+        <item quantity="other">%d contacts</item>
+    </plurals>
 </resources>

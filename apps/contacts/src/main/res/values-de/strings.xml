@@ -216,4 +216,12 @@
     <string name="settings_profiles_hint">Arbeit, Familie und der Rest</string>
     <string name="block_contact">Diesen Kontakt sperren</string>
     <string name="block_asked">In Seca Telefon gesperrt. Rückgängig in dessen Einstellungen, unter Gesperrte Nummern.</string>
+    <string name="accounts">Konten</string>
+    <string name="settings_accounts_hint">Welche angezeigt werden</string>
+    <string name="accounts_hint">Ein Konto auszuschalten blendet seine Zeilen aus. Nichts wird gelöscht.</string>
+    <string name="accounts_none">Kein Konto enthält Kontakte auf diesem Telefon</string>
+    <plurals name="accounts_holding">
+        <item quantity="one">%d Kontakt</item>
+        <item quantity="other">%d Kontakte</item>
+    </plurals>
 </resources>

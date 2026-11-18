@@ -226,4 +226,13 @@
     <string name="settings_profiles_hint">Travail, Famille, et le reste</string>
     <string name="block_contact">Bloquer ce contact</string>
     <string name="block_asked">Bloqué dans Seca Téléphone. À annuler dans ses paramètres, sous Numéros bloqués.</string>
+    <string name="accounts">Comptes</string>
+    <string name="settings_accounts_hint">Lesquels sont affichés</string>
+    <string name="accounts_hint">Éteindre un compte cesse d\'afficher ses lignes. Rien n\'est supprimé.</string>
+    <string name="accounts_none">Aucun compte ne contient de contact sur ce téléphone</string>
+    <plurals name="accounts_holding">
+        <item quantity="one">%d contact</item>
+        <item quantity="many">%d de contacts</item>
+        <item quantity="other">%d contacts</item>
+    </plurals>
 </resources>

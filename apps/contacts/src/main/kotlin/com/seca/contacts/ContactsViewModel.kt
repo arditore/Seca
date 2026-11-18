@@ -67,6 +67,10 @@ data class ContactsUi(
     /** Reads numbers with the SIM's country. */
     val numbers: PhoneNumbers,
     val loaded: Boolean = false,
+    /** The accounts holding a contact on this phone, each with how many (#74). */
+    val accounts: Map<Place, Int> = emptyMap(),
+    /** The ones the owner has turned off, whose rows are not drawn. */
+    val hiddenAccounts: Set<Place> = emptySet(),
     val contacts: List<SecaContact> = emptyList(),
     val profiles: List<Profile> = listOf(ProfileStore.Principal),
     val currentProfileId: String = ProfileStore.Principal.id,
@@ -559,14 +563,27 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /** Draws an account's rows again, or stops (#74). */
+    fun setAccountShown(account: Place, shown: Boolean) {
+        HiddenAccounts.setHidden(getApplication(), account, hidden = !shown)
+        viewModelScope.launch { load() }
+    }
+
     private suspend fun load() {
-        val contacts = repository.contacts()
+        val contacts = repository.contacts(HiddenAccounts.hidden(getApplication()))
         // Every number is read here, off the main thread: the list then only
         // looks results up, and scrolling never waits on parsing.
         withContext(Dispatchers.Default) {
             contacts.forEach { contact -> contact.phoneNumbers.forEach { numbers.prepare(it.raw) } }
         }
-        _ui.update { it.copy(loaded = true, contacts = contacts) }
+        _ui.update {
+            it.copy(
+                loaded = true,
+                contacts = contacts,
+                accounts = repository.accountsHolding(),
+                hiddenAccounts = HiddenAccounts.hidden(getApplication()),
+            )
+        }
     }
 
     private fun refreshPreferences() {

@@ -227,4 +227,13 @@
     <string name="settings_profiles_hint">Praca, Rodzina i reszta</string>
     <string name="block_contact">Zablokuj ten kontakt</string>
     <string name="block_asked">Zablokowano w Seca Telefon. Cofniesz to w jego ustawieniach, w Zablokowane numery.</string>
+    <string name="accounts">Konta</string>
+    <string name="settings_accounts_hint">Które są pokazywane</string>
+    <string name="accounts_hint">Wyłączenie konta przestaje pokazywać jego wiersze. Nic nie jest usuwane.</string>
+    <string name="accounts_none">Żadne konto nie ma kontaktów na tym telefonie</string>
+    <plurals name="accounts_holding">
+        <item quantity="one">%d kontakt</item>
+        <item quantity="few">%d kontakty</item>
+        <item quantity="many">%d kontaktów</item>
+    </plurals>
 </resources>
