@@ -51,6 +51,7 @@ import com.seca.core.suite.SuiteOrderSection
 import com.seca.phone.call.InCallSettings
 import com.seca.phone.screening.BlockMode
 import com.seca.phone.screening.ScreeningSettings
+import com.seca.phone.screening.Telemarketing
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -308,7 +309,7 @@ internal fun SettingsScreen(
                     // By the SIM's country, not the phone's language. A French speaker in
                     // Belgium has no use for it and an English speaker in France does, which is
                     // the opposite of what the language would have said.
-                    val inFrance = remember { PhoneNumbers.detectRegion(context) == FRANCE }
+                    val inFrance = remember { Telemarketing.offeredIn(PhoneNumbers.detectRegion(context)) }
                     val rows = if (inFrance) 3 else 2
                     if (inFrance) {
                         SecaGroupItem(index = 0, count = rows) {
@@ -457,6 +458,3 @@ private fun SettingsEntry(
         SecaSettingRow(icon = icon, title = title, subtitle = subtitle)
     }
 }
-
-/** The only country whose telemarketing ranges this filter knows (#77). */
-private const val FRANCE = "FR"
