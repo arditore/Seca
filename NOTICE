@@ -1,0 +1,46 @@
+Seca — Contacts, Phone and Messages for Android
+Copyright (C) 2026 arditore
+
+LICENCE
+
+  Seca Contacts, Seca Phone and every shared module are licensed under the
+  GNU General Public License, version 3 or later. See LICENSE.
+
+  Seca Messages is licensed under the GNU Affero General Public License,
+  version 3 or later. See apps/messages/LICENSE. It links libsignal, which
+  Signal Messenger publishes under the AGPL, and the AGPL asks the whole
+  work to be offered under its own terms.
+
+  These licences give you the right to use, study, change and share this
+  software, including to build something else out of it. That right is not
+  taken away here and cannot be: it is the licence, and adding conditions
+  on top of it is not permitted by the licence itself.
+
+  What the licence asks in return is the part that matters to this project:
+  anyone who distributes a changed version has to publish their changes
+  under the same terms. A closed version of Seca carrying code from here —
+  one with analytics in it, for instance — is a copyright infringement, not
+  a competitor.
+
+NAME AND MARKS
+
+  "Seca", the three app names, and the icons in this repository are not
+  covered by the licence above. The code is free; the name is not. See
+  TRADEMARK.md.
+
+OWNERSHIP
+
+  arditore is the copyright holder of this project and intends to remain
+  the sole holder, which is why contributions are accepted under the terms
+  in CONTRIBUTING.md.
+
+  Contributions made before those terms were written remain the copyright
+  of the people who made them, under the licences above. They are listed in
+  the git history, which is the record.
+
+NOT FOR SALE
+
+  Seca has had, and declined, offers to add data collection to it. These
+  are recorded in public:
+
+  https://github.com/arditore/Seca/issues/81

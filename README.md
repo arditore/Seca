@@ -265,6 +265,21 @@ SECA_SCREENSHOTS=build/captures SECA_SCREENSHOTS_LANGUAGE=en-rUS \
 `es-rES`, `tr-rTR`) and draws every screen in that language, words and dates alike. Each
 listing's images are generated this way, one language at a time.
 
+## 🦈 Not for sale
+
+A company offered **80,000 USD** to put analytics into Seca: to collect as much
+as possible about every user, route it through their infrastructure, and sell it
+from there. It was declined on the spot.
+
+Offers like that are declined and written down in public, with the amount, in
+[issue #81](https://github.com/arditore/Seca/issues/81) — the amount is the
+useful part, because it says what a contact list and a call history are worth to
+somebody.
+
+The licence is the thing that enforces this rather than the promise. Anyone who
+ships a changed Seca has to publish what they changed, so a closed build of this
+app with data collection in it is a copyright infringement, not a competitor.
+
 ## 📜 License
 
 [GPL-3.0-or-later](LICENSE), except Seca Messages.
@@ -273,6 +288,15 @@ Seca Messages is [AGPL-3.0-or-later](apps/messages/LICENSE). It links libsignal,
 which Signal publishes under the AGPL, and the AGPL asks the whole work to be
 offered under its own terms. Seca Contacts, Seca Phone and every shared module
 stay GPL-3.0-or-later.
+
+**The code is free; the name is not.** Fork it, change it, ship it — under your
+own name and icon. "Seca" and the app icons are reserved, which is how a fork
+stays tellable apart from this one: [TRADEMARK.md](TRADEMARK.md).
+
+Contributions are welcome and the terms are in
+[CONTRIBUTING.md](CONTRIBUTING.md), including why it asks for the right to
+relicense: so there is one person able to act against a company that takes this
+code and closes it. See [NOTICE](NOTICE) for who holds what.
 
 ---
 
