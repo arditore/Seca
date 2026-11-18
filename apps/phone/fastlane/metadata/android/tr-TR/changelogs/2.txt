@@ -1,0 +1,4 @@
+İkinci beta.
+• İngilizce arayüz, telefonun diline göre seçilir; Fransızca de duruyor.
+• Profil renkleri, Seca uygulamaları hangi sırayla kurulmuş olursa olsun görünür.
+• Android 12 ve üzeri her telefonda çalışır; GrapheneOS önerilir.

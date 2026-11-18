@@ -1,0 +1,1 @@
+Gezinme çubuğu da altta Material'in renk tonlu grisini bir şerit olarak bırakmak yerine siyah temayı izliyor. Lehçe artık çevirinin katkı olarak verilmesinden sonra eklenen arama ekranı seçeneklerini de kapsıyor.

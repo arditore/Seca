@@ -152,6 +152,7 @@ internal fun sampleProfile(key: String): Profile = Profile(
         "es" -> mapOf("family" to "Familia", "work" to "Trabajo", "sport" to "Deporte")
         "pl" -> mapOf("family" to "Rodzina", "work" to "Praca", "sport" to "Sport")
         "de" -> mapOf("family" to "Familie", "work" to "Arbeit", "sport" to "Sport")
+        "tr" -> mapOf("family" to "Aile", "work" to "İş", "sport" to "Spor")
         else -> mapOf("family" to "Family", "work" to "Work", "sport" to "Sport")
     }.getValue(key),
 )

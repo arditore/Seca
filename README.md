@@ -166,7 +166,7 @@ server of mine.
 
 ## 🌍 Languages
 
-English, French, Spanish, Polish and German, following the phone's own language,
+English, French, Spanish, Polish, German and Turkish, following the phone's own language,
 or the per-app language Android 13 offers. Nothing ships half translated: a
 language is listed in the build only once its strings are complete, in the apps
 and in every module they share.
@@ -262,7 +262,7 @@ SECA_SCREENSHOTS=build/captures SECA_SCREENSHOTS_LANGUAGE=en-rUS \
 ```
 
 `SECA_SCREENSHOTS_LANGUAGE` takes an Android qualifier (`en-rUS`, `fr-rFR`,
-`es-rES`) and draws every screen in that language, words and dates alike. Each
+`es-rES`, `tr-rTR`) and draws every screen in that language, words and dates alike. Each
 listing's images are generated this way, one language at a time.
 
 ## 📜 License

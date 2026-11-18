@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="design_app_contacts">Kişiler</string>
+    <string name="design_app_locked">%1$s kilitli</string>
+    <string name="design_app_locked_hint">İçeriği, kilit açılana kadar gizli kalır.</string>
+    <string name="design_app_messages">Mesajlar</string>
+    <string name="design_app_phone">Telefon</string>
+    <string name="design_back">Geri</string>
+    <string name="design_cancel">İptal</string>
+    <string name="design_clear_search">Aramayı temizle</string>
+    <string name="design_close">Kapat</string>
+    <string name="design_lock_app">%1$s uygulamasını kilitle</string>
+    <string name="design_lock_app_on">Açılırken parmak izi veya telefon kodu</string>
+    <string name="design_lock_app_unavailable">Önce Android\'de bir ekran kilidi ayarlayın</string>
+    <string name="design_palette_dusk">Alacakaranlık</string>
+    <string name="design_palette_forest">Orman</string>
+    <string name="design_palette_ocean">Okyanus</string>
+    <string name="design_palette_slate">Arduvaz</string>
+    <string name="design_palette_wallpaper">Duvar kâğıdı</string>
+    <string name="design_passphrase">Parola</string>
+    <string name="design_passphrase_confirm">Parolayı doğrula</string>
+    <string name="design_passphrase_creating_hint">Bu parola olmadan yedek bir daha açılamaz: kimse onu kurtaramaz.</string>
+    <string name="design_passphrase_opening_hint">Yedek alınırken seçilen parola.</string>
+    <plurals name="design_passphrase_too_short">
+        <item quantity="one">En az %d karakter</item>
+        <item quantity="other">En az %d karakter</item>
+    </plurals>
+    <string name="design_private_screen">Gizli ekran</string>
+    <string name="design_private_screen_hint">Ekran görüntüsü almayı engeller ve son uygulamalardaki önizlemeyi gizler</string>
+    <string name="design_profile_principal">Ana</string>
+    <string name="design_unlock">Kilidi aç</string>
+    <string name="design_unlock_app">%1$s uygulamasının kilidini aç</string>
+    <string name="seca_palette">Seca paleti</string>
+    <string name="seca_palette_hint_dynamic">Duvar kâğıdı renkleri yerine</string>
+    <string name="seca_palette_hint_on">Her uygulama kendi tonunu alır</string>
+    <string name="design_copied">Kopyalandı</string>
+    <string name="design_copy">Kopyala</string>
+    <string name="design_choose_all">Tümünü seç</string>
+    <string name="design_choose_none">Seçimi kaldır</string>
+    <string name="design_more_options">Diğer seçenekler</string>
+    <string name="design_shape_playful">Eğlenceli</string>
+    <string name="design_shape_circle">Daire</string>
+    <string name="design_shape_squircle">Yuvarlak kare</string>
+    <string name="design_shape_cookie">Kurabiye</string>
+    <string name="design_shape_clover">Yonca</string>
+    <string name="design_shape_sunny">Güneş</string>
+    <string name="design_shape_flower">Çiçek</string>
+    <string name="design_shape_section">Yüzlerin biçimi</string>
+    <string name="design_shape_hint_playful">Kişi başına farklı bir biçim</string>
+    <string name="design_shape_hint_one">Herkes için aynı biçim</string>
+    <string name="design_palette_mine">Benimki</string>
+    <string name="design_palette_hue">Renk</string>
+    <string name="design_palette_chroma">Yoğunluk</string>
+    <string name="design_keep">Kullan</string>
+    <string name="design_colour_per_person">Kişi başına bir renk</string>
+    <string name="design_colour_per_person_hint">Profilinin rengi yerine</string>
+</resources>

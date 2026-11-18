@@ -1,0 +1,5 @@
+İkinci beta.
+• İngilizce arayüz, telefonun diline göre seçilir; Fransızca de duruyor.
+• Her sohbet, en üstte kişinin profilinin ya da uygulamanın renginde kendi ışığını alır.
+• Profil renkleri, Seca uygulamaları hangi sırayla kurulmuş olursa olsun görünür.
+• Android 12 ve üzeri her telefonda çalışır; GrapheneOS önerilir.

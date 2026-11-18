@@ -216,6 +216,7 @@ internal fun sampleProfile(key: String): Profile = Profile(
         "es" -> mapOf("family" to "Familia", "work" to "Trabajo", "sport" to "Deporte")
         "pl" -> mapOf("family" to "Rodzina", "work" to "Praca", "sport" to "Sport")
         "de" -> mapOf("family" to "Familie", "work" to "Arbeit", "sport" to "Sport")
+        "tr" -> mapOf("family" to "Aile", "work" to "İş", "sport" to "Spor")
         else -> mapOf("family" to "Family", "work" to "Work", "sport" to "Sport")
     }.getValue(key),
 )
@@ -248,6 +249,17 @@ internal fun phrase(key: String): String = when (Locale.getDefault().language) {
         "document" to "Gracias por el documento, lo miro esta noche.",
         "code" to "Tu código de verificación es 482913",
         "callback" to "¿Me puedes llamar cuando tengas un momento?",
+    )
+    "tr" -> mapOf(
+        "market" to "Pazar günü pazara geliyor musun?",
+        "bread" to "Evet, ekmeği ben getiririm",
+        "saturday" to "Cumartesi programına baktın mı?",
+        "tonight" to "Selam! Bu akşam müsait misin?",
+        "yes" to "Evet, yediden sonra",
+        "soon" to "Harika, birazdan görüşürüz!",
+        "document" to "Belge için teşekkürler, bu akşam bakacağım.",
+        "code" to "Doğrulama kodunuz 482913",
+        "callback" to "Müsait olunca beni arayabilir misin?",
     )
     else -> mapOf(
         "market" to "Are you coming to the market on Sunday?",

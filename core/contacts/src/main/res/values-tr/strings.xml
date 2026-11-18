@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="contacts_number_short">Kısa numara</string>
+    <string name="contacts_number_unknown">Eksik veya bilinmeyen numara</string>
+</resources>

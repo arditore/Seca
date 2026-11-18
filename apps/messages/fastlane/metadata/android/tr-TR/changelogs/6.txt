@@ -1,0 +1,1 @@
+Altıncı beta, yine F-Droid için: derleme, tarayıcılarının gerektirdiği yerde kendini yamalıyor, Rust'ı sunucularının beklediği şekilde kuruyor ve onlarınkiyle aynı NDK sürümüne sabitleniyor; böylece onların APK'sı ile buradaki birebir aynı çıkıyor. Telefonda hiçbir şey değişmiyor.

@@ -1,0 +1,1 @@
+Arayanın operatörü bir ad gönderdiğinde Seca, bu adı aramada, arama geçmişinde ve cevapsız arama bildirimlerinde numaranın yerine gösterir; numara adın altında yer alır. Arayanı kişilere eklerseniz ad zaten dolu gelir. Bunun için kişiler asla okunmaz.
