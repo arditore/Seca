@@ -9,17 +9,18 @@ and what a new release has to do in what order.
 | Seca Phone | **published** ([!49025](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49025)), reproducible | ready to request |
 | Seca Messages | **published** ([!49106](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49106)), reproducible, both native libraries built from source | ready to request |
 
-The reproducible build is not a claim. For 0.1.0-beta10, the APK f-droid.org serves has the
+The reproducible build is not a claim. For 0.1.0-beta13, the APK f-droid.org serves has the
 same SHA-256 as the one attached to the GitHub release, for all three:
 
 ```text
-46e0cdf43878edb8f0ce16a01f8acebd57bb2ead76dd68d64ef057fa8d190760  seca-contacts
-202f3e114bb13a9c6686e72aa89ca72d20368142ab4fa7c28ee0bf2485c9688d  seca-phone
-22cd33add05402d6f93c8af112586bb278080eb66e00a745e773f9e4b358baf9  seca-messages
+24931ae93a12b9eb67d691c95d458e992315ab93395c9113f286ae061e58167b  seca-contacts
+4cdf5d889213e1abb7b43106a38be4dce5f641a3dd1548b54404c97745114926  seca-phone
+487c15dfe49708ab0899280872f5a3f0f94095b682f36275dcd0fdeee3d7b56c  seca-messages
 ```
 
-Their server rebuilt each one, found the same bytes, and distributes ours with this project's
-signature.
+Their server rebuilt each one from the tag, found the same bytes, and distributes ours with
+this project's signature. It held for 0.1.0-beta10 before this and through a change to the
+build itself in between, which is the interesting part: the property is maintained, not lucky.
 
 All three follow new tags by themselves (`AutoUpdateMode: Version`), so a release here reaches
 F-Droid without a merge request — as long as the APK published here stays reproducible, which
