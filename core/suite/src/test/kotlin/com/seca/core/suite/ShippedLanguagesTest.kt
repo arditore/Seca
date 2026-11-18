@@ -59,6 +59,38 @@ class ShippedLanguagesTest {
         assertTrue("Strings left behind after the English one was removed:\n" + extra.joinToString("\n"), extra.isEmpty())
     }
 
+    /**
+     * An apostrophe inside a string has to be escaped, and the error when it is not is useless.
+     *
+     * Android's resource compiler answers "Invalid unicode escape sequence in string" for a
+     * bare `'`, which sends whoever hit it looking for a backslash-u that is not there. It has
+     * now cost two people an evening: a French string of mine and a Turkish one in a pull
+     * request, both of them "Seca'nın"-shaped.
+     *
+     * Said here, by name, before the resource compiler gets to be mysterious about it.
+     */
+    @Test
+    fun `no string has a bare apostrophe in it`() {
+        val bare = mutableListOf<String>()
+        for (module in modules()) {
+            for (dir in File(module, "src/main/res").listFiles().orEmpty()) {
+                if (!dir.name.startsWith("values")) continue
+                val file = File(dir, "strings.xml")
+                if (!file.isFile) continue
+                VALUE.findAll(file.readText()).forEach { match ->
+                    val (name, body) = match.destructured
+                    if (UNESCAPED.containsMatchIn(body)) bare += "${module.name}/${dir.name} $name"
+                }
+            }
+        }
+        assertTrue(
+            "An apostrophe in an Android string resource has to be escaped or the whole file " +
+                "fails to compile, and the error names unicode rather than the quote:\n" +
+                bare.joinToString("\n"),
+            bare.isEmpty(),
+        )
+    }
+
     private fun keysOf(file: File): Set<String>? {
         if (!file.isFile) return null
         return KEY.findAll(file.readText()).map { it.groupValues[1] }.toSet()
@@ -80,5 +112,9 @@ class ShippedLanguagesTest {
         /** Kept in step with `localeFilters` in the application convention plugin. */
         val LANGUAGES = listOf("fr", "es", "pl", "de", "tr")
         val KEY = Regex("""<(?:string|plurals) name="([^"]+)"""")
+        val VALUE = Regex("""<string name="([^"]+)">(.*?)</string>""", RegexOption.DOT_MATCHES_ALL)
+
+        /** An apostrophe with no backslash in front of it. */
+        val UNESCAPED = Regex("(?<!\\\\)'")
     }
 }

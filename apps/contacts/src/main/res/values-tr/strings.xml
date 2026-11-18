@@ -218,7 +218,7 @@
     <string name="block_asked">Seca Telefon\'da engellendi. Ayarlarından, Engellenen numaralar bölümünden geri alın.</string>
     <string name="accounts">Hesaplar</string>
     <string name="settings_accounts_hint">Gösterilecek hesaplar</string>
-    <string name="accounts_hint">Bir hesabı kapatmak, Seca'nın o hesaba ait kişi kayıtlarını göstermesini durdurur. Hiçbir şey silinmez.</string>
+    <string name="accounts_hint">Bir hesabı kapatmak, Seca\'nın o hesaba ait kişi kayıtlarını göstermesini durdurur. Hiçbir şey silinmez.</string>
     <string name="accounts_none">Bu telefondaki hiçbir hesapta kişi yok</string>
     <plurals name="accounts_holding">
         <item quantity="one">%d kişi</item>
