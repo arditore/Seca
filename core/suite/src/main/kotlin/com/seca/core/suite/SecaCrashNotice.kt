@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 
 /**
@@ -42,28 +43,28 @@ fun SecaCrashNotice() {
         SecaCrashReport.clear(context)
         report = null
     }
-    AlertDialog(
-        onDismissRequest = forget,
-        icon = { Icon(SecaIcons.Shield, contentDescription = null) },
-        title = { Text(stringResource(R.string.crash_title)) },
-        text = {
+    val subject = stringResource(R.string.crash_subject)
+    SecaDialog(
+        onDismiss = forget,
+        icon = SecaIcons.Shield,
+        title = stringResource(R.string.crash_title),
+        message = stringResource(R.string.crash_body),
+        confirmLabel = stringResource(R.string.crash_send),
+        dismissLabel = stringResource(R.string.crash_discard),
+        onConfirm = {
+            share(context, subject, trace)
+            forget()
+        },
+        content = {
+            // The report itself, scrollable, because nobody should send what they cannot read.
             Text(
-                text = stringResource(R.string.crash_body) + "\n\n" + trace,
+                text = trace,
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
-                    .heightIn(max = 320.dp)
+                    .heightIn(max = 280.dp)
                     .verticalScroll(rememberScrollState()),
             )
-        },
-        confirmButton = {
-            val subject = stringResource(R.string.crash_subject)
-            TextButton(onClick = {
-                share(context, subject, trace)
-                forget()
-            }) { Text(stringResource(R.string.crash_send)) }
-        },
-        dismissButton = {
-            TextButton(onClick = forget) { Text(stringResource(R.string.crash_discard)) }
         },
     )
 }

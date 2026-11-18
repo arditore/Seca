@@ -434,7 +434,6 @@
     </plurals>
     <string name="caption_on_sim">%1$s · %2$s</string>
     <string name="choose">Auswählen</string>
-    <string name="delete_conversations_text">Löscht diese Unterhaltungen und alle ihre Nachrichten. Das lässt sich nicht rückgängig machen.</string>
     <plurals name="delete_conversations">
         <item quantity="one">%d Unterhaltung löschen?</item>
         <item quantity="other">%d Unterhaltungen löschen?</item>
@@ -459,4 +458,5 @@
     <string name="mms_apn">die Anbietereinstellungen fehlen</string>
     <string name="mms_no_server">der Server des Anbieters antwortete nicht</string>
     <string name="mms_retry">der Anbieter bat um einen neuen Versuch</string>
+    <string name="delete_conversations_text">Die Nachrichten gehen mit und kommen nicht zurück.</string>
 </resources>

@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.findDuplicates
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaContactRow
 import com.seca.core.design.component.SecaEmptyState
@@ -92,22 +93,17 @@ internal fun DuplicatesScreen(ui: ContactsUi, viewModel: ContactsViewModel, with
     }
 
     merging?.let { group ->
-        AlertDialog(
-            onDismissRequest = { merging = null },
-            icon = { Icon(SecaIcons.Link, contentDescription = null) },
-            title = { Text(pluralStringResource(R.plurals.merge_cards_title, group.size, group.size)) },
-            text = {
-                Text(stringResource(R.string.merge_cards_text, group.joinToString(", ") { it.displayName.ifBlank { noName } }))
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        SecaDialog(
+            onDismiss = { merging = null },
+            icon = SecaIcons.Link,
+            title = pluralStringResource(R.plurals.merge_cards_title, group.size, group.size),
+            message = stringResource(R.string.merge_cards_text, group.joinToString(", ") { it.displayName.ifBlank { noName } }),
+            confirmLabel = stringResource(R.string.merge),
+            dismissLabel = stringResource(R.string.cancel),
+            onConfirm = {
                         merging = null
                         withWrite { viewModel.merge(group) }
                     },
-                ) { Text(stringResource(R.string.merge)) }
-            },
-            dismissButton = { TextButton(onClick = { merging = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

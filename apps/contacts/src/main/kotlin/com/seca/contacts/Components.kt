@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.model.Profile
@@ -28,23 +29,22 @@ internal fun ProfileNameDialog(
     onConfirm: (String) -> Unit,
 ) {
     var name by remember { mutableStateOf(initial) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Label, contentDescription = null) },
-        title = { Text(title) },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                singleLine = true,
-                label = { Text(stringResource(R.string.profile_name)) },
-                shape = MaterialTheme.shapes.medium,
-            )
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Label,
+        title = title,
+        confirmLabel = confirmLabel,
+        dismissLabel = stringResource(R.string.cancel),
+        onConfirm = { onConfirm(name.trim()) },
+        content = {
+        OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.profile_name)) },
+                        shape = MaterialTheme.shapes.medium,
+                    )
         },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) { Text(confirmLabel) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

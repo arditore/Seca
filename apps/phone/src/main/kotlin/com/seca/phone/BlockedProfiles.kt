@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaChoicePill
 import com.seca.core.design.component.SecaProfileBadge
@@ -55,77 +56,78 @@ internal val PhoneUi.blockedProfileList: List<Profile>
 internal fun BlockedProfilesDialog(ui: PhoneUi, viewModel: PhoneViewModel, onDismiss: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val counts = remember(ui.contacts, ui.profiles) { ui.contacts.groupingBy { ui.profileOf(it).id }.eachCount() }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Block, contentDescription = null) },
-        title = { Text(stringResource(R.string.blocked_profiles)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text(
-                    text = stringResource(R.string.blocked_profiles_dialog_hint),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-                ui.profiles.profiles.forEach { profile ->
-                    val blocked = profile.id in ui.blockedProfiles
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.large)
-                            .toggleable(value = blocked, role = Role.Switch) { viewModel.setProfileBlocked(profile.id, it) }
-                            .padding(horizontal = 4.dp, vertical = 8.dp),
-                    ) {
-                        SecaProfileBadge(profile.label(), tone = ui.profiles.toneOf(profile), size = 36.dp)
-                        Column(
-                            Modifier
-                                .weight(1f)
-                                .padding(horizontal = 12.dp),
-                        ) {
-                            Text(
-                                text = profile.label(),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = colors.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                text = contactCount(counts[profile.id] ?: 0),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = colors.onSurfaceVariant,
-                            )
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Block,
+        title = stringResource(R.string.blocked_profiles),
+        confirmLabel = stringResource(android.R.string.ok),
+        onConfirm = onDismiss,
+        content = {
+        Column(Modifier.verticalScroll(rememberScrollState())) {
+                        Text(
+                            text = stringResource(R.string.blocked_profiles_dialog_hint),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        )
+                        ui.profiles.profiles.forEach { profile ->
+                            val blocked = profile.id in ui.blockedProfiles
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(MaterialTheme.shapes.large)
+                                    .toggleable(value = blocked, role = Role.Switch) { viewModel.setProfileBlocked(profile.id, it) }
+                                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                            ) {
+                                SecaProfileBadge(profile.label(), tone = ui.profiles.toneOf(profile), size = 36.dp)
+                                Column(
+                                    Modifier
+                                        .weight(1f)
+                                        .padding(horizontal = 12.dp),
+                                ) {
+                                    Text(
+                                        text = profile.label(),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = colors.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Text(
+                                        text = contactCount(counts[profile.id] ?: 0),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colors.onSurfaceVariant,
+                                    )
+                                }
+                                Switch(checked = blocked, onCheckedChange = null)
+                            }
                         }
-                        Switch(checked = blocked, onCheckedChange = null)
-                    }
-                }
-
-                DialogLabel(stringResource(R.string.block_duration))
-                BlockFor.entries.chunked(2).forEach { row ->
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    ) {
-                        row.forEach { choice ->
-                            SecaChoicePill(stringResource(durationLabel(choice)), selected = ui.blockFor == choice, onClick = { viewModel.setBlockFor(choice) })
+        
+                        DialogLabel(stringResource(R.string.block_duration))
+                        BlockFor.entries.chunked(2).forEach { row ->
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(bottom = 8.dp),
+                            ) {
+                                row.forEach { choice ->
+                                    SecaChoicePill(stringResource(durationLabel(choice)), selected = ui.blockFor == choice, onClick = { viewModel.setBlockFor(choice) })
+                                }
+                            }
                         }
+        
+                        DialogLabel(stringResource(R.string.when_they_call))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            SecaChoicePill(stringResource(R.string.decline), selected = ui.blockMode == BlockMode.Decline, onClick = { viewModel.setBlockMode(BlockMode.Decline) })
+                            SecaChoicePill(stringResource(R.string.silently), selected = ui.blockMode == BlockMode.Silence, onClick = { viewModel.setBlockMode(BlockMode.Silence) })
+                        }
+                        Text(
+                            text = stringResource(if (ui.blockMode == BlockMode.Decline) R.string.block_decline_hint else R.string.block_silence_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
                     }
-                }
-
-                DialogLabel(stringResource(R.string.when_they_call))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SecaChoicePill(stringResource(R.string.decline), selected = ui.blockMode == BlockMode.Decline, onClick = { viewModel.setBlockMode(BlockMode.Decline) })
-                    SecaChoicePill(stringResource(R.string.silently), selected = ui.blockMode == BlockMode.Silence, onClick = { viewModel.setBlockMode(BlockMode.Silence) })
-                }
-                Text(
-                    text = stringResource(if (ui.blockMode == BlockMode.Decline) R.string.block_decline_hint else R.string.block_silence_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.ok)) } },
     )
 }
 

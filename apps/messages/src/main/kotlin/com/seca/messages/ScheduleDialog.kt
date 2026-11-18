@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -39,33 +40,34 @@ internal fun ScheduleDialog(onDismiss: () -> Unit, onSchedule: (Long) -> Unit) {
     // Checked each time the dialog opens, so a permission just granted counts.
     val exact = remember { context.getSystemService(AlarmManager::class.java)?.canScheduleExactAlarms() != false }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Schedule, contentDescription = null) },
-        title = { Text(stringResource(R.string.schedule_send)) },
-        text = {
-            Column {
-                choices.forEach { (label, at) ->
-                    ScheduleChoice(stringResource(label), scheduleTimeOf(context, at)) { onSchedule(at) }
-                }
-                ScheduleChoice(stringResource(R.string.pick_date_time), null) { pickDateTime(context, now, onSchedule) }
-                if (!exact) {
-                    Text(
-                        text = stringResource(R.string.exact_alarm_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp),
-                    )
-                    TextButton(
-                        onClick = {
-                            onDismiss()
-                            openExactAlarmSettings(context)
-                        },
-                    ) { Text(stringResource(R.string.allow_exact_time)) }
-                }
-            }
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Schedule,
+        title = stringResource(R.string.schedule_send),
+        confirmLabel = stringResource(R.string.cancel),
+        onConfirm = onDismiss,
+        content = {
+        Column {
+                        choices.forEach { (label, at) ->
+                            ScheduleChoice(stringResource(label), scheduleTimeOf(context, at)) { onSchedule(at) }
+                        }
+                        ScheduleChoice(stringResource(R.string.pick_date_time), null) { pickDateTime(context, now, onSchedule) }
+                        if (!exact) {
+                            Text(
+                                text = stringResource(R.string.exact_alarm_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp),
+                            )
+                            TextButton(
+                                onClick = {
+                                    onDismiss()
+                                    openExactAlarmSettings(context)
+                                },
+                            ) { Text(stringResource(R.string.allow_exact_time)) }
+                        }
+                    }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

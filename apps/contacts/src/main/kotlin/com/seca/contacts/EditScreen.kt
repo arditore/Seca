@@ -70,6 +70,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.component.rememberContactPhoto
 import kotlinx.coroutines.launch
 import com.seca.core.contacts.ContactField
@@ -796,43 +797,44 @@ private fun SavingPlaceRow(place: Place?, choosable: Boolean, onChoose: () -> Un
 
 @Composable
 private fun SavingPlaceDialog(places: List<Place>, chosen: Place?, onDismiss: () -> Unit, onPick: (Place) -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Shield, contentDescription = null) },
-        title = { Text(stringResource(R.string.saved_in)) },
-        text = {
-            Column {
-                places.forEach { place ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.large)
-                            .selectable(selected = place == chosen, role = Role.RadioButton) { onPick(place) }
-                            .padding(vertical = 6.dp),
-                    ) {
-                        RadioButton(selected = place == chosen, onClick = null)
-                        Column(Modifier.padding(start = 12.dp)) {
-                            Text(
-                                text = placeName(place),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            // The account's type as the phone spells it: not pretty, but true,
-                            // and it is what tells two accounts of the same name apart.
-                            place.type?.takeIf { it.isNotEmpty() }?.let {
-                                Text(
-                                    text = it,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Shield,
+        title = stringResource(R.string.saved_in),
+        confirmLabel = stringResource(R.string.close),
+        onConfirm = onDismiss,
+        content = {
+        Column {
+                        places.forEach { place ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(MaterialTheme.shapes.large)
+                                    .selectable(selected = place == chosen, role = Role.RadioButton) { onPick(place) }
+                                    .padding(vertical = 6.dp),
+                            ) {
+                                RadioButton(selected = place == chosen, onClick = null)
+                                Column(Modifier.padding(start = 12.dp)) {
+                                    Text(
+                                        text = placeName(place),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    // The account's type as the phone spells it: not pretty, but true,
+                                    // and it is what tells two accounts of the same name apart.
+                                    place.type?.takeIf { it.isNotEmpty() }?.let {
+                                        Text(
+                                            text = it,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
     )
 }
 

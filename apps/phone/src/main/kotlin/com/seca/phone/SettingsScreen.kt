@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.PhoneNumbers
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.component.SecaGroupItem
@@ -376,20 +377,18 @@ internal fun SettingsScreen(
     }
 
     if (confirmClear) {
-        AlertDialog(
-            onDismissRequest = { confirmClear = false },
-            icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-            title = { Text(stringResource(R.string.clear_history_title)) },
-            text = { Text(stringResource(R.string.clear_history_text)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        SecaDialog(
+            onDismiss = { confirmClear = false },
+            icon = SecaIcons.Delete,
+            title = stringResource(R.string.clear_history_title),
+            message = stringResource(R.string.clear_history_text),
+            confirmLabel = stringResource(R.string.erase),
+            dismissLabel = stringResource(R.string.cancel),
+            destructive = true,
+            onConfirm = {
                         confirmClear = false
                         withCallLogWrite { viewModel.clearHistory() }
                     },
-                ) { Text(stringResource(R.string.erase)) }
-            },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -405,32 +404,29 @@ internal fun SettingsScreen(
 private fun QuickRepliesDialog(settings: InCallSettings, onDismiss: () -> Unit) {
     val defaults = remember(settings) { settings.defaultReplies }
     val texts = remember(settings) { settings.replies.toMutableStateList() }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Messages, contentDescription = null) },
-        title = { Text(stringResource(R.string.decline_and_reply)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                texts.forEachIndexed { index, text ->
-                    OutlinedTextField(
-                        value = text,
-                        onValueChange = { texts[index] = it },
-                        placeholder = { Text(defaults[index]) },
-                        singleLine = false,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Messages,
+        title = stringResource(R.string.decline_and_reply),
+        confirmLabel = stringResource(R.string.save),
+        dismissLabel = stringResource(R.string.cancel),
+        onConfirm = {
                     settings.replies = texts
                     onDismiss()
                 },
-            ) { Text(stringResource(R.string.save)) }
+        content = {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        texts.forEachIndexed { index, text ->
+                            OutlinedTextField(
+                                value = text,
+                                onValueChange = { texts[index] = it },
+                                placeholder = { Text(defaults[index]) },
+                                singleLine = false,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

@@ -455,7 +455,6 @@
     </plurals>
     <string name="caption_on_sim">%1$s · %2$s</string>
     <string name="choose">Wybierz</string>
-    <string name="delete_conversations_text">Usuwa te rozmowy i wszystkie ich wiadomości. Tego nie można cofnąć.</string>
     <plurals name="delete_conversations">
         <item quantity="one">Usunąć %d rozmowę?</item>
         <item quantity="few">Usunąć %d rozmowy?</item>
@@ -482,4 +481,5 @@
     <string name="mms_apn">brakuje ustawień operatora</string>
     <string name="mms_no_server">serwer operatora nie odpowiedział</string>
     <string name="mms_retry">operator poprosił o ponowienie</string>
+    <string name="delete_conversations_text">Wiadomości znikną razem z nimi.</string>
 </resources>

@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaIcons
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaSearchField
@@ -599,25 +600,33 @@ private fun FolderScreen(
 /** Deleting a chosen set, which cannot be undone and so is asked about once, for all of them. */
 @Composable
 private fun DeleteChosenDialog(count: Int, onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-        title = { Text(pluralStringResource(R.plurals.delete_conversations, count, count)) },
-        text = { Text(stringResource(R.string.delete_conversations_text)) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.delete)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Delete,
+        title = pluralStringResource(R.plurals.delete_conversations, count, count),
+        // The title already says how many, so this says only what the title does not: that
+        // the messages go with it and that there is no way back. It used to read "these
+        // conversations" over a title saying "Delete 1 conversation?", and carried no number
+        // of its own, so a plural would have been machinery for nothing.
+        message = stringResource(R.string.delete_conversations_text),
+        confirmLabel = stringResource(R.string.delete),
+        dismissLabel = stringResource(R.string.cancel),
+        destructive = true,
+        onConfirm = onConfirm,
     )
 }
 
 @Composable
 private fun DeleteConversationDialog(name: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-        title = { Text(stringResource(R.string.delete_conversation_title)) },
-        text = { Text(stringResource(R.string.delete_conversation_text, name)) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.delete)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Delete,
+        title = stringResource(R.string.delete_conversation_title),
+        message = stringResource(R.string.delete_conversation_text, name),
+        confirmLabel = stringResource(R.string.delete),
+        dismissLabel = stringResource(R.string.cancel),
+        destructive = true,
+        onConfirm = onConfirm,
     )
 }
 

@@ -29,6 +29,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.seca.core.design.component.SecaBusyDialog
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaChoicePill
 import com.seca.core.design.component.SecaGroupItem
@@ -234,49 +236,45 @@ fun AutoBackupSection() {
     }
 
     if (warning) {
-        AlertDialog(
-            onDismissRequest = { warning = false },
-            icon = { Icon(SecaIcons.Shield, contentDescription = null) },
-            title = { Text(stringResource(R.string.auto_portable)) },
-            text = { Text(stringResource(R.string.auto_portable_warning), style = MaterialTheme.typography.bodyMedium) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        SecaDialog(
+            onDismiss = { warning = false },
+            icon = SecaIcons.Shield,
+            title = stringResource(R.string.auto_portable),
+            message = stringResource(R.string.auto_portable_warning),
+            confirmLabel = stringResource(R.string.auto_understand),
+            dismissLabel = stringResource(android.R.string.cancel),
+            onConfirm = {
                         warning = false
                         portable = true
                         settings.portable = true
                     },
-                ) { Text(stringResource(R.string.auto_understand)) }
-            },
-            dismissButton = { TextButton(onClick = { warning = false }) { Text(stringResource(android.R.string.cancel)) } },
         )
     }
 
     if (working) {
-        AlertDialog(
-            onDismissRequest = {},
-            title = { Text(stringResource(R.string.suite_backing_up)) },
-            text = { Text(stringResource(R.string.suite_working_hint), style = MaterialTheme.typography.bodyMedium) },
-            confirmButton = {},
+        SecaBusyDialog(
+            title = stringResource(R.string.suite_backing_up),
+            message = stringResource(R.string.suite_working_hint),
         )
     }
 
     outcome?.let { result ->
-        AlertDialog(
-            onDismissRequest = { outcome = null },
-            icon = { Icon(if (result is AutoBackup.Result.Written) SecaIcons.Check else SecaIcons.Shield, contentDescription = null) },
-            title = { Text(stringResource(if (result is AutoBackup.Result.Written) R.string.suite_done else R.string.suite_failed)) },
-            text = {
-                Column {
-                    when (result) {
-                        is AutoBackup.Result.Written -> result.files.forEach {
-                            Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 4.dp))
-                        }
-                        is AutoBackup.Result.Failed -> Text(result.reason, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
+        SecaDialog(
+            onDismiss = { outcome = null },
+            icon = if (result is AutoBackup.Result.Written) SecaIcons.Check else SecaIcons.Shield,
+            title = stringResource(if (result is AutoBackup.Result.Written) R.string.suite_done else R.string.suite_failed),
+            confirmLabel = stringResource(android.R.string.ok),
+            onConfirm = { outcome = null },
+            content = {
+            Column {
+                                when (result) {
+                                    is AutoBackup.Result.Written -> result.files.forEach {
+                                        Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 4.dp))
+                                    }
+                                    is AutoBackup.Result.Failed -> Text(result.reason, style = MaterialTheme.typography.bodyMedium)
+                                }
+                            }
             },
-            confirmButton = { TextButton(onClick = { outcome = null }) { Text(stringResource(android.R.string.ok)) } },
         )
     }
 }

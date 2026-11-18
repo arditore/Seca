@@ -434,7 +434,6 @@
     </plurals>
     <string name="caption_on_sim">%1$s · %2$s</string>
     <string name="choose">Seç</string>
-    <string name="delete_conversations_text">Bu sohbetler ve içlerindeki tüm mesajlar silinecek. Bu işlem geri alınamaz.</string>
     <plurals name="delete_conversations">
         <item quantity="one">%d sohbet silinsin mi?</item>
         <item quantity="other">%d sohbet silinsin mi?</item>
@@ -459,4 +458,5 @@
     <string name="mms_apn">operatör ayarları eksik</string>
     <string name="mms_no_server">operatörün sunucusu yanıt vermedi</string>
     <string name="mms_retry">operatör yeniden denenmesini istedi</string>
+    <string name="delete_conversations_text">Mesajlar da gider ve geri gelmez.</string>
 </resources>

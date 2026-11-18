@@ -50,6 +50,7 @@ import androidx.core.net.toUri
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.ContactDetail
 import com.seca.core.contacts.PostalAddress
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaEmptyState
@@ -224,44 +225,41 @@ internal fun DetailScreen(
     }
 
     if (choosingShape && current != null) {
-        AlertDialog(
-            onDismissRequest = { choosingShape = false },
-            icon = { Icon(SecaIcons.Contacts, contentDescription = null) },
-            title = { Text(stringResource(R.string.photo_shape)) },
-            text = {
-                SecaShapePicker(
-                    chosen = ui.shapes[current.lookupKey],
-                    // "Everyone's" rather than "Playful" here: on one person's card, having no
-                    // shape of their own means taking whatever everybody else has, which may
-                    // itself be a single shape somebody chose in the settings.
-                    defaultLabel = stringResource(R.string.photo_shape_everyone),
-                    onPick = { shape ->
-                        viewModel.setShapeFor(current.lookupKey, shape)
-                        choosingShape = false
-                    },
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { choosingShape = false }) { Text(stringResource(R.string.close)) }
+        SecaDialog(
+            onDismiss = { choosingShape = false },
+            icon = SecaIcons.Contacts,
+            title = stringResource(R.string.photo_shape),
+            confirmLabel = stringResource(R.string.close),
+            onConfirm = { choosingShape = false },
+            content = {
+            SecaShapePicker(
+                                chosen = ui.shapes[current.lookupKey],
+                                // "Everyone's" rather than "Playful" here: on one person's card, having no
+                                // shape of their own means taking whatever everybody else has, which may
+                                // itself be a single shape somebody chose in the settings.
+                                defaultLabel = stringResource(R.string.photo_shape_everyone),
+                                onPick = { shape ->
+                                    viewModel.setShapeFor(current.lookupKey, shape)
+                                    choosingShape = false
+                                },
+                            )
             },
         )
     }
 
     if (confirmDelete && current != null) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-            title = { Text(stringResource(R.string.delete_contact_title)) },
-            text = { Text(stringResource(R.string.delete_contact_text, current.displayName)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        SecaDialog(
+            onDismiss = { confirmDelete = false },
+            icon = SecaIcons.Delete,
+            title = stringResource(R.string.delete_contact_title),
+            message = stringResource(R.string.delete_contact_text, current.displayName),
+            confirmLabel = stringResource(R.string.delete),
+            dismissLabel = stringResource(R.string.cancel),
+            destructive = true,
+            onConfirm = {
                         confirmDelete = false
                         withWrite { viewModel.delete(id) }
                     },
-                ) { Text(stringResource(R.string.delete)) }
-            },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.ContactField
 import com.seca.core.contacts.VCard
 import com.seca.core.contacts.VCardContact
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaGroupItem
@@ -232,22 +233,23 @@ internal fun MyCardScreen(ui: ContactsUi, viewModel: ContactsViewModel) {
 
     if (sharing) {
         val card = remember(name, shareable) { myCardVCard(name, shareable) }
-        AlertDialog(
-            onDismissRequest = { sharing = false },
-            title = { Text(name.ifBlank { myCardLabel }) },
-            text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    SecaQrCode(card, contentDescription = stringResource(R.string.my_card_qr))
-                    Text(
-                        text = stringResource(R.string.my_card_qr_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 16.dp),
-                    )
-                }
+        SecaDialog(
+            onDismiss = { sharing = false },
+            title = name.ifBlank { myCardLabel },
+            confirmLabel = stringResource(R.string.close),
+            onConfirm = { sharing = false },
+            content = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                                SecaQrCode(card, contentDescription = stringResource(R.string.my_card_qr))
+                                Text(
+                                    text = stringResource(R.string.my_card_qr_hint),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(top = 16.dp),
+                                )
+                            }
             },
-            confirmButton = { TextButton(onClick = { sharing = false }) { Text(stringResource(R.string.close)) } },
         )
     }
 }

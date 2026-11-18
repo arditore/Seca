@@ -454,7 +454,6 @@
     </plurals>
     <string name="caption_on_sim">%1$s · %2$s</string>
     <string name="choose">Seleccionar</string>
-    <string name="delete_conversations_text">Borra estas conversaciones y todos sus mensajes. No se puede deshacer.</string>
     <plurals name="delete_conversations">
         <item quantity="one">¿Borrar %d conversación?</item>
         <item quantity="other">¿Borrar %d conversaciones?</item>
@@ -480,4 +479,5 @@
     <string name="mms_apn">faltan los ajustes del operador</string>
     <string name="mms_no_server">el servidor del operador no respondió</string>
     <string name="mms_retry">el operador pidió reintentar</string>
+    <string name="delete_conversations_text">Los mensajes se van también y no vuelven.</string>
 </resources>

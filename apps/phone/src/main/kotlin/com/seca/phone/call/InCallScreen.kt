@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.SharedProfilesClient
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaAppIdentity
 import android.net.Uri
 import androidx.core.net.toUri
@@ -681,30 +682,31 @@ private fun KeypadPanel(view: CallView, onClose: () -> Unit) {
 @Composable
 private fun QuickReplyDialog(onDismiss: () -> Unit, onSend: (String) -> Unit) {
     val context = LocalContext.current
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Messages, contentDescription = null) },
-        title = { Text(stringResource(R.string.decline_and_reply)) },
-        text = {
-            Column {
-                // Read each time the dialog opens, so a reply edited in the settings is the one
-                // offered on the next call rather than the one the app started with.
-                val replies = remember(context) { InCallSettings(context).replies }
-                replies.forEach { reply ->
-                    Text(
-                        text = reply,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.small)
-                            .clickable { onSend(reply) }
-                            .padding(horizontal = 8.dp, vertical = 12.dp),
-                    )
-                }
-            }
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Messages,
+        title = stringResource(R.string.decline_and_reply),
+        confirmLabel = stringResource(R.string.cancel),
+        onConfirm = onDismiss,
+        content = {
+        Column {
+                        // Read each time the dialog opens, so a reply edited in the settings is the one
+                        // offered on the next call rather than the one the app started with.
+                        val replies = remember(context) { InCallSettings(context).replies }
+                        replies.forEach { reply ->
+                            Text(
+                                text = reply,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(MaterialTheme.shapes.small)
+                                    .clickable { onSend(reply) }
+                                    .padding(horizontal = 8.dp, vertical = 12.dp),
+                            )
+                        }
+                    }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

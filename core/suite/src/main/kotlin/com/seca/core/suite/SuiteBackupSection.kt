@@ -24,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import com.seca.core.design.component.SecaBusyDialog
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaHint
@@ -103,39 +105,28 @@ fun SuiteBackupSection(
         )
     }
     working?.let { label ->
-        AlertDialog(
-            onDismissRequest = {},
-            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
-            title = { Text(stringResource(label)) },
-            text = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(Modifier.size(32.dp))
-                    Text(
-                        text = stringResource(R.string.suite_working_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 16.dp),
-                    )
-                }
-            },
-            confirmButton = {},
+        SecaBusyDialog(
+            title = stringResource(label),
+            message = stringResource(R.string.suite_working_hint),
         )
     }
     outcome?.let { result ->
-        AlertDialog(
-            onDismissRequest = { outcome = null },
-            icon = { Icon(if (result is SuiteBackup.Outcome.Done) SecaIcons.Check else SecaIcons.Shield, contentDescription = null) },
-            title = { Text(stringResource(if (result is SuiteBackup.Outcome.Done) R.string.suite_done else R.string.suite_failed)) },
-            text = {
-                Column {
-                    when (result) {
-                        is SuiteBackup.Outcome.Done -> result.lines.forEach { line ->
-                            Text(line, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 6.dp))
-                        }
-                        is SuiteBackup.Outcome.Failed -> Text(result.reason, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
+        SecaDialog(
+            onDismiss = { outcome = null },
+            icon = if (result is SuiteBackup.Outcome.Done) SecaIcons.Check else SecaIcons.Shield,
+            title = stringResource(if (result is SuiteBackup.Outcome.Done) R.string.suite_done else R.string.suite_failed),
+            confirmLabel = stringResource(android.R.string.ok),
+            onConfirm = { outcome = null },
+            content = {
+            Column {
+                                when (result) {
+                                    is SuiteBackup.Outcome.Done -> result.lines.forEach { line ->
+                                        Text(line, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 6.dp))
+                                    }
+                                    is SuiteBackup.Outcome.Failed -> Text(result.reason, style = MaterialTheme.typography.bodyMedium)
+                                }
+                            }
             },
-            confirmButton = { TextButton(onClick = { outcome = null }) { Text(stringResource(android.R.string.ok)) } },
         )
     }
 }

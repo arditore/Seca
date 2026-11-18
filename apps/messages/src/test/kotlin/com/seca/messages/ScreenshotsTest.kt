@@ -13,11 +13,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isRoot
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import com.seca.core.contacts.NumberIndex
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.SharedProfiles
+import com.seca.core.design.SecaIcons
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.SecaTheme
@@ -116,6 +119,21 @@ class ScreenshotsTest {
         }
     }
 
+    /** The dialog, old and new side by side, so the difference is looked at rather than argued. */
+    @Test
+    fun dialog() = shoot("messages-dialog", lastWindow = true) {
+        SecaDialog(
+            onDismiss = {},
+            icon = SecaIcons.Delete,
+            title = "Supprimer 1 conversation ?",
+            message = "Les messages partent avec elle, et ne reviennent pas.",
+            confirmLabel = "Supprimer",
+            dismissLabel = "Annuler",
+            destructive = true,
+            onConfirm = {},
+        )
+    }
+
     @Test
     fun settings() = shoot("messages-settings") {
         SettingsScreen(sampleUi(), viewModel(), isDefaultApp = true, onBecomeDefault = {})
@@ -135,12 +153,14 @@ class ScreenshotsTest {
 
     private fun viewModel() = MessagesViewModel(ApplicationProvider.getApplicationContext<Application>())
 
-    private fun shoot(name: String, dark: Boolean = false, content: @Composable () -> Unit) {
+    private fun shoot(name: String, dark: Boolean = false, lastWindow: Boolean = false, content: @Composable () -> Unit) {
         composeRule.setContent {
             SecaTheme(identity = SecaAppIdentity.Messages, palette = SecaPalette.Ocean, darkTheme = dark) { content() }
         }
         composeRule.waitForIdle()
-        val image = composeRule.onAllNodes(isRoot())[0].captureToImage().asAndroidBitmap()
+        // A dialog draws in a window of its own, after the screen's.
+        val roots = composeRule.onAllNodes(isRoot())
+        val image = (if (lastWindow) roots.onLast() else roots[0]).captureToImage().asAndroidBitmap()
         val target = folder ?: return
         target.mkdirs()
         File(target, "$name.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }

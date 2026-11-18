@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import com.seca.core.contacts.PhoneNumbers
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaSectionLabel
@@ -210,56 +211,57 @@ internal fun SimChooserDialog(
 ) {
     var keep by remember { mutableStateOf(true) }
     val colors = MaterialTheme.colorScheme
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Phone, contentDescription = null) },
-        title = { Text(title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                sims.forEachIndexed { index, sim ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(segmentShape(index, sims.size, outer = 20.dp))
-                            .background(colors.surfaceContainerHighest)
-                            .clickable(onClickLabel = sim.name) { onPick(sim, keep) }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(colors.primaryContainer),
-                        ) {
-                            Text(
-                                text = sim.slot?.toString() ?: sim.label.take(1),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = colors.onPrimaryContainer,
-                            )
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Phone,
+        title = title,
+        confirmLabel = stringResource(R.string.cancel),
+        onConfirm = onDismiss,
+        content = {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        sims.forEachIndexed { index, sim ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(segmentShape(index, sims.size, outer = 20.dp))
+                                    .background(colors.surfaceContainerHighest)
+                                    .clickable(onClickLabel = sim.name) { onPick(sim, keep) }
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(colors.primaryContainer),
+                                ) {
+                                    Text(
+                                        text = sim.slot?.toString() ?: sim.label.take(1),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = colors.onPrimaryContainer,
+                                    )
+                                }
+                                Column(Modifier.padding(start = 16.dp)) {
+                                    Text(sim.label, style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
+                                    // Which one this contact is usually called with, so that choosing
+                                    // the other is seen to be the exception it is.
+                                    val under = when {
+                                        sim.handle == usual -> stringResource(R.string.sim_usual, sim.slot ?: sim.label)
+                                        sim.slot != null -> "SIM ${sim.slot}"
+                                        else -> null
+                                    }
+                                    under?.let {
+                                        Text(it, style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
+                                    }
+                                }
+                            }
                         }
-                        Column(Modifier.padding(start = 16.dp)) {
-                            Text(sim.label, style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
-                            // Which one this contact is usually called with, so that choosing
-                            // the other is seen to be the exception it is.
-                            val under = when {
-                                sim.handle == usual -> stringResource(R.string.sim_usual, sim.slot ?: sim.label)
-                                sim.slot != null -> "SIM ${sim.slot}"
-                                else -> null
-                            }
-                            under?.let {
-                                Text(it, style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
-                            }
+                        rememberLabel?.let { label ->
+                            RememberChoice(keep, label, onCheckedChange = { keep = it }, modifier = Modifier.padding(top = 12.dp))
                         }
                     }
-                }
-                rememberLabel?.let { label ->
-                    RememberChoice(keep, label, onCheckedChange = { keep = it }, modifier = Modifier.padding(top = 12.dp))
-                }
-            }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

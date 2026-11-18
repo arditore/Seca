@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.HUE_MAX
 import com.seca.core.design.R
 import com.seca.core.design.SecaCustomPalette
@@ -124,47 +125,48 @@ private fun MixDialog(
     var hue by remember { mutableFloatStateOf(start.baseHue) }
     var chroma by remember { mutableFloatStateOf(start.chroma) }
     val mixed = SecaCustomPalette(baseHue = hue, chroma = chroma)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.design_palette_mine)) },
-        text = {
-            Column {
-                // The three discs are the three apps, so the choice is judged on what it does
-                // rather than on one colour out of context.
-                SecaPaletteSwatch(
-                    palette = mixed,
-                    selected = false,
-                    onClick = {},
-                    size = 72.dp,
-                    label = stringResource(R.string.design_palette_mine),
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-                Text(
-                    text = stringResource(R.string.design_palette_hue),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Slider(
-                    value = hue,
-                    onValueChange = { hue = it },
-                    valueRange = 0f..HUE_MAX,
-                )
-                Text(
-                    text = stringResource(R.string.design_palette_chroma),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Slider(
-                    value = chroma,
-                    onValueChange = { chroma = it },
-                    // Never all the way to grey: at nothing at all the three apps stop being
-                    // told apart, which is the one thing the palette is for.
-                    valueRange = LEAST_CHROMA..1f,
-                )
-            }
+    SecaDialog(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.design_palette_mine),
+        confirmLabel = stringResource(R.string.design_keep),
+        dismissLabel = stringResource(R.string.design_cancel),
+        onConfirm = { onKeep(mixed) },
+        content = {
+        Column {
+                        // The three discs are the three apps, so the choice is judged on what it does
+                        // rather than on one colour out of context.
+                        SecaPaletteSwatch(
+                            palette = mixed,
+                            selected = false,
+                            onClick = {},
+                            size = 72.dp,
+                            label = stringResource(R.string.design_palette_mine),
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        )
+                        Text(
+                            text = stringResource(R.string.design_palette_hue),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Slider(
+                            value = hue,
+                            onValueChange = { hue = it },
+                            valueRange = 0f..HUE_MAX,
+                        )
+                        Text(
+                            text = stringResource(R.string.design_palette_chroma),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Slider(
+                            value = chroma,
+                            onValueChange = { chroma = it },
+                            // Never all the way to grey: at nothing at all the three apps stop being
+                            // told apart, which is the one thing the palette is for.
+                            valueRange = LEAST_CHROMA..1f,
+                        )
+                    }
         },
-        confirmButton = { TextButton(onClick = { onKeep(mixed) }) { Text(stringResource(R.string.design_keep)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.design_cancel)) } },
     )
 }
 

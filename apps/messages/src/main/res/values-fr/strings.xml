@@ -454,7 +454,6 @@
     </plurals>
     <string name="caption_on_sim">%1$s · %2$s</string>
     <string name="choose">Sélectionner</string>
-    <string name="delete_conversations_text">Supprime ces conversations et tous leurs messages. C\'est définitif.</string>
     <plurals name="delete_conversations">
         <item quantity="one">Supprimer %d conversation ?</item>
         <item quantity="other">Supprimer %d conversations ?</item>
@@ -480,4 +479,5 @@
     <string name="mms_apn">les réglages de l’opérateur manquent</string>
     <string name="mms_no_server">le serveur de l’opérateur n’a pas répondu</string>
     <string name="mms_retry">l’opérateur a demandé de réessayer</string>
+    <string name="delete_conversations_text">Les messages partent avec, et ne reviennent pas.</string>
 </resources>

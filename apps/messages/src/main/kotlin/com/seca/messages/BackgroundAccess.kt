@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaSettingRow
@@ -80,30 +81,20 @@ internal fun BackgroundAccessPrompt() {
 @Composable
 internal fun BackgroundAccessDialog(onDone: () -> Unit) {
     val context = LocalContext.current
-    AlertDialog(
-        onDismissRequest = {
+    SecaDialog(
+        onDismiss = {
             BackgroundAccess.postpone(context)
             onDone()
         },
-        icon = { Icon(SecaIcons.Battery, contentDescription = null) },
-        title = { Text(stringResource(R.string.receive_without_notification)) },
-        text = { Text(stringResource(R.string.background_dialog_text)) },
-        confirmButton = {
-            TextButton(
-                onClick = {
+        icon = SecaIcons.Battery,
+        title = stringResource(R.string.receive_without_notification),
+        message = stringResource(R.string.background_dialog_text),
+        confirmLabel = stringResource(R.string.allow),
+        dismissLabel = stringResource(R.string.later),
+        onConfirm = {
                     onDone()
                     BackgroundAccess.request(context)
                 },
-            ) { Text(stringResource(R.string.allow)) }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    BackgroundAccess.postpone(context)
-                    onDone()
-                },
-            ) { Text(stringResource(R.string.later)) }
-        },
     )
 }
 

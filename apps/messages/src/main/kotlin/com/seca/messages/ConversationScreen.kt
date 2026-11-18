@@ -126,6 +126,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.seca.messages.sms.SendingSim
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.secaToneColors
 import com.seca.core.link.handshake.Handshake
@@ -614,21 +615,19 @@ internal fun ConversationContent(
     }
 
     if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-            title = { Text(stringResource(R.string.delete_conversation_title)) },
-            text = { Text(stringResource(R.string.delete_conversation_text, name)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        SecaDialog(
+            onDismiss = { confirmDelete = false },
+            icon = SecaIcons.Delete,
+            title = stringResource(R.string.delete_conversation_title),
+            message = stringResource(R.string.delete_conversation_text, name),
+            confirmLabel = stringResource(R.string.delete),
+            dismissLabel = stringResource(R.string.cancel),
+            destructive = true,
+            onConfirm = {
                         confirmDelete = false
                         viewModel.deleteConversation(screen.threadId, screen.address)
                         viewModel.back()
                     },
-                ) { Text(stringResource(R.string.delete)) }
-            },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -1458,38 +1457,39 @@ private fun Notice(label: String) {
 /** How long new messages are kept, on both phones. */
 @Composable
 private fun TimerDialog(current: Int, onDismiss: () -> Unit, onChoose: (Int) -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Timer, contentDescription = null) },
-        title = { Text(stringResource(R.string.disappearing_messages)) },
-        text = {
-            Column {
-                Text(
-                    text = stringResource(R.string.timer_hint),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-                LinkTimers.Choices.forEach { seconds ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.large)
-                            .selectable(selected = seconds == current, role = Role.RadioButton) { onChoose(seconds) }
-                            .padding(vertical = 4.dp),
-                    ) {
-                        RadioButton(selected = seconds == current, onClick = null)
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Timer,
+        title = stringResource(R.string.disappearing_messages),
+        confirmLabel = stringResource(R.string.close),
+        onConfirm = onDismiss,
+        content = {
+        Column {
                         Text(
-                            text = LinkTimers.label(LocalContext.current, seconds),
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 12.dp),
+                            text = stringResource(R.string.timer_hint),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 8.dp),
                         )
+                        LinkTimers.Choices.forEach { seconds ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(MaterialTheme.shapes.large)
+                                    .selectable(selected = seconds == current, role = Role.RadioButton) { onChoose(seconds) }
+                                    .padding(vertical = 4.dp),
+                            ) {
+                                RadioButton(selected = seconds == current, onClick = null)
+                                Text(
+                                    text = LinkTimers.label(LocalContext.current, seconds),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(start = 12.dp),
+                                )
+                            }
+                        }
                     }
-                }
-            }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
     )
 }
 
@@ -1907,34 +1907,35 @@ private fun SendButton(
 @Composable
 private fun SendingSimDialog(sims: List<SendingSim>, onDismiss: () -> Unit, onPick: (SendingSim) -> Unit) {
     val colors = MaterialTheme.colorScheme
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Send, contentDescription = null) },
-        title = { Text(stringResource(R.string.which_sim_once)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                sims.forEach { sim ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.large)
-                            .background(colors.surfaceContainerHighest)
-                            .clickable(onClickLabel = sim.label) { onPick(sim) }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                    ) {
-                        Text(
-                            text = sim.label,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = colors.onSurface,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text("SIM ${sim.slot}", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Send,
+        title = stringResource(R.string.which_sim_once),
+        confirmLabel = stringResource(R.string.cancel),
+        onConfirm = onDismiss,
+        content = {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        sims.forEach { sim ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(MaterialTheme.shapes.large)
+                                    .background(colors.surfaceContainerHighest)
+                                    .clickable(onClickLabel = sim.label) { onPick(sim) }
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                            ) {
+                                Text(
+                                    text = sim.label,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = colors.onSurface,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text("SIM ${sim.slot}", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
+                            }
+                        }
                     }
-                }
-            }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

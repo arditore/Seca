@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaSectionLabel
@@ -69,80 +70,75 @@ internal fun ArrangeFavoritesDialog(
     onKeep: (List<String>) -> Unit,
 ) {
     var order by remember(favorites) { mutableStateOf(favorites) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Star, contentDescription = null) },
-        title = { Text(stringResource(R.string.arrange_favorites)) },
-        text = {
-            Column {
-                Text(
-                    text = stringResource(R.string.arrange_favorites_hint),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Column(
-                    Modifier
-                        .heightIn(max = 360.dp)
-                        .verticalScroll(rememberScrollState())
-                        .padding(top = 12.dp),
-                ) {
-                    order.forEachIndexed { index, contact ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(vertical = 2.dp),
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Star,
+        title = stringResource(R.string.arrange_favorites),
+        confirmLabel = stringResource(R.string.save),
+        dismissLabel = stringResource(R.string.cancel),
+        onConfirm = { onKeep(order.map { it.lookupKey }) },
+        content = {
+        Column {
+                        Text(
+                            text = stringResource(R.string.arrange_favorites_hint),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Column(
+                            Modifier
+                                .heightIn(max = 360.dp)
+                                .verticalScroll(rememberScrollState())
+                                .padding(top = 12.dp),
                         ) {
-                            SecaAvatar(
-                                initials = contact.initials,
-                                photoUri = contact.photoUri,
-                                size = 36.dp,
-                                tone = ui.toneOf(contact),
-                                seed = contact.displayName,
-                                photo = rememberContactThumbnail(contact.photoUri),
-                            )
-                            Text(
-                                text = contact.displayName,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(start = 12.dp),
-                            )
-                            // No arrow where there is nowhere to go, and the gap kept, so the
-                            // other arrow stays under the one above it.
-                            if (index > 0) {
-                                IconButton(onClick = { order = order.moved(index, -1) }) {
-                                    Icon(
-                                        imageVector = SecaIcons.ArrowUp,
-                                        contentDescription = stringResource(R.string.arrange_earlier, contact.displayName),
+                            order.forEachIndexed { index, contact ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(vertical = 2.dp),
+                                ) {
+                                    SecaAvatar(
+                                        initials = contact.initials,
+                                        photoUri = contact.photoUri,
+                                        size = 36.dp,
+                                        tone = ui.toneOf(contact),
+                                        seed = contact.displayName,
+                                        photo = rememberContactThumbnail(contact.photoUri),
                                     )
-                                }
-                            } else {
-                                Spacer(Modifier.size(48.dp))
-                            }
-                            if (index < order.size - 1) {
-                                IconButton(onClick = { order = order.moved(index, 1) }) {
-                                    Icon(
-                                        imageVector = SecaIcons.ArrowDown,
-                                        contentDescription = stringResource(R.string.arrange_later, contact.displayName),
+                                    Text(
+                                        text = contact.displayName,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(start = 12.dp),
                                     )
+                                    // No arrow where there is nowhere to go, and the gap kept, so the
+                                    // other arrow stays under the one above it.
+                                    if (index > 0) {
+                                        IconButton(onClick = { order = order.moved(index, -1) }) {
+                                            Icon(
+                                                imageVector = SecaIcons.ArrowUp,
+                                                contentDescription = stringResource(R.string.arrange_earlier, contact.displayName),
+                                            )
+                                        }
+                                    } else {
+                                        Spacer(Modifier.size(48.dp))
+                                    }
+                                    if (index < order.size - 1) {
+                                        IconButton(onClick = { order = order.moved(index, 1) }) {
+                                            Icon(
+                                                imageVector = SecaIcons.ArrowDown,
+                                                contentDescription = stringResource(R.string.arrange_later, contact.displayName),
+                                            )
+                                        }
+                                    } else {
+                                        Spacer(Modifier.size(48.dp))
+                                    }
                                 }
-                            } else {
-                                Spacer(Modifier.size(48.dp))
                             }
                         }
                     }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onKeep(order.map { it.lookupKey }) }) {
-                Text(stringResource(R.string.save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
 }

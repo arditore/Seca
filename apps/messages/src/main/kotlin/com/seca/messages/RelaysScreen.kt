@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaHint
@@ -174,20 +175,17 @@ internal fun NetworkBlockedCard(modifier: Modifier = Modifier) {
 @Composable
 internal fun NetworkAccessDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Wifi, contentDescription = null) },
-        title = { Text(stringResource(R.string.allow_network)) },
-        text = { Text(stringResource(R.string.allow_network_text)) },
-        confirmButton = {
-            TextButton(
-                onClick = {
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Wifi,
+        title = stringResource(R.string.allow_network),
+        message = stringResource(R.string.allow_network_text),
+        confirmLabel = stringResource(R.string.open_settings),
+        dismissLabel = stringResource(R.string.later),
+        onConfirm = {
                     onDismiss()
                     openAppSettings(context)
                 },
-            ) { Text(stringResource(R.string.open_settings)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.later)) } },
     )
 }
 

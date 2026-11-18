@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.seca.core.design.component.SecaDialog
+import com.seca.core.design.component.SecaBusyDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaChoicePill
 import com.seca.core.design.component.SecaGroupItem
@@ -127,33 +129,35 @@ internal fun CodeAndSpamSettings(onFile: (List<SweptConversation>) -> Unit) {
     SecaHint(stringResource(R.string.advertising_hint))
 
     if (sweeping) {
-        AlertDialog(
-            onDismissRequest = {},
-            title = { Text(stringResource(R.string.sweep_looking)) },
-            text = { Text(stringResource(R.string.sweep_looking_hint), style = MaterialTheme.typography.bodyMedium) },
-            confirmButton = {},
+        SecaBusyDialog(
+            title = stringResource(R.string.sweep_looking),
+            message = stringResource(R.string.sweep_looking_hint),
         )
     }
 
     found?.let { conversations ->
-        AlertDialog(
-            onDismissRequest = { found = null },
-            icon = { Icon(SecaIcons.Block, contentDescription = null) },
-            title = {
-                Text(
-                    if (conversations.isEmpty()) {
-                        stringResource(R.string.sweep_none)
-                    } else {
-                        pluralStringResource(R.plurals.sweep_found, conversations.size, conversations.size)
-                    },
-                )
+        val nothingFound = conversations.isEmpty()
+        SecaDialog(
+            onDismiss = { found = null },
+            icon = SecaIcons.Block,
+            title = if (nothingFound) {
+                stringResource(R.string.sweep_none)
+            } else {
+                pluralStringResource(R.plurals.sweep_found, conversations.size, conversations.size)
             },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    if (conversations.isEmpty()) {
-                        Text(stringResource(R.string.sweep_none_hint), style = MaterialTheme.typography.bodyMedium)
-                    } else {
-                        // Named rather than counted: the owner decides on what they can see.
+            message = if (nothingFound) stringResource(R.string.sweep_none_hint) else null,
+            confirmLabel = stringResource(if (nothingFound) android.R.string.ok else R.string.sweep_file),
+            dismissLabel = if (nothingFound) null else stringResource(android.R.string.cancel),
+            onConfirm = {
+                if (!nothingFound) onFile(conversations)
+                found = null
+            },
+            content = if (nothingFound) {
+                null
+            } else {
+                {
+                    // Named rather than counted: the owner decides on what they can see.
+                    Column(Modifier.verticalScroll(rememberScrollState())) {
                         conversations.forEach { swept ->
                             Text(
                                 text = swept.address,
@@ -170,23 +174,6 @@ internal fun CodeAndSpamSettings(onFile: (List<SweptConversation>) -> Unit) {
                             )
                         }
                     }
-                }
-            },
-            confirmButton = {
-                if (conversations.isEmpty()) {
-                    TextButton(onClick = { found = null }) { Text(stringResource(android.R.string.ok)) }
-                } else {
-                    TextButton(
-                        onClick = {
-                            onFile(conversations)
-                            found = null
-                        },
-                    ) { Text(stringResource(R.string.sweep_file)) }
-                }
-            },
-            dismissButton = {
-                if (conversations.isNotEmpty()) {
-                    TextButton(onClick = { found = null }) { Text(stringResource(android.R.string.cancel)) }
                 }
             },
         )

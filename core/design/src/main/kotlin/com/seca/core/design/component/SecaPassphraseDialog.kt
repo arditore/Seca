@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
@@ -43,33 +44,32 @@ fun SecaPassphraseDialog(
     val mismatch = creating && second.isNotEmpty() && first != second
     val valid = if (creating) first.length >= MIN_LENGTH && first == second else first.isNotEmpty()
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(SecaIcons.Lock, contentDescription = null) },
-        title = { Text(title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = stringResource(if (creating) R.string.design_passphrase_creating_hint else R.string.design_passphrase_opening_hint),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                PassphraseField(first, stringResource(R.string.design_passphrase), isError = tooShort) { first = it }
-                if (tooShort) {
-                    Text(
-                        text = pluralStringResource(R.plurals.design_passphrase_too_short, MIN_LENGTH, MIN_LENGTH),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                if (creating) {
-                    PassphraseField(second, stringResource(R.string.design_passphrase_confirm), isError = mismatch) { second = it }
-                }
-            }
+    SecaDialog(
+        onDismiss = onDismiss,
+        icon = SecaIcons.Lock,
+        title = title,
+        confirmLabel = confirmLabel,
+        dismissLabel = stringResource(R.string.design_cancel),
+        onConfirm = { onConfirm(first.toCharArray()) },
+        content = {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = stringResource(if (creating) R.string.design_passphrase_creating_hint else R.string.design_passphrase_opening_hint),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        PassphraseField(first, stringResource(R.string.design_passphrase), isError = tooShort) { first = it }
+                        if (tooShort) {
+                            Text(
+                                text = pluralStringResource(R.plurals.design_passphrase_too_short, MIN_LENGTH, MIN_LENGTH),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                        if (creating) {
+                            PassphraseField(second, stringResource(R.string.design_passphrase_confirm), isError = mismatch) { second = it }
+                        }
+                    }
         },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(first.toCharArray()) }, enabled = valid) { Text(confirmLabel) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.design_cancel)) } },
     )
 }
 

@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.NameOrder
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
 import com.seca.core.design.component.SecaGroupItem
@@ -437,20 +438,18 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
         )
     }
     deleting?.let { profile ->
-        AlertDialog(
-            onDismissRequest = { deleting = null },
-            icon = { Icon(SecaIcons.Delete, contentDescription = null) },
-            title = { Text(stringResource(R.string.delete_profile_title, profile.name)) },
-            text = { Text(stringResource(R.string.delete_profile_text)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        SecaDialog(
+            onDismiss = { deleting = null },
+            icon = SecaIcons.Delete,
+            title = stringResource(R.string.delete_profile_title, profile.name),
+            message = stringResource(R.string.delete_profile_text),
+            confirmLabel = stringResource(R.string.delete),
+            dismissLabel = stringResource(R.string.cancel),
+            destructive = true,
+            onConfirm = {
                         viewModel.deleteProfile(profile.id)
                         deleting = null
                     },
-                ) { Text(stringResource(R.string.delete)) }
-            },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
