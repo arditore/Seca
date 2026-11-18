@@ -46,6 +46,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -237,6 +239,7 @@ internal fun ConversationContent(
     var choosingTimer by remember { mutableStateOf(false) }
     var viewing by remember { mutableStateOf<String?>(null) }
     var replyingTo by remember { mutableStateOf<Message?>(null) }
+    var staged by remember(screen.address) { mutableStateOf<List<Staged>>(emptyList()) }
     // The list grows upwards, so the latest to leave comes first and sits at the very bottom.
     val scheduled = remember(ui.scheduled, screen.address) { ui.scheduledFor(screen.address).asReversed() }
     val byLinkId = remember(messages) { messages.filter { it.linkId != null }.associateBy { it.linkId } }
@@ -299,26 +302,19 @@ internal fun ConversationContent(
     // through the carrier, so it reaches a phone that has never heard of Seca.
     // Several at a time: a message carries as many as fit, and picking one photo out of a
     // holiday was the one thing people kept going back to another app to do.
+    // Picked and waiting, not sent: the message leaves when the owner says so, which is what
+    // lets a caption be written after the photo and a second thing be added beside it (#69).
     val pickMedia = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(MAX_ATTACHMENTS),
     ) { uris ->
-        if (uris.isNotEmpty()) {
-            viewModel.sendAttachments(screen.address, uris, text)
-            text = ""
-        }
+        staged = (staged + uris.map { stagedFile(context, it) }).take(MAX_ATTACHMENTS)
     }
     val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            viewModel.sendAttachment(screen.address, uri, text)
-            text = ""
-        }
+        if (uri != null) staged = (staged + stagedFile(context, uri)).take(MAX_ATTACHMENTS)
     }
     // The system's own contact picker: it hands back one row, and that is all that is read.
     val pickContact = rememberLauncherForActivityResult(ActivityResultContracts.PickContact()) { uri ->
-        if (uri != null) {
-            viewModel.sendContact(screen.address, uri, text)
-            text = ""
-        }
+        if (uri != null) staged = (staged + stagedFile(context, uri, isCard = true)).take(MAX_ATTACHMENTS)
     }
 
     // Voice messages: the microphone is asked for the first time one is recorded.
@@ -442,14 +438,19 @@ internal fun ConversationContent(
                     enabled = isDefaultApp || linked,
                     encrypted = linked,
                     onSend = {
-                        if (group.size < 2) {
-                            viewModel.send(screen.address, text, replyingTo?.linkId)
-                        } else {
-                            viewModel.sendToGroup(group, text)
+                        when {
+                            staged.isNotEmpty() -> {
+                                viewModel.sendStaged(screen.address, staged, text)
+                                staged = emptyList()
+                            }
+                            group.size >= 2 -> viewModel.sendToGroup(group, text)
+                            else -> viewModel.send(screen.address, text, replyingTo?.linkId)
                         }
                         text = ""
                         replyingTo = null
                     },
+                    staged = staged,
+                    onRemoveStaged = { item -> staged = staged - item },
                     sims = sims,
                     onSendFrom = { subscriptionId ->
                         viewModel.sendFrom(screen.address, text, subscriptionId)
@@ -1721,6 +1722,9 @@ private fun Composer(
     /** Holding Send down: which SIM to send this one from. Empty where there is no choice. */
     sims: List<SendingSim>,
     onSendFrom: (Int) -> Unit,
+    /** Picked and waiting, shown above the words until send (#69). */
+    staged: List<Staged> = emptyList(),
+    onRemoveStaged: (Staged) -> Unit = {},
 ) {
     // How many SMS the text takes: past 160 plain characters, or 70 with accents or emoji, it is split.
     val parts = remember(text, encrypted) { if (text.isEmpty() || encrypted) 0 else SmsMessage.calculateLength(text, false)[0] }
@@ -1775,6 +1779,7 @@ private fun Composer(
                 IconButton(onClick = onCancelReply) { Icon(SecaIcons.Close, contentDescription = stringResource(R.string.cancel_reply)) }
             }
         }
+        if (staged.isNotEmpty()) StagedRow(staged, onRemoveStaged)
         // One row, whatever is happening in it. The microphone has to be the same button from
         // one frame to the next or the finger holding it loses its grip halfway through: a
         // gesture belongs to a composable, and a composable that is swapped out never hears
@@ -1811,7 +1816,9 @@ private fun Composer(
                     modifier = Modifier.weight(1f),
                 )
             }
-            val speaking = text.isBlank()
+            // Nothing written and nothing waiting means the microphone; a photo waiting with
+            // no caption is still a message to send, so the button has to be Send.
+            val speaking = text.isBlank() && staged.isEmpty()
             // Only an ordinary SMS has a SIM to choose: an encrypted message goes over the
             // Internet, and a voice note is not a text at all.
             val chooseSim = sims.isNotEmpty() && !encrypted && !speaking && enabled
@@ -2268,3 +2275,92 @@ private const val GREYED = 0.38f
 
 /** The second line of an attachment reads under the first rather than beside it. */
 private const val UNDER = 0.75f
+
+/**
+ * What is picked and waiting, above the words, until send (#69).
+ *
+ * A picture shows itself; anything else shows what it is called, because a file name is what
+ * the owner recognises a document or a card by. Each carries the cross that takes it back out,
+ * which is the half of this that was missing entirely: picking the wrong photo used to be a
+ * message already sent.
+ */
+@Composable
+internal fun StagedRow(staged: List<Staged>, onRemove: (Staged) -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(bottom = 8.dp),
+    ) {
+        staged.forEach { item ->
+            val removeLabel = stringResource(R.string.remove_named, item.name)
+            Box(contentAlignment = Alignment.TopEnd) {
+                val picture = rememberMessagePicture(item.uri.toString(), STAGED_EDGE_PX)
+                if (picture != null && picture.width > 0 && picture.height > 0) {
+                    MessagePictureImage(
+                        picture = picture,
+                        description = item.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(STAGED_SIZE)
+                            .clip(RoundedCornerShape(12.dp)),
+                    )
+                } else {
+                    // Wider than a photograph and read along rather than down: a file is known
+                    // by its name, and "Devis chaudiere signe.pdf" in a square the size of a
+                    // thumbnail is three letters and a guess. The end is kept whatever happens,
+                    // because that is where the extension is.
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .height(STAGED_SIZE)
+                            .widthIn(min = STAGED_SIZE, max = STAGED_NAME_WIDTH)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(colors.surfaceContainerHighest)
+                            .padding(start = 10.dp, end = 30.dp),
+                    ) {
+                        Icon(
+                            imageVector = if (item.isCard) SecaIcons.Contacts else SecaIcons.Subject,
+                            contentDescription = null,
+                            tint = colors.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Text(
+                            text = item.name,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = colors.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.MiddleEllipsis,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(colors.surface.copy(alpha = 0.85f))
+                        .clickable(onClickLabel = removeLabel) { onRemove(item) },
+                ) {
+                    Icon(
+                        SecaIcons.Close,
+                        contentDescription = removeLabel,
+                        tint = colors.onSurface,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Big enough to tell two holiday photographs apart, small enough that four fit across. */
+private val STAGED_SIZE = 76.dp
+
+/** As much of a file's name as is worth reading before the row starts scrolling. */
+private val STAGED_NAME_WIDTH = 190.dp
+private const val STAGED_EDGE_PX = 300

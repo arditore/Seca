@@ -29,10 +29,12 @@ import com.seca.messages.sms.MessageNotifications
 import com.seca.messages.sms.MessagesRepository
 import com.seca.messages.sms.ScheduledMessage
 import com.seca.messages.sms.ScheduledMessages
+import com.seca.messages.mms.Attached
 import com.seca.messages.mms.ContactCard
 import com.seca.messages.mms.MmsAttachment
 import com.seca.messages.mms.MmsPdu
 import com.seca.messages.mms.MmsSender
+import com.seca.messages.mms.TooLarge
 import com.seca.messages.sms.SendingSim
 import com.seca.messages.sms.sendingSims
 import com.seca.messages.sms.SentSound
@@ -614,6 +616,55 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
      * The card comes from Android's own copy of the contact rather than being written here, so
      * the phone at the other end is handed the format its own contacts app reads.
      */
+    /**
+     * Sends everything waiting in the composer, with the words, as one message (#69).
+     *
+     * Picking used to send. The picker closed and the message was already gone: no caption
+     * after the fact, no second thing to add, no way back from the wrong one. Reported by a
+     * user who had also reported, separately, that Seca "cannot send more than one photo" —
+     * which was partly a display bug and partly this.
+     *
+     * The carrier's cap is for the message and not for each thing in it, so the room is shared
+     * out. Anything that still will not fit is named rather than dropped, and whatever did fit
+     * goes.
+     */
+    internal fun sendStaged(address: String, staged: List<Staged>, text: String) {
+        if (staged.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val budget = MmsAttachment.budgetOf(getApplication()) / staged.size
+            val read = staged.map { item ->
+                if (item.isCard) {
+                    ContactCard.read(getApplication(), item.uri)?.let { Attached(it, null) }
+                        ?: Attached(null, TooLarge(item.name, 0))
+                } else {
+                    MmsAttachment.read(getApplication(), item.uri, budget)
+                }
+            }
+            val parts = read.mapNotNull { it.part }
+            val refused = read.mapNotNull { it.refused }
+            if (parts.isEmpty()) {
+                val first = refused.firstOrNull()
+                val said = if (first == null || first.bytes == 0) {
+                    text(R.string.attachment_unreadable)
+                } else {
+                    text(R.string.attachment_too_large, first.name, first.bytes / BYTES_PER_KB)
+                }
+                withContext(Dispatchers.Main) { toast(said) }
+                return@launch
+            }
+            if (MmsSender.send(getApplication(), listOf(address), text, parts) == null) {
+                withContext(Dispatchers.Main) { toast(text(R.string.attachment_not_sent)) }
+                return@launch
+            }
+            SentSound.play(getApplication())
+            refused.firstOrNull()?.let { left ->
+                withContext(Dispatchers.Main) {
+                    toast(text(R.string.attachment_too_large, left.name, left.bytes / BYTES_PER_KB))
+                }
+            }
+        }
+    }
+
     fun sendContact(address: String, picked: Uri, words: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val part = ContactCard.read(getApplication(), picked)

@@ -5,6 +5,11 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.core.net.toUri
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isRoot
@@ -88,6 +93,27 @@ class ScreenshotsTest {
     @Test
     fun conversationDark() = shoot("messages-conversation-dark", dark = true) {
         ConversationContent(MessagesScreen.Conversation(1, CAMILLE), sampleUi(), viewModel(), isDefaultApp = true, sampleMessages())
+    }
+
+    /**
+     * What is picked and waiting, before it is sent (#69).
+     *
+     * Picking used to send, so there was nothing to draw and nothing to look at. The names are
+     * the long kind on purpose: a file picked out of a download folder is called whatever it is
+     * called, and the tile has to cope rather than the name having to be short.
+     */
+    @Test
+    fun staged() = shoot("messages-staged") {
+        Box(Modifier.padding(16.dp)) {
+            StagedRow(
+                staged = listOf(
+                    Staged("content://none/1".toUri(), "IMG_20261118_0412.jpg"),
+                    Staged("content://none/2".toUri(), "Devis chaudière signé.pdf"),
+                    Staged("content://none/3".toUri(), "Camille Durand", isCard = true),
+                ),
+                onRemove = {},
+            )
+        }
     }
 
     @Test
