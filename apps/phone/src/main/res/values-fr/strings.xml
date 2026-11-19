@@ -197,6 +197,8 @@
     <string name="sim_tap_to_choose">Toucher pour choisir la SIM qui appelle %1$s</string>
     <string name="sim_usual">SIM %1$s · habituelle</string>
     <string name="swap">Basculer</string>
+    <string name="swipe_to_act">Glisser pour répondre</string>
+    <string name="swipe_to_act_hint">Répondez, refusez et raccrochez en faisant glisser le bouton vers le haut, hors de portée d\'une poche.</string>
     <string name="tap_to_return">%1$s · Toucher pour revenir</string>
     <string name="this_number">ce numéro</string>
     <string name="today">Aujourd\'hui</string>

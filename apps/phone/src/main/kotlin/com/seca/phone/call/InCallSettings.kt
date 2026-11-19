@@ -51,9 +51,20 @@ class InCallSettings(context: Context) {
         get() = prefs.getBoolean(KEY_PROXIMITY, true)
         set(value) = prefs.edit { putBoolean(KEY_PROXIMITY, value) }
 
+    /**
+     * Whether answering, declining and hanging up take an upward swipe instead of a tap (#79).
+     *
+     * Off, because changing how a phone is answered without being asked is the kind of surprise
+     * that makes somebody miss a call.
+     */
+    var swipeToAct: Boolean
+        get() = prefs.getBoolean(KEY_SWIPE, false)
+        set(value) = prefs.edit { putBoolean(KEY_SWIPE, value) }
+
     private companion object {
         const val KEY_LABELS = "show_labels"
         const val KEY_PROXIMITY = "proximity"
+        const val KEY_SWIPE = "swipe_to_act"
         const val KEY_REPLY = "reply_"
 
         val Defaults = listOf(

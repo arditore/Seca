@@ -115,8 +115,9 @@ internal fun InCallRoot(onScreenOffNearEar: (Boolean) -> Unit, onDone: () -> Uni
     val (palette, black) = rememberSuiteColors()
     val context = LocalContext.current
     val labels = remember(context) { InCallSettings(context).showLabels }
+    val bySwipe = remember(context) { InCallSettings(context).swipeToAct }
     SecaTheme(identity = SecaAppIdentity.Phone, palette = palette, black = black) {
-        CompositionLocalProvider(LocalCallLabels provides labels) {
+        CompositionLocalProvider(LocalCallLabels provides labels, LocalSwipeToAct provides bySwipe) {
             Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
                 if (shown != null) CallScreen(shown, calls, audio, black = black)
             }
@@ -453,11 +454,11 @@ private fun HangUpButton(view: CallView) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
+            .actOnSwipeUp(stringResource(R.string.hang_up), LocalSwipeToAct.current) { CallSession.hangUp(view.call) }
             .width(120.dp)
             .height(68.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.error)
-            .clickable(onClickLabel = stringResource(R.string.hang_up), role = Role.Button) { CallSession.hangUp(view.call) },
+            .background(MaterialTheme.colorScheme.error),
     ) {
         Icon(SecaIcons.CallEnd, contentDescription = stringResource(R.string.hang_up), tint = MaterialTheme.colorScheme.onError)
     }
@@ -561,10 +562,10 @@ private fun RoundAction(icon: ImageVector, label: String, container: Color, cont
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
+                .actOnSwipeUp(label, LocalSwipeToAct.current, onClick)
                 .size(76.dp)
                 .clip(CircleShape)
-                .background(container)
-                .clickable(onClickLabel = label, role = Role.Button, onClick = onClick),
+                .background(container),
         ) {
             Icon(icon, contentDescription = null, tint = content)
         }

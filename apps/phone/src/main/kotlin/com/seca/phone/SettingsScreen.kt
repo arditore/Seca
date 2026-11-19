@@ -240,11 +240,12 @@ internal fun SettingsScreen(
                     val inCall = remember { InCallSettings(context) }
                     var showLabels by remember { mutableStateOf(inCall.showLabels) }
                     var screenOffNearEar by remember { mutableStateOf(inCall.proximity) }
+                    var swipeToAct by remember { mutableStateOf(inCall.swipeToAct) }
                     var editingReplies by remember { mutableStateOf(false) }
                     if (editingReplies) {
                         QuickRepliesDialog(settings = inCall, onDismiss = { editingReplies = false })
                     }
-                    SecaGroupItem(index = 0, count = 3) {
+                    SecaGroupItem(index = 0, count = 4) {
                         SecaSwitchRow(
                             icon = SecaIcons.Subject,
                             title = stringResource(R.string.button_labels),
@@ -256,7 +257,7 @@ internal fun SettingsScreen(
                             },
                         )
                     }
-                    SecaGroupItem(index = 1, count = 3) {
+                    SecaGroupItem(index = 1, count = 4) {
                         SecaSwitchRow(
                             icon = SecaIcons.VisibilityOff,
                             title = stringResource(R.string.screen_off_near_ear),
@@ -268,7 +269,19 @@ internal fun SettingsScreen(
                             },
                         )
                     }
-                    SecaGroupItem(index = 2, count = 3, onClick = { editingReplies = true }) {
+                    SecaGroupItem(index = 2, count = 4) {
+                        SecaSwitchRow(
+                            icon = SecaIcons.ArrowUp,
+                            title = stringResource(R.string.swipe_to_act),
+                            subtitle = stringResource(R.string.swipe_to_act_hint),
+                            checked = swipeToAct,
+                            onCheckedChange = { on ->
+                                swipeToAct = on
+                                inCall.swipeToAct = on
+                            },
+                        )
+                    }
+                    SecaGroupItem(index = 3, count = 4, onClick = { editingReplies = true }) {
                         SecaSettingRow(
                             icon = SecaIcons.Messages,
                             title = stringResource(R.string.decline_and_reply),

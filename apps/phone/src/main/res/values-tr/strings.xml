@@ -192,6 +192,8 @@
     <string name="sim_tap_to_choose">%1$s kişisini arayacak SIM\'i seçmek için dokunun</string>
     <string name="sim_usual">SIM %1$s · genellikle kullanılan</string>
     <string name="swap">Değiştir</string>
+    <string name="swipe_to_act">Cevaplamak için kaydır</string>
+    <string name="swipe_to_act_hint">Düğmeyi yukarı kaydırarak cevaplayın, reddedin ve kapatın; böylece cebiniz bunu yapamaz.</string>
     <string name="tap_to_return">%1$s · Dönmek için dokunun</string>
     <string name="this_number">bu numara</string>
     <string name="today">Bugün</string>

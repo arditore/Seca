@@ -192,6 +192,8 @@
     <string name="sim_tap_to_choose">Tap to choose the SIM that calls %1$s</string>
     <string name="sim_usual">SIM %1$s · usually used</string>
     <string name="swap">Swap</string>
+    <string name="swipe_to_act">Swipe to answer</string>
+    <string name="swipe_to_act_hint">Answer, decline and hang up by swiping the button up, so a pocket cannot do it.</string>
     <string name="tap_to_return">%1$s · Tap to return</string>
     <string name="this_number">this number</string>
     <string name="today">Today</string>
