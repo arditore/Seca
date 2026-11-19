@@ -49,6 +49,7 @@ import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaSearchField
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSwipeAway
+import com.seca.core.design.component.SwipeAction
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaSuiteBar
 import com.seca.core.design.component.SecaTopBar
@@ -342,15 +343,26 @@ private fun ConversationList(
     val nothing = pinned.isEmpty() && sections.isEmpty() && hits.isEmpty() && archivedCount == 0 && spamCount == 0
 
     val archiveLabel = stringResource(R.string.archive)
+    val deleteLabel = stringResource(R.string.delete)
     val row: @Composable (Conversation) -> Unit = { conversation ->
-        // Swiping a conversation aside archives it (#51). Not deletes: a swipe is the gesture
-        // people make by accident, and the archive is a tap away while a deleted conversation
-        // is gone from Android's shared store for good. While rows are being chosen the swipe
-        // is off, because the finger is already doing something else.
+        // Swiping towards the start archives (#51), and the other way deletes, which was asked
+        // for afterwards (#85). The archive keeps the direction it had: that is the gesture
+        // people have already learned, and it is the one that can be undone with a tap, while
+        // a deleted conversation is gone from Android's shared store for good. Deleting asks
+        // first, the same question the menu asks. While rows are being chosen both are off,
+        // because the finger is already doing something else.
         SecaSwipeAway(
-            onAway = { viewModel.setArchived(conversation.threadId, true) },
-            icon = SecaIcons.Archive,
-            label = archiveLabel,
+            toStart = SwipeAction(
+                onAct = { viewModel.setArchived(conversation.threadId, true) },
+                icon = SecaIcons.Archive,
+                label = archiveLabel,
+            ),
+            toEnd = SwipeAction(
+                onAct = { onDelete(conversation) },
+                icon = SecaIcons.Delete,
+                label = deleteLabel,
+                destructive = true,
+            ),
             enabled = chosen.isEmpty(),
         ) {
             ConversationRow(
