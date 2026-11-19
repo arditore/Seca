@@ -26,6 +26,10 @@ class SmsDeliverReceiver : BroadcastReceiver() {
         val address = parts.first().displayOriginatingAddress ?: return
         // A long text arrives in several parts, in order.
         val body = parts.joinToString("") { it.displayMessageBody.orEmpty() }
+        // Not a text message at all: the binary announcement of a picture message, handed over
+        // as though it were words. Storing it would put a screenful of hieroglyphs in the
+        // conversation and announce it as something somebody wrote (#72).
+        if (!readsAsMessage(body)) return
         val sentAt = parts.first().timestampMillis
         val subscription = intent.getIntExtra(SubscriptionManager.EXTRA_SUBSCRIPTION_INDEX, SubscriptionManager.INVALID_SUBSCRIPTION_ID)
 
