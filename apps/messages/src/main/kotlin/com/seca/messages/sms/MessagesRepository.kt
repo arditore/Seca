@@ -410,11 +410,8 @@ class MessagesRepository(private val context: Context) {
      * Retrying deletes the failed message and sends a new one, so nothing is stuck by this.
      */
     fun setSent(uri: Uri, sent: Boolean) {
-        if (sent && typeOf(uri) == Sms.MESSAGE_TYPE_FAILED) return
-        val values = ContentValues().apply {
-            put(Sms.TYPE, if (sent) Sms.MESSAGE_TYPE_SENT else Sms.MESSAGE_TYPE_FAILED)
-        }
-        runCatching { resolver.update(uri, values, null, null) }
+        val mark = sentMark(typeOf(uri), sent) ?: return
+        runCatching { resolver.update(uri, ContentValues().apply { put(Sms.TYPE, mark) }, null, null) }
     }
 
     private fun typeOf(uri: Uri): Int? = runCatching {
@@ -450,5 +447,20 @@ class MessagesRepository(private val context: Context) {
         delivery == Sms.STATUS_FAILED -> MessageStatus.Failed
         delivery == Sms.STATUS_COMPLETE -> MessageStatus.Delivered
         else -> MessageStatus.Sent
+    }
+
+    companion object {
+
+        /**
+         * How a message should be filed once a part has reported, or null to leave it alone.
+         *
+         * [current] is how it is filed now, and null when that cannot be read, where the
+         * answer at hand is the best there is.
+         */
+        internal fun sentMark(current: Int?, sent: Boolean): Int? = when {
+            !sent -> Sms.MESSAGE_TYPE_FAILED
+            current == Sms.MESSAGE_TYPE_FAILED -> null
+            else -> Sms.MESSAGE_TYPE_SENT
+        }
     }
 }
