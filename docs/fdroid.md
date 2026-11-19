@@ -5,9 +5,9 @@ and what a new release has to do in what order.
 
 | App | F-Droid | IzzyOnDroid |
 |---|---|---|
-| Seca Contacts | **published** ([!49024](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49024)), reproducible | ready to request |
-| Seca Phone | **published** ([!49025](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49025)), reproducible | ready to request |
-| Seca Messages | **published** ([!49106](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49106)), reproducible, both native libraries built from source | ready to request |
+| Seca Contacts | **published** ([!49024](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49024)), reproducible | requested ([#922](https://codeberg.org/IzzyOnDroid/repodata/issues/922)) |
+| Seca Phone | **published** ([!49025](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49025)), reproducible | requested ([#923](https://codeberg.org/IzzyOnDroid/repodata/issues/923)) |
+| Seca Messages | **published** ([!49106](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49106)), reproducible, both native libraries built from source | requested ([#924](https://codeberg.org/IzzyOnDroid/repodata/issues/924)) |
 
 The reproducible build is not a claim. For 0.1.0-beta13, the APK f-droid.org serves has the
 same SHA-256 as the one attached to the GitHub release, for all three:
@@ -203,13 +203,18 @@ request rather than a new one: push the updated recipe to its branch. Their revi
 exactly that, and a recipe left pointing at an older commit would have them test a version
 nobody runs any more.
 
-### IzzyOnDroid, not asked for yet
+### IzzyOnDroid, requested
 
-This one still needs an account and a request, for all three apps. Requirements already met: APKs signed with the release key, attached to the latest GitHub release,
-under 30 MB, no debuggable or testOnly flag, fastlane metadata in the repository.
+One request per app, filed on 19 November 2026:
 
-Open a request at <https://codeberg.org/IzzyOnDroid/repodata/issues>, using their **App
-Inclusion Request** template, one per app.
+| App | Request |
+|---|---|
+| Seca Contacts | [#922](https://codeberg.org/IzzyOnDroid/repodata/issues/922) |
+| Seca Phone | [#923](https://codeberg.org/IzzyOnDroid/repodata/issues/923) |
+| Seca Messages | [#924](https://codeberg.org/IzzyOnDroid/repodata/issues/924) |
+
+Requirements met before asking: APKs signed with the release key, attached to the latest GitHub
+release, under 30 MB, no debuggable or testOnly flag, fastlane metadata in the repository.
 
 This page has now said Codeberg, then GitLab, then Codeberg again, so it is worth writing down
 why rather than quietly changing it a third time. `gitlab.com/IzzyOnDroid/repo` **is archived
@@ -217,10 +222,18 @@ and read-only**; the project moved to Codeberg and the maintenance tracker there
 requests go. Checked rather than assumed: the GitLab page says archived, and
 `apt.izzysoft.de/fdroid/index/info` names the Codeberg tracker.
 
+Two notes for whoever files the next one. The template is a Forgejo form, so the web UI applies
+the `app-request` and `needs/apk-scan` labels by itself; a request filed through the API carries
+no labels, because only their maintainers may set them, and theirs get added on triage. And the
+fastlane metadata is per app here, at `apps/<app>/fastlane/metadata/android/`, not at the root,
+which their scanner has to be told.
+
 Their template asks for the source link, the licence, categories, a summary, a description,
-command-line build instructions, and — this one needs a decision rather than a form filled in —
+command-line build instructions, and, this one needing a decision rather than a form filled in,
 **how far "AI" tools were used in development**, with a required level from None to Dominant and
-a free-text explanation. It is a fair question and it is asked of everyone.
+a free-text explanation. It is a fair question and it is asked of everyone. The answer given was
+*Substantial*, with the two accountability boxes ticked and three named bugs as evidence that the
+level is checkable.
 
 Expect a question about the permissions Seca asks for; the
 answer is in each app's full description: SMS and call log are what a messaging app and a dialer
