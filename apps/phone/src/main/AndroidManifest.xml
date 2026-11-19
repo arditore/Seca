@@ -136,7 +136,12 @@
 
         <!-- The call screen lives in its own task: it shows over the lock screen and never
              mixes with the app's own back stack. It stays in the recent apps while the call
-             lasts, so it can always be found again; it removes itself when the call ends. -->
+             lasts, so it can always be found again; it removes itself when the call ends.
+
+             No android:turnScreenOn here, deliberately: that attribute is permanent, and a
+             window that turns the screen on fights the proximity sensor that darkens it (#67).
+             The screen is woken from code instead, for as long as a call is ringing and no
+             longer. -->
         <activity
             android:name=".call.InCallActivity"
             android:exported="false"
@@ -144,8 +149,7 @@
             android:launchMode="singleInstance"
             android:showWhenLocked="true"
             android:taskAffinity="com.seca.phone.incall"
-            android:theme="@style/Theme.SecaPhone"
-            android:turnScreenOn="true" />
+            android:theme="@style/Theme.SecaPhone" />
 
         <!-- Android hands every call to this service once Seca Phone is the default
              phone app. Only the system may bind to it. -->

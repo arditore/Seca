@@ -3,9 +3,14 @@ package com.seca.phone.call
 import android.content.Intent
 import android.os.Bundle
 import android.os.PowerManager
+import android.telecom.Call
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 /**
  * The call screen. It shows over the lock screen and turns the screen on, so
@@ -19,7 +24,7 @@ class InCallActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setShowWhenLocked(true)
-        setTurnScreenOn(true)
+        wakeWhileRinging()
         enableEdgeToEdge()
         handle(intent)
         setContent {
@@ -56,6 +61,22 @@ class InCallActivity : ComponentActivity() {
     private fun handle(intent: Intent?) {
         if (intent?.getBooleanExtra(EXTRA_ANSWER, false) == true) {
             CallSession.ringing()?.let(CallSession::answer)
+        }
+    }
+
+    /**
+     * A window that turns the screen on and the proximity sensor that darkens it pull against
+     * each other: the window wakes the display the sensor has just let go dark, and the screen
+     * stays lit against the ear for the whole call (#67). The screen only ever needs waking
+     * while a call is ringing, so that is exactly how long the flag lives.
+     */
+    private fun wakeWhileRinging() {
+        setTurnScreenOn(CallSession.ringing() != null)
+        lifecycleScope.launch {
+            CallSession.calls
+                .map { calls -> calls.any { it.state == Call.STATE_RINGING || it.state == Call.STATE_SIMULATED_RINGING } }
+                .distinctUntilChanged()
+                .collect(::setTurnScreenOn)
         }
     }
 
