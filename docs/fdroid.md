@@ -208,9 +208,21 @@ nobody runs any more.
 This one still needs an account and a request, for all three apps. Requirements already met: APKs signed with the release key, attached to the latest GitHub release,
 under 30 MB, no debuggable or testOnly flag, fastlane metadata in the repository.
 
-Open a request as a work item at <https://gitlab.com/IzzyOnDroid/repo/-/work_items> with the
-link to <https://github.com/arditore/Seca>. It is GitLab now, the same host as fdroiddata, and
-not the Codeberg tracker this page used to name. Expect a question about the permissions Seca asks for; the
+Open a request at <https://codeberg.org/IzzyOnDroid/repodata/issues>, using their **App
+Inclusion Request** template, one per app.
+
+This page has now said Codeberg, then GitLab, then Codeberg again, so it is worth writing down
+why rather than quietly changing it a third time. `gitlab.com/IzzyOnDroid/repo` **is archived
+and read-only**; the project moved to Codeberg and the maintenance tracker there is where
+requests go. Checked rather than assumed: the GitLab page says archived, and
+`apt.izzysoft.de/fdroid/index/info` names the Codeberg tracker.
+
+Their template asks for the source link, the licence, categories, a summary, a description,
+command-line build instructions, and — this one needs a decision rather than a form filled in —
+**how far "AI" tools were used in development**, with a required level from None to Dominant and
+a free-text explanation. It is a fair question and it is asked of everyone.
+
+Expect a question about the permissions Seca asks for; the
 answer is in each app's full description: SMS and call log are what a messaging app and a dialer
 do, Seca Contacts and Seca Phone have no `INTERNET` permission at all, and Seca Messages uses it
 only for Seca Link, which is off by default.
