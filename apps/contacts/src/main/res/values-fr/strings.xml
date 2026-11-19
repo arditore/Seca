@@ -29,6 +29,7 @@
         <item quantity="many">%d fiches absentes non recréées : autorisez la modification des contacts, puis restaurez à nouveau</item>
         <item quantity="other">%d fiches absentes non recréées : autorisez la modification des contacts, puis restaurez à nouveau</item>
     </plurals>
+    <string name="add_the_year">Ajouter l\'année</string>
     <string name="backup_done">Sauvegarde chiffrée : %1$s</string>
     <string name="backup_failed">La sauvegarde a échoué</string>
     <string name="backup_hint">Gardez une copie ailleurs que sur ce téléphone</string>
@@ -205,6 +206,7 @@
     <string name="tidy_up">Rangement</string>
     <string name="unreadable_file">Ce fichier ne peut pas être lu</string>
     <string name="website">Site web</string>
+    <string name="without_the_year">Sans l\'année</string>
     <string name="wrong_password">Mot de passe incorrect, ou fichier abîmé</string>
     <string name="your_name">Votre nom</string>
     <string name="show_my_card">Afficher Ma fiche</string>

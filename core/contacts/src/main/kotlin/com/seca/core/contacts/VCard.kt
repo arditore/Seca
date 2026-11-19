@@ -216,8 +216,10 @@ object VCard {
                 }
                 "TITLE" -> card?.jobTitle = unescape(value)
                 "URL" -> card?.website = unescape(value)
-                "BDAY" -> card?.birthday = unescape(value).trim()
-                "ANNIVERSARY", "X-ANNIVERSARY" -> card?.anniversary = unescape(value).trim()
+                // Put into the shape the provider keeps, so a card written anywhere reads
+                // back here as a date rather than as a line of characters (#86).
+                "BDAY" -> card?.birthday = normalisedDate(unescape(value))
+                "ANNIVERSARY", "X-ANNIVERSARY" -> card?.anniversary = normalisedDate(unescape(value))
                 "NOTE" -> card?.note = unescape(value)
                 // Version 4.0 writes it as a data URI; 2.1 and 3.0 as plain base64.
                 "PHOTO", "LOGO" -> card?.let { current ->

@@ -29,6 +29,7 @@
         <item quantity="many">%d de fichas ausentes no recreadas: permite editar los contactos y restaura de nuevo</item>
         <item quantity="other">%d fichas ausentes no recreadas: permite editar los contactos y restaura de nuevo</item>
     </plurals>
+    <string name="add_the_year">Añadir el año</string>
     <string name="backup_done">Copia cifrada: %1$s</string>
     <string name="backup_failed">La copia falló</string>
     <string name="backup_hint">Guarda una copia fuera de este teléfono</string>
@@ -205,6 +206,7 @@
     <string name="tidy_up">Ordenar</string>
     <string name="unreadable_file">Este archivo no se puede leer</string>
     <string name="website">Sitio web</string>
+    <string name="without_the_year">Sin el año</string>
     <string name="wrong_password">Contraseña incorrecta, o archivo dañado</string>
     <string name="your_name">Tu nombre</string>
     <string name="show_my_card">Mostrar Mi ficha</string>

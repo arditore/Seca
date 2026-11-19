@@ -27,6 +27,7 @@
         <item quantity="one">%d fehlende Karte nicht neu erstellt: Bearbeiten von Kontakten erlauben, dann erneut wiederherstellen</item>
         <item quantity="other">%d fehlende Karten nicht neu erstellt: Bearbeiten von Kontakten erlauben, dann erneut wiederherstellen</item>
     </plurals>
+    <string name="add_the_year">Jahr hinzufügen</string>
     <string name="backup_done">Verschlüsseltes Backup: %1$s</string>
     <string name="backup_failed">Das Backup ist fehlgeschlagen</string>
     <string name="backup_hint">Bewahren Sie eine Kopie außerhalb dieses Telefons auf</string>
@@ -196,6 +197,7 @@
     <string name="tidy_up">Aufräumen</string>
     <string name="unreadable_file">Diese Datei kann nicht gelesen werden</string>
     <string name="website">Website</string>
+    <string name="without_the_year">Ohne Jahr</string>
     <string name="wrong_password">Falsches Passwort oder beschädigte Datei</string>
     <string name="your_name">Dein Name</string>
     <string name="show_my_card">Meine Karte anzeigen</string>

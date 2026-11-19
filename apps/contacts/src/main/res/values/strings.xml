@@ -27,6 +27,7 @@
         <item quantity="one">%d missing card not recreated: allow editing contacts, then restore again</item>
         <item quantity="other">%d missing cards not recreated: allow editing contacts, then restore again</item>
     </plurals>
+    <string name="add_the_year">Add the year</string>
     <string name="backup_done">Encrypted backup: %1$s</string>
     <string name="backup_failed">The backup failed</string>
     <string name="backup_hint">Keep a copy somewhere other than this phone</string>
@@ -196,6 +197,7 @@
     <string name="tidy_up">Tidy up</string>
     <string name="unreadable_file">This file cannot be read</string>
     <string name="website">Website</string>
+    <string name="without_the_year">Without the year</string>
     <string name="wrong_password">Wrong password, or damaged file</string>
     <string name="your_name">Your name</string>
     <string name="show_my_card">Show My card</string>

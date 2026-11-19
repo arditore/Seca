@@ -27,6 +27,7 @@
         <item quantity="one">Eksik %d kart yeniden oluşturulmadı: kişileri düzenleme iznini verin, ardından yeniden geri yükleyin</item>
         <item quantity="other">Eksik %d kart yeniden oluşturulmadı: kişileri düzenleme iznini verin, ardından yeniden geri yükleyin</item>
     </plurals>
+    <string name="add_the_year">Yılı ekle</string>
     <string name="backup_done">Şifreli yedek: %1$s</string>
     <string name="backup_failed">Yedekleme başarısız oldu</string>
     <string name="backup_hint">Bir kopyayı bu telefonun dışında bir yerde saklayın</string>
@@ -196,6 +197,7 @@
     <string name="tidy_up">Derle toparla</string>
     <string name="unreadable_file">Bu dosya okunamıyor</string>
     <string name="website">Web sitesi</string>
+    <string name="without_the_year">Yıl olmadan</string>
     <string name="wrong_password">Yanlış parola veya bozuk dosya</string>
     <string name="your_name">Adınız</string>
     <string name="show_my_card">Kartımı göster</string>

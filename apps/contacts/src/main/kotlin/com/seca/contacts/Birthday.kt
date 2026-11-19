@@ -5,17 +5,23 @@ import java.time.MonthDay
 import java.time.Period
 import java.time.format.DateTimeFormatter
 import android.text.format.DateFormat
+import com.seca.core.contacts.normalisedDate
 import com.seca.core.model.uiLocale
 
 /**
  * A birthday as people read it. The provider keeps "1990-05-12", or
  * "--05-12" for a day without a year; anything else is shown as it was saved.
  *
+ * The same date with its dashes left out is read too, and not for tidiness: an address book
+ * imported from Google arrives full of birthdays written "--0824", and every one of them was
+ * showing as those six characters on the contact's page (#86). Importing puts them right from
+ * now on, but the ones already saved are only put right here.
+ *
  * The format is built here rather than kept aside, so it follows the phone's
  * language even when that changes while the app is running.
  */
 internal fun formatBirthday(raw: String): String {
-    val text = raw.trim()
+    val text = normalisedDate(raw)
     val locale = uiLocale()
     return runCatching {
         // Day and month in the order the language writes them: "12 mai" in French, "May 12" in English.
@@ -36,7 +42,7 @@ internal fun formatBirthday(raw: String): String {
  * birthday, and a date in the future a negative one.
  */
 internal fun ageFrom(raw: String, today: LocalDate = LocalDate.now()): Int? = runCatching {
-    val text = raw.trim()
+    val text = normalisedDate(raw)
     if (text.startsWith("--")) return null
     Period.between(LocalDate.parse(text), today).years.takeIf { it in 0..OLDEST }
 }.getOrNull()

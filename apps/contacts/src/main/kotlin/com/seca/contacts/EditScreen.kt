@@ -698,34 +698,59 @@ private fun PlainField(
     )
 }
 
-/** A date, chosen in the system's picker and kept as the provider writes it. */
+/**
+ * A date, chosen in the system's picker and kept as the provider writes it.
+ *
+ * With the year taken off where the owner does not know it, which is most birthdays in most
+ * address books: Android's picker has no way of leaving a year out, so the choice is made here
+ * instead, after the date is picked. Asked for by somebody who tracks birthdays and had
+ * hundreds saved without a year (#86).
+ */
 @Composable
 private fun DateField(value: String, label: String, onChange: (String) -> Unit) {
     val context = LocalContext.current
-    Box {
-        OutlinedTextField(
-            value = if (value.isBlank()) "" else formatBirthday(value),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            shape = MaterialTheme.shapes.medium,
-            trailingIcon = {
-                if (value.isNotBlank()) {
-                    IconButton(onClick = { onChange("") }) {
-                        Icon(SecaIcons.Close, contentDescription = stringResource(R.string.remove_date))
+    val withoutYear = value.startsWith("--")
+    Column {
+        Box {
+            OutlinedTextField(
+                value = if (value.isBlank()) "" else formatBirthday(value),
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(label) },
+                shape = MaterialTheme.shapes.medium,
+                trailingIcon = {
+                    if (value.isNotBlank()) {
+                        IconButton(onClick = { onChange("") }) {
+                            Icon(SecaIcons.Close, contentDescription = stringResource(R.string.remove_date))
+                        }
                     }
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        // The field itself opens the picker; typing a date by hand helps no one.
-        Box(
-            Modifier
-                .matchParentSize()
-                .clickable(onClickLabel = stringResource(R.string.pick_date)) { pickBirthday(context, value, onChange) },
-        )
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            // The field itself opens the picker; typing a date by hand helps no one.
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .clickable(onClickLabel = stringResource(R.string.pick_date)) { pickBirthday(context, value, onChange) },
+            )
+        }
+        // Only once there is a date to take a year off, or to put one back on.
+        if (value.isNotBlank()) {
+            TextButton(
+                onClick = {
+                    if (withoutYear) pickBirthday(context, value, onChange) else onChange(withoutTheYear(value))
+                },
+            ) {
+                Text(stringResource(if (withoutYear) R.string.add_the_year else R.string.without_the_year))
+            }
+        }
     }
 }
+
+/** "1990-08-24" without its year, as the provider writes a day whose year nobody knows. */
+private fun withoutTheYear(value: String): String =
+    runCatching { "--%02d-%02d".format(LocalDate.parse(value).monthValue, LocalDate.parse(value).dayOfMonth) }
+        .getOrDefault(value)
 
 private fun pickBirthday(context: Context, current: String, onChange: (String) -> Unit) {
     val start = runCatching { LocalDate.parse(current) }.getOrNull() ?: LocalDate.now().minusYears(YEARS_BACK)

@@ -29,6 +29,7 @@
         <item quantity="few">%d brakujące karty nie zostały odtworzone: zezwól na edycję kontaktów, a następnie przywróć ponownie</item>
         <item quantity="many">%d brakujących kart nie zostało odtworzonych: zezwól na edycję kontaktów, a następnie przywróć ponownie</item>
     </plurals>
+    <string name="add_the_year">Dodaj rok</string>
     <string name="backup_done">Szyfrowana kopia zapasowa: %1$s</string>
     <string name="backup_failed">Tworzenie kopii zapasowej nie powiodło się</string>
     <string name="backup_hint">Trzymaj kopię poza tym telefonem</string>
@@ -200,6 +201,7 @@
     <string name="tidy_up">Uporządkuj</string>
     <string name="unreadable_file">Nie można odczytać tego pliku</string>
     <string name="website">Strona internetowa</string>
+    <string name="without_the_year">Bez roku</string>
     <string name="wrong_password">Błędne hasło lub uszkodzony plik</string>
     <string name="your_name">Twoje imię i nazwisko</string>
     <string name="black_theme">Czysta czerń</string>
