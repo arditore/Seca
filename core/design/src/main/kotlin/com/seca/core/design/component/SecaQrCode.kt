@@ -29,17 +29,22 @@ import com.google.zxing.qrcode.QRCodeWriter
  */
 @Composable
 fun SecaQrCode(content: String, contentDescription: String, modifier: Modifier = Modifier, size: Dp = 200.dp) {
+    // A QR code holds a couple of thousand characters and the writer throws past that, which
+    // during composition is a crash. Nothing is drawn instead: the caller keeps the payload
+    // small, and a card that still will not fit leaves a gap rather than taking the app down.
     val image = remember(content) {
-        val hints = mapOf(EncodeHintType.MARGIN to 0, EncodeHintType.CHARACTER_SET to "UTF-8")
-        val matrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, 0, 0, hints)
-        val dark = Color.Black.toArgb()
-        val light = Color.White.toArgb()
-        val bitmap = createBitmap(matrix.width, matrix.height)
-        for (x in 0 until matrix.width) {
-            for (y in 0 until matrix.height) bitmap[x, y] = if (matrix[x, y]) dark else light
-        }
-        bitmap.asImageBitmap()
-    }
+        runCatching {
+            val hints = mapOf(EncodeHintType.MARGIN to 0, EncodeHintType.CHARACTER_SET to "UTF-8")
+            val matrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, 0, 0, hints)
+            val dark = Color.Black.toArgb()
+            val light = Color.White.toArgb()
+            val bitmap = createBitmap(matrix.width, matrix.height)
+            for (x in 0 until matrix.width) {
+                for (y in 0 until matrix.height) bitmap[x, y] = if (matrix[x, y]) dark else light
+            }
+            bitmap.asImageBitmap()
+        }.getOrNull()
+    } ?: return
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(28.dp))

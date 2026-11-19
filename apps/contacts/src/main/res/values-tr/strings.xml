@@ -188,6 +188,7 @@
     <string name="share">Paylaş</string>
     <string name="share_contact">Kişiyi paylaş</string>
     <string name="share_qr">QR koduyla paylaş</string>
+    <string name="share_qr_hint">Bu kişiyi eklemek için diğer telefonun kamerasıyla tarayın. Hiçbir şey internetten geçmez ve fotoğraf dahil değildir.</string>
     <string name="sim_cards">SIM kartlar</string>
     <string name="sim_no_number">Numara kartta yok</string>
     <string name="sim_number_missing_hint">Birçok operatör numarayı karta yazmaz: aşağıdan ekleyin.</string>

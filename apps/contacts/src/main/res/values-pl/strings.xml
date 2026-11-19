@@ -192,6 +192,7 @@
     <string name="share">Udostępnij</string>
     <string name="share_contact">Udostępnij kontakt</string>
     <string name="share_qr">Udostępnij za pomocą kodu QR</string>
+    <string name="share_qr_hint">Zeskanuj go aparatem drugiego telefonu, aby dodać ten kontakt. Żadne dane nie są przesyłane przez internet, a zdjęcie nie jest dołączane.</string>
     <string name="sim_cards">Karty SIM</string>
     <string name="sim_no_number">Brak numeru na karcie</string>
     <string name="sim_number_missing_hint">Wielu operatorów nie zapisuje numeru na karcie: dodaj go poniżej.</string>

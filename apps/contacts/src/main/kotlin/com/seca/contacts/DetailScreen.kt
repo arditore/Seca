@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.ContactDetail
 import com.seca.core.contacts.PostalAddress
 import com.seca.core.design.component.SecaDialog
+import com.seca.core.design.component.SecaQrCode
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaEmptyState
@@ -60,6 +61,8 @@ import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.component.rememberContactPhoto
 import com.seca.core.contacts.ContactField
+import com.seca.core.contacts.VCard
+import com.seca.core.contacts.VCardContact
 import com.seca.core.model.PhoneNumber
 import com.seca.core.model.Profile
 import com.seca.core.model.initialsOf
@@ -104,6 +107,7 @@ internal fun DetailScreen(
     }
     var confirmDelete by remember { mutableStateOf(false) }
     var choosingShape by remember { mutableStateOf(false) }
+    var sharingQr by remember { mutableStateOf(false) }
     val blockAskedText = stringResource(R.string.block_asked)
     val current = detail
     val blockableNumbers = current?.phones?.map { it.value }?.filter { it.isNotBlank() }?.distinct().orEmpty()
@@ -140,6 +144,16 @@ internal fun DetailScreen(
                                 onClick = {
                                     menuOpen = false
                                     scope.launch { viewModel.vCardOf(id)?.let { shareVCard(context, current.displayName, it) } }
+                                },
+                            )
+                            // The same card, handed over without a file and without a network:
+                            // the other phone's camera reads it off the screen (#84).
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.share_qr)) },
+                                leadingIcon = { Icon(SecaIcons.Label, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    sharingQr = true
                                 },
                             )
                             DropdownMenuItem(
@@ -243,6 +257,29 @@ internal fun DetailScreen(
                                     choosingShape = false
                                 },
                             )
+            },
+        )
+    }
+
+    if (sharingQr && current != null) {
+        val card = remember(current) { qrCardOf(current) }
+        SecaDialog(
+            onDismiss = { sharingQr = false },
+            icon = SecaIcons.Label,
+            title = current.displayName,
+            confirmLabel = stringResource(R.string.close),
+            onConfirm = { sharingQr = false },
+            content = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    SecaQrCode(card, contentDescription = stringResource(R.string.share_qr))
+                    Text(
+                        text = stringResource(R.string.share_qr_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                }
             },
         )
     }
@@ -584,3 +621,23 @@ private fun FieldRow(
         trailing?.invoke()
     }
 }
+
+/**
+ * The card a QR code can actually hold: the name, the numbers and the e-mail addresses.
+ *
+ * Not the whole vCard. A photograph alone is tens of kilobytes and a QR code holds a couple of
+ * thousand characters, so the full card would simply refuse to encode. This is the same trade
+ * the owner's own card makes, and it is what the other phone needs to reach the person (#84).
+ */
+private fun qrCardOf(detail: ContactDetail): String = VCard.write(
+    listOf(
+        VCardContact(
+            givenName = detail.givenName,
+            familyName = detail.familyName,
+            middleName = detail.middleName,
+            displayName = detail.displayName,
+            phones = detail.phones.map { ContactField(id = null, value = it.value, type = it.type) },
+            emails = detail.emails.map { ContactField(id = null, value = it.value, type = it.type) },
+        ),
+    ),
+)

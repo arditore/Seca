@@ -197,6 +197,7 @@
     <string name="share">Compartir</string>
     <string name="share_contact">Compartir el contacto</string>
     <string name="share_qr">Compartir con un código QR</string>
+    <string name="share_qr_hint">Escanéalo con la cámara del otro teléfono para añadir este contacto. Nada pasa por Internet, y la foto no se incluye.</string>
     <string name="sim_cards">Tarjetas SIM</string>
     <string name="sim_no_number">El número no está en la tarjeta</string>
     <string name="sim_number_missing_hint">Muchas operadoras no graban el número en la tarjeta: añádelo abajo.</string>

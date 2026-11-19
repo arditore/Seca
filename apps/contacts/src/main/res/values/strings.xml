@@ -188,6 +188,7 @@
     <string name="share">Share</string>
     <string name="share_contact">Share contact</string>
     <string name="share_qr">Share with a QR code</string>
+    <string name="share_qr_hint">Scan it with the other phone\'s camera to add this contact. Nothing goes through the Internet, and the photo is not included.</string>
     <string name="sim_cards">SIM cards</string>
     <string name="sim_no_number">Number not on the card</string>
     <string name="sim_number_missing_hint">Many carriers leave the number off the card: add it below.</string>
