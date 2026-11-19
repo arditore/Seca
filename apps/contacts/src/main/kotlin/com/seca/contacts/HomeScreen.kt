@@ -178,17 +178,22 @@ private fun HomeTopBar(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(top = 12.dp),
         ) {
-            // Every contact first, then one tab per profile.
+            // Every contact first, then one tab per profile — but not the one everybody has
+            // before they have made any. "All" and "Main" are then the same list with the same
+            // number beside it, and a user wrote in having looked at two tabs both reading 404
+            // and asked what the second was for. Nothing: it comes back with the first profile
+            // the owner makes, which is the first moment it means anything.
+            val tabs = if (ui.profiles.size > 1) ui.profiles else emptyList()
             item(key = "all-profiles") {
                 ProfileTab(
                     name = stringResource(R.string.all),
                     tone = null,
                     count = ui.contacts.size,
-                    selected = ui.showingAll,
+                    selected = ui.showingAll || tabs.isEmpty(),
                     onClick = { onSelectProfile(ProfileStore.ALL) },
                 )
             }
-            itemsIndexed(ui.profiles, key = { _, profile -> profile.id }) { index, profile ->
+            itemsIndexed(tabs, key = { _, profile -> profile.id }) { index, profile ->
                 ProfileTab(
                     name = profile.label(),
                     tone = index,
