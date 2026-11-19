@@ -44,7 +44,7 @@ class SmsSender(private val context: Context) {
             Intent(context, MessageActionReceiver::class.java)
                 .setAction(MessageActionReceiver.SENT)
                 .setData(stored),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            RESULT_FLAGS,
         )
         // A second answer, from the network rather than from the phone, saying it arrived.
         // Asked for only when the owner turned it on: see DeliveryReports.
@@ -57,7 +57,7 @@ class SmsSender(private val context: Context) {
                 Intent(context, MessageActionReceiver::class.java)
                     .setAction(MessageActionReceiver.DELIVERED)
                     .setData(stored),
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                RESULT_FLAGS,
             )
         }
         val sent = runCatching {
@@ -81,5 +81,16 @@ class SmsSender(private val context: Context) {
     companion object {
         /** Send on whichever SIM the phone itself would have used. */
         const val NO_SIM_CHOSEN: Int = -1
+
+        /**
+         * Mutable, and it has to be: telephony answers by filling the missing pieces into this
+         * very intent, which is exactly what an immutable one throws away. The delivery report
+         * arrives that way, as a PDU extra, so an immutable intent left that feature dead, every
+         * report reading as nothing said.
+         *
+         * Mutable is safe here because the intent already names its own receiver, which is not
+         * exported: there is no field left for anyone to redirect, only extras to add.
+         */
+        private const val RESULT_FLAGS = PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
     }
 }

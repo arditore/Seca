@@ -398,12 +398,30 @@ class MessagesRepository(private val context: Context) {
         runCatching { resolver.update(uri, values, null, null) }
     }
 
+    /**
+     * Marks a message sent, or failed.
+     *
+     * A long text leaves as several parts and each one reports back on its own, so this is
+     * called once per part and the parts answer in no fixed order. A failure is therefore
+     * final: one part that did not leave means the message did not, whatever a part answering
+     * after it says. Without that, a single part failing was overwritten by the next part
+     * succeeding, and a message nobody received sat there looking sent (#75).
+     *
+     * Retrying deletes the failed message and sends a new one, so nothing is stuck by this.
+     */
     fun setSent(uri: Uri, sent: Boolean) {
+        if (sent && typeOf(uri) == Sms.MESSAGE_TYPE_FAILED) return
         val values = ContentValues().apply {
             put(Sms.TYPE, if (sent) Sms.MESSAGE_TYPE_SENT else Sms.MESSAGE_TYPE_FAILED)
         }
         runCatching { resolver.update(uri, values, null, null) }
     }
+
+    private fun typeOf(uri: Uri): Int? = runCatching {
+        resolver.query(uri, arrayOf(Sms.TYPE), null, null, null)?.use { c ->
+            if (c.moveToFirst()) c.getInt(0) else null
+        }
+    }.getOrNull()
 
     /** Emits whenever a message is added, changed or removed, by any app. */
     fun changes(): Flow<Unit> = callbackFlow {
