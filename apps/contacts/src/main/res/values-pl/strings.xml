@@ -172,6 +172,7 @@
     <string name="protection">Ochrona</string>
     <string name="read_sim_numbers">Odczytaj numery z karty SIM</string>
     <string name="read_sim_numbers_hint">Odczytywane na tym telefonie, nigdy niewysyłane</string>
+    <string name="reframe_photo">Zmień kadr</string>
     <string name="remove_address">Usuń ten adres</string>
     <string name="remove_date">Usuń datę</string>
     <string name="remove_favorite">Usuń z ulubionych</string>
@@ -199,6 +200,7 @@
     <string name="sim_number_missing_hint">Wielu operatorów nie zapisuje numeru na karcie: dodaj go poniżej.</string>
     <string name="sim_slot">SIM %d</string>
     <string name="tidy_up">Uporządkuj</string>
+    <string name="turn_photo">Obróć zdjęcie</string>
     <string name="unreadable_file">Nie można odczytać tego pliku</string>
     <string name="website">Strona internetowa</string>
     <string name="without_the_year">Bez roku</string>

@@ -168,6 +168,7 @@
     <string name="protection">Koruma</string>
     <string name="read_sim_numbers">SIM kart numaralarını oku</string>
     <string name="read_sim_numbers_hint">Bu telefonda okunur, asla gönderilmez</string>
+    <string name="reframe_photo">Yeniden çerçevele</string>
     <string name="remove_address">Bu adresi kaldır</string>
     <string name="remove_date">Tarihi kaldır</string>
     <string name="remove_favorite">Favorilerden kaldır</string>
@@ -195,6 +196,7 @@
     <string name="sim_number_missing_hint">Birçok operatör numarayı karta yazmaz: aşağıdan ekleyin.</string>
     <string name="sim_slot">SIM %d</string>
     <string name="tidy_up">Derle toparla</string>
+    <string name="turn_photo">Fotoğrafı döndür</string>
     <string name="unreadable_file">Bu dosya okunamıyor</string>
     <string name="website">Web sitesi</string>
     <string name="without_the_year">Yıl olmadan</string>

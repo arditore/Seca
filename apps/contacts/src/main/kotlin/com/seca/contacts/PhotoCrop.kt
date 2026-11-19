@@ -13,6 +13,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
+import android.graphics.Matrix
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.mutableIntStateOf
+import com.seca.core.design.SecaIcons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -66,7 +72,12 @@ internal fun PhotoCropDialog(uri: Uri, onCancel: () -> Unit, onCropped: (ByteArr
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val colors = MaterialTheme.colorScheme
-    val picture by produceState<Bitmap?>(initialValue = null, uri) { value = forCropping(context, uri) }
+    val loaded by produceState<Bitmap?>(initialValue = null, uri) { value = forCropping(context, uri) }
+    // Quarter turns the owner has asked for. A photograph taken sideways is the commonest
+    // reason to come back to one that is already set (#68), and the framing starts again with
+    // each turn because the square it describes belongs to the picture as it was.
+    var turns by remember(loaded) { mutableIntStateOf(0) }
+    val picture = remember(loaded, turns) { loaded?.let { turned(it, turns) } }
     val frame = remember(picture) { picture?.let(::Frame) }
     var busy by remember(picture) { mutableStateOf(false) }
 
@@ -100,11 +111,15 @@ internal fun PhotoCropDialog(uri: Uri, onCancel: () -> Unit, onCropped: (ByteArr
                     if (frame == null) CircularProgressIndicator() else Framing(frame)
                 }
                 Row(
-                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 12.dp),
                 ) {
+                    IconButton(enabled = picture != null && !busy, onClick = { turns = (turns + 1) % QUARTERS }) {
+                        Icon(SecaIcons.Rotate, contentDescription = stringResource(R.string.turn_photo))
+                    }
+                    Spacer(Modifier.weight(1f))
                     TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
                     TextButton(
                         enabled = frame != null && !busy,
@@ -128,6 +143,18 @@ internal fun PhotoCropDialog(uri: Uri, onCancel: () -> Unit, onCropped: (ByteArr
         }
     }
 }
+
+/** The same picture a quarter turn at a time, and the original back on the fourth. */
+private fun turned(picture: Bitmap, quarters: Int): Bitmap {
+    if (quarters % QUARTERS == 0) return picture
+    val matrix = Matrix().apply { postRotate(90f * (quarters % QUARTERS)) }
+    return runCatching {
+        Bitmap.createBitmap(picture, 0, 0, picture.width, picture.height, matrix, true)
+    }.getOrDefault(picture)
+}
+
+/** Four quarter turns and a photograph is back where it started. */
+private const val QUARTERS = 4
 
 /** The picture, the square cut out of it, and the fingers that move that square. */
 @Composable

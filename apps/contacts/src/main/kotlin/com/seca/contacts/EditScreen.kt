@@ -1,7 +1,9 @@
 package com.seca.contacts
 
 import android.app.DatePickerDialog
+import android.content.ContentUris
 import android.content.Context
+import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
@@ -264,6 +266,13 @@ internal fun EditScreen(
                             preview = null
                         }
                     },
+                    // Only for a photograph the contact already has. One just picked has been
+                    // framed on the way in, and a contact with none has nothing to frame.
+                    onReframe = if (id != null && saved != null && picture == ContactsViewModel.Picture.Unchanged) {
+                        { framing = savedPhotoUri(id) }
+                    } else {
+                        null
+                    },
                 )
 
                 FormCard(SecaIcons.PersonOutline, stringResource(R.string.name)) {
@@ -383,6 +392,8 @@ private fun PhotoHeader(
     photo: ImageBitmap?,
     onPick: () -> Unit,
     onRemove: (() -> Unit)?,
+    /** Framing the one already saved, for a contact that has one (#68). */
+    onReframe: (() -> Unit)?,
 ) {
     val colors = MaterialTheme.colorScheme
     Column(
@@ -435,6 +446,9 @@ private fun PhotoHeader(
         ) {
             FilledTonalButton(onClick = onPick) {
                 Text(stringResource(if (photo == null) R.string.add_photo else R.string.change_photo))
+            }
+            if (onReframe != null) {
+                TextButton(onClick = onReframe) { Text(stringResource(R.string.reframe_photo)) }
             }
             if (onRemove != null) {
                 TextButton(onClick = onRemove) { Text(stringResource(R.string.remove_photo)) }
@@ -762,6 +776,17 @@ private fun pickBirthday(context: Context, current: String, onChange: (String) -
         start.dayOfMonth,
     ).show()
 }
+
+/**
+ * The photograph a contact already has, as something the framer can open.
+ *
+ * The provider hands its own picture out under this path, at full size rather than the small
+ * copy a list row draws, which is the one worth framing again (#68).
+ */
+private fun savedPhotoUri(contactId: Long): Uri = Uri.withAppendedPath(
+    ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId),
+    ContactsContract.Contacts.Photo.DISPLAY_PHOTO,
+)
 
 /** Where the date picker opens when a contact has no birthday yet. */
 private const val YEARS_BACK = 30L

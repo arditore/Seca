@@ -168,6 +168,7 @@
     <string name="protection">Protection</string>
     <string name="read_sim_numbers">Read the SIM card numbers</string>
     <string name="read_sim_numbers_hint">Read on this phone, never sent</string>
+    <string name="reframe_photo">Frame again</string>
     <string name="remove_address">Remove this address</string>
     <string name="remove_date">Remove the date</string>
     <string name="remove_favorite">Remove from favorites</string>
@@ -195,6 +196,7 @@
     <string name="sim_number_missing_hint">Many carriers leave the number off the card: add it below.</string>
     <string name="sim_slot">SIM %d</string>
     <string name="tidy_up">Tidy up</string>
+    <string name="turn_photo">Turn the photo</string>
     <string name="unreadable_file">This file cannot be read</string>
     <string name="website">Website</string>
     <string name="without_the_year">Without the year</string>

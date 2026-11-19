@@ -177,6 +177,7 @@
     <string name="protection">Protection</string>
     <string name="read_sim_numbers">Lire les numéros des cartes SIM</string>
     <string name="read_sim_numbers_hint">Lus sur ce téléphone, jamais envoyés</string>
+    <string name="reframe_photo">Recadrer</string>
     <string name="remove_address">Retirer cette adresse</string>
     <string name="remove_date">Retirer la date</string>
     <string name="remove_favorite">Retirer des favoris</string>
@@ -204,6 +205,7 @@
     <string name="sim_number_missing_hint">Beaucoup d\'opérateurs n\'inscrivent pas le numéro sur la carte : ajoutez-le ci-dessous.</string>
     <string name="sim_slot">SIM %d</string>
     <string name="tidy_up">Rangement</string>
+    <string name="turn_photo">Tourner la photo</string>
     <string name="unreadable_file">Ce fichier ne peut pas être lu</string>
     <string name="website">Site web</string>
     <string name="without_the_year">Sans l\'année</string>
