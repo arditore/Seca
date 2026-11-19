@@ -562,10 +562,17 @@ private fun FavoritesRow(favorites: List<SecaContact>, ui: PhoneUi, onCall: (Str
                     photo = rememberContactThumbnail(contact.photoUri),
                 )
                 Text(
-                    text = contact.displayName.substringBefore(' '),
+                    // The whole name, over two lines, the same as Seca Contacts draws it.
+                    // Keeping only what came before the first space was meant to be the
+                    // forename, and a name is not built that way: it turned "Abbé Christophe
+                    // Decerf" into "Abbé". Contacts was fixed for #41 and this row was missed,
+                    // which the reporter found and said so. Two lines are always reserved, so
+                    // a name that wraps does not stand taller than its neighbours.
+                    text = contact.displayName,
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
+                    minLines = 2,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp),
