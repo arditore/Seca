@@ -55,6 +55,7 @@ import android.Manifest
 import com.seca.core.model.Profile
 import com.seca.core.suite.AutoBackupSection
 import com.seca.core.suite.SuiteBackupSection
+import com.seca.core.suite.LanguageSection
 import com.seca.core.suite.SuiteNamesSection
 import com.seca.core.suite.SuiteOrderSection
 import java.time.LocalDate
@@ -169,6 +170,7 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                         index = 5,
                         count = 6,
                     ) { page = SettingsPage.Privacy }
+                    LanguageSection()
                 }
                 SettingsPage.Appearance -> {
                     SecaGroupItem(index = 0, count = 4) {

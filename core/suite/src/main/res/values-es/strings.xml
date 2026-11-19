@@ -76,4 +76,6 @@
     <string name="crash_send">Enviar</string>
     <string name="crash_discard">Descartar</string>
     <string name="crash_subject">Informe de fallo de Seca</string>
+    <string name="language">Idioma</string>
+    <string name="language_system">Idioma del teléfono</string>
 </resources>

@@ -76,4 +76,6 @@
     <string name="crash_send">Send</string>
     <string name="crash_discard">Discard</string>
     <string name="crash_subject">Seca crash report</string>
+    <string name="language">Language</string>
+    <string name="language_system">Phone language</string>
 </resources>

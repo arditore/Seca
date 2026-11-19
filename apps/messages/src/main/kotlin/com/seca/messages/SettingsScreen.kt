@@ -43,6 +43,7 @@ import com.seca.core.design.component.SecaTopBar
 import com.seca.core.design.privacy.SecaPrivacySettingsGroup
 import com.seca.core.suite.AutoBackupSection
 import com.seca.core.suite.SuiteBackupSection
+import com.seca.core.suite.LanguageSection
 import com.seca.core.suite.SuiteNamesSection
 import com.seca.core.suite.SuiteOrderSection
 import androidx.compose.ui.res.stringResource
@@ -133,6 +134,7 @@ internal fun SettingsScreen(
                         index = 4,
                         count = 5,
                     ) { page = SettingsPage.Privacy }
+                    LanguageSection()
                 }
                 SettingsPage.Appearance -> {
                     if (ui.profiles.connected) {

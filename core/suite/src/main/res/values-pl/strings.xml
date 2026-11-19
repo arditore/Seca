@@ -76,4 +76,6 @@
     <string name="crash_send">Wyślij</string>
     <string name="crash_discard">Odrzuć</string>
     <string name="crash_subject">Raport awarii Seca</string>
+    <string name="language">Język</string>
+    <string name="language_system">Język telefonu</string>
 </resources>

@@ -76,4 +76,6 @@
     <string name="crash_send">Gönder</string>
     <string name="crash_discard">Raporu kaldır</string>
     <string name="crash_subject">Seca çökme raporu</string>
+    <string name="language">Dil</string>
+    <string name="language_system">Telefonun dili</string>
 </resources>
