@@ -4,6 +4,7 @@
     <string name="add_address">Add an address</string>
     <string name="add_email">Add an email address</string>
     <string name="add_favorite">Add to favorites</string>
+    <string name="add_middle_name_nickname">Middle name and nickname</string>
     <string name="add_number">Add a number</string>
     <string name="add_photo">Add a photo</string>
     <string name="add_profile">Add a profile</string>
@@ -126,9 +127,11 @@
     <string name="my_card_qr">QR code of your card</string>
     <string name="my_card_qr_hint">Scan it with the other phone\'s camera to add your card. Nothing goes through the Internet, and the photo is not included.</string>
     <string name="my_numbers">My numbers</string>
+    <string name="middle_name">Middle name</string>
     <string name="name">Name</string>
     <string name="new_contact">New contact</string>
     <string name="new_profile">New profile</string>
+    <string name="nickname">Nickname</string>
     <string name="no_contact_info">No number or email address.</string>
     <string name="no_contacts">No contacts</string>
     <string name="no_contacts_hint">Contacts saved on this phone will show up here. If this phone keeps contacts you cannot see here, it is limiting what this app is allowed to read: check its permission for contacts.</string>

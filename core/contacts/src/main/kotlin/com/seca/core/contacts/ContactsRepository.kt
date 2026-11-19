@@ -13,6 +13,7 @@ import android.provider.ContactsContract
 import androidx.annotation.RequiresApi
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
@@ -73,6 +74,10 @@ data class ContactDetail(
     val displayName: String,
     val givenName: String,
     val familyName: String,
+    /** The name between the two, for whoever has one (#57). */
+    val middleName: String,
+    /** What they are actually called, in a row of its own, so there may be none (#57). */
+    val nickname: ContactField?,
     val starred: Boolean,
     val phones: List<ContactField>,
     val emails: List<ContactField>,
@@ -99,6 +104,10 @@ data class ContactDetail(
 data class ContactInput(
     val givenName: String,
     val familyName: String,
+    /** The name between the two, for whoever has one (#57). */
+    val middleName: String = "",
+    /** What they are actually called, searchable like the rest of the name (#57). */
+    val nickname: String = "",
     val phones: List<ContactField>,
     val emails: List<ContactField>,
     val addresses: List<PostalAddress> = emptyList(),
@@ -142,14 +151,20 @@ class ContactsRepository(
      * first person whose account has an apostrophe in it.
      */
     suspend fun contacts(hidden: Set<Place>, order: NameOrder): List<SecaContact> = withContext(Dispatchers.IO) {
-        if (hidden.isEmpty()) return@withContext groupContacts(ordered(queryContacts(order), order), queryPhones())
+        if (hidden.isEmpty()) {
+            return@withContext groupContacts(
+                ordered(queryContacts(order), order),
+                queryPhones(),
+                nicknamesByContact(),
+            )
+        }
         val byRaw = rawContactAccounts()
         // Known by one account that is still on is enough to stay: turning WhatsApp off must
         // not take away a contact that Google also knows.
         val visible = byRaw.filterValues { places -> places.any { it !in hidden } }.keys
         val contacts = ordered(queryContacts(order).filter { it.id in visible }, order)
         val phones = queryPhones().filter { it.account == null || it.account !in hidden }
-        groupContacts(contacts, phones)
+        groupContacts(contacts, phones, nicknamesByContact())
     }
 
     /**
@@ -220,6 +235,8 @@ class ContactsRepository(
         var nameDataId: Long? = null
         var givenName = ""
         var familyName = ""
+        var middleName = ""
+        var nickname: ContactField? = null
         var jobTitle = ""
         var organization: ContactField? = null
         var website: ContactField? = null
@@ -231,8 +248,8 @@ class ContactsRepository(
         val addresses = mutableListOf<PostalAddress>()
         resolver.query(
             Data.CONTENT_URI,
-            // DATA5 to DATA10 are only ever an address's parts; every other kind of row leaves
-            // them empty, so one projection serves all of them.
+            // DATA5 to DATA10 are an address's parts, and DATA5 is also a name's middle name;
+            // every other kind of row leaves them empty, so one projection serves all of them.
             arrayOf(
                 Data._ID, Data.MIMETYPE, Data.DATA1, Data.DATA2, Data.DATA3, Data.DATA4,
                 Data.DATA5, Data.DATA6, Data.DATA7, Data.DATA8, Data.DATA9, Data.DATA10,
@@ -245,11 +262,19 @@ class ContactsRepository(
             while (cursor.moveToNext()) {
                 val dataId = cursor.getLong(0)
                 when (cursor.getString(1)) {
-                    // For a name, DATA2 is the given name and DATA3 the family name.
+                    // For a name, DATA2 is the given name, DATA3 the family name and DATA5 the
+                    // one in the middle.
                     StructuredName.CONTENT_ITEM_TYPE -> if (nameDataId == null) {
                         nameDataId = dataId
                         givenName = cursor.getString(3).orEmpty()
                         familyName = cursor.getString(4).orEmpty()
+                        middleName = cursor.getString(6).orEmpty()
+                    }
+                    // A nickname is a row of its own, written by whichever app the owner used.
+                    Nickname.CONTENT_ITEM_TYPE -> if (nickname == null) {
+                        cursor.getString(2)?.takeIf { it.isNotBlank() }?.let {
+                            nickname = ContactField(dataId, it, cursor.getInt(3))
+                        }
                     }
                     // For a number, an e-mail or an address, DATA1 is the value and DATA2 its type.
                     // DATA3 holds the owner's own word for the field, kept for a custom type.
@@ -291,6 +316,8 @@ class ContactsRepository(
             displayName = head.displayName,
             givenName = givenName,
             familyName = familyName,
+            middleName = middleName,
+            nickname = nickname,
             starred = head.starred,
             phones = phones,
             emails = emails,
@@ -435,6 +462,7 @@ class ContactsRepository(
                     .withSelection("${Data._ID} = ?", arrayOf(nameDataId.toString()))
                     .withValue(StructuredName.GIVEN_NAME, input.givenName.trim())
                     .withValue(StructuredName.FAMILY_NAME, input.familyName.trim())
+                    .withValue(StructuredName.MIDDLE_NAME, input.middleName.trim().ifEmpty { null })
                     .withValue(StructuredName.DISPLAY_NAME, displayNameOf(input).ifEmpty { null })
                     .build()
             } else if (displayNameOf(input).isNotEmpty()) {
@@ -463,6 +491,9 @@ class ContactsRepository(
                 withValue(Event.TYPE, Event.TYPE_ANNIVERSARY)
             }
             syncSingle(ops, detail.rawContactId, Note.CONTENT_ITEM_TYPE, detail.note, input.note)
+            syncSingle(ops, detail.rawContactId, Nickname.CONTENT_ITEM_TYPE, detail.nickname, input.nickname) {
+                withValue(Nickname.TYPE, Nickname.TYPE_DEFAULT)
+            }
             resolver.applyBatch(ContactsContract.AUTHORITY, ops)
         }
     }
@@ -618,7 +649,7 @@ class ContactsRepository(
                 Data.DATA9,
                 Data.DATA10,
             ),
-            "${Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?)",
+            "${Data.MIMETYPE} IN (?, ?, ?, ?, ?, ?, ?, ?)",
             arrayOf(
                 StructuredName.CONTENT_ITEM_TYPE,
                 Phone.CONTENT_ITEM_TYPE,
@@ -627,6 +658,7 @@ class ContactsRepository(
                 Organization.CONTENT_ITEM_TYPE,
                 Website.CONTENT_ITEM_TYPE,
                 Note.CONTENT_ITEM_TYPE,
+                Nickname.CONTENT_ITEM_TYPE,
             ),
             null,
         )?.use { c ->
@@ -636,6 +668,11 @@ class ContactsRepository(
                     StructuredName.CONTENT_ITEM_TYPE -> if (card.given.isEmpty() && card.family.isEmpty()) {
                         card.given = c.getString(4).orEmpty()
                         card.family = c.getString(5).orEmpty()
+                        // DATA5, the middle name, which shares the column with an address's box.
+                        card.middle = c.getString(8).orEmpty()
+                    }
+                    Nickname.CONTENT_ITEM_TYPE -> if (card.nickname.isEmpty()) {
+                        card.nickname = c.getString(3).orEmpty()
                     }
                     // DATA3 carries the owner's own word for a field; without it a custom
                     // one came out of a backup as a plain one.
@@ -700,6 +737,8 @@ class ContactsRepository(
                 card.lookupKey to VCardContact(
                     givenName = card.given,
                     familyName = card.family,
+                    middleName = card.middle,
+                    nickname = card.nickname,
                     displayName = card.display,
                     phones = card.phones.distinctBy(ContactField::value),
                     emails = card.emails.distinctBy(ContactField::value),
@@ -719,6 +758,8 @@ class ContactsRepository(
     private class ExportCard(val display: String, val lookupKey: String) {
         var given = ""
         var family = ""
+        var middle = ""
+        var nickname = ""
         var organization = ""
         var jobTitle = ""
         var website = ""
@@ -771,6 +812,27 @@ class ContactsRepository(
             }
         }
         names
+    }.getOrDefault(emptyMap())
+
+    /**
+     * Each contact's nickname, for the few who have one, so the list can be searched by it
+     * without reading a row per contact (#57).
+     */
+    private fun nicknamesByContact(): Map<Long, String> = runCatching {
+        val nicknames = HashMap<Long, String>()
+        resolver.query(
+            Data.CONTENT_URI,
+            arrayOf(Data.CONTACT_ID, Nickname.NAME),
+            "${Data.MIMETYPE} = ?",
+            arrayOf(Nickname.CONTENT_ITEM_TYPE),
+            null,
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val name = cursor.getString(1).orEmpty()
+                if (name.isNotBlank()) nicknames.putIfAbsent(cursor.getLong(0), name)
+            }
+        }
+        nicknames
     }.getOrDefault(emptyMap())
 
     /** Orders [rows] by the half of the name the owner asked for, then by the other. */
@@ -879,6 +941,7 @@ class ContactsRepository(
             .withValue(Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE)
             .withValue(StructuredName.GIVEN_NAME, input.givenName.trim())
             .withValue(StructuredName.FAMILY_NAME, input.familyName.trim())
+            .withValue(StructuredName.MIDDLE_NAME, input.middleName.trim().ifEmpty { null })
             .withValue(StructuredName.DISPLAY_NAME, displayNameOf(input))
 
     private fun fieldRow(mimeType: String, field: ContactField): ContentProviderOperation.Builder =
@@ -1001,6 +1064,13 @@ class ContactsRepository(
         }
         if (input.website.isNotBlank()) {
             add(dataRow(Website.CONTENT_ITEM_TYPE).withValue(Website.URL, input.website.trim()))
+        }
+        if (input.nickname.isNotBlank()) {
+            add(
+                dataRow(Nickname.CONTENT_ITEM_TYPE)
+                    .withValue(Nickname.NAME, input.nickname.trim())
+                    .withValue(Nickname.TYPE, Nickname.TYPE_DEFAULT),
+            )
         }
         if (input.birthday.isNotBlank()) {
             add(
@@ -1125,7 +1195,9 @@ private const val EXPORT_POSTCODE = 12
 private const val EXPORT_COUNTRY = 13
 
 private fun displayNameOf(input: ContactInput): String =
-    listOf(input.givenName.trim(), input.familyName.trim()).filter { it.isNotEmpty() }.joinToString(" ")
+    listOf(input.givenName.trim(), input.middleName.trim(), input.familyName.trim())
+        .filter { it.isNotEmpty() }
+        .joinToString(" ")
 
 internal data class ContactRow(
     val id: Long,
@@ -1153,7 +1225,11 @@ internal data class PhoneRow(val contactId: Long, val number: String, val accoun
  * number, then whatever order it gave. Comparing by the last nine digits is [PhoneNumber.matches],
  * the same rule used to recognise a caller, so a card and an incoming call cannot disagree.
  */
-internal fun groupContacts(contacts: List<ContactRow>, phones: List<PhoneRow>): List<SecaContact> {
+internal fun groupContacts(
+    contacts: List<ContactRow>,
+    phones: List<PhoneRow>,
+    nicknames: Map<Long, String> = emptyMap(),
+): List<SecaContact> {
     val numbersByContact = phones.groupBy(PhoneRow::contactId, PhoneRow::number)
     return contacts.map { row ->
         SecaContact(
@@ -1165,6 +1241,7 @@ internal fun groupContacts(contacts: List<ContactRow>, phones: List<PhoneRow>): 
             isFavorite = row.starred,
             photoUri = row.photoUri,
             lookupKey = row.lookupKey,
+            nickname = nicknames[row.id].orEmpty(),
         )
     }
 }

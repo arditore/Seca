@@ -4,6 +4,7 @@ import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -22,6 +23,36 @@ class VCardTest {
         val back = VCard.parse(VCard.write(listOf(camille))).single()
 
         assertEquals(camille.copy(phones = camille.phones.map { it.copy(id = null) }), back)
+    }
+
+    @Test
+    fun `a middle name and a nickname survive the round trip`() {
+        val robert = VCardContact(
+            givenName = "Robert",
+            familyName = "Nesta Marley",
+            middleName = "Nesta",
+            nickname = "Bob",
+            displayName = "Robert Nesta Marley",
+            phones = emptyList(),
+            emails = emptyList(),
+        )
+
+        val written = VCard.write(listOf(robert))
+        val back = VCard.parse(written).single()
+
+        // The third part of N, where every other contacts app looks for it.
+        assertTrue(written.contains("N:Nesta Marley;Robert;Nesta;;"))
+        assertTrue(written.contains("NICKNAME:Bob"))
+        assertEquals(robert, back)
+    }
+
+    @Test
+    fun `a card with neither leaves no empty nickname line`() {
+        val written = VCard.write(
+            listOf(VCardContact(givenName = "Camille", familyName = "Durand", displayName = "Camille Durand", phones = emptyList(), emails = emptyList())),
+        )
+
+        assertFalse(written.contains("NICKNAME"))
     }
 
     @Test

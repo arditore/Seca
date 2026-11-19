@@ -4,6 +4,7 @@
     <string name="add_address">Adresse hinzufügen</string>
     <string name="add_email">E-Mail-Adresse hinzufügen</string>
     <string name="add_favorite">Zu Favoriten hinzufügen</string>
+    <string name="add_middle_name_nickname">Zweiter Vorname und Spitzname</string>
     <string name="add_number">Nummer hinzufügen</string>
     <string name="add_photo">Foto hinzufügen</string>
     <string name="add_profile">Profil hinzufügen</string>
@@ -126,9 +127,11 @@
     <string name="my_card_qr">QR-Code deiner Karte</string>
     <string name="my_card_qr_hint">Scanne ihn mit der Kamera des anderen Geräts, um deine Karte hinzuzufügen. Nichts läuft über das Internet, und das Foto ist nicht enthalten.</string>
     <string name="my_numbers">Meine Nummern</string>
+    <string name="middle_name">Zweiter Vorname</string>
     <string name="name">Name</string>
     <string name="new_contact">Neuer Kontakt</string>
     <string name="new_profile">Neues Profil</string>
+    <string name="nickname">Spitzname</string>
     <string name="no_contact_info">Keine Nummer oder E-Mail-Adresse.</string>
     <string name="no_contacts">Keine Kontakte</string>
     <string name="no_contacts_hint">Auf diesem Gerät gespeicherte Kontakte erscheinen hier. Wenn dieses Gerät Kontakte speichert, die du hier nicht siehst, schränkt es ein, was diese App lesen darf: Prüfe die Berechtigung für Kontakte.</string>

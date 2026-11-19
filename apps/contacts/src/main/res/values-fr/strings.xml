@@ -4,6 +4,7 @@
     <string name="add_address">Ajouter une adresse</string>
     <string name="add_email">Ajouter une adresse e-mail</string>
     <string name="add_favorite">Ajouter aux favoris</string>
+    <string name="add_middle_name_nickname">Deuxième prénom et surnom</string>
     <string name="add_number">Ajouter un numéro</string>
     <string name="add_photo">Ajouter une photo</string>
     <string name="add_profile">Ajouter un profil</string>
@@ -135,9 +136,11 @@
     <string name="my_card_qr">QR code de votre fiche</string>
     <string name="my_card_qr_hint">Scannez-le avec l\'appareil photo de l\'autre téléphone pour ajouter votre fiche. Rien ne passe par Internet, et la photo n\'est pas incluse.</string>
     <string name="my_numbers">Mes numéros</string>
+    <string name="middle_name">Deuxième prénom</string>
     <string name="name">Nom</string>
     <string name="new_contact">Nouveau contact</string>
     <string name="new_profile">Nouveau profil</string>
+    <string name="nickname">Surnom</string>
     <string name="no_contact_info">Aucun numéro ni adresse e-mail.</string>
     <string name="no_contacts">Aucun contact</string>
     <string name="no_contacts_hint">Les contacts enregistrés sur ce téléphone apparaîtront ici. Si le téléphone contient des contacts absents de cette liste, c\'est qu\'il limite ce que cette application peut lire : vérifiez son autorisation d\'accès aux contacts.</string>

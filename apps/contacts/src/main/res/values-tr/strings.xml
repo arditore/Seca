@@ -4,6 +4,7 @@
     <string name="add_address">Adres ekle</string>
     <string name="add_email">E-posta adresi ekle</string>
     <string name="add_favorite">Favorilere ekle</string>
+    <string name="add_middle_name_nickname">İkinci ad ve takma ad</string>
     <string name="add_number">Numara ekle</string>
     <string name="add_photo">Fotoğraf ekle</string>
     <string name="add_profile">Profil ekle</string>
@@ -126,9 +127,11 @@
     <string name="my_card_qr">Kartınızın QR kodu</string>
     <string name="my_card_qr_hint">Kartınızı eklemek için diğer telefonun kamerasıyla tarayın. Hiçbir şey internetten geçmez ve fotoğraf dahil değildir.</string>
     <string name="my_numbers">Numaralarım</string>
+    <string name="middle_name">İkinci ad</string>
     <string name="name">Ad</string>
     <string name="new_contact">Yeni kişi</string>
     <string name="new_profile">Yeni profil</string>
+    <string name="nickname">Takma ad</string>
     <string name="no_contact_info">Numara veya e-posta adresi yok.</string>
     <string name="no_contacts">Kişi yok</string>
     <string name="no_contacts_hint">Bu telefonda kayıtlı kişiler burada görünür. Bu telefonda burada göremediğiniz kişiler varsa, bu uygulamanın okuyabileceği kişiler sınırlanmış olabilir: kişiler iznini kontrol edin.</string>

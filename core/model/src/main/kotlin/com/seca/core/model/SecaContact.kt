@@ -9,6 +9,8 @@ data class SecaContact(
     val photoUri: String?,
     /** The provider's stable key: unlike [id], it survives contacts being re-aggregated. */
     val lookupKey: String = "",
+    /** What they are actually called, searched like the name itself; empty for most (#57). */
+    val nickname: String = "",
 ) {
     /** Up to two letters used when no photo is available. */
     val initials: String

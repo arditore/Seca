@@ -137,6 +137,8 @@ internal fun SecaContact.isSameAs(card: VCardContact, numbers: PhoneNumbers): Bo
 internal fun VCardContact.toInput() = ContactInput(
     givenName = givenName.ifBlank { if (familyName.isBlank()) displayName else "" },
     familyName = familyName,
+    middleName = middleName,
+    nickname = nickname,
     phones = phones,
     emails = emails,
     addresses = addresses,

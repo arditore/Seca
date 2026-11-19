@@ -108,6 +108,9 @@ internal fun EditScreen(
     var ready by remember(id) { mutableStateOf(false) }
     var givenName by remember(id) { mutableStateOf("") }
     var familyName by remember(id) { mutableStateOf("") }
+    var middleName by remember(id) { mutableStateOf("") }
+    var nickname by remember(id) { mutableStateOf("") }
+    var moreName by remember(id) { mutableStateOf(false) }
     val phones = remember(id) { mutableStateListOf<ContactField>() }
     val emails = remember(id) { mutableStateListOf<ContactField>() }
     val addresses = remember(id) { mutableStateListOf<PostalAddress>() }
@@ -164,6 +167,9 @@ internal fun EditScreen(
                 // A contact saved with only a single name still shows that name here.
                 givenName = loaded.givenName.ifEmpty { if (loaded.familyName.isEmpty()) loaded.displayName else "" }
                 familyName = loaded.familyName
+                middleName = loaded.middleName
+                nickname = loaded.nickname?.value.orEmpty()
+                moreName = middleName.isNotEmpty() || nickname.isNotEmpty()
                 phones.addAll(loaded.phones)
                 emails.addAll(loaded.emails)
                 addresses.addAll(loaded.addresses)
@@ -211,6 +217,8 @@ internal fun EditScreen(
                         val input = ContactInput(
                             givenName = givenName,
                             familyName = familyName,
+                            middleName = middleName,
+                            nickname = nickname,
                             phones = phones.toList(),
                             emails = emails.toList(),
                             addresses = addresses.toList(),
@@ -261,6 +269,14 @@ internal fun EditScreen(
                 FormCard(SecaIcons.PersonOutline, stringResource(R.string.name)) {
                     NameField(givenName, stringResource(R.string.given_name)) { givenName = it }
                     NameField(familyName, stringResource(R.string.family_name)) { familyName = it }
+                    // Behind one tap, and shown by itself to whoever already has one: most
+                    // contacts have neither, and four name fields for all of them is four.
+                    if (moreName) {
+                        NameField(middleName, stringResource(R.string.middle_name)) { middleName = it }
+                        NameField(nickname, stringResource(R.string.nickname)) { nickname = it }
+                    } else {
+                        AddFieldButton(stringResource(R.string.add_middle_name_nickname)) { moreName = true }
+                    }
                 }
 
                 // Said even when there is only one place: an address book that quietly

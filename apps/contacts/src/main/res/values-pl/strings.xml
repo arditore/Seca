@@ -4,6 +4,7 @@
     <string name="add_address">Dodaj adres</string>
     <string name="add_email">Dodaj adres e-mail</string>
     <string name="add_favorite">Dodaj do ulubionych</string>
+    <string name="add_middle_name_nickname">Drugie imię i pseudonim</string>
     <string name="add_number">Dodaj numer</string>
     <string name="add_photo">Dodaj zdjęcie</string>
     <string name="add_profile">Dodaj profil</string>
@@ -130,9 +131,11 @@
     <string name="my_card_qr">Kod QR Twojej wizytówki</string>
     <string name="my_card_qr_hint">Zeskanuj go aparatem drugiego telefonu, aby dodać swoją wizytówkę. Żadne dane nie są przesyłane przez internet, a zdjęcie nie jest dołączane.</string>
     <string name="my_numbers">Moje numery</string>
+    <string name="middle_name">Drugie imię</string>
     <string name="name">Nazwa</string>
     <string name="new_contact">Nowy kontakt</string>
     <string name="new_profile">Nowy profil</string>
+    <string name="nickname">Pseudonim</string>
     <string name="no_contact_info">Brak numeru telefonu lub adresu e-mail.</string>
     <string name="no_contacts">Brak kontaktów</string>
     <string name="no_contacts_hint">Kontakty zapisane na tym telefonie pojawią się tutaj.</string>

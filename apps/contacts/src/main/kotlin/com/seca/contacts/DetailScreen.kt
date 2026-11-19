@@ -415,7 +415,9 @@ private fun About(detail: ContactDetail) {
     val birthdayLabel = stringResource(R.string.birthday)
     val anniversaryLabel = stringResource(R.string.anniversary)
     val notesLabel = stringResource(R.string.notes)
+    val nicknameLabel = stringResource(R.string.nickname)
     val rows = buildList {
+        detail.nickname?.let { add(AboutRow(SecaIcons.Label, it.value, nicknameLabel)) }
         if (company.isNotBlank()) add(AboutRow(SecaIcons.Work, company, companyLabel))
         // The date, and how old that makes them today: a birthday is read to work that out.
         detail.birthday?.let { field ->

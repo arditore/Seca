@@ -38,4 +38,21 @@ class ContactSearchTest {
     fun `does not match on a single digit`() {
         assertFalse(matchesQuery(elodie, "7", numbers))
     }
+
+    @Test
+    fun `finds a contact by the nickname they are actually called`() {
+        val nan = elodie.copy(displayName = "Anne-Marie Lefebvre", nickname = "Nan")
+        assertTrue(matchesQuery(nan, "nan", numbers))
+        assertTrue(matchesQuery(nan, "Nan", numbers))
+    }
+
+    @Test
+    fun `a nickname is matched without its accents too`() {
+        assertTrue(matchesQuery(elodie.copy(nickname = "Loïc"), "loic", numbers))
+    }
+
+    @Test
+    fun `a contact with no nickname is not matched by someone else's`() {
+        assertFalse(matchesQuery(elodie, "nan", numbers))
+    }
 }

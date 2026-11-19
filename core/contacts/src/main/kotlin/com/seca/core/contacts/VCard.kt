@@ -13,6 +13,10 @@ data class VCardContact(
     val displayName: String,
     val phones: List<ContactField>,
     val emails: List<ContactField>,
+    /** The third part of N, for whoever has a name in the middle (#57). */
+    val middleName: String = "",
+    /** The card's NICKNAME, which every contacts app reads (#57). */
+    val nickname: String = "",
     val addresses: List<PostalAddress> = emptyList(),
     val organization: String = "",
     val jobTitle: String = "",
@@ -32,6 +36,7 @@ data class VCardContact(
         (
             other is VCardContact &&
                 givenName == other.givenName && familyName == other.familyName &&
+                middleName == other.middleName && nickname == other.nickname &&
                 displayName == other.displayName && phones == other.phones &&
                 emails == other.emails && addresses == other.addresses &&
                 organization == other.organization && jobTitle == other.jobTitle &&
@@ -42,7 +47,10 @@ data class VCardContact(
 
     override fun hashCode(): Int {
         var result = givenName.hashCode()
-        listOf(familyName, displayName, organization, jobTitle, website, birthday, anniversary, note, profile)
+        listOf(
+            familyName, middleName, nickname, displayName, organization, jobTitle,
+            website, birthday, anniversary, note, profile,
+        )
             .forEach { result = HASH_STEP * result + it.hashCode() }
         listOf(phones, emails, addresses).forEach { result = HASH_STEP * result + it.hashCode() }
         return HASH_STEP * result + photo.contentHashCode()
@@ -80,8 +88,15 @@ object VCard {
         contacts.forEach { contact ->
             line("BEGIN:VCARD")
             line("VERSION:3.0")
-            line("N:${escape(contact.familyName)};${escape(contact.givenName)};;;")
-            line("FN:${escape(contact.displayName.ifBlank { nameOf(contact.givenName, contact.familyName) })}")
+            line("N:${escape(contact.familyName)};${escape(contact.givenName)};${escape(contact.middleName)};;")
+            line(
+                "FN:" + escape(
+                    contact.displayName.ifBlank {
+                        nameOf(contact.givenName, contact.middleName, contact.familyName)
+                    },
+                ),
+            )
+            if (contact.nickname.isNotBlank()) line("NICKNAME:${escape(contact.nickname)}")
             // Groups are numbered across the whole card: a label belongs to one property only.
             var group = 0
             fun labelled(field: ContactField, body: () -> String) {
@@ -171,8 +186,13 @@ object VCard {
                     val fields = splitUnescaped(value)
                     it.family = fields.getOrElse(0) { "" }
                     it.given = fields.getOrElse(1) { "" }
+                    it.middle = fields.getOrElse(2) { "" }
                 }
                 "FN" -> card?.display = unescape(value)
+                // A card may carry several, separated by commas; the first is the one kept.
+                "NICKNAME" -> card?.let {
+                    if (it.nickname.isEmpty()) it.nickname = splitUnescaped(value, ',').firstOrNull().orEmpty().trim()
+                }
                 "TEL" -> card?.addPhone(group, unescape(value).removePrefix("tel:").trim(), types, written)
                 "EMAIL" -> card?.addEmail(group, unescape(value).trim(), types, written)
                 // The components as the format orders them, kept apart rather than joined:
@@ -213,6 +233,8 @@ object VCard {
     private class Card {
         var given = ""
         var family = ""
+        var middle = ""
+        var nickname = ""
         var display = ""
         var organization = ""
         var jobTitle = ""
@@ -277,11 +299,13 @@ object VCard {
         }
 
         fun build(): VCardContact? {
-            val shown = display.ifBlank { nameOf(given, family) }
+            val shown = display.ifBlank { nameOf(given, middle, family) }
             if (shown.isBlank() && phones.isEmpty() && emails.isEmpty()) return null
             return VCardContact(
                 givenName = given,
                 familyName = family,
+                middleName = middle,
+                nickname = nickname,
                 displayName = shown,
                 phones = phones.filter { it.value.isNotBlank() },
                 emails = emails.filter { it.value.isNotBlank() },
@@ -303,8 +327,8 @@ object VCard {
         Base64.decode(value.filterNot(Char::isWhitespace))
     }.getOrNull()?.takeIf { it.isNotEmpty() }
 
-    private fun nameOf(given: String, family: String) =
-        listOf(given, family).filter(String::isNotBlank).joinToString(" ")
+    private fun nameOf(given: String, middle: String, family: String) =
+        listOf(given, middle, family).filter(String::isNotBlank).joinToString(" ")
 
     /** Lines over 75 characters are folded: the rest continues after a line break and one space. */
     private fun StringBuilder.line(text: String) {
@@ -357,7 +381,7 @@ object VCard {
     }
 
     /** Splits on the semicolons that are not escaped, unescaping each part. */
-    private fun splitUnescaped(value: String): List<String> {
+    private fun splitUnescaped(value: String, separator: Char = ';'): List<String> {
         val parts = mutableListOf<String>()
         val current = StringBuilder()
         var i = 0
@@ -369,7 +393,7 @@ object VCard {
                     i += 2
                     continue
                 }
-                c == ';' -> {
+                c == separator -> {
                     parts += unescape(current.toString())
                     current.clear()
                 }
