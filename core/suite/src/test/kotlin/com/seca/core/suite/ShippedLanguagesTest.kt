@@ -1,5 +1,7 @@
 package com.seca.core.suite
 
+import com.seca.core.model.ShippedLanguages
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -108,9 +110,40 @@ class ShippedLanguagesTest {
         }.sortedBy { it.name }
     }
 
+    /**
+     * The build decides what ships, and two lists in the code claim to know it: this test's own,
+     * and [ShippedLanguages], which picks the locale dates and numbers are written in. The second
+     * one was three languages behind, so phones in the other three were given English dates under
+     * their own screens, for months, in silence. Neither list is trusted here: both are held
+     * against `localeFilters`.
+     */
+    @Test
+    fun `the lists of languages agree with the build`() {
+        val filters = localeFilters()
+        assertEquals(
+            "This test's own list of languages is not what the build ships",
+            filters, (LANGUAGES + "en").sorted(),
+        )
+        assertEquals(
+            "ShippedLanguages decides which phones get their dates in their own language, and it " +
+                "is not what the build ships",
+            filters, ShippedLanguages.sorted(),
+        )
+    }
+
+    /** What `localeFilters` names in the application convention plugin, sorted. */
+    private fun localeFilters(): List<String> {
+        val root = generateSequence(File("").absoluteFile) { it.parentFile }
+            .first { File(it, "settings.gradle.kts").isFile }
+        val plugin = File(root, "build-logic/src/main/kotlin/seca.android.application.gradle.kts")
+        val line = plugin.readLines().first { it.contains("localeFilters") }
+        return FILTER.findAll(line).map { it.groupValues[1] }.toList().sorted()
+    }
+
     private companion object {
-        /** Kept in step with `localeFilters` in the application convention plugin. */
+        /** Held to the build's own list by `the lists of languages agree with the build`. */
         val LANGUAGES = listOf("fr", "es", "pl", "de", "tr")
+        val FILTER = Regex(""""([a-z]{2})"""")
         val KEY = Regex("""<(?:string|plurals) name="([^"]+)"""")
         val VALUE = Regex("""<string name="([^"]+)">(.*?)</string>""", RegexOption.DOT_MATCHES_ALL)
 
