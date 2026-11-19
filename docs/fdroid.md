@@ -18,6 +18,16 @@ same SHA-256 as the one attached to the GitHub release, for all three:
 487c15dfe49708ab0899280872f5a3f0f94095b682f36275dcd0fdeee3d7b56c  seca-messages
 ```
 
+0.1.0-beta14 is published and waiting for their queue. These are the bytes attached to the
+release here, which is what their rebuild has to match; nothing is claimed about it until it
+has run:
+
+```text
+8f8cd46ac5c907f4d019688e50d1b63193efb6a98149be6229fdadfaeaef0b3b  seca-contacts
+ccdf23065277cfdf57b6b5abc908f3dc15235172467c78bf97a4ffd1a33e9b70  seca-phone
+215b7d37d8206219428497a985bccde1337579f3969a5c4e15fa671ef24deabe  seca-messages
+```
+
 Their server rebuilt each one from the tag, found the same bytes, and distributes ours with
 this project's signature. It held for 0.1.0-beta10 before this and through a change to the
 build itself in between, which is the interesting part: the property is maintained, not lucky.
