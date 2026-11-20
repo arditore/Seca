@@ -111,10 +111,20 @@
     <string name="export_failed">Dışa aktarma başarısız oldu</string>
     <string name="family_name">Soyadı</string>
     <string name="favorites">Favoriler</string>
+    <string name="from_a_label">Bir etiketten</string>
+    <string name="from_a_label_hint">Bu telefondaki etiketler. Birini içeri almak aynı kişilerle bir profil oluşturur; etiketin kendisi değişmez.</string>
     <string name="given_name">Ad</string>
     <string name="import_contacts">Kişileri içe aktar</string>
     <string name="import_contacts_hint">Bir .vcf dosyasından; zaten burada olanlar atlanır</string>
+    <plurals name="import_label_text">
+        <item quantity="one">Bu etikette %d kişi.</item>
+        <item quantity="other">Bu etikette %d kişi.</item>
+    </plurals>
     <string name="job_title">Unvan</string>
+    <plurals name="label_members">
+        <item quantity="one">%d kişi</item>
+        <item quantity="other">%d kişi</item>
+    </plurals>
     <string name="label_name">Etiket</string>
     <string name="merge">Birleştir</string>
     <plurals name="merge_cards">

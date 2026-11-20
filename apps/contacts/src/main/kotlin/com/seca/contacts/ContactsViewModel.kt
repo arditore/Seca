@@ -17,6 +17,7 @@ import com.seca.core.contacts.ContactInput
 import com.seca.core.contacts.squareJpeg
 import com.seca.core.contacts.Place
 import com.seca.core.contacts.ContactWriteException
+import com.seca.core.contacts.ContactLabel
 import com.seca.core.contacts.ContactsRepository
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.SharedProfilesClient
@@ -205,6 +206,25 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     fun selectProfile(id: String) {
         store.setCurrentProfile(id)
         refreshPreferences()
+    }
+
+    /** Reads every label into the app, so a profile can be made from one. */
+    suspend fun labels(): List<ContactLabel> = repository.labels()
+
+    /**
+     * Makes a profile out of a label, with the people in it (#65).
+     *
+     * A copy taken once, not a link kept: the profile is Seca's own from then on, and the
+     * label is left exactly as it was. Nothing is written to the account.
+     */
+    fun profileFromLabel(label: ContactLabel) {
+        viewModelScope.launch {
+            val members = repository.membersOf(label.id)
+            val profile = store.addProfile(label.title)
+            members.forEach { store.assign(it, profile.id) }
+            refreshPreferences()
+            load()
+        }
     }
 
     fun addProfile(name: String) {

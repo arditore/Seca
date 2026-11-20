@@ -47,6 +47,8 @@ import com.seca.core.design.component.SecaPaletteSwatch
 import com.seca.core.design.component.SecaPassphraseDialog
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaSectionLabel
+import androidx.compose.runtime.produceState
+import com.seca.core.contacts.ContactLabel
 import com.seca.core.design.component.SecaSettingRow
 import com.seca.core.design.component.SecaSwitchRow
 import com.seca.core.design.component.SecaTopBar
@@ -97,6 +99,8 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
     var adding by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<Profile?>(null) }
     var deleting by remember { mutableStateOf<Profile?>(null) }
+    /** The label being read into a profile of its own (#65). */
+    var importing by remember { mutableStateOf<ContactLabel?>(null) }
     val dynamic = ui.palette == null
     // Which part of the settings is showing. State rather than a route of its own: it is one
     // screen showing one of its parts, and the back gesture already means "the part before".
@@ -252,6 +256,27 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                         }
                     }
                     SecaHint(stringResource(R.string.profiles_hint))
+                    // A label is the same idea kept by the account, so one can be read in (#65).
+                    val labels by produceState(initialValue = emptyList<ContactLabel>()) {
+                        value = viewModel.labels()
+                    }
+                    if (labels.isNotEmpty()) {
+                        SecaSectionLabel(stringResource(R.string.from_a_label))
+                        labels.forEachIndexed { index, label ->
+                            SecaGroupItem(
+                                index = index,
+                                count = labels.size,
+                                onClick = { importing = label },
+                            ) {
+                                SecaSettingRow(
+                                    icon = SecaIcons.Label,
+                                    title = label.title,
+                                    subtitle = pluralStringResource(R.plurals.label_members, label.members, label.members),
+                                )
+                            }
+                        }
+                        SecaHint(stringResource(R.string.from_a_label_hint))
+                    }
                 }
                 SettingsPage.Backup -> {
                     SecaGroupItem(index = 0, count = 4, onClick = { backupLauncher.launch("seca-contacts-${LocalDate.now()}.seca") }) {
@@ -424,6 +449,20 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
             onConfirm = {
                 viewModel.addProfile(it)
                 adding = false
+            },
+        )
+    }
+    importing?.let { label ->
+        SecaDialog(
+            onDismiss = { importing = null },
+            icon = SecaIcons.Label,
+            title = label.title,
+            message = pluralStringResource(R.plurals.import_label_text, label.members, label.members),
+            confirmLabel = stringResource(R.string.create),
+            dismissLabel = stringResource(R.string.cancel),
+            onConfirm = {
+                viewModel.profileFromLabel(label)
+                importing = null
             },
         )
     }

@@ -113,10 +113,24 @@
     <string name="export_failed">Eksport nie powiódł się</string>
     <string name="family_name">Nazwisko</string>
     <string name="favorites">Ulubione</string>
+    <string name="from_a_label">Z etykiety</string>
+    <string name="from_a_label_hint">Etykiety na tym telefonie. Wczytanie jednej tworzy profil z tymi samymi osobami; sama etykieta zostaje bez zmian.</string>
     <string name="given_name">Imię</string>
     <string name="import_contacts">Importuj kontakty</string>
     <string name="import_contacts_hint">Z pliku .vcf; kontakty, które już tu są, zostaną pominięte</string>
+    <plurals name="import_label_text">
+        <item quantity="one">%d osoba w tej etykiecie.</item>
+        <item quantity="few">%d osoby w tej etykiecie.</item>
+        <item quantity="many">%d osób w tej etykiecie.</item>
+        <item quantity="other">%d osoby w tej etykiecie.</item>
+    </plurals>
     <string name="job_title">Stanowisko</string>
+    <plurals name="label_members">
+        <item quantity="one">%d osoba</item>
+        <item quantity="few">%d osoby</item>
+        <item quantity="many">%d osób</item>
+        <item quantity="other">%d osoby</item>
+    </plurals>
     <string name="label_name">Etykieta</string>
     <string name="merge">Scal</string>
     <plurals name="merge_cards">

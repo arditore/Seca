@@ -13,6 +13,8 @@ import android.provider.ContactsContract
 import androidx.annotation.RequiresApi
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.GroupMembership
+import android.provider.ContactsContract.Groups
 import android.provider.ContactsContract.CommonDataKinds.Nickname
 import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
@@ -101,6 +103,14 @@ data class ContactDetail(
     val rawContactId: Long,
     val nameDataId: Long?,
 )
+
+/**
+ * A label as Google Contacts and the phone's own address book call a contact group (#65).
+ *
+ * The same thing a Seca profile is, kept by the account rather than by this app, which is why
+ * one can be read into the other.
+ */
+data class ContactLabel(val id: Long, val title: String, val members: Int)
 
 /**
  * A field the owner named themselves: "Blood type", "Locker", "Allergies".
@@ -481,6 +491,10 @@ class ContactsRepository(
          * one there is: Android has no mime type of its own for an arbitrary field, so an app
          * that invents one is an app whose fields nothing else can read.
          */
+        /** The label every contact in an account belongs to, which says nothing about anybody. */
+        const val EVERYBODY = "Contacts"
+
+
         const val GOOGLE_CUSTOM_FIELD = "vnd.com.google.cursor.item/contact_user_defined_field"
     }
 
@@ -804,7 +818,78 @@ class ContactsRepository(
         val addresses = mutableListOf<PostalAddress>()
     }
 
-    /** The contact behind a contacts link handed over by another app, or null. */
+    /**
+     * The labels on this phone that hold anybody, biggest first (#65).
+     *
+     * Two of the account's own are left out. "My Contacts" holds everybody, so a profile made
+     * from it would be the address book under another name, and "Starred in Android" is the
+     * favourites, which Seca already shows as favourites. What is left is the labels somebody
+     * actually sorted people into, whether they made them or Google did.
+     */
+    suspend fun labels(): List<ContactLabel> = withContext(Dispatchers.IO) {
+        val counts = HashMap<Long, Int>()
+        runCatching {
+            resolver.query(
+                Data.CONTENT_URI,
+                // The row id is asked for although it is never read. Without a column that
+                // differs from row to row, the provider hands back one row per distinct value
+                // and the count comes out as the number of labels rather than of people:
+                // measured, thirty-seven memberships arrived as one.
+                arrayOf(Data._ID, GroupMembership.GROUP_ROW_ID),
+                "${Data.MIMETYPE} = ?",
+                arrayOf(GroupMembership.CONTENT_ITEM_TYPE),
+                null,
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    val group = cursor.getLong(1)
+                    counts[group] = (counts[group] ?: 0) + 1
+                }
+            }
+        }
+        runCatching {
+            resolver.query(
+                Groups.CONTENT_URI,
+                arrayOf(Groups._ID, Groups.TITLE, Groups.SYSTEM_ID, Groups.FAVORITES),
+                "${Groups.DELETED} = 0",
+                null,
+                null,
+            )?.use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) {
+                        val id = cursor.getLong(0)
+                        val title = cursor.getString(1).orEmpty()
+                        val system = cursor.getString(2)
+                        // The favourites group is marked by a column of its own rather than by
+                        // a system name: on this phone it carries no system name at all.
+                        val favourites = cursor.getInt(3) == 1
+                        val members = counts[id] ?: 0
+                        if (title.isNotBlank() && members > 0 && system != EVERYBODY && !favourites) {
+                            add(ContactLabel(id, title, members))
+                        }
+                    }
+                }
+            }
+        }.getOrNull().orEmpty().sortedByDescending { it.members }
+    }
+
+    /** The lookup keys of the contacts in one label, which is how a profile remembers people. */
+    suspend fun membersOf(labelId: Long): List<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            resolver.query(
+                Data.CONTENT_URI,
+                arrayOf(Data._ID, Data.LOOKUP_KEY),
+                "${Data.MIMETYPE} = ? AND ${GroupMembership.GROUP_ROW_ID} = ?",
+                arrayOf(GroupMembership.CONTENT_ITEM_TYPE, labelId.toString()),
+                null,
+            )?.use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) cursor.getString(1)?.takeIf { it.isNotBlank() }?.let(::add)
+                }
+            }
+        }.getOrNull().orEmpty().distinct()
+    }
+
+    /** The contacts link handed over by another app, or null. */
     suspend fun contactIdFor(uri: Uri): Long? = withContext(Dispatchers.IO) {
         try {
             Contacts.lookupContact(resolver, uri)?.let(ContentUris::parseId)

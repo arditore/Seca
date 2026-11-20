@@ -111,10 +111,20 @@
     <string name="export_failed">Export failed</string>
     <string name="family_name">Last name</string>
     <string name="favorites">Favorites</string>
+    <string name="from_a_label">From a label</string>
+    <string name="from_a_label_hint">The labels on this phone. Reading one in makes a profile with the same people; the label itself is left alone.</string>
     <string name="given_name">First name</string>
     <string name="import_contacts">Import contacts</string>
     <string name="import_contacts_hint">From a .vcf file; those already here are skipped</string>
+    <plurals name="import_label_text">
+        <item quantity="one">%d person in this label.</item>
+        <item quantity="other">%d people in this label.</item>
+    </plurals>
     <string name="job_title">Job title</string>
+    <plurals name="label_members">
+        <item quantity="one">%d person</item>
+        <item quantity="other">%d people</item>
+    </plurals>
     <string name="label_name">Label</string>
     <string name="merge">Merge</string>
     <plurals name="merge_cards">
