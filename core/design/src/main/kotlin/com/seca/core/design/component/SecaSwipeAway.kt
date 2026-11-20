@@ -7,15 +7,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
+import kotlin.math.abs
 
 /** One of the two things a swipe can do to a row. */
 class SwipeAction(
@@ -60,11 +67,24 @@ fun SecaSwipeAway(
     }
     val start = rememberUpdatedState(toStart)
     val end = rememberUpdatedState(toEnd)
+    // The row's own width, so how far the finger went can be weighed against it.
+    var width by remember { mutableFloatStateOf(0f) }
+    // The state asks its own question below, and to answer it the question needs the state.
+    // It is only ever asked while somebody is dragging, long after this composition has handed
+    // the state over, so a box filled in just below is enough.
+    val live = remember { arrayOfNulls<SwipeToDismissBoxState>(1) }
     val state = rememberSwipeToDismissBoxState(
+        // Distance is the whole of it, and this is the half of that the gesture does not decide
+        // on its own: a swipe that is thrown rather than carried also dismisses, however short
+        // it was, and a thumb scrolling a list ends its arc in exactly such a flick (#92).
+        confirmValueChange = { going ->
+            going == SwipeToDismissBoxValue.Settled || carried(live[0], width)
+        },
         // Most of the way across, not a third of it: a list that is being scrolled with a
         // thumb catches a short sideways movement often enough to matter.
-        positionalThreshold = { width -> width * THRESHOLD },
+        positionalThreshold = { distance -> distance * THRESHOLD },
     )
+    live[0] = state
     LaunchedEffect(state.currentValue) {
         val action = when (state.currentValue) {
             SwipeToDismissBoxValue.EndToStart -> start.value
@@ -81,7 +101,7 @@ fun SecaSwipeAway(
     }
     SwipeToDismissBox(
         state = state,
-        modifier = modifier,
+        modifier = modifier.onSizeChanged { width = it.width.toFloat() },
         enableDismissFromStartToEnd = toEnd != null,
         backgroundContent = {
             // Nothing drawn until the finger has actually moved, so a row at rest is a row.
@@ -125,6 +145,18 @@ fun SecaSwipeAway(
         },
         content = { content() },
     )
+}
+
+/**
+ * Whether the row was really carried, rather than brushed quickly.
+ *
+ * Nothing measured yet, or an offset the gesture has not set, means getting out of the way: a
+ * guard against an accident must never be what stops a deliberate swipe from working.
+ */
+private fun carried(state: SwipeToDismissBoxState?, width: Float): Boolean {
+    if (state == null || width <= 0f) return true
+    val distance = runCatching { abs(state.requireOffset()) }.getOrNull() ?: return true
+    return distance >= width * THRESHOLD
 }
 
 /** How far across before letting go acts on the row. */
