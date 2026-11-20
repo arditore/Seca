@@ -435,6 +435,12 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         if (spam) MessageNotifications.cancel(getApplication(), threadId)
     }
 
+    /** The SIM this conversation is answered from, or null for whichever the phone names (#90). */
+    fun simOf(threadId: Long): Int? = conversationPrefs.sim(threadId)
+
+    /** Remembers the card for this conversation; null hands the choice back to the phone. */
+    fun setSim(threadId: Long, subscriptionId: Int?) = conversationPrefs.setSim(threadId, subscriptionId)
+
     private fun refreshConversationPrefs() {
         _ui.update {
             it.copy(pinned = conversationPrefs.pinned(), archived = conversationPrefs.archived(), spam = conversationPrefs.spam())
@@ -477,10 +483,20 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     /** A conversation's messages, SMS and Seca Link together, reloaded whenever either changes. */
     fun messagesOf(threadId: Long, address: String): Flow<List<Message>> = links.conversation(threadId, address, repository)
 
-    /** Goes encrypted through Seca Link when the contact is connected, answering [replyTo] when given; by SMS otherwise. */
-    fun send(address: String, text: String, replyTo: String? = null) {
+    /**
+     * Goes encrypted through Seca Link when the contact is connected, answering [replyTo] when
+     * given; by SMS otherwise, from [subscriptionId] where the conversation names a card (#90).
+     */
+    fun send(
+        address: String,
+        text: String,
+        replyTo: String? = null,
+        subscriptionId: Int = SmsSender.NO_SIM_CHOSEN,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (!links.sendText(address, text, replyTo)) SmsSender(getApplication()).send(address, text)
+            if (!links.sendText(address, text, replyTo)) {
+                SmsSender(getApplication()).send(address, text, subscriptionId)
+            }
             SentSound.play(getApplication())
         }
     }
@@ -492,26 +508,13 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
      * group text has always worked on a carrier's network, and it is why the reply used to go
      * to one person. Seca Link is not consulted, since it is a conversation between two.
      */
-    fun sendToGroup(addresses: List<String>, text: String) {
+    fun sendToGroup(addresses: List<String>, text: String, subscriptionId: Int = SmsSender.NO_SIM_CHOSEN) {
         if (addresses.size < 2 || text.isBlank()) return
         viewModelScope.launch(Dispatchers.IO) {
-            if (MmsSender.send(getApplication(), addresses, text, emptyList()) == null) {
+            if (MmsSender.send(getApplication(), addresses, text, emptyList(), subscriptionId) == null) {
                 withContext(Dispatchers.Main) { toast(text(R.string.attachment_not_sent)) }
                 return@launch
             }
-            SentSound.play(getApplication())
-        }
-    }
-
-    /**
-     * Sends by SMS from one named SIM, for this message only.
-     *
-     * Seca Link is not consulted: a SIM is an SMS idea, and this is only offered where the
-     * message was going to leave as an SMS anyway.
-     */
-    fun sendFrom(address: String, text: String, subscriptionId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            SmsSender(getApplication()).send(address, text, subscriptionId)
             SentSound.play(getApplication())
         }
     }
@@ -589,7 +592,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
      * on a phone that has never heard of Seca. The recorder already keeps it short enough for a
      * network to carry; a recording that somehow is not is said out loud rather than dropped.
      */
-    fun sendVoiceByCarrier(address: String, path: String) {
+    fun sendVoiceByCarrier(address: String, path: String, subscriptionId: Int = SmsSender.NO_SIM_CHOSEN) {
         viewModelScope.launch(Dispatchers.IO) {
             val file = java.io.File(path)
             val bytes = runCatching { file.readBytes() }.getOrNull()
@@ -604,7 +607,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                 return@launch
             }
             val part = MmsPdu.Part(VOICE_TYPE, file.name, "<voice>", bytes)
-            if (MmsSender.send(getApplication(), listOf(address), "", listOf(part)) == null) {
+            if (MmsSender.send(getApplication(), listOf(address), "", listOf(part), subscriptionId) == null) {
                 withContext(Dispatchers.Main) { toast(text(R.string.voice_not_sent)) }
             }
         }
@@ -628,7 +631,12 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
      * out. Anything that still will not fit is named rather than dropped, and whatever did fit
      * goes.
      */
-    internal fun sendStaged(address: String, staged: List<Staged>, text: String) {
+    internal fun sendStaged(
+        address: String,
+        staged: List<Staged>,
+        text: String,
+        subscriptionId: Int = SmsSender.NO_SIM_CHOSEN,
+    ) {
         if (staged.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
             val budget = MmsAttachment.budgetOf(getApplication()) / staged.size
@@ -652,7 +660,7 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                 withContext(Dispatchers.Main) { toast(said) }
                 return@launch
             }
-            if (MmsSender.send(getApplication(), listOf(address), text, parts) == null) {
+            if (MmsSender.send(getApplication(), listOf(address), text, parts, subscriptionId) == null) {
                 withContext(Dispatchers.Main) { toast(text(R.string.attachment_not_sent)) }
                 return@launch
             }

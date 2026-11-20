@@ -50,6 +50,7 @@
     <string name="camera_access_hint">Para leer el código que aparece en el teléfono de %1$s. No se guarda ninguna imagen.</string>
     <string name="cancel">Cancelar</string>
     <string name="cancel_reply">Cancelar la respuesta</string>
+    <string name="change_sim">Cambiar de SIM</string>
     <string name="cancel_send">Cancelar el envío</string>
     <string name="channel_alerts">Avisos</string>
     <string name="channel_alerts_desc">Un mensaje programado que no salió, una clave de Seca Link que cambió.</string>
@@ -310,6 +311,7 @@
     <string name="receive_without_notification">Recibir sin notificación</string>
     <string name="reception_relays">Relés de recepción</string>
     <string name="record_voice">Grabar un mensaje de voz</string>
+    <string name="release_to_cancel">Suelta para cancelar</string>
     <string name="refused">Rechazado por el relé</string>
     <string name="refused_named">Rechazado: %1$s</string>
     <string name="relay_placeholder">rele.ejemplo.org</string>
@@ -359,6 +361,9 @@
     <string name="send_encrypted_photo">Enviar una foto cifrada</string>
     <string name="send_failed_retry">El envío falló · Toca para reintentar</string>
     <string name="send_from_other_sim">Enviar desde otra SIM</string>
+    <string name="sim_phone_choice">La que elija el teléfono</string>
+    <string name="sim_slot">SIM %1$d</string>
+    <string name="sim_slot_named">SIM %1$d · %2$s</string>
     <string name="send_now">Enviar ahora</string>
     <string name="sending">Enviando…</string>
     <string name="sent_at">Enviado · %1$s</string>
@@ -439,9 +444,13 @@
     <string name="verified_named">%1$s está verificado: nadie se interpone entre vuestros dos teléfonos.</string>
     <string name="verify">Verificar</string>
     <string name="view_contact">Ver el contacto</string>
+    <string name="voice_button">Botón de voz</string>
+    <string name="voice_button_hint">Mantén pulsado para grabar</string>
+    <string name="voice_button_note">Desactivado, el botón de enviar se queda solo ahí.</string>
+    <string name="voice_messages">Mensajes de voz</string>
     <string name="voice_not_sent">No se pudo enviar el mensaje de voz</string>
     <string name="waiting_to_send">Esperando para enviarse</string>
-    <string name="which_sim_once">¿Qué SIM, solo esta vez?</string>
+    <string name="which_sim">¿Qué SIM envía?</string>
     <string name="write_to">Escribir a %1$s</string>
     <string name="wrong_password">Contraseña incorrecta, o archivo dañado</string>
     <string name="yesterday">Ayer</string>

@@ -50,6 +50,7 @@
     <string name="camera_access_hint">%1$s adlı kişinin telefonunda görünen kodu okumak için. Hiçbir görüntü saklanmaz.</string>
     <string name="cancel">İptal</string>
     <string name="cancel_reply">Yanıtı iptal et</string>
+    <string name="change_sim">SIM değiştir</string>
     <string name="cancel_send">Göndermeyi iptal et</string>
     <string name="channel_alerts">Uyarılar</string>
     <string name="channel_alerts_desc">Gönderilemeyen zamanlanmış bir mesaj, değişen bir Seca Link anahtarı.</string>
@@ -300,6 +301,7 @@
     <string name="receive_without_notification">Bildirim olmadan al</string>
     <string name="reception_relays">Mesaj alınan röleler</string>
     <string name="record_voice">Sesli mesaj kaydet</string>
+    <string name="release_to_cancel">İptal için bırakın</string>
     <string name="refused">Röle tarafından reddedildi</string>
     <string name="refused_named">Reddedildi: %1$s</string>
     <string name="relay_placeholder">relay.example.org</string>
@@ -347,6 +349,9 @@
     <string name="send_encrypted_photo">Şifreli fotoğraf gönder</string>
     <string name="send_failed_retry">Gönderilemedi · Yeniden denemek için dokunun</string>
     <string name="send_from_other_sim">Başka bir SIM ile gönder</string>
+    <string name="sim_phone_choice">Telefonun seçimi</string>
+    <string name="sim_slot">SIM %1$d</string>
+    <string name="sim_slot_named">SIM %1$d · %2$s</string>
     <string name="send_now">Şimdi gönder</string>
     <string name="sending">Gönderiliyor…</string>
     <string name="sent_at">Gönderildi · %1$s</string>
@@ -420,9 +425,13 @@
     <string name="verified_named">%1$s doğrulandı: iki telefonunuzun arasında kimse yok.</string>
     <string name="verify">Doğrula</string>
     <string name="view_contact">Kişiyi görüntüle</string>
+    <string name="voice_button">Ses düğmesi</string>
+    <string name="voice_button_hint">Kaydetmek için basılı tutun</string>
+    <string name="voice_button_note">Kapalıyken o yerde yalnızca gönder düğmesi kalır.</string>
+    <string name="voice_messages">Sesli mesajlar</string>
     <string name="voice_not_sent">Sesli mesaj gönderilemedi</string>
     <string name="waiting_to_send">Gönderilmeyi bekliyor</string>
-    <string name="which_sim_once">Bu seferlik hangi SIM?</string>
+    <string name="which_sim">Hangi SIM gönderiyor?</string>
     <string name="write_to">%1$s kişisine yaz</string>
     <string name="wrong_password">Yanlış parola veya bozuk dosya</string>
     <string name="yesterday">Dün</string>

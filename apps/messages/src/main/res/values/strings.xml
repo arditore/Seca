@@ -50,6 +50,7 @@
     <string name="camera_access_hint">To read the code shown on %1$s\'s phone. No image is kept.</string>
     <string name="cancel">Cancel</string>
     <string name="cancel_reply">Cancel reply</string>
+    <string name="change_sim">Change SIM</string>
     <string name="cancel_send">Cancel sending</string>
     <string name="channel_alerts">Alerts</string>
     <string name="channel_alerts_desc">A scheduled message that did not leave, a Seca Link key that changed.</string>
@@ -300,6 +301,7 @@
     <string name="receive_without_notification">Receive without a notification</string>
     <string name="reception_relays">Receiving relays</string>
     <string name="record_voice">Record a voice message</string>
+    <string name="release_to_cancel">Let go to cancel</string>
     <string name="refused">Refused by the relay</string>
     <string name="refused_named">Refused: %1$s</string>
     <string name="relay_placeholder">relay.example.org</string>
@@ -347,6 +349,9 @@
     <string name="send_encrypted_photo">Send an encrypted photo</string>
     <string name="send_failed_retry">Sending failed · Tap to retry</string>
     <string name="send_from_other_sim">Send from another SIM</string>
+    <string name="sim_phone_choice">The phone’s choice</string>
+    <string name="sim_slot">SIM %1$d</string>
+    <string name="sim_slot_named">SIM %1$d · %2$s</string>
     <string name="send_now">Send now</string>
     <string name="sending">Sending…</string>
     <string name="sent_at">Sent · %1$s</string>
@@ -420,9 +425,13 @@
     <string name="verified_named">%1$s is verified: no one sits between your two phones.</string>
     <string name="verify">Verify</string>
     <string name="view_contact">View contact</string>
+    <string name="voice_button">Voice button</string>
+    <string name="voice_button_hint">Hold it down to record</string>
+    <string name="voice_button_note">Switched off, the send button keeps that place to itself.</string>
+    <string name="voice_messages">Voice messages</string>
     <string name="voice_not_sent">The voice message could not be sent</string>
     <string name="waiting_to_send">Waiting to be sent</string>
-    <string name="which_sim_once">Which SIM, this once?</string>
+    <string name="which_sim">Which SIM sends?</string>
     <string name="write_to">Write to %1$s</string>
     <string name="wrong_password">Wrong password, or damaged file</string>
     <string name="yesterday">Yesterday</string>

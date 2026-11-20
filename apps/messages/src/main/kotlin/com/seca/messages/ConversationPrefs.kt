@@ -48,6 +48,23 @@ class ConversationPrefs(context: Context) {
         }
     }
 
+    /**
+     * Which SIM this conversation is answered from, or null for whichever the phone names (#90).
+     *
+     * Kept per conversation because that is how two cards are actually used: one number for
+     * work, another for everything else, and the same choice every time you write to the same
+     * person. Holding the send button down used to be the only way to say it, and it said it for
+     * one message only, so it had to be said again every time.
+     */
+    fun sim(threadId: Long): Int? =
+        prefs.getInt("$KEY_SIM$threadId", NO_SIM).takeIf { it != NO_SIM }
+
+    fun setSim(threadId: Long, subscriptionId: Int?) {
+        prefs.edit {
+            if (subscriptionId == null) remove("$KEY_SIM$threadId") else putInt("$KEY_SIM$threadId", subscriptionId)
+        }
+    }
+
     private fun ids(key: String): List<Long> =
         prefs.getString(key, null).orEmpty().split(',').mapNotNull { it.toLongOrNull() }
 
@@ -60,5 +77,11 @@ class ConversationPrefs(context: Context) {
         const val KEY_ARCHIVED = "archived"
         const val KEY_SPAM = "spam"
         const val KEY_TRUSTED = "trusted"
+
+        /** One key per conversation, since this is a number and not a list of them. */
+        const val KEY_SIM = "sim_"
+
+        /** No subscription has that number, so it stands for "nothing chosen". */
+        const val NO_SIM = -1
     }
 }

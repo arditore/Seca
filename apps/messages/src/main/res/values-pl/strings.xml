@@ -50,6 +50,7 @@
     <string name="camera_access_hint">Aby odczytać kod wyświetlony na telefonie użytkownika %1$s. Żadne zdjęcia nie są zapisywane.</string>
     <string name="cancel">Anuluj</string>
     <string name="cancel_reply">Anuluj odpowiedź</string>
+    <string name="change_sim">Zmień kartę SIM</string>
     <string name="cancel_send">Anuluj wysyłanie</string>
     <string name="channel_alerts">Alerty</string>
     <string name="channel_alerts_desc">Zaplanowana wiadomość, która nie została wysłana, lub zmieniony klucz Seca Link.</string>
@@ -308,6 +309,7 @@
     <string name="receive_without_notification">Odbieraj bez powiadomienia</string>
     <string name="reception_relays">Bramki odbiorcze</string>
     <string name="record_voice">Nagraj wiadomość głosową</string>
+    <string name="release_to_cancel">Puść, aby anulować</string>
     <string name="refused">Odrzucono przez bramkę</string>
     <string name="refused_named">Odrzucono: %1$s</string>
     <string name="relay_placeholder">bramka.example.org</string>
@@ -357,6 +359,9 @@
     <string name="send_encrypted_photo">Wyślij zaszyfrowane zdjęcie</string>
     <string name="send_failed_retry">Wysyłanie nie powiodło się · Dotknij, aby ponowić</string>
     <string name="send_from_other_sim">Wyślij z innej karty SIM</string>
+    <string name="sim_phone_choice">Wybór telefonu</string>
+    <string name="sim_slot">SIM %1$d</string>
+    <string name="sim_slot_named">SIM %1$d · %2$s</string>
     <string name="send_now">Wyślij teraz</string>
     <string name="sending">Wysyłanie…</string>
     <string name="sent_at">Wysłano · %1$s</string>
@@ -437,9 +442,13 @@
     <string name="verified_named">Użytkownik %1$s został zweryfikowany: nikt nie podsłuchuje połączenia między Waszymi telefonami.</string>
     <string name="verify">Zweryfikuj</string>
     <string name="view_contact">Zobacz kontakt</string>
+    <string name="voice_button">Przycisk głosowy</string>
+    <string name="voice_button_hint">Przytrzymaj, aby nagrać</string>
+    <string name="voice_button_note">Wyłączony zostawia w tym miejscu tylko przycisk wysyłania.</string>
+    <string name="voice_messages">Wiadomości głosowe</string>
     <string name="voice_not_sent">Nie udało się wysłać wiadomości głosowej</string>
     <string name="waiting_to_send">Oczekuje na wysłanie</string>
-    <string name="which_sim_once">Która karta SIM, tym razem?</string>
+    <string name="which_sim">Która karta SIM wysyła?</string>
     <string name="write_to">Napisz do: %1$s</string>
     <string name="wrong_password">Błędne hasło lub uszkodzony plik</string>
     <string name="yesterday">Wczoraj</string>

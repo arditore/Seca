@@ -136,6 +136,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.seca.messages.sms.SendingSim
+import com.seca.messages.sms.SmsSender
+import com.seca.messages.sms.defaultSendingSim
 import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.secaToneColors
@@ -331,6 +333,18 @@ internal fun ConversationContent(
         if (uri != null) staged = (staged + stagedFile(context, uri, isCard = true)).take(MAX_ATTACHMENTS)
     }
 
+    // Asked once per conversation, off the main thread: the SIMs do not change while it is
+    // open, and the screen draws without them until they arrive. Held here rather than in the
+    // composer, because the messages name their card too.
+    val sims by produceState(initialValue = emptyList<SendingSim>()) { value = viewModel.sims() }
+    // Which card this conversation is written from, kept between visits (#90).
+    var sendingSim by remember(screen.threadId) { mutableStateOf(viewModel.simOf(screen.threadId)) }
+    val chosenSim = sims.firstOrNull { it.subscriptionId == sendingSim }
+    val subscription = chosenSim?.subscriptionId ?: SmsSender.NO_SIM_CHOSEN
+    // Read once: the settings are a screen of their own, and coming back from it draws this one
+    // again from the start.
+    val voiceButton = remember { VoiceButtonSetting.enabled(context) }
+
     // Voice messages: the microphone is asked for the first time one is recorded.
     val recorder = remember { VoiceRecorder(context) }
     val micUnavailable = stringResource(R.string.mic_unavailable)
@@ -347,7 +361,7 @@ internal fun ConversationContent(
             if (linked) {
                 viewModel.sendVoice(screen.address, recorded.absolutePath)
             } else {
-                viewModel.sendVoiceByCarrier(screen.address, recorded.absolutePath)
+                viewModel.sendVoiceByCarrier(screen.address, recorded.absolutePath, subscription)
             }
         }
     }
@@ -368,10 +382,6 @@ internal fun ConversationContent(
             Toast.makeText(context, micUnavailable, Toast.LENGTH_SHORT).show()
         }
     }
-    // Asked once per conversation, off the main thread: the SIMs do not change while it is
-    // open, and the screen draws without them until they arrive. Held here rather than in the
-    // composer, because the messages name their card too.
-    val sims by produceState(initialValue = emptyList<SendingSim>()) { value = viewModel.sims() }
     val askMicrophone = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Granted mid-press, so there is nothing being held any more: the next hold records.
         if (!granted) Toast.makeText(context, micUnavailable, Toast.LENGTH_SHORT).show()
@@ -486,11 +496,11 @@ internal fun ConversationContent(
                     onSend = {
                         when {
                             staged.isNotEmpty() -> {
-                                viewModel.sendStaged(screen.address, staged, text)
+                                viewModel.sendStaged(screen.address, staged, text, subscription)
                                 staged = emptyList()
                             }
-                            group.size >= 2 -> viewModel.sendToGroup(group, text)
-                            else -> viewModel.send(screen.address, text, replyingTo?.linkId)
+                            group.size >= 2 -> viewModel.sendToGroup(group, text, subscription)
+                            else -> viewModel.send(screen.address, text, replyingTo?.linkId, subscription)
                         }
                         draft.clearText()
                         replyingTo = null
@@ -498,10 +508,10 @@ internal fun ConversationContent(
                     staged = staged,
                     onRemoveStaged = { item -> staged = staged - item },
                     sims = sims,
-                    onSendFrom = { subscriptionId ->
-                        viewModel.sendFrom(screen.address, text, subscriptionId)
-                        draft.clearText()
-                        replyingTo = null
+                    chosenSim = chosenSim,
+                    onChooseSim = { sim ->
+                        sendingSim = sim?.subscriptionId
+                        viewModel.setSim(screen.threadId, sim?.subscriptionId)
                     },
                     // Encrypted where the conversation is, by carrier where it is not: the
                     // button is there either way, which is the whole point of it.
@@ -528,6 +538,7 @@ internal fun ConversationContent(
                     onCancelReply = { replyingTo = null },
                     recording = recording,
                     recordingMillis = recordingMillis,
+                    voiceButton = voiceButton,
                     onStartVoice = {
                         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                             startRecording()
@@ -1799,12 +1810,16 @@ private fun Composer(
     onCancelReply: () -> Unit,
     recording: Boolean,
     recordingMillis: Long,
+    /** False when the owner would rather have the send button on its own (#91). */
+    voiceButton: Boolean,
     onStartVoice: () -> Unit,
     onCancelVoice: () -> Unit,
     onSendVoice: () -> Unit,
-    /** Holding Send down: which SIM to send this one from. Empty where there is no choice. */
+    /** The SIMs there are to choose between. Empty where there is no choice to make. */
     sims: List<SendingSim>,
-    onSendFrom: (Int) -> Unit,
+    /** Which one this conversation goes from, or null for whichever the phone names. */
+    chosenSim: SendingSim?,
+    onChooseSim: (SendingSim?) -> Unit,
     /** Picked and waiting, shown above the words until send (#69). */
     staged: List<Staged> = emptyList(),
     onRemoveStaged: (Staged) -> Unit = {},
@@ -1864,13 +1879,37 @@ private fun Composer(
             }
         }
         if (staged.isNotEmpty()) StagedRow(staged, onRemoveStaged)
+        // Which card this leaves from, said out loud rather than hidden behind a long press
+        // (#90). Not while recording: the strip beside it is already saying something.
+        var choosingSim by remember { mutableStateOf(false) }
+        if (sims.size > 1 && !encrypted && !recording) {
+            SimChip(
+                sim = chosenSim ?: defaultSendingSim(sims),
+                chosen = chosenSim != null,
+                onClick = { choosingSim = true },
+            )
+        }
+        if (choosingSim) {
+            SendingSimDialog(
+                sims = sims,
+                chosen = chosenSim,
+                onDismiss = { choosingSim = false },
+                onPick = { sim ->
+                    choosingSim = false
+                    onChooseSim(sim)
+                },
+            )
+        }
         // One row, whatever is happening in it. The microphone has to be the same button from
         // one frame to the next or the finger holding it loses its grip halfway through: a
         // gesture belongs to a composable, and a composable that is swapped out never hears
         // the finger lift. So what changes is everything to its left, and never the button.
+        // Whether the finger has slid off the microphone, which is what letting go now throws
+        // the recording away rather than sending it (#91).
+        var slipped by remember { mutableStateOf(false) }
         Row(verticalAlignment = Alignment.Bottom) {
             if (recording) {
-                RecordingStrip(recordingMillis, Modifier.weight(1f))
+                RecordingStrip(recordingMillis, slipped, Modifier.weight(1f))
             } else {
                 if (attach != null) AttachButton(attach)
                 TextField(
@@ -1923,22 +1962,14 @@ private fun Composer(
                 )
             }
             // Nothing written and nothing waiting means the microphone; a photo waiting with
-            // no caption is still a message to send, so the button has to be Send.
-            val speaking = text.isBlank() && staged.isEmpty()
+            // no caption is still a message to send, so the button has to be Send. With the
+            // microphone switched off, this place belongs to Send alone, greyed until there is
+            // something to send: somebody who never records a message said the microphone where
+            // Send is was the thing he kept pressing by mistake (#91).
+            val speaking = text.isBlank() && staged.isEmpty() && voiceButton
             // Only an ordinary SMS has a SIM to choose: an encrypted message goes over the
-            // Internet, and a voice note is not a text at all.
-            val chooseSim = sims.isNotEmpty() && !encrypted && !speaking && enabled
-            var choosingSim by remember { mutableStateOf(false) }
-            if (choosingSim) {
-                SendingSimDialog(
-                    sims = sims,
-                    onDismiss = { choosingSim = false },
-                    onPick = { sim ->
-                        choosingSim = false
-                        onSendFrom(sim.subscriptionId)
-                    },
-                )
-            }
+            // Internet, and the choice is the conversation's now, not this one message's.
+            val chooseSim = sims.size > 1 && !encrypted && enabled
             val buttonPadding = Modifier.padding(start = 8.dp, bottom = if (parts > 1) 24.dp else 0.dp)
             if (speaking) {
                 VoiceButton(
@@ -1947,11 +1978,12 @@ private fun Composer(
                     onStart = onStartVoice,
                     onFinish = onSendVoice,
                     onCancel = onCancelVoice,
+                    onSlip = { slipped = it },
                     modifier = buttonPadding,
                 )
             } else {
                 SendButton(
-                    enabled = enabled,
+                    enabled = enabled && !(text.isBlank() && staged.isEmpty()),
                     encrypted = encrypted,
                     onSend = onSend,
                     onChooseSim = if (chooseSim) ({ choosingSim = true }) else null,
@@ -2005,44 +2037,129 @@ private fun SendButton(
 }
 
 /**
- * Which SIM sends this one text.
+ * Which SIM this conversation is written from (#90).
  *
- * Reached by holding the send button down, and it changes nothing afterwards: the next message
- * goes from whichever SIM the phone's own settings name, as this one would have.
+ * It used to be reached by holding the send button down, and it chose for one message only: the
+ * next one went from whichever card the phone names, so a second SIM had to be asked for again
+ * every single time, and nothing on screen ever said which one was about to be used. Now the
+ * choice is the conversation's and it is written on the composer, where it can be seen before
+ * the message goes rather than guessed at afterwards.
  */
 @Composable
-private fun SendingSimDialog(sims: List<SendingSim>, onDismiss: () -> Unit, onPick: (SendingSim) -> Unit) {
+private fun SendingSimDialog(
+    sims: List<SendingSim>,
+    chosen: SendingSim?,
+    onDismiss: () -> Unit,
+    onPick: (SendingSim?) -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
+    val phone = defaultSendingSim(sims)
     SecaDialog(
         onDismiss = onDismiss,
         icon = SecaIcons.Send,
-        title = stringResource(R.string.which_sim_once),
+        title = stringResource(R.string.which_sim),
         confirmLabel = stringResource(R.string.cancel),
         onConfirm = onDismiss,
         content = {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        sims.forEach { sim ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(MaterialTheme.shapes.large)
-                                    .background(colors.surfaceContainerHighest)
-                                    .clickable(onClickLabel = sim.label) { onPick(sim) }
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                            ) {
-                                Text(
-                                    text = sim.label,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = colors.onSurface,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                Text("SIM ${sim.slot}", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
-                            }
-                        }
-                    }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                sims.forEach { sim ->
+                    SimRow(
+                        title = sim.label,
+                        trailing = stringResource(R.string.sim_slot, sim.slot),
+                        picked = chosen?.subscriptionId == sim.subscriptionId,
+                        onClick = { onPick(sim) },
+                    )
+                }
+                // Back to the phone's own setting, which is where everyone starts: a choice you
+                // cannot undo is not a choice.
+                SimRow(
+                    title = stringResource(R.string.sim_phone_choice),
+                    trailing = phone?.label.orEmpty(),
+                    picked = chosen == null,
+                    onClick = { onPick(null) },
+                )
+            }
         },
     )
+}
+
+/** One card in the chooser, ticked when it is the one in use. */
+@Composable
+private fun SimRow(title: String, trailing: String, picked: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .background(if (picked) colors.secondaryContainer else colors.surfaceContainerHighest)
+            .clickable(onClickLabel = title, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (picked) colors.onSecondaryContainer else colors.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (trailing.isNotEmpty()) {
+            Text(
+                text = trailing,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (picked) colors.onSecondaryContainer else colors.onSurfaceVariant,
+            )
+        }
+        if (picked) {
+            Icon(
+                imageVector = SecaIcons.Check,
+                contentDescription = null,
+                tint = colors.onSecondaryContainer,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .size(18.dp),
+            )
+        }
+    }
+}
+
+/**
+ * The card this conversation leaves from, above the words.
+ *
+ * Small and quiet, because it is an answer and not a question: most people never touch it. It
+ * is only drawn where there are two cards to tell apart, and it says which one is about to be
+ * used, whether that was chosen here or left to the phone.
+ */
+@Composable
+private fun SimChip(sim: SendingSim?, chosen: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(start = 4.dp, bottom = 6.dp)
+            .clip(CircleShape)
+            .background(if (chosen) colors.secondaryContainer else colors.surfaceContainerHigh)
+            .clickable(onClickLabel = stringResource(R.string.change_sim), onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+    ) {
+        val tint = if (chosen) colors.onSecondaryContainer else colors.onSurfaceVariant
+        Icon(
+            imageVector = SecaIcons.Sim,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = sim?.let { stringResource(R.string.sim_slot_named, it.slot, it.label) }
+                ?: stringResource(R.string.sim_phone_choice),
+            style = MaterialTheme.typography.labelLarge,
+            color = tint,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+    }
 }
 
 /** What the button to the left of the text has to offer, which is not the same in both places. */
@@ -2248,9 +2365,16 @@ private class JustAbove(private val gap: Int) : PopupPositionProvider {
     }
 }
 
-/** What is going on while the microphone is held down, where the text field usually is. */
+/**
+ * What is going on while the microphone is held down, where the text field usually is.
+ *
+ * [slipped] is the finger having slid off the button, which is the moment the recording stops
+ * being a message and becomes something about to be thrown away. It is said here, in words and
+ * in the error colour, because a cancel you cannot see is a cancel nobody believes in: it was
+ * reported as a voice button that "can only send and cannot be retracted" (#91).
+ */
 @Composable
-private fun RecordingStrip(millis: Long, modifier: Modifier = Modifier) {
+private fun RecordingStrip(millis: Long, slipped: Boolean, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -2271,9 +2395,9 @@ private fun RecordingStrip(millis: Long, modifier: Modifier = Modifier) {
             modifier = Modifier.padding(start = 12.dp),
         )
         Text(
-            text = stringResource(R.string.slide_to_cancel),
+            text = stringResource(if (slipped) R.string.release_to_cancel else R.string.slide_to_cancel),
             style = MaterialTheme.typography.bodyMedium,
-            color = colors.onSurfaceVariant,
+            color = if (slipped) colors.error else colors.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.End,
@@ -2294,6 +2418,11 @@ private fun RecordingStrip(millis: Long, modifier: Modifier = Modifier) {
  *
  * A press too short to be speech is discarded by the recorder itself, so a fumbled tap costs
  * nothing and sends nothing.
+ *
+ * Sliding off is reported out as it happens, through [onSlip], and the button itself turns into
+ * a bin: the gesture was there from the start but nothing on screen admitted it, so it read as a
+ * button that could only send (#91). Whoever would rather not have a microphone in the send
+ * button's place can switch it off in the settings, and then this is never drawn.
  */
 @Composable
 private fun VoiceButton(
@@ -2302,9 +2431,11 @@ private fun VoiceButton(
     onStart: () -> Unit,
     onFinish: () -> Unit,
     onCancel: () -> Unit,
+    onSlip: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
+    var slipped by remember { mutableStateOf(false) }
     val swell by animateFloatAsState(
         targetValue = if (recording) 1.15f else 1f,
         animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow),
@@ -2315,6 +2446,9 @@ private fun VoiceButton(
         label = "mic-container",
     )
     val held by rememberUpdatedState(Triple(onStart, onFinish, onCancel))
+    // Read through the delegate inside the gesture, which is set up once and would otherwise
+    // keep calling the very first composition's lambda.
+    val slip by rememberUpdatedState(onSlip)
     val label = stringResource(R.string.record_voice)
     val escape = with(LocalDensity.current) { ESCAPE.toPx() }
     Box(
@@ -2342,10 +2476,18 @@ private fun VoiceButton(
                             while (true) {
                                 val moved = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
                                 gone = (moved.position - down.position).getDistance() > escape
+                                if (gone != slipped) {
+                                    slipped = gone
+                                    slip(gone)
+                                }
                                 if (!moved.pressed) {
                                     moved.consume()
                                     break
                                 }
+                            }
+                            if (slipped) {
+                                slipped = false
+                                slip(false)
                             }
                             if (gone) cancel() else finish()
                         }
@@ -2354,7 +2496,9 @@ private fun VoiceButton(
             ),
     ) {
         Icon(
-            imageVector = SecaIcons.Mic,
+            // A bin once the finger has slid off: what letting go does now, drawn on the thing
+            // being let go of.
+            imageVector = if (slipped) SecaIcons.Delete else SecaIcons.Mic,
             contentDescription = null,
             tint = when {
                 !enabled -> colors.onSurfaceVariant.copy(alpha = GREYED)

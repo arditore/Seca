@@ -50,6 +50,7 @@
     <string name="camera_access_hint">Um den Code zu lesen, der auf dem Gerät von %1$s angezeigt wird. Es wird kein Bild gespeichert.</string>
     <string name="cancel">Abbrechen</string>
     <string name="cancel_reply">Antwort abbrechen</string>
+    <string name="change_sim">SIM wechseln</string>
     <string name="cancel_send">Senden abbrechen</string>
     <string name="channel_alerts">Warnungen</string>
     <string name="channel_alerts_desc">Eine geplante Nachricht, die nicht gesendet wurde, ein geänderter Seca-Link-Schlüssel.</string>
@@ -300,6 +301,7 @@
     <string name="receive_without_notification">Ohne Benachrichtigung empfangen</string>
     <string name="reception_relays">Empfangende Relays</string>
     <string name="record_voice">Sprachnachricht aufnehmen</string>
+    <string name="release_to_cancel">Loslassen zum Abbrechen</string>
     <string name="refused">Vom Relay abgelehnt</string>
     <string name="refused_named">Abgelehnt: %1$s</string>
     <string name="relay_placeholder">relay.example.org</string>
@@ -347,6 +349,9 @@
     <string name="send_encrypted_photo">Verschlüsseltes Foto senden</string>
     <string name="send_failed_retry">Senden fehlgeschlagen · Zum Wiederholen tippen</string>
     <string name="send_from_other_sim">Mit anderer SIM senden</string>
+    <string name="sim_phone_choice">Die Wahl des Telefons</string>
+    <string name="sim_slot">SIM %1$d</string>
+    <string name="sim_slot_named">SIM %1$d · %2$s</string>
     <string name="send_now">Jetzt senden</string>
     <string name="sending">Wird gesendet …</string>
     <string name="sent_at">Gesendet · %1$s</string>
@@ -420,9 +425,13 @@
     <string name="verified_named">%1$s ist verifiziert: Niemand sitzt zwischen euren beiden Geräten.</string>
     <string name="verify">Verifizieren</string>
     <string name="view_contact">Kontakt anzeigen</string>
+    <string name="voice_button">Sprachtaste</string>
+    <string name="voice_button_hint">Halten zum Aufnehmen</string>
+    <string name="voice_button_note">Aus bleibt an dieser Stelle nur die Sendetaste.</string>
+    <string name="voice_messages">Sprachnachrichten</string>
     <string name="voice_not_sent">Die Sprachnachricht konnte nicht gesendet werden</string>
     <string name="waiting_to_send">Wartet auf das Senden</string>
-    <string name="which_sim_once">Welche SIM, nur dieses Mal?</string>
+    <string name="which_sim">Welche SIM sendet?</string>
     <string name="write_to">An %1$s schreiben</string>
     <string name="wrong_password">Falsches Passwort oder beschädigte Datei</string>
     <string name="yesterday">Gestern</string>

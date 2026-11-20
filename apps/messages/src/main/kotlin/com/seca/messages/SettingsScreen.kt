@@ -194,6 +194,8 @@ internal fun SettingsScreen(
                         )
                     }
 
+                    VoiceButtonSection()
+
                     SecaSectionLabel(stringResource(R.string.notifications))
                     SecaGroupItem(index = 0, count = 1, onClick = { openNotificationSettings(context) }) {
                         SecaSettingRow(

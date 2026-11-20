@@ -40,3 +40,15 @@ internal fun sendingSims(context: Context): List<SendingSim> {
             .sortedBy(SendingSim::slot)
     }.getOrDefault(emptyList())
 }
+
+/**
+ * The SIM the phone itself would send a text from, as its own settings name it.
+ *
+ * Shown rather than guessed at: a composer that says "SIM 1" when the phone would have used
+ * SIM 2 is worse than one that says nothing. Null when the phone has no such setting, or when
+ * it names a card that is not in a slot any more.
+ */
+internal fun defaultSendingSim(sims: List<SendingSim>): SendingSim? {
+    val chosen = runCatching { SubscriptionManager.getDefaultSmsSubscriptionId() }.getOrNull() ?: return null
+    return sims.firstOrNull { it.subscriptionId == chosen }
+}
