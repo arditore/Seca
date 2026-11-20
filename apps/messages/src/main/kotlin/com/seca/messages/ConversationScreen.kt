@@ -1018,7 +1018,16 @@ private fun Bubble(
             val carriedAt = message.attachmentAt
             when {
                 images.isNotEmpty() ->
-                    PhotoBubble(images, shape, container, content, message.body, onOpen = onOpenPhoto, modifier = touch)
+                    PhotoBubble(
+                        onLongPress = { menuOpen = true },
+                        paths = images,
+                        shape = shape,
+                        container = container,
+                        content = content,
+                        caption = message.body,
+                        onOpen = onOpenPhoto,
+                        modifier = touch,
+                    )
                 audio != null -> VoiceBubble(audio, shape, container, content, modifier = touch)
                 carried != null && carriedAt != null ->
                     AttachmentBubble(carried, carriedAt, message.body, shape, container, content, modifier = touch)
@@ -1200,6 +1209,14 @@ private fun QuoteBox(quoted: Message?, contactName: String, content: Color) {
  */
 @Composable
 private fun PhotoBubble(
+    /**
+     * Holding a photograph down means what holding any other message down means (#96).
+     *
+     * Each picture has a tap of its own, to open it, and a clickable nearer the finger takes
+     * the long press with it: the menu never opened, so a picture message could not be
+     * deleted, replied to or forwarded at all. The same lesson as the send button in #53.
+     */
+    onLongPress: () -> Unit,
     paths: List<String>,
     shape: RoundedCornerShape,
     container: Color,
@@ -1234,7 +1251,12 @@ private fun PhotoBubble(
                             ratio = photo.width.toFloat() / photo.height,
                             matchHeightConstraintsFirst = photo.height > photo.width,
                         )
-                        .clickable(onClickLabel = stringResource(R.string.photo)) { onOpen(path) },
+                        .combinedClickable(
+                            onClickLabel = stringResource(R.string.photo),
+                            onClick = { onOpen(path) },
+                            onLongClickLabel = stringResource(R.string.more_actions),
+                            onLongClick = onLongPress,
+                        ),
                 )
             }
         }
