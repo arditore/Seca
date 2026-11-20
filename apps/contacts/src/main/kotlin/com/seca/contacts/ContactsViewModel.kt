@@ -519,6 +519,15 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /** Deletes several at once, chosen from the list, and reads the list back once (#88). */
+    fun deleteAll(ids: Set<Long>) {
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            ids.forEach { repository.deleteContact(it) }
+            load()
+        }
+    }
+
     fun delete(id: Long) {
         viewModelScope.launch {
             repository.deleteContact(id)

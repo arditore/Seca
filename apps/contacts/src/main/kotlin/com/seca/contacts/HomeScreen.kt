@@ -50,7 +50,11 @@ import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaAppIdentity
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.component.SecaAvatar
+import androidx.activity.compose.BackHandler
+import com.seca.core.design.component.SecaChoiceAction
+import com.seca.core.design.component.SecaChoiceBar
 import com.seca.core.design.component.SecaContactRow
+import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaFastScroller
 import com.seca.core.design.component.SecaGroupItem
@@ -83,18 +87,32 @@ internal fun HomeScreen(
     onPick: ((Long) -> Unit)? = null,
 ) {
     var addingProfile by remember { mutableStateOf(false) }
+    // Contacts being chosen, for doing one thing to several of them (#88).
+    var chosen by remember { mutableStateOf(emptySet<Long>()) }
+    var deletingChosen by remember { mutableStateOf(false) }
+    val choosing = chosen.isNotEmpty()
+    // Leaving the choosing is what Back means while anything is chosen.
+    BackHandler(enabled = choosing) { chosen = emptySet() }
     // The button carries its label at the top of the list and shrinks to an icon once scrolled.
     val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            HomeTopBar(
-                ui = ui,
-                onQueryChange = viewModel::setQuery,
-                onOpenSettings = { viewModel.open(Screen.Settings) },
-                onSelectProfile = viewModel::selectProfile,
-                onAddProfile = { addingProfile = true },
-            )
+            if (choosing) {
+                ChosenBar(
+                    count = chosen.size,
+                    onClear = { chosen = emptySet() },
+                    onDelete = { deletingChosen = true },
+                )
+            } else {
+                HomeTopBar(
+                    ui = ui,
+                    onQueryChange = viewModel::setQuery,
+                    onOpenSettings = { viewModel.open(Screen.Settings) },
+                    onSelectProfile = viewModel::selectProfile,
+                    onAddProfile = { addingProfile = true },
+                )
+            }
         },
         // Answering another app is one question with one answer: the ways out of it — the other
         // Seca apps, and writing a new contact — would leave that app waiting on nothing.
@@ -130,6 +148,14 @@ internal fun HomeScreen(
                 onOpen = { onPick?.invoke(it.id) ?: viewModel.open(Screen.Detail(it.id)) },
                 onOpenMyCard = { viewModel.open(Screen.MyCard) },
                 onArrangeFavorites = viewModel::setFavoriteOrder,
+                chosen = chosen,
+                // Answering another app is one question with one answer, so choosing several
+                // is not offered there.
+                onChoose = if (onPick != null) {
+                    null
+                } else {
+                    { id -> chosen = if (id in chosen) chosen - id else chosen + id }
+                },
             )
         }
     }
@@ -142,6 +168,23 @@ internal fun HomeScreen(
             onConfirm = {
                 viewModel.addProfile(it)
                 addingProfile = false
+            },
+        )
+    }
+    if (deletingChosen) {
+        SecaDialog(
+            onDismiss = { deletingChosen = false },
+            icon = SecaIcons.Delete,
+            title = stringResource(R.string.delete_contacts_title),
+            // The bar above says how many; this says the part the count does not.
+            message = stringResource(R.string.delete_contacts_text),
+            confirmLabel = stringResource(R.string.delete),
+            dismissLabel = stringResource(R.string.cancel),
+            destructive = true,
+            onConfirm = {
+                viewModel.deleteAll(chosen)
+                chosen = emptySet()
+                deletingChosen = false
             },
         )
     }
@@ -267,10 +310,28 @@ private fun AddProfileTab(onClick: () -> Unit) {
     }
 }
 
+/** The bar that replaces the search while contacts are being chosen (#88). */
+@Composable
+private fun ChosenBar(count: Int, onClear: () -> Unit, onDelete: () -> Unit) {
+    SecaChoiceBar(
+        count = count,
+        onClear = onClear,
+        actions = listOf(
+            SecaChoiceAction(
+                icon = SecaIcons.Delete,
+                label = stringResource(R.string.delete),
+                onClick = onDelete,
+            ),
+        ),
+    )
+}
+
 @Composable
 private fun HomeContent(
     ui: ContactsUi,
     listState: LazyListState,
+    chosen: Set<Long>,
+    onChoose: ((Long) -> Unit)?,
     onOpen: (SecaContact) -> Unit,
     onOpenMyCard: () -> Unit,
     onArrangeFavorites: (List<String>) -> Unit,
@@ -333,7 +394,7 @@ private fun HomeContent(
                 // Search looks through every profile; results are grouped by profile.
                 shown.groupBy { ui.profileOf(it) }.forEach { (profile, group) ->
                     item(key = "profile-${profile.id}", contentType = "label") { SecaSectionLabel(profile.label()) }
-                    contactGroup(group, keyPrefix = "result", ui = ui, onOpen = onOpen)
+                    contactGroup(group, keyPrefix = "result", ui = ui, onOpen = onOpen, chosen = chosen, onChoose = onChoose)
                 }
             } else {
                 if (favorites.isNotEmpty()) {
@@ -349,7 +410,7 @@ private fun HomeContent(
                 }
                 sections.forEach { (letter, group) ->
                     item(key = "letter-$letter", contentType = "label") { SecaSectionLabel(letter) }
-                    contactGroup(group, keyPrefix = "contact", ui = ui, onOpen = onOpen)
+                    contactGroup(group, keyPrefix = "contact", ui = ui, onOpen = onOpen, chosen = chosen, onChoose = onChoose)
                 }
                 if (shown.isNotEmpty()) {
                     item(key = "count") {
@@ -395,6 +456,8 @@ private fun HomeContent(
 private fun LazyListScope.contactGroup(
     group: List<SecaContact>,
     keyPrefix: String,
+    chosen: Set<Long>,
+    onChoose: ((Long) -> Unit)?,
     ui: ContactsUi,
     onOpen: (SecaContact) -> Unit,
 ) {
@@ -407,19 +470,25 @@ private fun LazyListScope.contactGroup(
         SecaGroupItem(index = index, count = group.size) {
             val context = LocalContext.current
             val copyLabel = stringResource(DesignR.string.design_copy)
+            val chooseLabel = stringResource(R.string.choose_contacts)
             val numberLabel = stringResource(R.string.number)
             val number = contact.phoneNumbers.firstOrNull()?.raw
+            val choosing = chosen.isNotEmpty()
             SecaContactRow(
                 contact = contact,
-                onClick = { onOpen(contact) },
+                // While rows are being chosen, touching one chooses it too: nobody expects a
+                // list half in one mode and half in another.
+                onClick = { if (choosing && onChoose != null) onChoose(contact.id) else onOpen(contact) },
                 supportingText = number?.let(ui.numbers::display),
                 tone = ui.toneOf(contact),
                 photo = rememberContactThumbnail(contact.photoUri),
-                // The number is right there on the row and the only way to get it anywhere
-                // else was to read it out and type it again (#24). Nothing is chosen in this
-                // list, so holding a row down is free to mean this.
-                onLongClick = number?.let { { secaCopy(context, numberLabel, it) } },
-                longClickLabel = copyLabel,
+                // Holding a row down starts choosing several (#88). It used to copy the
+                // number, which was the only way to get it anywhere else (#24); that moved to
+                // the contact's own page, where every other thing you can do to a number is.
+                onLongClick = onChoose?.let { choose -> { choose(contact.id) } }
+                    ?: number?.let { { secaCopy(context, numberLabel, it) } },
+                longClickLabel = if (onChoose != null) chooseLabel else copyLabel,
+                chosen = contact.id in chosen,
             )
         }
     }

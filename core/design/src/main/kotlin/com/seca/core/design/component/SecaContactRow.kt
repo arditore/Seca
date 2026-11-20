@@ -5,6 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import com.seca.core.design.SecaIcons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,10 +45,13 @@ fun SecaContactRow(
     /** What holding the row down does, where there is no set of rows to be choosing from. */
     onLongClick: (() -> Unit)? = null,
     longClickLabel: String? = null,
+    /** Whether this row is one of those being chosen (#88). */
+    chosen: Boolean = false,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .background(if (chosen) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
             .combinedClickable(
                 onClick = onClick,
                 onLongClickLabel = longClickLabel,
@@ -49,14 +60,32 @@ fun SecaContactRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SecaAvatar(
-            initials = contact.initials,
-            photoUri = contact.photoUri,
-            size = 44.dp,
-            tone = tone,
-            seed = contact.displayName,
-            photo = photo,
-        )
+        // A chosen row says so where the face was, rather than beside it: a tick in the
+        // margin is read as something to tick, and this is already done.
+        if (chosen) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+            ) {
+                Icon(
+                    imageVector = SecaIcons.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        } else {
+            SecaAvatar(
+                initials = contact.initials,
+                photoUri = contact.photoUri,
+                size = 44.dp,
+                tone = tone,
+                seed = contact.displayName,
+                photo = photo,
+            )
+        }
         Column(
             modifier = Modifier
                 .weight(1f)

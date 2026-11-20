@@ -48,9 +48,12 @@
         <item quantity="other">%d fichas combinadas</item>
     </plurals>
     <string name="change_photo">Cambiar la foto</string>
+    <string name="choose_contacts">Elegir contactos</string>
     <string name="custom_field_name">Nombre del campo</string>
     <string name="custom_field_value">Contenido</string>
     <string name="custom_fields">Sus propios campos</string>
+    <string name="delete_contacts_text">Se van de este teléfono, con todo lo guardado en ellos.</string>
+    <string name="delete_contacts_title">¿Eliminar los contactos elegidos?</string>
     <string name="frame_photo">Encuadrar la foto</string>
     <string name="frame_photo_hint">Arrastra y pellizca hasta que la cara quede en el círculo.</string>
     <string name="change_profile">Cambiar de perfil</string>

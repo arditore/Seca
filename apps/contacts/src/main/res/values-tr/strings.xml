@@ -45,9 +45,12 @@
         <item quantity="other">%d kart birleştirildi</item>
     </plurals>
     <string name="change_photo">Fotoğrafı değiştir</string>
+    <string name="choose_contacts">Kişileri seç</string>
     <string name="custom_field_name">Alan adı</string>
     <string name="custom_field_value">İçerik</string>
     <string name="custom_fields">Kendi alanlarınız</string>
+    <string name="delete_contacts_text">Bu telefondan, içlerinde kayıtlı her şeyle birlikte giderler.</string>
+    <string name="delete_contacts_title">Seçilen kişiler silinsin mi?</string>
     <string name="frame_photo">Fotoğrafı kırp</string>
     <string name="frame_photo_hint">Yüz dairenin içine gelene kadar sürükleyin ve iki parmağınızla yakınlaştırın.</string>
     <string name="change_profile">Profili değiştir</string>

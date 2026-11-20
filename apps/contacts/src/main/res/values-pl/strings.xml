@@ -48,9 +48,12 @@
         <item quantity="many">%d kart zostało scalonych</item>
     </plurals>
     <string name="change_photo">Zmień zdjęcie</string>
+    <string name="choose_contacts">Wybierz kontakty</string>
     <string name="custom_field_name">Nazwa pola</string>
     <string name="custom_field_value">Treść</string>
     <string name="custom_fields">Własne pola</string>
+    <string name="delete_contacts_text">Znikną z tego telefonu razem ze wszystkim, co w nich zapisano.</string>
+    <string name="delete_contacts_title">Usunąć wybrane kontakty?</string>
     <string name="frame_photo">Wykadruj zdjęcie</string>
     <string name="frame_photo_hint">Przeciągaj i szczypnij, aż twarz znajdzie się w kołku.</string>
     <string name="change_profile">Zmień profil</string>

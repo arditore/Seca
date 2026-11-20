@@ -45,9 +45,12 @@
         <item quantity="other">%d Karten zusammengeführt</item>
     </plurals>
     <string name="change_photo">Foto ändern</string>
+    <string name="choose_contacts">Kontakte auswählen</string>
     <string name="custom_field_name">Name des Feldes</string>
     <string name="custom_field_value">Inhalt</string>
     <string name="custom_fields">Eigene Felder</string>
+    <string name="delete_contacts_text">Sie verlassen dieses Telefon, mit allem, was darin gespeichert ist.</string>
+    <string name="delete_contacts_title">Die gewählten Kontakte löschen?</string>
     <string name="frame_photo">Fotoausschnitt wählen</string>
     <string name="frame_photo_hint">Ziehe und zoome, bis das Gesicht im Kreis liegt.</string>
     <string name="change_profile">Profil ändern</string>

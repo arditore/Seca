@@ -45,9 +45,12 @@
         <item quantity="other">%d cards merged</item>
     </plurals>
     <string name="change_photo">Change photo</string>
+    <string name="choose_contacts">Choose contacts</string>
     <string name="custom_field_name">Field name</string>
     <string name="custom_field_value">What it says</string>
     <string name="custom_fields">Your own fields</string>
+    <string name="delete_contacts_text">They go from this phone, with everything saved with them.</string>
+    <string name="delete_contacts_title">Delete the chosen contacts?</string>
     <string name="frame_photo">Frame the photo</string>
     <string name="frame_photo_hint">Drag and pinch until the face is in the circle.</string>
     <string name="change_profile">Change profile</string>
