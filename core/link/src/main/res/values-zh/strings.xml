@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="link_accept_intro">Seca Link：已接受邀请，我们的消息已加密。</string>
+    <string name="link_encryption_failed">加密失败</string>
+    <string name="link_incomplete_invitation">邀请不完整</string>
+    <string name="link_invalid_keys">密钥无效：%1$s</string>
+    <string name="link_invite_intro">Seca Link：邀请你用 Seca 信息进行加密聊天。</string>
+    <string name="link_keys_not_found">在中继上找不到密钥</string>
+    <string name="link_no_key_received">没有收到该联系人的密钥</string>
+    <string name="link_no_network">没有网络连接</string>
+    <string name="link_no_relay_accepted">没有中继接收这条消息</string>
+    <string name="link_not_kept">已接受密钥，但没有保存</string>
+    <string name="link_unknown_contact">未知联系人</string>
+    <string name="link_untrusted_key">密钥未获认可：%1$s</string>
+</resources>

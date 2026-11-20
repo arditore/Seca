@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="contacts_number_place">%1$s · %2$s</string>
+    <string name="contacts_number_short">短号码</string>
+    <string name="contacts_number_unknown">号码不完整或无法识别</string>
+</resources>

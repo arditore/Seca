@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="design_app_contacts">通讯录</string>
+    <string name="design_app_locked">%1$s已锁定</string>
+    <string name="design_app_locked_hint">解锁前，里面的内容不会显示。</string>
+    <string name="design_app_messages">信息</string>
+    <string name="design_app_phone">电话</string>
+    <string name="design_back">返回</string>
+    <string name="design_cancel">取消</string>
+    <string name="design_clear_search">清除搜索</string>
+    <string name="design_close">关闭</string>
+    <string name="design_lock_app">锁定%1$s</string>
+    <string name="design_lock_app_on">打开时验证指纹或手机密码</string>
+    <string name="design_lock_app_unavailable">请先在安卓系统里设置屏幕锁</string>
+    <string name="design_palette_dusk">黄昏</string>
+    <string name="design_palette_forest">森林</string>
+    <string name="design_palette_ocean">海洋</string>
+    <string name="design_palette_slate">石板</string>
+    <string name="design_palette_wallpaper">壁纸</string>
+    <string name="design_passphrase">密码</string>
+    <string name="design_passphrase_confirm">确认密码</string>
+    <string name="design_passphrase_creating_hint">没有这个密码，备份将永远无法再打开：谁也找不回来。</string>
+    <string name="design_passphrase_opening_hint">创建备份时设置的密码。</string>
+    <plurals name="design_passphrase_too_short">
+        <item quantity="other">至少 %d 个字符</item>
+    </plurals>
+    <string name="design_private_screen">隐私屏幕</string>
+    <string name="design_private_screen_hint">禁止截屏，并在最近任务里隐藏预览</string>
+    <string name="design_profile_principal">主要</string>
+    <string name="design_unlock">解锁</string>
+    <string name="design_unlock_app">解锁%1$s</string>
+    <string name="seca_palette">Seca 配色</string>
+    <string name="seca_palette_hint_dynamic">不跟随壁纸取色</string>
+    <string name="seca_palette_hint_on">每个应用各有自己的色调</string>
+    <string name="design_copied">已复制</string>
+    <string name="design_copy">复制</string>
+    <string name="design_choose_all">全选</string>
+    <string name="design_choose_none">全不选</string>
+    <string name="design_more_options">更多选项</string>
+    <string name="design_shape_playful">活泼</string>
+    <string name="design_shape_circle">圆形</string>
+    <string name="design_shape_squircle">圆角方形</string>
+    <string name="design_shape_cookie">饼干</string>
+    <string name="design_shape_clover">四叶草</string>
+    <string name="design_shape_sunny">太阳</string>
+    <string name="design_shape_flower">花朵</string>
+    <string name="design_shape_section">头像形状</string>
+    <string name="design_shape_hint_playful">每个人一种形状</string>
+    <string name="design_shape_hint_one">所有人用同一种形状</string>
+    <string name="design_palette_mine">自定义</string>
+    <string name="design_palette_hue">颜色</string>
+    <string name="design_palette_chroma">浓度</string>
+    <string name="design_keep">保留</string>
+    <string name="design_colour_per_person">每人一种颜色</string>
+    <string name="design_colour_per_person_hint">不使用其资料组的颜色</string>
+</resources>
