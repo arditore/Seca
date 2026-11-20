@@ -390,12 +390,37 @@ internal fun ConversationContent(
     val contact = ui.contactOf(screen.address)
     val (wash, _) = secaToneColors(contact?.let { ui.toneOf(it) } ?: 0)
     val surface = MaterialTheme.colorScheme.surface
+    // A picture behind this conversation alone, for whoever wants one (#47).
+    var background by remember(screen.threadId) {
+        mutableStateOf(ConversationBackground.of(context, screen.threadId))
+    }
+    val pickBackground = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { picked ->
+        if (picked != null) background = ConversationBackground.set(context, screen.threadId, picked)
+    }
     Box(
         Modifier
             .fillMaxSize()
             .background(surface)
             .background(Brush.verticalGradient(0f to wash.copy(alpha = 0.55f), 0.32f to surface)),
     ) {
+        background?.let { picture ->
+            val image = remember(picture, picture.lastModified()) { decodeBackground(picture) }
+            if (image != null) {
+                Image(
+                    bitmap = image,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                // Over the picture, not instead of it: a bubble has to stay readable on a
+                // photograph of anything, including a white sky and a black night.
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(surface.copy(alpha = BACKGROUND_VEIL)),
+                )
+            }
+        }
         Scaffold(
             // Transparent over the light; the icons keep the theme's colour rather than black.
             containerColor = Color.Transparent,
@@ -404,6 +429,16 @@ internal fun ConversationContent(
                 Column {
                     val openSafetyNumber = { viewModel.open(SafetyNumberRoute(screen.address)) }
                     ConversationTopBar(
+                        hasBackground = background != null,
+                        onBackground = {
+                            pickBackground.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                            )
+                        },
+                        onRemoveBackground = {
+                            ConversationBackground.clear(context, screen.threadId)
+                            background = null
+                        },
                         address = screen.address,
                         ui = ui,
                         linked = peer?.active == true,
@@ -660,6 +695,10 @@ private fun carried(contentType: String): Int = when {
 /** Back, who the conversation is with and their profile, a call button and the rest in a menu. */
 @Composable
 private fun ConversationTopBar(
+    /** Choosing a picture for this conversation, and taking it away again (#47). */
+    hasBackground: Boolean,
+    onBackground: () -> Unit,
+    onRemoveBackground: () -> Unit,
     address: String,
     ui: MessagesUi,
     linked: Boolean,
@@ -812,6 +851,16 @@ private fun ConversationTopBar(
                     MenuEntry(stringResource(R.string.copy_number), SecaIcons.ContentCopy) {
                         menuOpen = false
                         copyText(context, numberLabel, address)
+                    }
+                }
+                MenuEntry(stringResource(R.string.conversation_background), SecaIcons.Photo) {
+                    menuOpen = false
+                    onBackground()
+                }
+                if (hasBackground) {
+                    MenuEntry(stringResource(R.string.remove_background), SecaIcons.Close) {
+                        menuOpen = false
+                        onRemoveBackground()
                     }
                 }
                 MenuEntry(stringResource(R.string.delete_conversation), SecaIcons.Delete) {
@@ -2365,3 +2414,17 @@ private val STAGED_SIZE = 76.dp
 /** As much of a file's name as is worth reading before the row starts scrolling. */
 private val STAGED_NAME_WIDTH = 190.dp
 private const val STAGED_EDGE_PX = 300
+
+/** The picture behind a conversation, read from the file it was copied into (#47). */
+private fun decodeBackground(file: java.io.File): androidx.compose.ui.graphics.ImageBitmap? = runCatching {
+    android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+}.getOrNull()
+
+/**
+ * How much of the surface stays over the picture.
+ *
+ * Enough that a bubble is readable on a photograph of anything, little enough that the
+ * photograph is still the point. Checked against a white sky and a night shot, which are the
+ * two ends of it.
+ */
+private const val BACKGROUND_VEIL = 0.62f

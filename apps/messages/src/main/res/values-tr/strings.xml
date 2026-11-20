@@ -23,9 +23,11 @@
     <string name="attachment_not_sent">Telefon bunu göndermedi.</string>
     <string name="attachment_too_large">%1$s, %2$d KB; çoklu ortam mesajı için çok büyük.</string>
     <string name="attachment_unreadable">Bu dosya okunamadı.</string>
+    <string name="conversation_background">Arka plan</string>
     <string name="nothing_opens_this">Bu telefonda bunu açan bir uygulama yok.</string>
     <string name="open_attachment">Açmak için dokunun</string>
     <string name="contact_not_read">Bu kişi okunamadı.</string>
+    <string name="remove_background">Arka planı kaldır</string>
     <string name="slide_to_cancel">İptal etmek için kaydırın</string>
     <string name="back">Geri</string>
     <string name="background_allowed_quiet">İzin verildi, bildirim olmadan</string>

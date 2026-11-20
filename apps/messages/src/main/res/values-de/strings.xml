@@ -23,9 +23,11 @@
     <string name="attachment_not_sent">Das Gerät hat den Anhang nicht gesendet.</string>
     <string name="attachment_too_large">%1$s hat %2$d KB und ist zu groß für eine MMS.</string>
     <string name="attachment_unreadable">Diese Datei konnte nicht gelesen werden.</string>
+    <string name="conversation_background">Hintergrund</string>
     <string name="nothing_opens_this">Nichts auf diesem Gerät öffnet das.</string>
     <string name="open_attachment">Zum Öffnen berühren</string>
     <string name="contact_not_read">Dieser Kontakt konnte nicht gelesen werden.</string>
+    <string name="remove_background">Hintergrund entfernen</string>
     <string name="slide_to_cancel">Zum Abbrechen wegwischen</string>
     <string name="back">Zurück</string>
     <string name="background_allowed_quiet">Erlaubt, ohne Benachrichtigung</string>
