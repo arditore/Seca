@@ -2,7 +2,9 @@ package com.seca.phone.call
 
 import android.telecom.Call
 import android.telecom.TelecomManager
+import android.content.res.Resources
 import com.seca.core.contacts.PhoneNumbers
+import com.seca.core.contacts.originOf
 import com.seca.core.model.Profile
 import android.content.Context
 import com.seca.phone.R
@@ -34,13 +36,15 @@ internal fun CallView.status(context: Context): String = when (state) {
  * for when someone calls — and the kind of number. Only the number for
  * someone who is not a contact.
  */
-internal fun CallView.subtitle(numbers: PhoneNumbers): String? = when {
+internal fun CallView.subtitle(numbers: PhoneNumbers, resources: Resources): String? = when {
     caller != null -> listOfNotNull(
         caller.profile.name.takeIf { caller.profile.id != Profile.Principal.id },
         caller.numberLabel,
     ).joinToString(" · ").ifEmpty { null }
     number.isNotBlank() && presentation == TelecomManager.PRESENTATION_ALLOWED && networkName != null -> numbers.display(number)
-    else -> numbers.countryOf(number)?.takeIf { !it.isHome }?.displayName
+    // Where the line is from, which in a numbering plan tied to geography is the town and
+    // the province; the country alone elsewhere, and nothing for a number from home (#93).
+    else -> numbers.originOf(number, resources)
 }
 
 /** "02:31", or "1:02:31" past an hour. */

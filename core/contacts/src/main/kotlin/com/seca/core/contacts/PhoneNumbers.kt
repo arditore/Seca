@@ -4,7 +4,9 @@ import android.content.Context
 import android.telephony.TelephonyManager
 import com.google.i18n.phonenumbers.NumberParseException
 import com.google.i18n.phonenumbers.PhoneNumberUtil
+import com.google.i18n.phonenumbers.PhoneNumberToCarrierMapper
 import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat
+import com.google.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder
 import com.google.i18n.phonenumbers.Phonenumber
 import java.util.Locale
 import java.util.Optional
@@ -27,6 +29,8 @@ import com.seca.core.model.uiLocale
 class PhoneNumbers(val homeRegion: String) {
 
     private val util = PhoneNumberUtil.getInstance()
+    private val geocoder = PhoneNumberOfflineGeocoder.getInstance()
+    private val carriers = PhoneNumberToCarrierMapper.getInstance()
     private val homeCountryCode = util.getCountryCodeForRegion(homeRegion)
 
     private val displays = ConcurrentHashMap<String, String>()
@@ -82,17 +86,48 @@ class PhoneNumbers(val homeRegion: String) {
     fun toE164(raw: String): String? =
         parse(raw)?.takeIf(util::isValidNumber)?.let { util.format(it, PhoneNumberFormat.E164) }
 
-    /** The country of a valid number, or null. */
+    /** The country of a valid number, and where inside it the line was given out. */
     fun countryOf(raw: String): NumberCountry? = countries.getOrPut(raw) {
         val number = parse(raw)?.takeIf(util::isValidNumber)
         val region = number?.let(util::getRegionCodeForNumber)
         Optional.ofNullable(
             region?.let {
                 val name = Locale.Builder().setRegion(it).build().getDisplayCountry(uiLocale())
-                NumberCountry(region = it, displayName = name, isHome = it == homeRegion)
+                NumberCountry(
+                    region = it,
+                    displayName = name,
+                    isHome = it == homeRegion,
+                    place = placeOf(number, country = name),
+                )
             },
         )
     }.orElse(null)
+
+    /**
+     * Where a number was given out, and on whose network, in the phone's language (#93).
+     *
+     * Asked for from China, where every phone shows a number's home city: a call from an
+     * unknown number is answered differently when the screen says it is from your own town.
+     * The same data covers the rest of the world, finely where the numbering plan is tied to
+     * geography and not at all where it is not, so most of Europe keeps showing only its
+     * country.
+     *
+     * Null rather than a repetition: a line that can only say "China" again under a number
+     * already marked China is noise. The network is named only where naming it is sound. In
+     * most of Europe a number can be carried from one network to another, so what the plan
+     * says and who actually carries the line are different things, and the library answers
+     * nothing at all there rather than answer wrongly.
+     */
+    private fun placeOf(number: Phonenumber.PhoneNumber, country: String): String? {
+        val locale = uiLocale()
+        val where = runCatching { geocoder.getDescriptionForNumber(number, locale) }
+            .getOrNull()
+            ?.takeIf { it.isNotBlank() && !it.equals(country, ignoreCase = true) }
+        val who = runCatching { carriers.getSafeDisplayName(number, locale) }
+            .getOrNull()
+            ?.takeIf { it.isNotBlank() && !it.equals(where, ignoreCase = true) }
+        return listOfNotNull(where, who).joinToString(" · ").ifBlank { null }
+    }
 
     /** What the editor can say under a number: its country, or why it is not recognised. Null for an empty field. */
     fun note(raw: String): NumberNote? {
@@ -163,4 +198,10 @@ class PhoneNumbers(val homeRegion: String) {
 }
 
 /** The country a number belongs to, its name in the phone's language, and whether it is the SIM's own. */
-data class NumberCountry(val region: String, val displayName: String, val isHome: Boolean)
+data class NumberCountry(
+    val region: String,
+    val displayName: String,
+    val isHome: Boolean,
+    /** The town, province or network the line belongs to, where that is known; null otherwise. */
+    val place: String? = null,
+)

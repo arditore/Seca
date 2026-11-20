@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -181,7 +182,7 @@ private fun CallScreen(view: CallView, calls: List<CallView>, audio: AudioView, 
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 20.dp),
             )
-            view.subtitle(numbers)?.let { ProfileLine(view, it) }
+            view.subtitle(numbers, LocalResources.current)?.let { ProfileLine(view, it) }
             StatusLine(view)
             OtherCall(view, calls)
             // Pushes the buttons to the bottom of the screen.

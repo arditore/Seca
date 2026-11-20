@@ -70,6 +70,7 @@ import androidx.annotation.StringRes
 import com.seca.core.design.label
 import androidx.compose.ui.platform.LocalResources
 import com.seca.core.contacts.describe
+import com.seca.core.contacts.originOf
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import kotlin.math.abs
@@ -407,6 +408,7 @@ private fun EmptyHistory(filter: CallFilter) {
 @Composable
 private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val call = group.latest
     val contact = group.match?.contact
     val carrier = if (contact == null) call.carrierName(context) else null
@@ -419,7 +421,7 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
         } else if (carrier != null) {
             add(ui.numbers.display(call.number))
         } else if (call.callable) {
-            ui.numbers.countryOf(call.number)?.takeIf { !it.isHome }?.let { add(it.displayName) }
+            ui.numbers.originOf(call.number, resources)?.let { add(it) }
         }
     }.joinToString(" · ")
     Box {

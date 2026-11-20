@@ -86,7 +86,7 @@ internal object CallNotifications {
         val screen = screenIntent(context, answer = false)
         val builder = base(context, if (screenVisible || screenSeen) INCOMING_QUIET else INCOMING)
             .setContentTitle(title)
-            .setContentText(view.subtitle(CallSession.numbers) ?: context.getString(R.string.call_status_incoming))
+            .setContentText(view.subtitle(CallSession.numbers, context.resources) ?: context.getString(R.string.call_status_incoming))
             .setContentIntent(screen)
         if (manager.fullScreenAllowed()) {
             builder

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="contacts_number_place">%1$s · %2$s</string>
     <string name="contacts_number_short">Numéro court</string>
     <string name="contacts_number_unknown">Numéro incomplet ou inconnu</string>
 </resources>
