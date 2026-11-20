@@ -107,8 +107,13 @@ internal fun InCallRoot(onScreenOffNearEar: (Boolean) -> Unit, onDone: () -> Uni
             onDone()
         }
     }
-    // The screen only darkens against the ear while talking through the earpiece.
-    val talking = shown?.state == Call.STATE_ACTIVE
+    // The screen darkens against the ear while the phone is at it, which starts when the call
+    // goes out rather than when it is answered: a face can press a button during the ringing
+    // just as well as during the conversation, and every other dialer darkens then too (#94).
+    // A call ringing in is the exception, because that screen is one you are meant to look at.
+    val talking = shown?.state == Call.STATE_ACTIVE ||
+        shown?.state == Call.STATE_DIALING ||
+        shown?.state == Call.STATE_CONNECTING
     val earpiece = audio.route?.kind.let { it == null || it == AudioKind.Earpiece }
     LaunchedEffect(talking, earpiece) { onScreenOffNearEar(talking && earpiece) }
 
