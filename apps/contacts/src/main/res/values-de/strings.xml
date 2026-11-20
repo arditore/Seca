@@ -27,6 +27,7 @@
         <item quantity="one">%d fehlende Karte nicht neu erstellt: Bearbeiten von Kontakten erlauben, dann erneut wiederherstellen</item>
         <item quantity="other">%d fehlende Karten nicht neu erstellt: Bearbeiten von Kontakten erlauben, dann erneut wiederherstellen</item>
     </plurals>
+    <string name="add_custom_field">Feld hinzufügen</string>
     <string name="add_the_year">Jahr hinzufügen</string>
     <string name="backup_done">Verschlüsseltes Backup: %1$s</string>
     <string name="backup_failed">Das Backup ist fehlgeschlagen</string>
@@ -44,6 +45,9 @@
         <item quantity="other">%d Karten zusammengeführt</item>
     </plurals>
     <string name="change_photo">Foto ändern</string>
+    <string name="custom_field_name">Name des Feldes</string>
+    <string name="custom_field_value">Inhalt</string>
+    <string name="custom_fields">Eigene Felder</string>
     <string name="frame_photo">Fotoausschnitt wählen</string>
     <string name="frame_photo_hint">Ziehe und zoome, bis das Gesicht im Kreis liegt.</string>
     <string name="change_profile">Profil ändern</string>
@@ -170,6 +174,7 @@
     <string name="read_sim_numbers_hint">Auf diesem Gerät gelesen, nie gesendet</string>
     <string name="reframe_photo">Neu zuschneiden</string>
     <string name="remove_address">Diese Adresse entfernen</string>
+    <string name="remove_custom_field">Dieses Feld entfernen</string>
     <string name="remove_date">Das Datum entfernen</string>
     <string name="remove_favorite">Aus Favoriten entfernen</string>
     <string name="remove_number">Diese Nummer entfernen</string>

@@ -76,6 +76,7 @@ import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.component.rememberContactPhoto
 import kotlinx.coroutines.launch
 import com.seca.core.contacts.ContactField
+import com.seca.core.contacts.CustomField
 import com.seca.core.contacts.ContactInput
 import com.seca.core.contacts.PostalAddress
 import com.seca.core.design.SecaIcons
@@ -113,6 +114,7 @@ internal fun EditScreen(
     var middleName by remember(id) { mutableStateOf("") }
     var nickname by remember(id) { mutableStateOf("") }
     var moreName by remember(id) { mutableStateOf(false) }
+    val customFields = remember(id) { mutableStateListOf<CustomField>() }
     val phones = remember(id) { mutableStateListOf<ContactField>() }
     val emails = remember(id) { mutableStateListOf<ContactField>() }
     val addresses = remember(id) { mutableStateListOf<PostalAddress>() }
@@ -172,6 +174,7 @@ internal fun EditScreen(
                 middleName = loaded.middleName
                 nickname = loaded.nickname?.value.orEmpty()
                 moreName = middleName.isNotEmpty() || nickname.isNotEmpty()
+                customFields.addAll(loaded.customFields)
                 phones.addAll(loaded.phones)
                 emails.addAll(loaded.emails)
                 addresses.addAll(loaded.addresses)
@@ -230,6 +233,7 @@ internal fun EditScreen(
                             birthday = birthday,
                             anniversary = anniversary,
                             note = note,
+                            customFields = customFields.toList(),
                         )
                         withWrite { viewModel.save(existing, input, profileId, savingIn, picture) }
                     },
@@ -353,6 +357,21 @@ internal fun EditScreen(
                     DateField(birthday, stringResource(R.string.birthday)) { birthday = it }
                     DateField(anniversary, stringResource(R.string.anniversary)) { anniversary = it }
                     PlainField(note, stringResource(R.string.notes), singleLine = false) { note = it }
+                }
+
+                // After the ready-made fields, because that is what they are for: whatever
+                // this app did not think of (#66).
+                FormCard(SecaIcons.Subject, stringResource(R.string.custom_fields)) {
+                    customFields.forEachIndexed { index, field ->
+                        CustomFieldRow(
+                            field = field,
+                            onChange = { customFields[index] = it },
+                            onRemove = { customFields.removeAt(index) },
+                        )
+                    }
+                    AddFieldButton(stringResource(R.string.add_custom_field)) {
+                        customFields.add(CustomField(id = null, name = "", value = ""))
+                    }
                 }
 
                 FormCard(SecaIcons.Label, stringResource(R.string.profile)) {
@@ -775,6 +794,20 @@ private fun pickBirthday(context: Context, current: String, onChange: (String) -
         start.monthValue - 1,
         start.dayOfMonth,
     ).show()
+}
+
+/** One field the owner named: what it is called, what it says, and a way to take it away. */
+@Composable
+private fun CustomFieldRow(field: CustomField, onChange: (CustomField) -> Unit, onRemove: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.weight(1f)) {
+            PlainField(field.name, stringResource(R.string.custom_field_name)) { onChange(field.copy(name = it)) }
+            PlainField(field.value, stringResource(R.string.custom_field_value)) { onChange(field.copy(value = it)) }
+        }
+        IconButton(onClick = onRemove) {
+            Icon(SecaIcons.Close, contentDescription = stringResource(R.string.remove_custom_field))
+        }
+    }
 }
 
 /**

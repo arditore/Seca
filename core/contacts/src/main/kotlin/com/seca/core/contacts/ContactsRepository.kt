@@ -95,10 +95,21 @@ data class ContactDetail(
     /** The same, for the day two people mark together; another app may have written it. */
     val anniversary: ContactField?,
     val note: ContactField?,
+    /** The fields the owner named themselves (#66). */
+    val customFields: List<CustomField> = emptyList(),
     /** Where new rows are written: the device-only raw contact when there is one. */
     val rawContactId: Long,
     val nameDataId: Long?,
 )
+
+/**
+ * A field the owner named themselves: "Blood type", "Locker", "Allergies".
+ *
+ * Kept under the mime type Google Contacts uses for the same thing, so a field added in either
+ * app shows up in the other (#66). Its two columns are the other way round from what the names
+ * suggest and from what this app would have guessed: DATA1 holds the value and DATA2 the label.
+ */
+data class CustomField(val id: Long?, val name: String, val value: String)
 
 /** What the editor hands back to be saved. */
 data class ContactInput(
@@ -117,6 +128,8 @@ data class ContactInput(
     val birthday: String = "",
     val anniversary: String = "",
     val note: String = "",
+    /** The fields the owner named themselves (#66). */
+    val customFields: List<CustomField> = emptyList(),
 )
 
 /**
@@ -246,6 +259,7 @@ class ContactsRepository(
         val phones = mutableListOf<ContactField>()
         val emails = mutableListOf<ContactField>()
         val addresses = mutableListOf<PostalAddress>()
+        val customFields = mutableListOf<CustomField>()
         resolver.query(
             Data.CONTENT_URI,
             // DATA5 to DATA10 are an address's parts, and DATA5 is also a name's middle name;
@@ -304,6 +318,15 @@ class ContactsRepository(
                             cursor.getString(2)?.let { anniversary = ContactField(dataId, it, Event.TYPE_ANNIVERSARY) }
                         }
                     }
+                    // DATA1 is the value and DATA2 the label, which is the way round Google
+                    // Contacts writes them and not the way round the names suggest (#66).
+                    GOOGLE_CUSTOM_FIELD -> {
+                        val named = cursor.getString(3).orEmpty()
+                        val said = cursor.getString(2).orEmpty()
+                        if (named.isNotBlank() || said.isNotBlank()) {
+                            customFields += CustomField(dataId, named, said)
+                        }
+                    }
                     Note.CONTENT_ITEM_TYPE -> if (note == null) {
                         cursor.getString(2)?.takeIf { it.isNotBlank() }?.let { note = ContactField(dataId, it, 0) }
                     }
@@ -330,6 +353,7 @@ class ContactsRepository(
             birthday = birthday,
             anniversary = anniversary,
             note = note,
+            customFields = customFields,
             rawContactId = rawContactId,
             nameDataId = nameDataId,
         )
@@ -451,6 +475,13 @@ class ContactsRepository(
     private companion object {
         /** Android 16, the version that gave the owner a say in where new contacts are kept. */
         const val ANDROID_16 = 36
+
+        /**
+         * Google Contacts' own row for a field the owner named. Undocumented, and the only
+         * one there is: Android has no mime type of its own for an arbitrary field, so an app
+         * that invents one is an app whose fields nothing else can read.
+         */
+        const val GOOGLE_CUSTOM_FIELD = "vnd.com.google.cursor.item/contact_user_defined_field"
     }
 
     suspend fun updateContact(detail: ContactDetail, input: ContactInput) {
@@ -491,6 +522,7 @@ class ContactsRepository(
                 withValue(Event.TYPE, Event.TYPE_ANNIVERSARY)
             }
             syncSingle(ops, detail.rawContactId, Note.CONTENT_ITEM_TYPE, detail.note, input.note)
+            syncCustomFields(ops, detail.rawContactId, detail.customFields, input.customFields)
             syncSingle(ops, detail.rawContactId, Nickname.CONTENT_ITEM_TYPE, detail.nickname, input.nickname) {
                 withValue(Nickname.TYPE, Nickname.TYPE_DEFAULT)
             }
@@ -1065,6 +1097,15 @@ class ContactsRepository(
         if (input.website.isNotBlank()) {
             add(dataRow(Website.CONTENT_ITEM_TYPE).withValue(Website.URL, input.website.trim()))
         }
+        input.customFields
+            .filter { it.name.isNotBlank() && it.value.isNotBlank() }
+            .forEach { field ->
+                add(
+                    dataRow(GOOGLE_CUSTOM_FIELD)
+                        .withValue(Data.DATA1, field.value.trim())
+                        .withValue(Data.DATA2, field.name.trim()),
+                )
+            }
         if (input.nickname.isNotBlank()) {
             add(
                 dataRow(Nickname.CONTENT_ITEM_TYPE)
@@ -1132,6 +1173,45 @@ class ContactsRepository(
      */
     private fun superPrimary(cursor: Cursor): Boolean =
         cursor.getInt(cursor.getColumnIndexOrThrow(Data.IS_SUPER_PRIMARY)) == 1
+
+    /**
+     * The owner's own fields, as deletes, updates and inserts against the rows already there.
+     *
+     * Not [syncFields], which writes a value, a type and a label into DATA1, DATA2 and DATA3.
+     * These rows put the value in DATA1 and the label in DATA2, and Google Contacts wants both
+     * filled: a field with a name and no value, or the other way round, is dropped rather than
+     * written half-made (#66).
+     */
+    private fun syncCustomFields(
+        ops: MutableList<ContentProviderOperation>,
+        rawContactId: Long,
+        before: List<CustomField>,
+        after: List<CustomField>,
+    ) {
+        val kept = after.filter { it.name.isNotBlank() && it.value.isNotBlank() }
+        val keptIds = kept.mapNotNull { it.id }.toSet()
+        before.mapNotNull { it.id }.filterNot { it in keptIds }.forEach { removedId ->
+            ops += ContentProviderOperation.newDelete(Data.CONTENT_URI)
+                .withSelection("${Data._ID} = ?", arrayOf(removedId.toString()))
+                .build()
+        }
+        kept.forEach { field ->
+            val savedId = field.id
+            if (savedId == null) {
+                ops += dataRow(GOOGLE_CUSTOM_FIELD)
+                    .withValue(Data.RAW_CONTACT_ID, rawContactId)
+                    .withValue(Data.DATA1, field.value.trim())
+                    .withValue(Data.DATA2, field.name.trim())
+                    .build()
+            } else if (before.firstOrNull { it.id == savedId } != field) {
+                ops += ContentProviderOperation.newUpdate(Data.CONTENT_URI)
+                    .withSelection("${Data._ID} = ?", arrayOf(savedId.toString()))
+                    .withValue(Data.DATA1, field.value.trim())
+                    .withValue(Data.DATA2, field.name.trim())
+                    .build()
+            }
+        }
+    }
 
     private fun syncFields(
         ops: MutableList<ContentProviderOperation>,

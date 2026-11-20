@@ -27,6 +27,7 @@
         <item quantity="one">%d missing card not recreated: allow editing contacts, then restore again</item>
         <item quantity="other">%d missing cards not recreated: allow editing contacts, then restore again</item>
     </plurals>
+    <string name="add_custom_field">Add a field</string>
     <string name="add_the_year">Add the year</string>
     <string name="backup_done">Encrypted backup: %1$s</string>
     <string name="backup_failed">The backup failed</string>
@@ -44,6 +45,9 @@
         <item quantity="other">%d cards merged</item>
     </plurals>
     <string name="change_photo">Change photo</string>
+    <string name="custom_field_name">Field name</string>
+    <string name="custom_field_value">What it says</string>
+    <string name="custom_fields">Your own fields</string>
     <string name="frame_photo">Frame the photo</string>
     <string name="frame_photo_hint">Drag and pinch until the face is in the circle.</string>
     <string name="change_profile">Change profile</string>
@@ -170,6 +174,7 @@
     <string name="read_sim_numbers_hint">Read on this phone, never sent</string>
     <string name="reframe_photo">Frame again</string>
     <string name="remove_address">Remove this address</string>
+    <string name="remove_custom_field">Remove this field</string>
     <string name="remove_date">Remove the date</string>
     <string name="remove_favorite">Remove from favorites</string>
     <string name="remove_number">Remove this number</string>

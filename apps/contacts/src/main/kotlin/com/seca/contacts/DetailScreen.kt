@@ -470,6 +470,10 @@ private fun About(detail: ContactDetail) {
             add(AboutRow(SecaIcons.Event, formatBirthday(it.value), anniversaryLabel, onCalendar(context, it.value)))
         }
         detail.note?.let { add(AboutRow(SecaIcons.Subject, it.value, notesLabel)) }
+        // The owner's own fields, each under the name they gave it (#66).
+        detail.customFields
+            .filter { it.name.isNotBlank() && it.value.isNotBlank() }
+            .forEach { add(AboutRow(SecaIcons.Subject, it.value, it.name)) }
     }
     if (rows.isEmpty()) return
     SecaSectionLabel(stringResource(R.string.about))

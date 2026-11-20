@@ -27,6 +27,7 @@
         <item quantity="one">Eksik %d kart yeniden oluşturulmadı: kişileri düzenleme iznini verin, ardından yeniden geri yükleyin</item>
         <item quantity="other">Eksik %d kart yeniden oluşturulmadı: kişileri düzenleme iznini verin, ardından yeniden geri yükleyin</item>
     </plurals>
+    <string name="add_custom_field">Alan ekle</string>
     <string name="add_the_year">Yılı ekle</string>
     <string name="backup_done">Şifreli yedek: %1$s</string>
     <string name="backup_failed">Yedekleme başarısız oldu</string>
@@ -44,6 +45,9 @@
         <item quantity="other">%d kart birleştirildi</item>
     </plurals>
     <string name="change_photo">Fotoğrafı değiştir</string>
+    <string name="custom_field_name">Alan adı</string>
+    <string name="custom_field_value">İçerik</string>
+    <string name="custom_fields">Kendi alanlarınız</string>
     <string name="frame_photo">Fotoğrafı kırp</string>
     <string name="frame_photo_hint">Yüz dairenin içine gelene kadar sürükleyin ve iki parmağınızla yakınlaştırın.</string>
     <string name="change_profile">Profili değiştir</string>
@@ -170,6 +174,7 @@
     <string name="read_sim_numbers_hint">Bu telefonda okunur, asla gönderilmez</string>
     <string name="reframe_photo">Yeniden çerçevele</string>
     <string name="remove_address">Bu adresi kaldır</string>
+    <string name="remove_custom_field">Bu alanı kaldır</string>
     <string name="remove_date">Tarihi kaldır</string>
     <string name="remove_favorite">Favorilerden kaldır</string>
     <string name="remove_number">Bu numarayı kaldır</string>

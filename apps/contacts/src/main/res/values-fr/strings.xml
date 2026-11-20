@@ -29,6 +29,7 @@
         <item quantity="many">%d fiches absentes non recréées : autorisez la modification des contacts, puis restaurez à nouveau</item>
         <item quantity="other">%d fiches absentes non recréées : autorisez la modification des contacts, puis restaurez à nouveau</item>
     </plurals>
+    <string name="add_custom_field">Ajouter un champ</string>
     <string name="add_the_year">Ajouter l\'année</string>
     <string name="backup_done">Sauvegarde chiffrée : %1$s</string>
     <string name="backup_failed">La sauvegarde a échoué</string>
@@ -47,6 +48,9 @@
         <item quantity="other">%d fiches réunies</item>
     </plurals>
     <string name="change_photo">Changer la photo</string>
+    <string name="custom_field_name">Nom du champ</string>
+    <string name="custom_field_value">Contenu</string>
+    <string name="custom_fields">Vos propres champs</string>
     <string name="frame_photo">Cadrer la photo</string>
     <string name="frame_photo_hint">Faites glisser et pincez jusqu\'à ce que le visage soit dans le cercle.</string>
     <string name="change_profile">Changer de profil</string>
@@ -179,6 +183,7 @@
     <string name="read_sim_numbers_hint">Lus sur ce téléphone, jamais envoyés</string>
     <string name="reframe_photo">Recadrer</string>
     <string name="remove_address">Retirer cette adresse</string>
+    <string name="remove_custom_field">Retirer ce champ</string>
     <string name="remove_date">Retirer la date</string>
     <string name="remove_favorite">Retirer des favoris</string>
     <string name="remove_number">Retirer ce numéro</string>

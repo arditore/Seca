@@ -29,6 +29,7 @@
         <item quantity="many">%d de fichas ausentes no recreadas: permite editar los contactos y restaura de nuevo</item>
         <item quantity="other">%d fichas ausentes no recreadas: permite editar los contactos y restaura de nuevo</item>
     </plurals>
+    <string name="add_custom_field">Añadir un campo</string>
     <string name="add_the_year">Añadir el año</string>
     <string name="backup_done">Copia cifrada: %1$s</string>
     <string name="backup_failed">La copia falló</string>
@@ -47,6 +48,9 @@
         <item quantity="other">%d fichas combinadas</item>
     </plurals>
     <string name="change_photo">Cambiar la foto</string>
+    <string name="custom_field_name">Nombre del campo</string>
+    <string name="custom_field_value">Contenido</string>
+    <string name="custom_fields">Sus propios campos</string>
     <string name="frame_photo">Encuadrar la foto</string>
     <string name="frame_photo_hint">Arrastra y pellizca hasta que la cara quede en el círculo.</string>
     <string name="change_profile">Cambiar de perfil</string>
@@ -179,6 +183,7 @@
     <string name="read_sim_numbers_hint">Se leen en este teléfono, nunca se envían</string>
     <string name="reframe_photo">Reencuadrar</string>
     <string name="remove_address">Quitar esta dirección</string>
+    <string name="remove_custom_field">Quitar este campo</string>
     <string name="remove_date">Quitar la fecha</string>
     <string name="remove_favorite">Quitar de favoritos</string>
     <string name="remove_number">Quitar este número</string>
