@@ -24,6 +24,9 @@
     </plurals>
     <string name="backup_filtering_restored">filtrowanie zostało przywrócone</string>
     <string name="backup_filtering_restored_no_access">filtrowanie zostało przywrócone; otwórz Seca Telefon, zezwól na dostęp do historii połączeń, a następnie przywróć ponownie, aby odzyskać połączenia</string>
+    <string name="block">Zablokuj</string>
+    <string name="block_a_number">Zablokuj numer</string>
+    <string name="block_a_number_hint">Taki, który jeszcze nie dzwonił</string>
     <string name="block_decline_hint">Połączenie jest odrzucane bez dzwonienia i pozostaje w historii wśród połączeń odrzuconych.</string>
     <string name="block_duration">Przez</string>
     <string name="block_failed">Nie udało się zablokować</string>
@@ -39,6 +42,8 @@
     <string name="blocked_declined">Ich połączenia są odrzucane</string>
     <string name="blocked_numbers">Zablokowane numery</string>
     <string name="blocked_numbers_hint">Lista systemu Android, współdzielona przez wszystkie aplikacje</string>
+    <string name="blocked_numbers_none">Żaden numer nie jest zablokowany.</string>
+    <string name="blocked_numbers_shared">To lista telefonu: numer zablokowany tutaj jest zablokowany we wszystkich aplikacjach, a odblokowanie go tutaj zwalnia go wszędzie.</string>
     <string name="blocked_profiles">Zablokowane profile</string>
     <string name="blocked_profiles_declined">%1$s · połączenia odrzucone</string>
     <string name="blocked_profiles_dialog_hint">Kontakty z zablokowanego profilu nie będą mogły się do Ciebie dodzwonić przez wybrany czas.</string>

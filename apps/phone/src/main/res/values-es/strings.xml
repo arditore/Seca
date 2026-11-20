@@ -24,6 +24,9 @@
     </plurals>
     <string name="backup_filtering_restored">filtrado restaurado</string>
     <string name="backup_filtering_restored_no_access">filtrado restaurado; abre Seca Teléfono, permite el historial de llamadas y restaura de nuevo para las llamadas</string>
+    <string name="block">Bloquear</string>
+    <string name="block_a_number">Bloquear un número</string>
+    <string name="block_a_number_hint">Uno que todavía no ha llamado</string>
     <string name="block_decline_hint">La llamada se rechaza sin sonar y queda en el historial, entre las llamadas rechazadas.</string>
     <string name="block_duration">Durante</string>
     <string name="block_failed">No se pudo bloquear</string>
@@ -39,6 +42,8 @@
     <string name="blocked_declined">Sus llamadas se rechazan</string>
     <string name="blocked_numbers">Números bloqueados</string>
     <string name="blocked_numbers_hint">La lista de Android, compartida por todas las aplicaciones</string>
+    <string name="blocked_numbers_none">Ningún número bloqueado.</string>
+    <string name="blocked_numbers_shared">Es la lista del teléfono: un número bloqueado aquí lo está para todas las aplicaciones, y desbloquearlo aquí lo libera en todas.</string>
     <string name="blocked_profiles">Perfiles bloqueados</string>
     <string name="blocked_profiles_declined">%1$s · llamadas rechazadas</string>
     <string name="blocked_profiles_dialog_hint">Los contactos de un perfil bloqueado ya no pueden llamarte, durante el tiempo que elijas.</string>

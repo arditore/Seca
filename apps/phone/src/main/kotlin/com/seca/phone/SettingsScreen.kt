@@ -96,12 +96,6 @@ internal fun SettingsScreen(
             listOf(callSettings()),
         ),
         SystemEntry(SecaIcons.Voicemail, stringResource(R.string.voicemail), stringResource(R.string.voicemail_settings_hint), listOf(voicemailSettings())),
-        SystemEntry(
-            SecaIcons.Block,
-            stringResource(R.string.blocked_numbers),
-            stringResource(R.string.blocked_numbers_hint),
-            listOfNotNull(blockedNumbers(context)),
-        ),
     )
 
     // Which part of the settings is showing. State rather than a route of its own: it is one
@@ -326,7 +320,9 @@ internal fun SettingsScreen(
                     // Belgium has no use for it and an English speaker in France does, which is
                     // the opposite of what the language would have said.
                     val inFrance = remember { Telemarketing.offeredIn(PhoneNumbers.detectRegion(context)) }
-                    val rows = if (inFrance) 3 else 2
+                    // One more row where the phone lets this app see the blocked list (#user).
+                    val blockedList = remember { BlockedNumbers.available(context) }
+                    val rows = (if (inFrance) 3 else 2) + if (blockedList) 1 else 0
                     if (inFrance) {
                         SecaGroupItem(index = 0, count = rows) {
                             SecaSettingRow(
@@ -341,7 +337,7 @@ internal fun SettingsScreen(
                             )
                         }
                     }
-                    SecaGroupItem(index = rows - 2, count = rows) {
+                    SecaGroupItem(index = rows - (if (blockedList) 3 else 2), count = rows) {
                         SecaSettingRow(
                             icon = SecaIcons.VolumeOff,
                             title = stringResource(R.string.silence_unknown),
@@ -355,7 +351,11 @@ internal fun SettingsScreen(
                     }
                     var managingBlocked by remember { mutableStateOf(false) }
                     val blockedProfiles = ui.blockedProfileList
-                    SecaGroupItem(index = rows - 1, count = rows, onClick = if (ui.profiles.connected) ({ managingBlocked = true }) else null) {
+                    SecaGroupItem(
+                        index = rows - (if (blockedList) 2 else 1),
+                        count = rows,
+                        onClick = if (ui.profiles.connected) ({ managingBlocked = true }) else null,
+                    ) {
                         SecaSettingRow(
                             icon = SecaIcons.Block,
                             title = stringResource(R.string.blocked_profiles),
@@ -369,8 +369,20 @@ internal fun SettingsScreen(
                         )
                     }
                     if (managingBlocked) BlockedProfilesDialog(ui, viewModel, onDismiss = { managingBlocked = false })
+                    // Android's own list, kept here rather than behind a trip to the system
+                    // settings: undoing something you did in this app should not need another.
+                    if (blockedList) {
+                        SecaGroupItem(index = rows - 1, count = rows, onClick = { page = SettingsPage.Blocked }) {
+                            SecaSettingRow(
+                                icon = SecaIcons.Block,
+                                title = stringResource(R.string.blocked_numbers),
+                                subtitle = stringResource(R.string.blocked_numbers_hint),
+                            )
+                        }
+                    }
                     SecaHint(stringResource(if (isDefaultDialer) R.string.filtering_local else R.string.filtering_needs_default))
                 }
+                SettingsPage.Blocked -> BlockedNumbersPage(ui)
                 SettingsPage.Backup -> {
                     SuiteBackupSection(beforeRestore = askCallLogThen)
                     AutoBackupSection()
@@ -451,6 +463,7 @@ private enum class SettingsPage(val title: Int) {
     Appearance(R.string.colors),
     Calls(R.string.calls),
     Filtering(R.string.call_filtering),
+    Blocked(R.string.blocked_numbers),
     Backup(R.string.backup),
     Privacy(R.string.protection),
 }

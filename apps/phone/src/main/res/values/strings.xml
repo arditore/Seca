@@ -22,6 +22,9 @@
     </plurals>
     <string name="backup_filtering_restored">filtering restored</string>
     <string name="backup_filtering_restored_no_access">filtering restored; open Seca Phone, allow the call history, then restore again for the calls</string>
+    <string name="block">Block</string>
+    <string name="block_a_number">Block a number</string>
+    <string name="block_a_number_hint">One that has not called yet</string>
     <string name="block_decline_hint">The call is declined without ringing and stays in the history, among the declined calls.</string>
     <string name="block_duration">For</string>
     <string name="block_failed">Could not block</string>
@@ -37,6 +40,8 @@
     <string name="blocked_declined">Their calls are declined</string>
     <string name="blocked_numbers">Blocked numbers</string>
     <string name="blocked_numbers_hint">Android\'s list, shared by every app</string>
+    <string name="blocked_numbers_none">No number is blocked.</string>
+    <string name="blocked_numbers_shared">This is the phone’s own list, so a number blocked here is blocked for every app, and unblocking it here frees it everywhere.</string>
     <string name="blocked_profiles">Blocked profiles</string>
     <string name="blocked_profiles_declined">%1$s · calls declined</string>
     <string name="blocked_profiles_dialog_hint">Contacts in a blocked profile can no longer call you, for as long as you choose.</string>

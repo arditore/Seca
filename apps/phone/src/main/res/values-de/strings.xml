@@ -22,6 +22,9 @@
     </plurals>
     <string name="backup_filtering_restored">Filterung wiederhergestellt</string>
     <string name="backup_filtering_restored_no_access">Filterung wiederhergestellt; öffne Seca Telefon, erlaube den Anrufverlauf und stelle dann erneut wieder her, um die Anrufe zu erhalten</string>
+    <string name="block">Blockieren</string>
+    <string name="block_a_number">Eine Nummer blockieren</string>
+    <string name="block_a_number_hint">Eine, die noch nicht angerufen hat</string>
     <string name="block_decline_hint">Der Anruf wird ohne Klingeln abgelehnt und bleibt im Verlauf, unter den abgelehnten Anrufen.</string>
     <string name="block_duration">Für</string>
     <string name="block_failed">Blockieren nicht möglich</string>
@@ -37,6 +40,8 @@
     <string name="blocked_declined">Ihre Anrufe werden abgelehnt</string>
     <string name="blocked_numbers">Blockierte Nummern</string>
     <string name="blocked_numbers_hint">Die Liste von Android, von jeder App geteilt</string>
+    <string name="blocked_numbers_none">Keine Nummer ist blockiert.</string>
+    <string name="blocked_numbers_shared">Das ist die Liste des Telefons: eine hier blockierte Nummer ist für jede App blockiert, und sie hier freizugeben gilt überall.</string>
     <string name="blocked_profiles">Blockierte Profile</string>
     <string name="blocked_profiles_declined">%1$s · Anrufe abgelehnt</string>
     <string name="blocked_profiles_dialog_hint">Kontakte in einem blockierten Profil können dich nicht mehr anrufen, so lange du möchtest.</string>
