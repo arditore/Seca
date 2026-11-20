@@ -51,6 +51,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import android.net.Uri
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.content.ReceiveContentListener
+import androidx.compose.foundation.content.TransferableContent
+import androidx.compose.foundation.content.contentReceiver
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -234,7 +244,10 @@ internal fun ConversationContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var text by rememberSaveable(screen.address) { mutableStateOf(screen.draft) }
+    // A state rather than a String, which is what lets the field tell the keyboard it takes
+    // pictures as well as letters: that is the whole of the GIF key working (#54).
+    val draft = rememberSaveable(screen.address, saver = TextFieldState.Saver) { TextFieldState(screen.draft) }
+    val text by remember(draft) { derivedStateOf { draft.text.toString() } }
     var confirmDelete by remember { mutableStateOf(false) }
     var scheduling by remember { mutableStateOf(false) }
     var choosingTimer by remember { mutableStateOf(false) }
@@ -369,7 +382,7 @@ internal fun ConversationContent(
             onDismiss = { scheduling = false },
             onSchedule = { at ->
                 viewModel.schedule(screen.address, text, at)
-                text = ""
+                draft.clearText()
                 scheduling = false
             },
         )
@@ -466,11 +479,8 @@ internal fun ConversationContent(
             },
             bottomBar = {
                 Composer(
-                    text = text,
-                    onText = {
-                        text = it
-                        if (linked && it.isNotBlank()) viewModel.typing(screen.address)
-                    },
+                    draft = draft,
+                    onContent = { uri -> staged = (staged + stagedFile(context, uri)).take(MAX_ATTACHMENTS) },
                     enabled = isDefaultApp || linked,
                     encrypted = linked,
                     onSend = {
@@ -482,7 +492,7 @@ internal fun ConversationContent(
                             group.size >= 2 -> viewModel.sendToGroup(group, text)
                             else -> viewModel.send(screen.address, text, replyingTo?.linkId)
                         }
-                        text = ""
+                        draft.clearText()
                         replyingTo = null
                     },
                     staged = staged,
@@ -490,7 +500,7 @@ internal fun ConversationContent(
                     sims = sims,
                     onSendFrom = { subscriptionId ->
                         viewModel.sendFrom(screen.address, text, subscriptionId)
-                        text = ""
+                        draft.clearText()
                         replyingTo = null
                     },
                     // Encrypted where the conversation is, by carrier where it is not: the
@@ -564,7 +574,7 @@ internal fun ConversationContent(
                         onSendNow = { viewModel.sendScheduledNow(message) },
                         onEdit = {
                             viewModel.cancelScheduled(message.id)
-                            text = message.body
+                            draft.setTextAndPlaceCursorAtEnd(message.body)
                         },
                         onCancel = { viewModel.cancelScheduled(message.id) },
                     )
@@ -1753,9 +1763,11 @@ private fun ScheduledBubble(message: ScheduledMessage, onSendNow: () -> Unit, on
  * answers, and SMS counting and scheduling, which belong to SMS, step aside.
  */
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun Composer(
-    text: String,
-    onText: (String) -> Unit,
+    draft: TextFieldState,
+    /** A GIF or a sticker committed by the keyboard, which is not typing (#54). */
+    onContent: (Uri) -> Unit,
     enabled: Boolean,
     encrypted: Boolean,
     onSend: () -> Unit,
@@ -1776,6 +1788,7 @@ private fun Composer(
     onRemoveStaged: (Staged) -> Unit = {},
 ) {
     // How many SMS the text takes: past 160 plain characters, or 70 with accents or emoji, it is split.
+    val text = draft.text.toString()
     val parts = remember(text, encrypted) { if (text.isEmpty() || encrypted) 0 else SmsMessage.calculateLength(text, false)[0] }
     val colors = MaterialTheme.colorScheme
     Column(
@@ -1839,8 +1852,7 @@ private fun Composer(
             } else {
                 if (attach != null) AttachButton(attach)
                 TextField(
-                    value = text,
-                    onValueChange = onText,
+                    state = draft,
                     placeholder = { Text(stringResource(if (encrypted) R.string.encrypted_message else R.string.message)) },
                     leadingIcon = if (encrypted) {
                         { Icon(SecaIcons.Lock, contentDescription = stringResource(R.string.encrypted_by_link), modifier = Modifier.size(18.dp)) }
@@ -1853,7 +1865,7 @@ private fun Composer(
                         null
                     },
                     shape = RoundedCornerShape(28.dp),
-                    maxLines = 6,
+                    lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = COMPOSER_LINES),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = colors.surfaceContainerHigh,
@@ -1862,7 +1874,30 @@ private fun Composer(
                         unfocusedIndicatorColor = Color.Transparent,
                         disabledIndicatorColor = Color.Transparent,
                     ),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        // The keyboard's GIF key hands its picture to the field it is typing
+                        // into, as content rather than as text, and a field that does not
+                        // listen for it drops it on the floor: the key appeared to do nothing
+                        // at all (#54). What arrives is handled exactly like a picture chosen
+                        // from the gallery, so it waits in the composer until you send it.
+                        .contentReceiver(
+                            object : ReceiveContentListener {
+                                override fun onReceive(transferableContent: TransferableContent): TransferableContent? {
+                                    val clip = transferableContent.clipEntry.clipData
+                                    var taken = false
+                                    for (index in 0 until clip.itemCount) {
+                                        clip.getItemAt(index).uri?.let {
+                                            onContent(it)
+                                            taken = true
+                                        }
+                                    }
+                                    // What was not a picture goes back for the field to treat
+                                    // as what it is, which is usually text.
+                                    return if (taken) null else transferableContent
+                                }
+                            },
+                        ),
                 )
             }
             // Nothing written and nothing waiting means the microphone; a photo waiting with
@@ -2428,3 +2463,6 @@ private fun decodeBackground(file: java.io.File): androidx.compose.ui.graphics.I
  * two ends of it.
  */
 private const val BACKGROUND_VEIL = 0.62f
+
+/** How tall the message field grows before it scrolls, in lines. */
+private const val COMPOSER_LINES = 6
