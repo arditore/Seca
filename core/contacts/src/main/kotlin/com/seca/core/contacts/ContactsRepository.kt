@@ -99,6 +99,16 @@ data class ContactDetail(
     val note: ContactField?,
     /** The fields the owner named themselves (#66). */
     val customFields: List<CustomField> = emptyList(),
+    /**
+     * The address books this contact is kept in (#44).
+     *
+     * Usually one, and more than one where the same person is synced from two places or kept
+     * on the phone as well as in an account: a contact is what the provider makes of several
+     * raw rows, and those rows can come from different books. All of them are named, because
+     * naming one and hiding the rest is how an app tells somebody their work address book does
+     * not exist.
+     */
+    val places: List<Place> = emptyList(),
     /** Where new rows are written: the device-only raw contact when there is one. */
     val rawContactId: Long,
     val nameDataId: Long?,
@@ -254,6 +264,7 @@ class ContactsRepository(
             }
         } ?: return@withContext null
         val rawContactId = primaryRawContact(id) ?: return@withContext null
+        val places = placesOf(id)
 
         var nameDataId: Long? = null
         var givenName = ""
@@ -364,6 +375,7 @@ class ContactsRepository(
             anniversary = anniversary,
             note = note,
             customFields = customFields,
+            places = places,
             rawContactId = rawContactId,
             nameDataId = nameDataId,
         )
@@ -1034,6 +1046,23 @@ class ContactsRepository(
             null,
             null,
         )?.use { if (it.moveToFirst()) it.getLong(0) else null }
+
+    /** The books a contact's rows come from, in the order the provider lists them (#44). */
+    private fun placesOf(contactId: Long): List<Place> =
+        resolver.query(
+            RawContacts.CONTENT_URI,
+            arrayOf(RawContacts.ACCOUNT_TYPE, RawContacts.ACCOUNT_NAME),
+            "${RawContacts.CONTACT_ID} = ? AND ${RawContacts.DELETED} = 0",
+            arrayOf(contactId.toString()),
+            null,
+        )?.use { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    val place = Place(type = cursor.getString(0), name = cursor.getString(1))
+                    if (place !in this) add(place)
+                }
+            }
+        }.orEmpty()
 
     private fun primaryRawContact(contactId: Long): Long? =
         resolver.query(

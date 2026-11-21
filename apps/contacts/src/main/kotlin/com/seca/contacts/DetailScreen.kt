@@ -453,6 +453,8 @@ private fun About(detail: ContactDetail) {
     val anniversaryLabel = stringResource(R.string.anniversary)
     val notesLabel = stringResource(R.string.notes)
     val nicknameLabel = stringResource(R.string.nickname)
+    val savedInLabel = stringResource(R.string.saved_in)
+    val onThisPhone = stringResource(R.string.on_this_phone)
     val rows = buildList {
         detail.nickname?.let { add(AboutRow(SecaIcons.Label, it.value, nicknameLabel)) }
         if (company.isNotBlank()) add(AboutRow(SecaIcons.Work, company, companyLabel))
@@ -478,6 +480,17 @@ private fun About(detail: ContactDetail) {
         detail.customFields
             .filter { it.name.isNotBlank() && it.value.isNotBlank() }
             .forEach { add(AboutRow(SecaIcons.Subject, it.value, it.name)) }
+        // Which address book this person is kept in, which somebody syncing two of them has no
+        // other way of telling (#44). More than one row where the same person is in two books.
+        detail.places.forEach { place ->
+            add(
+                AboutRow(
+                    icon = SecaIcons.PersonOutline,
+                    value = place.name?.takeIf { it.isNotBlank() } ?: onThisPhone,
+                    label = savedInLabel,
+                ),
+            )
+        }
     }
     if (rows.isEmpty()) return
     SecaSectionLabel(stringResource(R.string.about))
