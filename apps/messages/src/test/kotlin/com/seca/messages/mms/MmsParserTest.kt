@@ -70,6 +70,31 @@ class MmsParserTest {
         assertTrue(picture.data.contentEquals(photo))
     }
 
+    /**
+     * The one-byte content types, against the numbers the standard assigns them (#72).
+     *
+     * This is the table that was wrong, by three places, so every picture that arrived named
+     * by its number was read as something else — a JPEG as a contact card, and from there its
+     * bytes into the conversation as words. A list of numbers can only be held to by naming
+     * them, which is what this does.
+     */
+    @Test
+    fun `a part named by its number is the type the standard gives that number`() {
+        val body = ByteArrayOutputStream()
+        body.write(uintvar(4))
+        body.write(part(IMAGE_JPEG, "photo.jpg", "<p>", byteArrayOf(1, 2, 3)))
+        body.write(part(IMAGE_PNG, "shot.png", "<s>", byteArrayOf(4, 5)))
+        body.write(part(VCARD, "card.vcf", "<c>", "BEGIN:VCARD".toByteArray()))
+        body.write(part(VIDEO, "clip.mp4", "<v>", byteArrayOf(6)))
+
+        val parts = MmsParser.partsOf(body.toByteArray())
+
+        assertEquals(
+            listOf("image/jpeg", "image/png", "text/x-vCard", "video/*"),
+            parts.map { it.contentType },
+        )
+    }
+
     @Test
     fun `a field this does not know does not cost the rest of the message`() {
         val pdu = pdu {
@@ -197,9 +222,14 @@ class MmsParserTest {
     }
 
     private companion object {
+        // The WSP assigned numbers, with the high bit set as a short integer carries them:
+        // 0x03 text/plain, 0x1E image/jpeg, 0x33 application/vnd.wap.multipart.related.
         const val TEXT_PLAIN = 0x83
-        const val IMAGE_JPEG = 0xA1
-        const val MULTIPART_RELATED = 0xA9
+        const val IMAGE_JPEG = 0x9E
+        const val MULTIPART_RELATED = 0xB3
+        const val IMAGE_PNG = 0xA0
+        const val VCARD = 0x87
+        const val VIDEO = 0xD0
         const val PARAM_NAME = 0x85
         const val HEADER_CONTENT_ID = 0xC0
         const val UTF_8_CHARSET = 0x6A

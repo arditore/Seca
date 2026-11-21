@@ -223,26 +223,148 @@ internal object MmsParser {
         return PartHeader(contentType, name, contentId)
     }
 
-    /** The content types written as one byte rather than spelled out. */
-    private fun wellKnownType(code: Int): String = when (code) {
-        0x03 -> "text/plain"
-        0x1E -> "text/x-vCard"
-        0x1F -> "text/x-vCalendar"
-        0x20 -> "image/gif"
-        0x21 -> "image/jpeg"
-        0x22 -> "image/tiff"
-        0x23 -> "image/png"
-        0x24 -> "image/vnd.wap.wbmp"
-        0x25 -> "application/vnd.wap.multipart.*"
-        0x26 -> "application/vnd.wap.multipart.mixed"
-        0x27 -> "application/vnd.wap.multipart.form-data"
-        0x28 -> "application/vnd.wap.multipart.byteranges"
-        0x29 -> "application/vnd.wap.multipart.related"
-        0x33 -> "audio/*"
-        0x35 -> "video/*"
-        0x3E -> "application/smil"
-        else -> "application/octet-stream"
-    }
+    /**
+     * The content types written as one byte rather than spelled out.
+     *
+     * The numbers are not ours to choose: they are the WSP assigned numbers, the same list
+     * Android's own `WspTypeDecoder` carries, and a table that is off by even one labels every
+     * picture as something else. This one was, by three, so a JPEG arriving as 0x1E was read as
+     * a contact card and its bytes went into the conversation as words. That is the screenful
+     * of hieroglyphs two people reported, from different networks and different handsets, and
+     * why a card arrived calling itself a photograph (#72, #55).
+     *
+     * Kept whole rather than trimmed to the types that seemed to matter, because which ones
+     * matter is decided by carriers, not here.
+     */
+    private fun wellKnownType(code: Int): String = WELL_KNOWN_TYPES.getOrNull(code) ?: "application/octet-stream"
+
+    private val WELL_KNOWN_TYPES = listOf(
+        "*/*",
+        "text/*",
+        "text/html",
+        "text/plain",
+        "text/x-hdml",
+        "text/x-ttml",
+        "text/x-vCalendar",
+        "text/x-vCard",
+        "text/vnd.wap.wml",
+        "text/vnd.wap.wmlscript",
+        "text/vnd.wap.wta-event",
+        "multipart/*",
+        "multipart/mixed",
+        "multipart/form-data",
+        "multipart/byterantes",
+        "multipart/alternative",
+        "application/*",
+        "application/java-vm",
+        "application/x-www-form-urlencoded",
+        "application/x-hdmlc",
+        "application/vnd.wap.wmlc",
+        "application/vnd.wap.wmlscriptc",
+        "application/vnd.wap.wta-eventc",
+        "application/vnd.wap.uaprof",
+        "application/vnd.wap.wtls-ca-certificate",
+        "application/vnd.wap.wtls-user-certificate",
+        "application/x-x509-ca-cert",
+        "application/x-x509-user-cert",
+        "image/*",
+        "image/gif",
+        "image/jpeg",
+        "image/tiff",
+        "image/png",
+        "image/vnd.wap.wbmp",
+        "application/vnd.wap.multipart.*",
+        "application/vnd.wap.multipart.mixed",
+        "application/vnd.wap.multipart.form-data",
+        "application/vnd.wap.multipart.byteranges",
+        "application/vnd.wap.multipart.alternative",
+        "application/xml",
+        "text/xml",
+        "application/vnd.wap.wbxml",
+        "application/x-x968-cross-cert",
+        "application/x-x968-ca-cert",
+        "application/x-x968-user-cert",
+        "text/vnd.wap.si",
+        "application/vnd.wap.sic",
+        "text/vnd.wap.sl",
+        "application/vnd.wap.slc",
+        "text/vnd.wap.co",
+        "application/vnd.wap.coc",
+        "application/vnd.wap.multipart.related",
+        "application/vnd.wap.sia",
+        "text/vnd.wap.connectivity-xml",
+        "application/vnd.wap.connectivity-wbxml",
+        "application/pkcs7-mime",
+        "application/vnd.wap.hashed-certificate",
+        "application/vnd.wap.signed-certificate",
+        "application/vnd.wap.cert-response",
+        "application/xhtml+xml",
+        "application/wml+xml",
+        "text/css",
+        "application/vnd.wap.mms-message",
+        "application/vnd.wap.rollover-certificate",
+        "application/vnd.wap.locc+wbxml",
+        "application/vnd.wap.loc+xml",
+        "application/vnd.syncml.dm+wbxml",
+        "application/vnd.syncml.dm+xml",
+        "application/vnd.syncml.notification",
+        "application/vnd.wap.xhtml+xml",
+        "application/vnd.wv.csp.cir",
+        "application/vnd.oma.dd+xml",
+        "application/vnd.oma.drm.message",
+        "application/vnd.oma.drm.content",
+        "application/vnd.oma.drm.rights+xml",
+        "application/vnd.oma.drm.rights+wbxml",
+        "application/vnd.wv.csp+xml",
+        "application/vnd.wv.csp+wbxml",
+        "application/vnd.syncml.ds.notification",
+        "audio/*",
+        "video/*",
+        "application/vnd.oma.dd2+xml",
+        "application/mikey",
+        "application/vnd.oma.dcd",
+        "application/vnd.oma.dcdc",
+        "application/vnd.uplanet.cacheop-wbxml",
+        "application/vnd.uplanet.signal",
+        "application/vnd.uplanet.alert-wbxml",
+        "application/vnd.uplanet.list-wbxml",
+        "application/vnd.uplanet.listcmd-wbxml",
+        "application/vnd.uplanet.channel-wbxml",
+        "application/vnd.uplanet.provisioning-status-uri",
+        "x-wap.multipart/vnd.uplanet.header-set",
+        "application/vnd.uplanet.bearer-choice-wbxml",
+        "application/vnd.phonecom.mmc-wbxml",
+        "application/vnd.nokia.syncset+wbxml",
+        "image/x-up-wpng",
+        "application/iota.mmc-wbxml",
+        "application/iota.mmc-xml",
+        "application/vnd.syncml+xml",
+        "application/vnd.syncml+wbxml",
+        "text/vnd.wap.emn+xml",
+        "text/calendar",
+        "application/vnd.omads-email+xml",
+        "application/vnd.omads-file+xml",
+        "application/vnd.omads-folder+xml",
+        "text/directory;profile=vCard",
+        "application/vnd.wap.emn+wbxml",
+        "application/vnd.nokia.ipdc-purchase-response",
+        "application/vnd.motorola.screen3+xml",
+        "application/vnd.motorola.screen3+gzip",
+        "application/vnd.cmcc.setting+wbxml",
+        "application/vnd.cmcc.bombing+wbxml",
+        "application/vnd.docomo.pf",
+        "application/vnd.docomo.ub",
+        "application/vnd.omaloc-supl-init",
+        "application/vnd.oma.group-usage-list+xml",
+        "application/oma-directory+xml",
+        "application/vnd.docomo.pf2",
+        "application/vnd.oma.drm.roap-trigger+wbxml",
+        "application/vnd.sbm.mid2",
+        "application/vnd.wmf.bootstrap",
+        "application/vnc.cmcc.dcd+xml",
+        "application/vnd.sbm.cid",
+        "application/vnd.oma.bcast.provisioningtrigger",
+    )
 
     private const val MILLIS_PER_SECOND = 1000L
     private const val MAX_PARTS = 64
