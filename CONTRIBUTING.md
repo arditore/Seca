@@ -75,8 +75,8 @@ relicensing today would still mean asking them.
 ## Style
 
 Written English in code, comments, commit messages and documentation.
-Interface text in English, French, Spanish, Polish, German, Turkish and Simplified
-Chinese.
+Interface text in English, French, Spanish, Polish, German, Turkish, Simplified
+Chinese and Persian.
 
 Commit messages say what changed and why, in sentences. Look at the history
 for the register; a one-line `fix: bug` is not it.

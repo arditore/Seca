@@ -142,7 +142,7 @@ class ShippedLanguagesTest {
 
     private companion object {
         /** Held to the build's own list by `the lists of languages agree with the build`. */
-        val LANGUAGES = listOf("fr", "es", "pl", "de", "tr", "zh")
+        val LANGUAGES = listOf("fr", "es", "pl", "de", "tr", "zh", "fa")
         val FILTER = Regex(""""([a-z]{2})"""")
         val KEY = Regex("""<(?:string|plurals) name="([^"]+)"""")
         val VALUE = Regex("""<string name="([^"]+)">(.*?)</string>""", RegexOption.DOT_MATCHES_ALL)

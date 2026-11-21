@@ -11,7 +11,7 @@ import java.util.Locale
  * German and its dates in English (reported with a screenshot of a call list reading
  * "Sunday, November 15" on a German handset).
  */
-val ShippedLanguages = listOf("en", "fr", "es", "pl", "de", "tr", "zh")
+val ShippedLanguages = listOf("en", "fr", "es", "pl", "de", "tr", "zh", "fa")
 
 /**
  * The locale dates, times and numbers are written in, matching the language the screens

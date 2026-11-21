@@ -166,8 +166,9 @@ server of mine.
 
 ## 🌍 Languages
 
-English, French, Spanish, Polish, German, Turkish and Simplified Chinese,
-following the phone's own language, or the per-app language Android 13 offers.
+English, French, Spanish, Polish, German, Turkish, Simplified Chinese and
+Persian, following the phone's own language, or the per-app language
+Android 13 offers.
 Nothing ships half translated: a language is listed in the build only once its
 strings are complete, in the apps and in every module they share.
 

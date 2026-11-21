@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="link_accept_intro">Seca Link: دعوت پذیرفته شد، پیام‌های ما رمزگذاری شده‌اند.</string>
+    <string name="link_encryption_failed">رمزگذاری ناموفق بود</string>
+    <string name="link_incomplete_invitation">دعوت ناقص است</string>
+    <string name="link_invalid_keys">کلیدهای نامعتبر: %1$s</string>
+    <string name="link_invite_intro">Seca Link: شما را به گفت‌وگوی رمزگذاری‌شده با Seca دعوت می‌کنم.</string>
+    <string name="link_keys_not_found">کلیدها روی رله‌ها پیدا نشد</string>
+    <string name="link_no_key_received">هیچ کلیدی از این مخاطب دریافت نشد</string>
+    <string name="link_no_network">دسترسی به شبکه نیست</string>
+    <string name="link_no_relay_accepted">هیچ رله‌ای این پیام را نپذیرفت</string>
+    <string name="link_not_kept">کلیدها را پذیرفت ولی نگه نمی‌دارد</string>
+    <string name="link_unknown_contact">مخاطب ناشناس</string>
+    <string name="link_untrusted_key">کلید تأیید نشده: %1$s</string>
+</resources>
