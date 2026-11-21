@@ -458,16 +458,20 @@ private fun About(detail: ContactDetail) {
         if (company.isNotBlank()) add(AboutRow(SecaIcons.Work, company, companyLabel))
         // The date, and how old that makes them today: a birthday is read to work that out.
         detail.birthday?.let { field ->
-            val age = ageFrom(field.value)
+            val age = ageFrom(context, field.value)
             val written = if (age == null) {
-                formatBirthday(field.value)
+                formatBirthday(context, field.value)
             } else {
-                stringResource(R.string.birthday_with_age, formatBirthday(field.value), pluralStringResource(R.plurals.years_old, age, age))
+                stringResource(
+                    R.string.birthday_with_age,
+                    formatBirthday(context, field.value),
+                    pluralStringResource(R.plurals.years_old, age, age),
+                )
             }
             add(AboutRow(SecaIcons.Cake, written, birthdayLabel, onCalendar(context, field.value)))
         }
         detail.anniversary?.let {
-            add(AboutRow(SecaIcons.Event, formatBirthday(it.value), anniversaryLabel, onCalendar(context, it.value)))
+            add(AboutRow(SecaIcons.Event, formatBirthday(context, it.value), anniversaryLabel, onCalendar(context, it.value)))
         }
         detail.note?.let { add(AboutRow(SecaIcons.Subject, it.value, notesLabel)) }
         // The owner's own fields, each under the name they gave it (#66).
@@ -499,7 +503,7 @@ private class AboutRow(
  * than a row that does not look tappable.
  */
 private fun onCalendar(context: Context, raw: String): (() -> Unit)? =
-    nextOccurrence(raw)?.let { day -> { openCalendar(context, day) } }
+    nextOccurrence(context, raw)?.let { day -> { openCalendar(context, day) } }
 
 /** The contact's profile; tapping it moves the contact to another one. */
 @Composable

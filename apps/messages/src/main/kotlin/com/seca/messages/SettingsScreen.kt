@@ -30,6 +30,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.seca.core.design.SecaIcons
 import com.seca.core.design.SecaPalette
+import com.seca.core.design.component.SecaCalendarSection
+import com.seca.core.model.SecaCalendar
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaHint
 import com.seca.core.design.component.SecaColourPerPersonRow
@@ -134,6 +136,7 @@ internal fun SettingsScreen(
                         index = 4,
                         count = 5,
                     ) { page = SettingsPage.Privacy }
+                    SecaCalendarSection(SecaCalendar.named(ui.profiles.calendar)) { viewModel.setCalendar(it) }
                     LanguageSection()
                 }
                 SettingsPage.Appearance -> {

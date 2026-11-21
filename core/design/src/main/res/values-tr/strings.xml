@@ -54,4 +54,19 @@
     <string name="design_keep">Kullan</string>
     <string name="design_colour_per_person">Kişi başına bir renk</string>
     <string name="design_colour_per_person_hint">Profilinin rengi yerine</string>
+    <string name="design_calendar">Takvim</string>
+    <string name="design_calendar_hint">Üç uygulamanın da tarihleri yazdığı takvim</string>
+    <string name="design_calendar_phone">Telefonunki</string>
+    <string name="design_calendar_gregorian">Miladi</string>
+    <string name="design_calendar_persian">Farsî (güneş hicri)</string>
+    <string name="design_calendar_islamic">İslami (Ümmülkura)</string>
+    <string name="design_calendar_buddhist">Budist</string>
+    <string name="design_calendar_hebrew">İbrani</string>
+    <string name="design_calendar_indian">Hindistan ulusal</string>
+    <string name="design_calendar_japanese">Japon</string>
+    <string name="design_gregorian_too">Miladi: %1$s</string>
+    <string name="design_year">Yıl</string>
+    <string name="design_month">Ay</string>
+    <string name="design_day">Gün</string>
+    <string name="design_day_past">O gün geçti.</string>
 </resources>

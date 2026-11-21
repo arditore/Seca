@@ -32,7 +32,9 @@ import com.seca.core.design.SecaPalette
 import com.seca.core.design.component.forgetContactPhoto
 import com.seca.core.model.backup.BackupCipher
 import org.json.JSONObject
+import com.seca.core.model.Calendars
 import com.seca.core.model.Profile
+import com.seca.core.model.SecaCalendar
 import com.seca.core.model.SecaContact
 import com.seca.core.suite.SuiteBackup
 import kotlinx.coroutines.Dispatchers
@@ -88,6 +90,8 @@ data class ContactsUi(
     val palette: SecaPaletteSpec? = null,
     /** Whether the dark theme goes down to black, for OLED screens. */
     val black: Boolean = false,
+    /** The calendar dates are written in, shared with the other two apps (#83). */
+    val calendar: SecaCalendar = SecaCalendar.Phone,
     /** Whether the owner's own card sits at the top of the list. */
     val showMyCard: Boolean = true,
     val myCard: MyCard = MyCard(),
@@ -157,7 +161,14 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     private val resolver = application.contentResolver
     // Read here rather than waited for: these live in this app's own preferences, so the first
     // frame can already be the right colour instead of flashing Material dark on the way.
-    private val _ui = MutableStateFlow(ContactsUi(numbers = numbers, palette = store.palette(), black = store.black()))
+    private val _ui = MutableStateFlow(
+        ContactsUi(
+            numbers = numbers,
+            palette = store.palette(),
+            black = store.black(),
+            calendar = SecaCalendar.named(store.calendar()),
+        ),
+    )
     val ui: StateFlow<ContactsUi> = _ui.asStateFlow()
 
     /** Kept here rather than in the composition, so it survives rotation. */
@@ -166,6 +177,8 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     private var watching: Job? = null
 
     init {
+        // The dates drawn in the very first frame are already in the owner's own calendar.
+        Calendars.remember(application, SecaCalendar.named(store.calendar()))
         refreshPreferences()
         loadMyCard()
         refreshSimLines()
@@ -285,6 +298,13 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     /** Takes the dark theme down to black, in all three apps. */
     fun setBlack(black: Boolean) {
         store.setBlack(black)
+        refreshPreferences()
+    }
+
+    /** Writes every date in all three apps in this calendar (#83). */
+    fun setCalendar(calendar: SecaCalendar) {
+        store.setCalendar(calendar.takeIf { it != SecaCalendar.Phone }?.name)
+        Calendars.remember(getApplication(), calendar)
         refreshPreferences()
     }
 
@@ -683,6 +703,7 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                 favoriteOrder = store.favoriteOrder(),
                 avatarShape = store.avatarShape(),
                 colourPerPerson = store.colourPerPerson(),
+                calendar = SecaCalendar.named(store.calendar()),
                 shapes = store.shapes().mapValues { (_, name) -> SecaAvatarShape.of(name) },
             )
         }

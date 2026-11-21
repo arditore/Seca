@@ -42,6 +42,9 @@ object SharedProfilesContract {
 
     /** Whether a face takes a colour of its own rather than its profile's (#52). */
     const val COLUMN_COLOUR_PER_PERSON = "colour_per_person"
+
+    /** The calendar the suite writes dates in, by name, or nothing for the phone's own (#83). */
+    const val COLUMN_CALENDAR = "calendar"
 }
 
 /** What a Seca app needs from Seca Contacts' profiles. */
@@ -57,6 +60,8 @@ data class SharedProfiles(
     val avatarShape: String? = null,
     /** A shape chosen for one contact, by lookup key, where one was. */
     val shapes: Map<String, String> = emptyMap(),
+    /** The calendar dates are written in, by name, or null for the phone's own (#83). */
+    val calendar: String? = null,
     /** Whether each person gets a colour of their own rather than their profile's (#52). */
     val colourPerPerson: Boolean = false,
     /** Whether Seca Contacts answered: without it there are no profiles to show nor colours to set. */
@@ -135,7 +140,9 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
                         .takeIf { it >= 0 }?.let { c.getString(it) }
                     val perPerson = c.getColumnIndex(SharedProfilesContract.COLUMN_COLOUR_PER_PERSON)
                         .takeIf { it >= 0 }?.let { c.getInt(it) == 1 } == true
-                    Settings(palette, black, shape, perPerson)
+                    val calendar = c.getColumnIndex(SharedProfilesContract.COLUMN_CALENDAR)
+                        .takeIf { it >= 0 }?.let { c.getString(it) }
+                    Settings(palette, black, shape, perPerson, calendar)
                 }
             }
             SharedProfiles(
@@ -146,6 +153,7 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
                 avatarShape = settings?.avatarShape,
                 shapes = shapes,
                 colourPerPerson = settings?.colourPerPerson == true,
+                calendar = settings?.calendar,
                 connected = profiles != null,
             )
         } catch (e: SecurityException) {
@@ -165,6 +173,10 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
     suspend fun setAvatarShape(shape: String?): Boolean =
         write(ContentValues().apply { put(SharedProfilesContract.COLUMN_AVATAR_SHAPE, shape) })
 
+    /** Writes every date in every Seca app in one calendar, or back in the phone's own (#83). */
+    suspend fun setCalendar(calendar: String?): Boolean =
+        write(ContentValues().apply { put(SharedProfilesContract.COLUMN_CALENDAR, calendar) })
+
     /** Gives every person a colour of their own, or puts them back on their profile's (#52). */
     suspend fun setColourPerPerson(on: Boolean): Boolean =
         write(ContentValues().apply { put(SharedProfilesContract.COLUMN_COLOUR_PER_PERSON, if (on) 1 else 0) })
@@ -175,6 +187,7 @@ class SharedProfilesClient(private val resolver: ContentResolver) {
         val black: Boolean,
         val avatarShape: String?,
         val colourPerPerson: Boolean,
+        val calendar: String?,
     )
 
     private suspend fun write(values: ContentValues): Boolean = withContext(Dispatchers.IO) {

@@ -7,6 +7,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.seca.core.model.Calendars
 import com.seca.core.model.uiLocale
 
 // Formats are built on each call rather than kept aside, so they follow the
@@ -29,8 +30,8 @@ internal fun shortDateOf(context: Context, millis: Long): String {
     return when {
         day == today -> timeOf(context, millis)
         day.isAfter(today.minusDays(7)) -> date.format(DateTimeFormatter.ofPattern("EEE", locale))
-        day.year == today.year -> date.format(patternOf(locale, "dMMM"))
-        else -> date.format(patternOf(locale, "dMMMyyyy"))
+        sameYear(context, day, today) -> Calendars.text(context, millis, "dMMM")
+        else -> Calendars.text(context, millis, "dMMMy")
     }
 }
 
@@ -57,7 +58,7 @@ internal fun dayTitleOf(context: Context, millis: Long): String {
     return when (day) {
         today -> context.getString(R.string.today)
         today.minusDays(1) -> context.getString(R.string.yesterday)
-        else -> day.format(patternOf(locale, if (day.year == today.year) "EEEEdMMMM" else "EEEEdMMMMyyyy"))
+        else -> Calendars.text(context, millis, if (sameYear(context, day, today)) "EEEEdMMMM" else "EEEEdMMMMy")
             .replaceFirstChar { it.titlecase(locale) }
     }
 }
@@ -72,10 +73,14 @@ internal fun scheduleTimeOf(context: Context, millis: Long): String {
     return when (day) {
         today -> context.getString(R.string.today_at, time)
         today.plusDays(1) -> context.getString(R.string.tomorrow_at, time)
-        else -> context.getString(R.string.day_at, day.format(patternOf(uiLocale(), if (day.year == today.year) "EEEdMMM" else "EEEdMMMyyyy")), time)
+        else -> context.getString(
+            R.string.day_at,
+            Calendars.text(context, millis, if (sameYear(context, day, today)) "EEEdMMM" else "EEEdMMMy"),
+            time,
+        )
     }
 }
 
-/** A date in the order the language writes it: "12 mai" in French, "May 12" in English. */
-private fun patternOf(locale: Locale, skeleton: String): DateTimeFormatter =
-    DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
+/** Whether two days fall in the same year of the calendar the owner reads (#83). */
+private fun sameYear(context: Context, a: LocalDate, b: LocalDate): Boolean =
+    Calendars.year(context, a) == Calendars.year(context, b)

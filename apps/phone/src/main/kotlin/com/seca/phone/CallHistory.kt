@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import android.content.Context
 import android.text.format.DateFormat
+import com.seca.core.model.Calendars
 import com.seca.core.model.uiLocale
 
 /** Consecutive calls with the same number on the same day, shown as one row. */
@@ -50,11 +51,14 @@ internal fun dayOf(millis: Long, zone: ZoneId = ZoneId.systemDefault()): Long =
 internal fun dayLabel(context: Context, millis: Long, today: LocalDate = LocalDate.now()): String {
     val day = LocalDate.ofEpochDay(dayOf(millis))
     val locale = uiLocale()
-    val pattern = DateFormat.getBestDateTimePattern(locale, if (day.year == today.year) "EEEEdMMMM" else "EEEEdMMMMyyyy")
+    // The year is left out when the date is from this year, and which year that is depends on
+    // the calendar being read: the Persian one turns in March (#83).
+    val thisYear = Calendars.year(context, day) == Calendars.year(context, today)
     return when (day) {
         today -> context.getString(R.string.today)
         today.minusDays(1) -> context.getString(R.string.yesterday)
-        else -> day.format(DateTimeFormatter.ofPattern(pattern, locale)).replaceFirstChar { it.titlecase(locale) }
+        else -> Calendars.text(context, day, if (thisYear) "EEEEdMMMM" else "EEEEdMMMMy")
+            .replaceFirstChar { it.titlecase(locale) }
     }
 }
 

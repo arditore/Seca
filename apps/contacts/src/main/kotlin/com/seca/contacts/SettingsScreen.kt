@@ -46,6 +46,7 @@ import com.seca.core.design.component.SecaShapeSection
 import com.seca.core.design.component.SecaPaletteSwatch
 import com.seca.core.design.component.SecaPassphraseDialog
 import com.seca.core.design.component.SecaProfileBadge
+import com.seca.core.design.component.SecaCalendarSection
 import com.seca.core.design.component.SecaSectionLabel
 import androidx.compose.runtime.produceState
 import com.seca.core.contacts.ContactLabel
@@ -181,6 +182,7 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                         index = 6,
                         count = 7,
                     ) { page = SettingsPage.Privacy }
+                    SecaCalendarSection(ui.calendar) { viewModel.setCalendar(it) }
                     LanguageSection()
                 }
                 SettingsPage.Appearance -> {

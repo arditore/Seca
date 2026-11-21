@@ -17,7 +17,9 @@ import com.seca.core.link.LinkSettings
 import com.seca.core.link.SecaLink
 import com.seca.core.link.TorAccess
 import com.seca.core.link.relay.PublishResult
+import com.seca.core.model.Calendars
 import com.seca.core.model.Profile
+import com.seca.core.model.SecaCalendar
 import com.seca.core.model.SecaContact
 import com.seca.core.model.backup.BackupCipher
 import com.seca.messages.link.LinkService
@@ -873,6 +875,12 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
 
     private fun toast(text: String) {
         Toast.makeText(getApplication(), text, Toast.LENGTH_LONG).show()
+    }
+
+    /** Writes every date in all three apps in this calendar; Seca Contacts keeps the choice (#83). */
+    fun setCalendar(calendar: SecaCalendar) {
+        Calendars.remember(getApplication(), calendar)
+        viewModelScope.launch { sharedProfiles.setCalendar(calendar.takeIf { it != SecaCalendar.Phone }?.name) }
     }
 
     /** Sets the palette of every Seca app; null follows the wallpaper. */

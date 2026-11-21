@@ -16,13 +16,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.seca.core.design.component.SecaDialog
 import com.seca.core.design.SecaIcons
+import com.seca.core.design.component.SecaDayPicker
+import com.seca.core.model.Calendars
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
@@ -39,6 +44,23 @@ internal fun ScheduleDialog(onDismiss: () -> Unit, onSchedule: (Long) -> Unit) {
     val choices = remember(now) { presetsFrom(now) }
     // Checked each time the dialog opens, so a permission just granted counts.
     val exact = remember { context.getSystemService(AlarmManager::class.java)?.canScheduleExactAlarms() != false }
+    // A calendar Android's picker cannot draw gets one of ours, and the time picker after it (#83).
+    var pickingDay by remember { mutableStateOf(false) }
+    if (pickingDay) {
+        SecaDayPicker(
+            title = stringResource(R.string.pick_date_time),
+            initial = now.toLocalDate(),
+            notBefore = now.toLocalDate(),
+            onDismiss = { pickingDay = false },
+            onPick = { day ->
+                pickingDay = false
+                pickTime(context, now, day) { at ->
+                    onDismiss()
+                    onSchedule(at)
+                }
+            },
+        )
+    }
 
     SecaDialog(
         onDismiss = onDismiss,
@@ -51,7 +73,13 @@ internal fun ScheduleDialog(onDismiss: () -> Unit, onSchedule: (Long) -> Unit) {
                         choices.forEach { (label, at) ->
                             ScheduleChoice(stringResource(label), scheduleTimeOf(context, at)) { onSchedule(at) }
                         }
-                        ScheduleChoice(stringResource(R.string.pick_date_time), null) { pickDateTime(context, now, onSchedule) }
+                        ScheduleChoice(stringResource(R.string.pick_date_time), null) {
+                            if (Calendars.needsItsOwnPicker(context)) {
+                                pickingDay = true
+                            } else {
+                                pickDateTime(context, now, onSchedule)
+                            }
+                        }
                         if (!exact) {
                             Text(
                                 text = stringResource(R.string.exact_alarm_hint),
@@ -93,6 +121,29 @@ private fun presetsFrom(now: ZonedDateTime): List<Pair<Int, Long>> = buildList {
     if (now.hour < EVENING_HOUR - 1) add(R.string.this_evening to now.withHour(EVENING_HOUR).truncatedTo(ChronoUnit.HOURS))
     add(R.string.tomorrow_morning to now.plusDays(1).withHour(MORNING_HOUR).truncatedTo(ChronoUnit.HOURS))
 }.map { (label, time) -> label to time.toInstant().toEpochMilli() }
+
+/**
+ * The time of day, once the day itself is settled.
+ *
+ * Shared by both ways in: Android's picker hands over a Gregorian day, ours hands over a day
+ * of whatever calendar is being read, and from there the question is the same one.
+ */
+private fun pickTime(context: Context, now: ZonedDateTime, day: java.time.LocalDate, onSchedule: (Long) -> Unit) {
+    TimePickerDialog(
+        context,
+        { _, hour, minute ->
+            val at = day.atTime(hour, minute).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            if (at <= System.currentTimeMillis()) {
+                Toast.makeText(context, context.getString(R.string.pick_future_time), Toast.LENGTH_SHORT).show()
+            } else {
+                onSchedule(at)
+            }
+        },
+        now.hour,
+        now.minute,
+        DateFormat.is24HourFormat(context),
+    ).show()
+}
 
 /** Android's own date then time pickers, in the phone's colours and 12- or 24-hour setting. */
 private fun pickDateTime(context: Context, now: ZonedDateTime, onSchedule: (Long) -> Unit) {

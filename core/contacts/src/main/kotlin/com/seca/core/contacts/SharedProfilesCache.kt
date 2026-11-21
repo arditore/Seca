@@ -1,6 +1,8 @@
 package com.seca.core.contacts
 
 import android.content.Context
+import com.seca.core.model.Calendars
+import com.seca.core.model.SecaCalendar
 import androidx.core.content.edit
 
 /**
@@ -17,6 +19,7 @@ import androidx.core.content.edit
  */
 class SharedProfilesCache(context: Context) {
 
+    private val context = context.applicationContext
     private val prefs = context.getSharedPreferences("seca_suite_colours", Context.MODE_PRIVATE)
 
     /** The palette by name, or null for the wallpaper colours. */
@@ -35,6 +38,9 @@ class SharedProfilesCache(context: Context) {
             if (shared.palette == null) remove(KEY_PALETTE) else putString(KEY_PALETTE, shared.palette)
             putBoolean(KEY_BLACK, shared.black)
         }
+        // The calendar keeps its own copy, in core:model, because the dates are written there
+        // and a formatter deep in a list cannot wait for a provider to answer (#83).
+        Calendars.remember(context, SecaCalendar.named(shared.calendar))
     }
 
     private companion object {

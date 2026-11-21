@@ -33,6 +33,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.seca.core.contacts.NumberMatch
 import com.seca.core.design.SecaIcons
+import com.seca.core.design.R as DesignText
+import java.time.Instant
+import java.time.ZoneId
+import com.seca.core.model.Calendars
+import com.seca.core.model.SecaCalendar
 import com.seca.core.design.component.SecaActionButton
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaGroupItem
@@ -314,6 +319,15 @@ private fun HistoryRow(call: CallRecord, ui: PhoneUi, showNumber: Boolean) {
         durationOf(call.durationSeconds),
         if (showNumber) ui.numbers.display(call.number) else null,
     ).joinToString(" · ")
+    // The exact day in the Gregorian calendar as well, where another one is being read: this
+    // is the page a date is quoted from, and a date quoted across calendars has to say which
+    // one it is in (#83).
+    val gregorian = if (Calendars.needsItsOwnPicker(context)) {
+        val day = Instant.ofEpochMilli(call.date).atZone(ZoneId.systemDefault()).toLocalDate()
+        stringResource(DesignText.string.design_gregorian_too, Calendars.textIn(SecaCalendar.Gregorian, day, "dMMMMy"))
+    } else {
+        null
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -324,6 +338,9 @@ private fun HistoryRow(call: CallRecord, ui: PhoneUi, showNumber: Boolean) {
         Column(Modifier.padding(start = 16.dp)) {
             Text(stringResource(call.type.label), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
             Text(details, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            gregorian?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }

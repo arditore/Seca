@@ -131,6 +131,16 @@ class ProfileStore(context: Context) {
         announceChange()
     }
 
+    /** The calendar every Seca app writes its dates in, by name; null for the phone's own (#83). */
+    fun calendar(): String? = prefs.getString(KEY_CALENDAR, null)
+
+    fun setCalendar(calendar: String?) {
+        prefs.edit {
+            if (calendar == null) remove(KEY_CALENDAR) else putString(KEY_CALENDAR, calendar)
+        }
+        announceChange()
+    }
+
     /** A shape chosen for one contact, which outranks the one chosen for everybody. */
     fun shapes(): Map<String, String> {
         val json = prefs.getString(KEY_SHAPES, null)?.let { JSONObject(it) } ?: return emptyMap()
@@ -212,6 +222,7 @@ class ProfileStore(context: Context) {
         private const val KEY_CURRENT = "current_profile"
         private const val KEY_AVATAR_SHAPE = "avatar_shape"
     private const val KEY_COLOUR_PER_PERSON = "colour_per_person"
+    private const val KEY_CALENDAR = "calendar"
     private const val KEY_BY_GIVEN_NAME = "sort_by_given_name"
     private const val KEY_SHAPES = "avatar_shapes"
     private const val KEY_FAVORITE_ORDER = "favorite_order"

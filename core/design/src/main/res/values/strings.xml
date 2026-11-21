@@ -54,4 +54,19 @@
     <string name="design_keep">Keep</string>
     <string name="design_colour_per_person">A colour per person</string>
     <string name="design_colour_per_person_hint">Instead of their profile’s colour</string>
+    <string name="design_calendar">Calendar</string>
+    <string name="design_calendar_hint">The calendar all three apps write their dates in</string>
+    <string name="design_calendar_phone">The phone’s own</string>
+    <string name="design_calendar_gregorian">Gregorian</string>
+    <string name="design_calendar_persian">Persian (Solar Hijri)</string>
+    <string name="design_calendar_islamic">Islamic (Umm al-Qura)</string>
+    <string name="design_calendar_buddhist">Buddhist</string>
+    <string name="design_calendar_hebrew">Hebrew</string>
+    <string name="design_calendar_indian">Indian national</string>
+    <string name="design_calendar_japanese">Japanese</string>
+    <string name="design_gregorian_too">Gregorian: %1$s</string>
+    <string name="design_year">Year</string>
+    <string name="design_month">Month</string>
+    <string name="design_day">Day</string>
+    <string name="design_day_past">That day has already passed.</string>
 </resources>

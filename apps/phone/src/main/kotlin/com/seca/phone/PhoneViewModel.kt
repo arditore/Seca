@@ -15,7 +15,9 @@ import com.seca.core.contacts.SharedProfiles
 import com.seca.core.contacts.SharedProfilesCache
 import com.seca.core.contacts.SharedProfilesClient
 import com.seca.core.design.SecaPalette
+import com.seca.core.model.Calendars
 import com.seca.core.model.Profile
+import com.seca.core.model.SecaCalendar
 import com.seca.core.model.SecaContact
 import com.seca.phone.screening.BlockFor
 import com.seca.phone.screening.BlockMode
@@ -215,6 +217,12 @@ class PhoneViewModel(application: Application) : AndroidViewModel(application) {
     /** Gives every person a colour of their own, or puts them back on their profile's (#52). */
     fun setColourPerPerson(on: Boolean) {
         viewModelScope.launch { sharedProfiles.setColourPerPerson(on) }
+    }
+
+    /** Writes every date in all three apps in this calendar; Seca Contacts keeps the choice (#83). */
+    fun setCalendar(calendar: SecaCalendar) {
+        Calendars.remember(getApplication(), calendar)
+        viewModelScope.launch { sharedProfiles.setCalendar(calendar.takeIf { it != SecaCalendar.Phone }?.name) }
     }
 
     /** Cuts every face in all three apps to one shape, or back to one per person (#25). */

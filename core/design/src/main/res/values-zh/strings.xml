@@ -53,4 +53,19 @@
     <string name="design_keep">保留</string>
     <string name="design_colour_per_person">每人一种颜色</string>
     <string name="design_colour_per_person_hint">不使用其资料组的颜色</string>
+    <string name="design_calendar">历法</string>
+    <string name="design_calendar_hint">三个应用写日期时使用的历法</string>
+    <string name="design_calendar_phone">跟随手机</string>
+    <string name="design_calendar_gregorian">公历</string>
+    <string name="design_calendar_persian">波斯历（太阳希吉来）</string>
+    <string name="design_calendar_islamic">伊斯兰历（乌姆·库拉）</string>
+    <string name="design_calendar_buddhist">佛历</string>
+    <string name="design_calendar_hebrew">希伯来历</string>
+    <string name="design_calendar_indian">印度国历</string>
+    <string name="design_calendar_japanese">日本年号</string>
+    <string name="design_gregorian_too">公历：%1$s</string>
+    <string name="design_year">年</string>
+    <string name="design_month">月</string>
+    <string name="design_day">日</string>
+    <string name="design_day_past">这一天已经过去了。</string>
 </resources>

@@ -80,6 +80,9 @@ import com.seca.core.contacts.CustomField
 import com.seca.core.contacts.ContactInput
 import com.seca.core.contacts.PostalAddress
 import com.seca.core.design.SecaIcons
+import com.seca.core.design.component.SecaDayPicker
+import com.seca.core.contacts.normalisedDate
+import com.seca.core.model.Calendars
 import com.seca.core.design.component.SecaAvatar
 import com.seca.core.design.component.SecaProfileBadge
 import com.seca.core.design.component.SecaTopBar
@@ -743,10 +746,28 @@ private fun PlainField(
 private fun DateField(value: String, label: String, onChange: (String) -> Unit) {
     val context = LocalContext.current
     val withoutYear = value.startsWith("--")
+    // Android's picker draws a Gregorian grid and nothing else, so a calendar it cannot draw
+    // gets one of ours, which asks for the year, month and day of that calendar (#83).
+    var picking by remember { mutableStateOf(false) }
+    val open = {
+        if (Calendars.needsItsOwnPicker(context)) picking = true else pickBirthday(context, value, onChange)
+    }
+    if (picking) {
+        SecaDayPicker(
+            title = label,
+            initial = runCatching { LocalDate.parse(normalisedDate(value)) }.getOrNull()
+                ?: LocalDate.now().minusYears(YEARS_BACK),
+            onDismiss = { picking = false },
+            onPick = { day ->
+                picking = false
+                onChange("%04d-%02d-%02d".format(day.year, day.monthValue, day.dayOfMonth))
+            },
+        )
+    }
     Column {
         Box {
             OutlinedTextField(
-                value = if (value.isBlank()) "" else formatBirthday(value),
+                value = if (value.isBlank()) "" else formatBirthday(context, value),
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(label) },
@@ -764,15 +785,13 @@ private fun DateField(value: String, label: String, onChange: (String) -> Unit) 
             Box(
                 Modifier
                     .matchParentSize()
-                    .clickable(onClickLabel = stringResource(R.string.pick_date)) { pickBirthday(context, value, onChange) },
+                    .clickable(onClickLabel = stringResource(R.string.pick_date)) { open() },
             )
         }
         // Only once there is a date to take a year off, or to put one back on.
         if (value.isNotBlank()) {
             TextButton(
-                onClick = {
-                    if (withoutYear) pickBirthday(context, value, onChange) else onChange(withoutTheYear(value))
-                },
+                onClick = { if (withoutYear) open() else onChange(withoutTheYear(value)) },
             ) {
                 Text(stringResource(if (withoutYear) R.string.add_the_year else R.string.without_the_year))
             }

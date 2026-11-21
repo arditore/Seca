@@ -51,6 +51,7 @@ class ProfilesProvider : ContentProvider() {
                     SharedProfilesContract.COLUMN_BLACK,
                     SharedProfilesContract.COLUMN_AVATAR_SHAPE,
                     SharedProfilesContract.COLUMN_COLOUR_PER_PERSON,
+                    SharedProfilesContract.COLUMN_CALENDAR,
                 ),
             ).apply {
                 addRow(
@@ -59,6 +60,7 @@ class ProfilesProvider : ContentProvider() {
                         if (store.black()) 1 else 0,
                         store.avatarShape()?.name,
                         if (store.colourPerPerson()) 1 else 0,
+                        store.calendar(),
                     ),
                 )
             }
@@ -93,6 +95,10 @@ class ProfilesProvider : ContentProvider() {
         }
         if (values.containsKey(SharedProfilesContract.COLUMN_COLOUR_PER_PERSON)) {
             store.setColourPerPerson(values.getAsInteger(SharedProfilesContract.COLUMN_COLOUR_PER_PERSON) == 1)
+            changed++
+        }
+        if (values.containsKey(SharedProfilesContract.COLUMN_CALENDAR)) {
+            store.setCalendar(values.getAsString(SharedProfilesContract.COLUMN_CALENDAR))
             changed++
         }
         if (values.containsKey(SharedProfilesContract.COLUMN_AVATAR_SHAPE)) {
