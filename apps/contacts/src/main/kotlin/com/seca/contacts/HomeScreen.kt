@@ -59,6 +59,13 @@ import com.seca.core.design.component.SecaEmptyState
 import com.seca.core.design.component.SecaFastScroller
 import com.seca.core.design.component.SecaGroupItem
 import com.seca.core.design.component.SecaProfileBadge
+import com.seca.core.model.Profile
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import com.seca.core.design.component.SecaSearchField
 import com.seca.core.design.component.SecaSectionLabel
 import com.seca.core.design.component.SecaSuiteBar
@@ -87,6 +94,9 @@ internal fun HomeScreen(
     onPick: ((Long) -> Unit)? = null,
 ) {
     var addingProfile by remember { mutableStateOf(false) }
+    // Renaming and deleting a profile without going to the settings for it (#99).
+    var renamingProfile by remember { mutableStateOf<Profile?>(null) }
+    var deletingProfile by remember { mutableStateOf<Profile?>(null) }
     // Contacts being chosen, for doing one thing to several of them (#88).
     var chosen by remember { mutableStateOf(emptySet<Long>()) }
     var deletingChosen by remember { mutableStateOf(false) }
@@ -111,6 +121,8 @@ internal fun HomeScreen(
                     onOpenSettings = { viewModel.open(Screen.Settings) },
                     onSelectProfile = viewModel::selectProfile,
                     onAddProfile = { addingProfile = true },
+                    onRenameProfile = { renamingProfile = it },
+                    onDeleteProfile = { deletingProfile = it },
                 )
             }
         },
@@ -159,6 +171,33 @@ internal fun HomeScreen(
             )
         }
     }
+    renamingProfile?.let { profile ->
+        ProfileNameDialog(
+            title = stringResource(R.string.rename_profile),
+            initial = profile.name,
+            confirmLabel = stringResource(R.string.rename),
+            onDismiss = { renamingProfile = null },
+            onConfirm = {
+                viewModel.renameProfile(profile.id, it)
+                renamingProfile = null
+            },
+        )
+    }
+    deletingProfile?.let { profile ->
+        SecaDialog(
+            onDismiss = { deletingProfile = null },
+            icon = SecaIcons.Delete,
+            title = stringResource(R.string.delete_profile_title, profile.name),
+            message = stringResource(R.string.delete_profile_text),
+            confirmLabel = stringResource(R.string.delete),
+            dismissLabel = stringResource(R.string.cancel),
+            destructive = true,
+            onConfirm = {
+                viewModel.deleteProfile(profile.id)
+                deletingProfile = null
+            },
+        )
+    }
     if (addingProfile) {
         ProfileNameDialog(
             title = stringResource(R.string.new_profile),
@@ -198,6 +237,9 @@ private fun HomeTopBar(
     onOpenSettings: () -> Unit,
     onSelectProfile: (String) -> Unit,
     onAddProfile: () -> Unit,
+    /** Holding a profile down offers these, for one the owner made themselves (#99). */
+    onRenameProfile: (Profile) -> Unit,
+    onDeleteProfile: (Profile) -> Unit,
 ) {
     Column(
         Modifier
@@ -243,6 +285,10 @@ private fun HomeTopBar(
                     count = ui.counts[profile.id] ?: 0,
                     selected = profile.id == ui.currentProfileId,
                     onClick = { onSelectProfile(profile.id) },
+                    // Everybody has the first profile and nobody made it, so there is nothing
+                    // to rename it to and nowhere for its contacts to fall back to.
+                    onRename = { onRenameProfile(profile) }.takeIf { profile.id != ProfileStore.Principal.id },
+                    onDelete = { onDeleteProfile(profile) }.takeIf { profile.id != ProfileStore.Principal.id },
                 )
             }
             item(key = "add-profile") { AddProfileTab(onClick = onAddProfile) }
@@ -251,7 +297,17 @@ private fun HomeTopBar(
 }
 
 @Composable
-private fun ProfileTab(name: String, tone: Int?, count: Int, selected: Boolean, onClick: () -> Unit) {
+private fun ProfileTab(
+    name: String,
+    tone: Int?,
+    count: Int,
+    selected: Boolean,
+    onClick: () -> Unit,
+    onRename: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
+) {
+    var menu by remember { mutableStateOf(false) }
+    val renameLabel = stringResource(R.string.rename)
     // Selecting a profile morphs its pill toward a rounded square, as M3 Expressive toggles do.
     val corner by animateDpAsState(if (selected) 14.dp else 24.dp, label = "corner")
     val container by animateColorAsState(
@@ -259,28 +315,59 @@ private fun ProfileTab(name: String, tone: Int?, count: Int, selected: Boolean, 
         label = "container",
     )
     val content = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .height(48.dp)
-            .clip(RoundedCornerShape(corner))
-            .background(container)
-            .selectable(selected = selected, onClick = onClick, role = Role.Tab)
-            .padding(start = if (tone != null) 8.dp else 16.dp, end = 16.dp),
-    ) {
-        if (tone != null) SecaProfileBadge(name = name, tone = tone, size = 32.dp)
-        Text(
-            text = name,
-            style = MaterialTheme.typography.labelLarge,
-            color = content,
-            modifier = Modifier.padding(start = if (tone != null) 10.dp else 0.dp),
-        )
-        Text(
-            text = count.toString(),
-            style = MaterialTheme.typography.labelMedium,
-            color = content.copy(alpha = 0.7f),
-            modifier = Modifier.padding(start = 6.dp),
-        )
+    Box {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .height(48.dp)
+                .clip(RoundedCornerShape(corner))
+                .background(container)
+                // Both gestures in one modifier: a tap handler put on top of a selectable
+                // takes the press and the hold never arrives (#53, #96).
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClickLabel = if (onRename != null) renameLabel else null,
+                    onLongClick = if (onRename != null || onDelete != null) ({ menu = true }) else null,
+                )
+                .semantics { this.selected = selected; role = Role.Tab }
+                .padding(start = if (tone != null) 8.dp else 16.dp, end = 16.dp),
+        ) {
+            if (tone != null) SecaProfileBadge(name = name, tone = tone, size = 32.dp)
+            Text(
+                text = name,
+                style = MaterialTheme.typography.labelLarge,
+                color = content,
+                modifier = Modifier.padding(start = if (tone != null) 10.dp else 0.dp),
+            )
+            Text(
+                text = count.toString(),
+                style = MaterialTheme.typography.labelMedium,
+                color = content.copy(alpha = 0.7f),
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            onRename?.let { rename ->
+                DropdownMenuItem(
+                    text = { Text(renameLabel) },
+                    leadingIcon = { Icon(SecaIcons.Edit, contentDescription = null) },
+                    onClick = {
+                        menu = false
+                        rename()
+                    },
+                )
+            }
+            onDelete?.let { delete ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.delete)) },
+                    leadingIcon = { Icon(SecaIcons.Delete, contentDescription = null) },
+                    onClick = {
+                        menu = false
+                        delete()
+                    },
+                )
+            }
+        }
     }
 }
 
