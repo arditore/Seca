@@ -137,42 +137,49 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                         title = stringResource(R.string.colors),
                         subtitle = stringResource(R.string.settings_appearance_hint),
                         index = 0,
-                        count = 6,
+                        count = 7,
                     ) { page = SettingsPage.Appearance }
                     SettingsEntry(
                         icon = SecaIcons.Label,
                         title = stringResource(R.string.profiles),
                         subtitle = stringResource(R.string.settings_profiles_hint),
                         index = 1,
-                        count = 6,
+                        count = 7,
                     ) { page = SettingsPage.Profiles }
                     SettingsEntry(
                         icon = SecaIcons.PersonOutline,
                         title = stringResource(R.string.accounts),
                         subtitle = stringResource(R.string.settings_accounts_hint),
                         index = 2,
-                        count = 6,
+                        count = 7,
                     ) { page = SettingsPage.Accounts }
                     SettingsEntry(
                         icon = SecaIcons.Lock,
                         title = stringResource(R.string.backup),
                         subtitle = stringResource(R.string.settings_backup_hint),
                         index = 3,
-                        count = 6,
+                        count = 7,
                     ) { page = SettingsPage.Backup }
                     SettingsEntry(
                         icon = SecaIcons.Contacts,
                         title = stringResource(R.string.tidy_up),
                         subtitle = stringResource(R.string.settings_tidy_hint),
                         index = 4,
-                        count = 6,
+                        count = 7,
                     ) { page = SettingsPage.TidyUp }
+                    SettingsEntry(
+                        icon = SecaIcons.Sim,
+                        title = stringResource(R.string.sim_contacts),
+                        subtitle = stringResource(R.string.sim_contacts_hint),
+                        index = 5,
+                        count = 7,
+                    ) { page = SettingsPage.SimCard }
                     SettingsEntry(
                         icon = SecaIcons.Shield,
                         title = stringResource(R.string.protection),
                         subtitle = stringResource(R.string.settings_privacy_hint),
-                        index = 5,
-                        count = 6,
+                        index = 6,
+                        count = 7,
                     ) { page = SettingsPage.Privacy }
                     LanguageSection()
                 }
@@ -347,6 +354,7 @@ internal fun SettingsScreen(ui: ContactsUi, viewModel: ContactsViewModel, withWr
                         }
                     }
                 }
+                SettingsPage.SimCard -> SimContactsPage(viewModel)
                 SettingsPage.TidyUp -> {
                     // Two choices, so touching the row takes the other one: a menu to pick
                     // between exactly two things is a tap more than the job needs.
@@ -559,6 +567,7 @@ private enum class SettingsPage(val title: Int) {
     Appearance(R.string.colors),
     Profiles(R.string.profiles),
     Accounts(R.string.accounts),
+    SimCard(R.string.sim_contacts),
     Backup(R.string.backup),
     TidyUp(R.string.tidy_up),
     Privacy(R.string.protection),

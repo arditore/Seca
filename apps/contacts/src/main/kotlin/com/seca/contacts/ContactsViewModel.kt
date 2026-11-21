@@ -2,6 +2,8 @@ package com.seca.contacts
 
 import android.app.Application
 import android.net.Uri
+import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,6 +15,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.seca.core.contacts.NameOrder
 import com.seca.core.contacts.ContactDetail
+import com.seca.core.contacts.ContactField
 import com.seca.core.contacts.ContactInput
 import com.seca.core.contacts.squareJpeg
 import com.seca.core.contacts.Place
@@ -21,6 +24,7 @@ import com.seca.core.contacts.ContactLabel
 import com.seca.core.contacts.ContactsRepository
 import com.seca.core.contacts.PhoneNumbers
 import com.seca.core.contacts.SharedProfilesClient
+import com.seca.core.contacts.SimEntry
 import com.seca.core.contacts.VCard
 import com.seca.core.contacts.VCardContact
 import com.seca.core.design.SecaAvatarShape
@@ -431,6 +435,48 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
 
     private fun toast(text: String) {
         Toast.makeText(getApplication(), text, Toast.LENGTH_LONG).show()
+    }
+
+    /** Says something out loud for a page that did its own work, such as the SIM card's (#97). */
+    fun say(text: String) = toast(text)
+
+    /**
+     * Copies one entry of a SIM card into the phone's own contacts (#97).
+     *
+     * A card holds a name, a number and sometimes an email, so that is all there is to copy.
+     * An entry whose number is already on the phone is left alone and said so: reading a card
+     * twice should not leave the address book with everything in duplicate.
+     */
+    fun saveFromSim(entry: SimEntry) {
+        viewModelScope.launch {
+            val key = numbers.key(entry.number)
+            val already = _ui.value.contacts.any { contact ->
+                contact.phoneNumbers.any { numbers.key(it.raw) == key }
+            }
+            if (already) {
+                toast(text(R.string.contacts_already_here))
+                return@launch
+            }
+            val input = ContactInput(
+                givenName = entry.name.ifBlank { entry.number },
+                familyName = "",
+                phones = listOf(ContactField(id = null, value = entry.number, type = Phone.TYPE_MOBILE)),
+                emails = entry.email.takeIf { it.isNotBlank() }
+                    ?.let { listOf(ContactField(id = null, value = it, type = Email.TYPE_HOME)) }
+                    .orEmpty(),
+            )
+            val saved = try {
+                repository.createContact(input) != null
+            } catch (e: ContactWriteException) {
+                val said = e.message?.takeIf { it.isNotBlank() }
+                toast(if (said == null) text(R.string.contact_not_saved) else text(R.string.contact_not_saved_because, said))
+                return@launch
+            }
+            if (saved) {
+                load()
+                toast(text(R.string.sim_copied))
+            }
+        }
     }
 
     fun saveMyCard(name: String, numbers: List<String>) {

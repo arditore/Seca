@@ -17,4 +17,7 @@ dependencies {
     implementation(libs.libphonenumber.geocoder)
     implementation(libs.libphonenumber.carrier)
     testImplementation(libs.junit)
+    // The SIM phonebook is a content provider, so its test needs one to answer.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 }
