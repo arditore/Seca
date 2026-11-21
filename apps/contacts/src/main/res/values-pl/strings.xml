@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="about">O aplikacji</string>
+    <string name="about">Informacje</string>
     <string name="add_address">Dodaj adres</string>
     <string name="add_email">Dodaj adres e-mail</string>
     <string name="add_favorite">Dodaj do ulubionych</string>
