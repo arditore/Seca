@@ -22,6 +22,8 @@ internal fun matchesQuery(contact: SecaContact, query: String, numbers: PhoneNum
     if (normalized.isEmpty()) return true
     if (normalizeForSearch(contact.displayName).contains(normalized)) return true
     if (contact.nickname.isNotEmpty() && normalizeForSearch(contact.nickname).contains(normalized)) return true
+    val organization = contact.organization
+    if (organization != null && normalizeForSearch(organization).contains(normalized)) return true
     if (query.count(Char::isDigit) < 2) return false
     return contact.phoneNumbers.any { numbers.matchesDigits(it.raw, query) }
 }

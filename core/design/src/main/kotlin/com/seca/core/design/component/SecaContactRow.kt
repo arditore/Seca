@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.ui.draw.clip
@@ -48,6 +49,12 @@ fun SecaContactRow(
     /** Whether this row is one of those being chosen (#88). */
     chosen: Boolean = false,
 ) {
+    val bottomText = remember(contact.organization, supportingText) {
+        listOfNotNull(contact.organization, supportingText)
+            .filter { it.isNotBlank() }
+            .joinToString(" · ")
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -98,9 +105,9 @@ fun SecaContactRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            supportingText?.let {
+            if (bottomText.isNotEmpty()) {
                 Text(
-                    text = it,
+                    text = bottomText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

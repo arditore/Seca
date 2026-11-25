@@ -19,6 +19,14 @@ class ContactSearchTest {
         photoUri = null,
     )
 
+    private val jean = SecaContact(
+        id = 2,
+        displayName = "Jean Dupont",
+        phoneNumbers = listOf(),
+        isFavorite = false,
+        photoUri = null,
+        organization = "Acme Corp",
+    )
     @Test
     fun `finds a name typed without its accents`() {
         assertTrue(matchesQuery(elodie, "elo", numbers))
@@ -37,6 +45,11 @@ class ContactSearchTest {
     @Test
     fun `does not match on a single digit`() {
         assertFalse(matchesQuery(elodie, "7", numbers))
+    }
+
+    @Test
+    fun `finds a contact from its organization`() {
+        assertTrue(matchesQuery(jean, "acme", numbers))
     }
 
     @Test

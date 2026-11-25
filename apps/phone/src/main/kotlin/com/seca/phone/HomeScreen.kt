@@ -414,6 +414,9 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
     val carrier = if (contact == null) call.carrierName(context) else null
     val title = contact?.displayName ?: carrier ?: callerLabel(context, call, ui.numbers)
     val details = buildList {
+        if (contact != null) {
+            contact.organization?.takeIf { it.isNotBlank() }?.let { add(it) }
+        }
         add(timeOf(context, call.date))
         ui.simLabels[call.accountId]?.let { add(it) }
         if (contact != null) {

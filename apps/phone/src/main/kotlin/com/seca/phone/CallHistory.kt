@@ -111,7 +111,10 @@ internal fun keypadSuggestions(
         .sortedByDescending { numbers.key(it.number.raw) == typedKey }
     val found = byNumber.map { it.contact.id }.toSet()
     val byName = contacts
-        .filter { it.id !in found && matchesKeypadName(it.displayName, typed) }
+        .filter {
+            val org = it.organization
+            it.id !in found && (matchesKeypadName(it.displayName, typed) || (org != null && matchesKeypadName(org, typed)))
+        }
         .mapNotNull { contact -> contact.phoneNumbers.firstOrNull()?.let { NumberMatch(contact, it) } }
     return (byNumber + byName).distinctBy { it.contact.id }.take(limit)
 }
