@@ -24,7 +24,7 @@
     <string name="backup_filtering_restored_no_access">filtreleme geri yüklendi; aramalar için Seca Telefon\'u açın, arama geçmişine izin verin, ardından yeniden geri yükleyin</string>
     <string name="block">Engelle</string>
     <string name="block_a_number">Bir numarayı engelle</string>
-    <string name="block_a_number_hint">Henüz aramamış bir numara</string>
+    <string name="block_a_number_hint">Engellenmiş numara mevcut değil.</string>
     <string name="block_decline_hint">Arama çalmadan reddedilir ve geçmişte, reddedilen aramalar arasında kalır.</string>
     <string name="block_duration">Süre</string>
     <string name="block_failed">Engellenemedi</string>

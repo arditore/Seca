@@ -27,7 +27,7 @@
     </plurals>
     <string name="design_private_screen">Gizli ekran</string>
     <string name="design_private_screen_hint">Ekran görüntüsü almayı engeller ve son uygulamalardaki önizlemeyi gizler</string>
-    <string name="design_profile_principal">Ana</string>
+    <string name="design_profile_principal">Genel</string>
     <string name="design_unlock">Kilidi aç</string>
     <string name="design_unlock_app">%1$s uygulamasının kilidini aç</string>
     <string name="seca_palette">Seca paleti</string>

@@ -58,8 +58,10 @@ internal fun NewMessageScreen(ui: MessagesUi, viewModel: MessagesViewModel) {
         ui.contacts.asSequence()
             .flatMap { contact -> contact.phoneNumbers.asSequence().map { contact to it } }
             .filter { (contact, number) ->
+                val org = contact.organization
                 trimmed.isEmpty() ||
                     searchable(contact.displayName).contains(wanted) ||
+                    (org != null && searchable(org).contains(wanted)) ||
                     (digits >= 2 && ui.numbers.matchesDigits(number.raw, trimmed))
             }
             .take(MAX_RESULTS)

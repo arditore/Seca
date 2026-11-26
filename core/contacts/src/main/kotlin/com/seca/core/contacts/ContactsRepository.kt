@@ -189,6 +189,7 @@ class ContactsRepository(
                 ordered(queryContacts(order), order),
                 queryPhones(),
                 nicknamesByContact(),
+                queryOrganizations(),
             )
         }
         val byRaw = rawContactAccounts()
@@ -197,7 +198,7 @@ class ContactsRepository(
         val visible = byRaw.filterValues { places -> places.any { it !in hidden } }.keys
         val contacts = ordered(queryContacts(order).filter { it.id in visible }, order)
         val phones = queryPhones().filter { it.account == null || it.account !in hidden }
-        groupContacts(contacts, phones, nicknamesByContact())
+        groupContacts(contacts, phones, nicknamesByContact(), queryOrganizations())
     }
 
     /**
@@ -1009,6 +1010,28 @@ class ContactsRepository(
             .orEmpty()
     }
 
+    private fun queryOrganizations(): Map<Long, String> {
+        val projection = arrayOf(Data.CONTACT_ID, Organization.COMPANY)
+        return resolver.query(
+            Data.CONTENT_URI,
+            projection,
+            "${Data.MIMETYPE} = ?",
+            arrayOf(Organization.CONTENT_ITEM_TYPE),
+            null,
+        )?.use { cursor ->
+            val contactId = cursor.getColumnIndexOrThrow(Data.CONTACT_ID)
+            val company = cursor.getColumnIndexOrThrow(Organization.COMPANY)
+            buildMap {
+                while (cursor.moveToNext()) {
+                    val rawCompany = cursor.getString(company)
+                    if (!rawCompany.isNullOrBlank()) {
+                        put(cursor.getLong(contactId), rawCompany)
+                    }
+                }
+            }
+        }.orEmpty()
+    }
+
     /**
      * Every contact's numbers, the chosen one first.
      *
@@ -1423,6 +1446,7 @@ internal fun groupContacts(
     contacts: List<ContactRow>,
     phones: List<PhoneRow>,
     nicknames: Map<Long, String> = emptyMap(),
+    organizations: Map<Long, String> = emptyMap(),
 ): List<SecaContact> {
     val numbersByContact = phones.groupBy(PhoneRow::contactId, PhoneRow::number)
     return contacts.map { row ->
@@ -1434,6 +1458,7 @@ internal fun groupContacts(
                 .distinctLines(),
             isFavorite = row.starred,
             photoUri = row.photoUri,
+            organization = organizations[row.id],
             lookupKey = row.lookupKey,
             nickname = nicknames[row.id].orEmpty(),
         )

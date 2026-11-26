@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.SEND_SMS" />
     <!-- Multimedia messages come later, but the default messaging app must accept them. -->
     <uses-permission android:name="android.permission.RECEIVE_MMS" />
+    <!-- In order to be default messaging application, this permission is required. -->
+    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" />
     <!-- Which SIMs can send, so a text can be sent from the other one this once. Android
          gives this to whichever app the owner made their messaging app, with the rest. -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -68,6 +70,7 @@
     <queries>
         <package android:name="com.seca.contacts" />
         <package android:name="com.seca.phone" />
+        <provider android:authorities="com.seca.contacts.profiles" />
         <!-- Orbot, when the owner routes Seca Link through Tor: to see it is there and ask it to start. -->
         <package android:name="org.torproject.android" />
     </queries>

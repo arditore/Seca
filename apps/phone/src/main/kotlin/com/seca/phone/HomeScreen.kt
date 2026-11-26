@@ -414,6 +414,9 @@ private fun CallRow(group: CallGroup, ui: PhoneUi, actions: RowActions) {
     val carrier = if (contact == null) call.carrierName(context) else null
     val title = contact?.displayName ?: carrier ?: callerLabel(context, call, ui.numbers)
     val details = buildList {
+        if (contact != null) {
+            contact.organization?.takeIf { it.isNotBlank() }?.let { add(it) }
+        }
         add(timeOf(context, call.date))
         ui.simLabels[call.accountId]?.let { add(it) }
         if (contact != null) {
@@ -593,16 +596,20 @@ private fun SearchResults(ui: PhoneUi, actions: RowActions) {
     val contacts = remember(ui.contacts, query) {
         val name = searchable(query)
         ui.contacts.filter { contact ->
+            val org = contact.organization
             contact.phoneNumbers.isNotEmpty() &&
-                (searchable(contact.displayName).contains(name) ||
-                    (digits >= 2 && contact.phoneNumbers.any { ui.numbers.matchesDigits(it.raw, query) }))
+                    (searchable(contact.displayName).contains(name) ||
+                            (org != null && searchable(org).contains(name)) || // 👈 Şirket ismiyle kişi arama eklendi
+                            (digits >= 2 && contact.phoneNumbers.any { ui.numbers.matchesDigits(it.raw, query) }))
         }
     }
     val calls = remember(ui.groups, query) {
         val name = searchable(query)
         ui.groups.filter { group ->
-            group.match?.contact?.displayName?.let { searchable(it).contains(name) } == true ||
-                (digits >= 2 && group.latest.callable && ui.numbers.matchesDigits(group.latest.number, query))
+            val contact = group.match?.contact
+            val org = contact?.organization
+            (contact != null && (searchable(contact.displayName).contains(name) || (org != null && searchable(org).contains(name)))) || // 👈 Şirket ismiyle geçmiş arama eklendi
+                    (digits >= 2 && group.latest.callable && ui.numbers.matchesDigits(group.latest.number, query))
         }.take(MAX_CALL_RESULTS)
     }
     val isNumber = digits >= 3 && query.all { it.isDigit() || it in "+ ()-.*#" }
